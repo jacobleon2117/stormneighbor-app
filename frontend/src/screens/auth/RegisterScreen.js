@@ -7,8 +7,6 @@ import {
   StyleSheet,
   SafeAreaView,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
   ActivityIndicator,
   ScrollView,
 } from "react-native";
@@ -94,154 +92,133 @@ const RegisterScreen = ({ onRegister, onSwitchToLogin }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.keyboardView}
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <ScrollView
-          contentContainerStyle={styles.scrollContainer}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.wrapper}>
-            {/* Header */}
-            <View style={styles.header}>
-              <Text style={styles.title}>Create Account</Text>
-              <Text style={styles.subtitle}>
-                Fill out your information to get started with your neighborhood
-              </Text>
+        <View style={styles.wrapper}>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.title}>Create Account</Text>
+            <Text style={styles.subtitle}>
+              Fill out your information to get started with your neighborhood
+            </Text>
+          </View>
+
+          {/* Form */}
+          <View style={styles.form}>
+            {/* Full Name */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Full Name</Text>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={styles.input}
+                  value={formData.fullName}
+                  onChangeText={(value) => updateField("fullName", value)}
+                  placeholder="Your name"
+                  placeholderTextColor="#9CA3AF"
+                  autoCapitalize="words"
+                  autoCorrect={false}
+                />
+                <User size={18} color="#9CA3AF" />
+              </View>
             </View>
 
-            {/* Form */}
-            <View style={styles.form}>
-              {/* Full Name */}
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Full Name</Text>
-                <View style={styles.inputWrapper}>
-                  <TextInput
-                    style={styles.input}
-                    value={formData.fullName}
-                    onChangeText={(value) => updateField("fullName", value)}
-                    placeholder="Your name"
-                    placeholderTextColor="#9CA3AF"
-                    autoCapitalize="words"
-                    autoCorrect={false}
-                  />
-                  <User size={18} color="#9CA3AF" />
-                </View>
+            {/* Email */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Email</Text>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={styles.input}
+                  value={formData.email}
+                  onChangeText={(value) => updateField("email", value)}
+                  placeholder="Enter your email"
+                  placeholderTextColor="#9CA3AF"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                <Mail size={18} color="#9CA3AF" />
               </View>
+            </View>
 
-              {/* Email */}
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Email</Text>
-                <View style={styles.inputWrapper}>
-                  <TextInput
-                    style={styles.input}
-                    value={formData.email}
-                    onChangeText={(value) => updateField("email", value)}
-                    placeholder="Enter your email"
-                    placeholderTextColor="#9CA3AF"
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                  />
-                  <Mail size={18} color="#9CA3AF" />
-                </View>
+            {/* Password */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Password</Text>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={styles.input}
+                  value={formData.password}
+                  onChangeText={(value) => updateField("password", value)}
+                  placeholder="At least 8 characters"
+                  placeholderTextColor="#9CA3AF"
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                <TouchableOpacity
+                  style={styles.eyeButton}
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff size={18} color="#9CA3AF" />
+                  ) : (
+                    <Eye size={18} color="#9CA3AF" />
+                  )}
+                </TouchableOpacity>
               </View>
+            </View>
 
-              {/* Phone */}
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Phone (Optional)</Text>
-                <View style={styles.inputWrapper}>
-                  <TextInput
-                    style={styles.input}
-                    value={formData.phone}
-                    onChangeText={(value) => updateField("phone", value)}
-                    placeholder="(555) 123-4567"
-                    placeholderTextColor="#9CA3AF"
-                    keyboardType="phone-pad"
-                  />
-                  <Phone size={18} color="#9CA3AF" />
-                </View>
-              </View>
+            {/* Register Button */}
+            <TouchableOpacity
+              style={[styles.button, loading && styles.buttonDisabled]}
+              onPress={handleRegister}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#ffffff" />
+              ) : (
+                <Text style={styles.buttonText}>Create Account</Text>
+              )}
+            </TouchableOpacity>
 
-              {/* Password */}
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Password</Text>
-                <View style={styles.inputWrapper}>
-                  <TextInput
-                    style={styles.input}
-                    value={formData.password}
-                    onChangeText={(value) => updateField("password", value)}
-                    placeholder="At least 8 characters"
-                    placeholderTextColor="#9CA3AF"
-                    secureTextEntry={!showPassword}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                  />
-                  <TouchableOpacity
-                    style={styles.eyeButton}
-                    onPress={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? (
-                      <EyeOff size={18} color="#9CA3AF" />
-                    ) : (
-                      <Eye size={18} color="#9CA3AF" />
-                    )}
-                  </TouchableOpacity>
-                </View>
-              </View>
+            {/* Social Login Divider */}
+            <View style={styles.dividerContainer}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or continue with</Text>
+              <View style={styles.dividerLine} />
+            </View>
 
-              {/* Register Button */}
+            {/* Social Login Buttons */}
+            <View style={styles.socialContainer}>
               <TouchableOpacity
-                style={[styles.button, loading && styles.buttonDisabled]}
-                onPress={handleRegister}
-                disabled={loading}
+                style={styles.socialButton}
+                onPress={handleGoogleSignUp}
               >
-                {loading ? (
-                  <ActivityIndicator color="#ffffff" />
-                ) : (
-                  <Text style={styles.buttonText}>Create Account</Text>
-                )}
+                <AntDesign name="google" size={20} color="#DB4437" />
+                <Text style={styles.socialText}>Google</Text>
               </TouchableOpacity>
 
-              {/* Social Login Divider */}
-              <View style={styles.dividerContainer}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>or continue with</Text>
-                <View style={styles.dividerLine} />
-              </View>
-
-              {/* Social Login Buttons */}
-              <View style={styles.socialContainer}>
-                <TouchableOpacity
-                  style={styles.socialButton}
-                  onPress={handleGoogleSignUp}
-                >
-                  <AntDesign name="google" size={20} color="#DB4437" />
-                  <Text style={styles.socialText}>Google</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.socialButton}
-                  onPress={handleAppleSignUp}
-                >
-                  <AntDesign name="apple1" size={20} color="#000000" />
-                  <Text style={styles.socialText}>Apple</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Footer */}
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>Already have an account? </Text>
-              <TouchableOpacity onPress={onSwitchToLogin}>
-                <Text style={styles.footerLink}>Sign In</Text>
+              <TouchableOpacity
+                style={styles.socialButton}
+                onPress={handleAppleSignUp}
+              >
+                <AntDesign name="apple1" size={20} color="#000000" />
+                <Text style={styles.socialText}>Apple</Text>
               </TouchableOpacity>
             </View>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+
+          {/* Footer */}
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Already have an account? </Text>
+            <TouchableOpacity onPress={onSwitchToLogin}>
+              <Text style={styles.footerLink}>Sign In</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -250,9 +227,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F8FAFF",
-  },
-  keyboardView: {
-    flex: 1,
   },
   scrollContainer: {
     flexGrow: 1,

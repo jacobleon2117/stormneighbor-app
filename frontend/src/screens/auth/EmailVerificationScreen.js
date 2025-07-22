@@ -8,8 +8,6 @@ import {
   Alert,
   ActivityIndicator,
   ScrollView,
-  KeyboardAvoidingView,
-  Platform,
 } from "react-native";
 import { CheckCircle, RotateCcw, ArrowLeft } from "lucide-react-native";
 import apiService from "../../services/api";
@@ -93,122 +91,117 @@ const EmailVerificationScreen = ({ userEmail, onVerified, onBack }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.keyboardView}
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <ScrollView
-          contentContainerStyle={styles.scrollContainer}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.wrapper}>
-            {/* Back Button */}
-            {onBack && (
-              <TouchableOpacity style={styles.backButton} onPress={onBack}>
-                <ArrowLeft size={24} color="#1F2937" />
-              </TouchableOpacity>
-            )}
+        <View style={styles.wrapper}>
+          {/* Back Button */}
+          {onBack && (
+            <TouchableOpacity style={styles.backButton} onPress={onBack}>
+              <ArrowLeft size={24} color="#1F2937" />
+            </TouchableOpacity>
+          )}
 
-            {/* Header */}
-            <View style={styles.header}>
-              <Text style={styles.title}>Check Your Email</Text>
-              <Text style={styles.subtitle}>
-                We sent a verification email to{" "}
-                {userEmail || "your email address"}
-              </Text>
-            </View>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.title}>Check Your Email</Text>
+            <Text style={styles.subtitle}>
+              We sent a verification email to{" "}
+              {userEmail || "your email address"}
+            </Text>
+          </View>
 
-            {/* Form Content */}
-            <View style={styles.form}>
-              {/* Instructions */}
-              <View style={styles.instructionsContainer}>
-                <Text style={styles.instructionsTitle}>What to do next:</Text>
-                <View style={styles.instructionsList}>
-                  <View style={styles.instructionItem}>
-                    <Text style={styles.stepNumber}>1</Text>
-                    <Text style={styles.stepText}>
-                      Check your email inbox (and spam folder)
-                    </Text>
-                  </View>
-                  <View style={styles.instructionItem}>
-                    <Text style={styles.stepNumber}>2</Text>
-                    <Text style={styles.stepText}>
-                      Click the "Verify Email" button in the email
-                    </Text>
-                  </View>
-                  <View style={styles.instructionItem}>
-                    <Text style={styles.stepNumber}>3</Text>
-                    <Text style={styles.stepText}>
-                      Come back here and tap "I've Verified"
-                    </Text>
-                  </View>
+          {/* Form Content */}
+          <View style={styles.form}>
+            {/* Instructions */}
+            <View style={styles.instructionsContainer}>
+              <Text style={styles.instructionsTitle}>What to do next:</Text>
+              <View style={styles.instructionsList}>
+                <View style={styles.instructionItem}>
+                  <Text style={styles.stepNumber}>1</Text>
+                  <Text style={styles.stepText}>
+                    Check your email inbox (and spam folder)
+                  </Text>
+                </View>
+                <View style={styles.instructionItem}>
+                  <Text style={styles.stepNumber}>2</Text>
+                  <Text style={styles.stepText}>
+                    Click the "Verify Email" button in the email
+                  </Text>
+                </View>
+                <View style={styles.instructionItem}>
+                  <Text style={styles.stepNumber}>3</Text>
+                  <Text style={styles.stepText}>
+                    Come back here and tap "I've Verified"
+                  </Text>
                 </View>
               </View>
-
-              {/* Actions */}
-              <View style={styles.actionsContainer}>
-                <TouchableOpacity
-                  style={[
-                    styles.button,
-                    (checking || loading) && styles.buttonDisabled,
-                  ]}
-                  onPress={handleCheckVerification}
-                  disabled={checking || loading}
-                >
-                  {checking ? (
-                    <View style={styles.checkingContainer}>
-                      <ActivityIndicator color="#ffffff" size="small" />
-                      <Text style={styles.checkingText}>
-                        Checking verification...
-                      </Text>
-                    </View>
-                  ) : (
-                    <View style={styles.buttonContent}>
-                      <CheckCircle size={20} color="#FFFFFF" />
-                      <Text style={styles.buttonText}>I've Verified</Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[
-                    styles.secondaryButton,
-                    (!canResend || resendLoading) && styles.buttonDisabled,
-                  ]}
-                  onPress={handleResendEmail}
-                  disabled={!canResend || resendLoading}
-                >
-                  {resendLoading ? (
-                    <ActivityIndicator color="#3B82F6" />
-                  ) : (
-                    <View style={styles.buttonContent}>
-                      <RotateCcw size={20} color="#3B82F6" />
-                      <Text style={styles.secondaryButtonText}>
-                        {canResend ? "Resend Email" : `Resend Email`}
-                      </Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-
-                {!canResend && (
-                  <Text style={styles.timerText}>
-                    You can resend in {countdown} seconds
-                  </Text>
-                )}
-              </View>
             </View>
 
-            {/* Footer */}
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>Wrong email address? </Text>
-              <TouchableOpacity onPress={onBack}>
-                <Text style={styles.footerLink}>Go Back</Text>
+            {/* Actions */}
+            <View style={styles.actionsContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.button,
+                  (checking || loading) && styles.buttonDisabled,
+                ]}
+                onPress={handleCheckVerification}
+                disabled={checking || loading}
+              >
+                {checking ? (
+                  <View style={styles.checkingContainer}>
+                    <ActivityIndicator color="#ffffff" size="small" />
+                    <Text style={styles.checkingText}>
+                      Checking verification...
+                    </Text>
+                  </View>
+                ) : (
+                  <View style={styles.buttonContent}>
+                    <CheckCircle size={20} color="#FFFFFF" />
+                    <Text style={styles.buttonText}>I've Verified</Text>
+                  </View>
+                )}
               </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.secondaryButton,
+                  (!canResend || resendLoading) && styles.buttonDisabled,
+                ]}
+                onPress={handleResendEmail}
+                disabled={!canResend || resendLoading}
+              >
+                {resendLoading ? (
+                  <ActivityIndicator color="#3B82F6" />
+                ) : (
+                  <View style={styles.buttonContent}>
+                    <RotateCcw size={20} color="#3B82F6" />
+                    <Text style={styles.secondaryButtonText}>
+                      {canResend ? "Resend Email" : `Resend Email`}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              {!canResend && (
+                <Text style={styles.timerText}>
+                  You can resend in {countdown} seconds
+                </Text>
+              )}
             </View>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+
+          {/* Footer */}
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Wrong email address? </Text>
+            <TouchableOpacity onPress={onBack}>
+              <Text style={styles.footerLink}>Go Back</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -217,9 +210,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F8FAFF",
-  },
-  keyboardView: {
-    flex: 1,
   },
   scrollContainer: {
     flexGrow: 1,

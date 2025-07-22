@@ -1,4 +1,3 @@
-// frontend/src/components/ScreenNavigator.js
 import React, { useState } from "react";
 import {
   View,
@@ -9,7 +8,6 @@ import {
   ScrollView,
 } from "react-native";
 
-// Import all your auth screens
 import LoadingScreen from "../screens/auth/LoadingScreen";
 import WelcomeScreen from "../screens/auth/WelcomeScreen";
 import LoginScreen from "../screens/auth/LoginScreen";
@@ -24,7 +22,6 @@ import ProfileSetupScreen from "../screens/auth/ProfileSetupScreen";
 const ScreenNavigator = () => {
   const [currentScreen, setCurrentScreen] = useState("navigator");
 
-  // Screen data
   const screens = [
     {
       id: "loading",
@@ -88,7 +85,6 @@ const ScreenNavigator = () => {
     },
   ];
 
-  // Mock handlers for screen interactions
   const mockHandlers = {
     onGetStarted: () => console.log("Get Started pressed"),
     onLogin: (data) => console.log("Login successful:", data),
@@ -107,12 +103,10 @@ const ScreenNavigator = () => {
       console.log("Password reset successful");
       setCurrentScreen("login");
     },
-    // Mock data for verification screens
     email: "user@example.com",
     verificationCode: "123456",
   };
 
-  // Render the current screen
   const renderCurrentScreen = () => {
     const screen = screens.find((s) => s.id === currentScreen);
     if (!screen) return null;
@@ -121,7 +115,6 @@ const ScreenNavigator = () => {
     return <ScreenComponent {...mockHandlers} />;
   };
 
-  // Main navigator view
   if (currentScreen === "navigator") {
     return (
       <SafeAreaView style={styles.container}>
@@ -159,47 +152,13 @@ const ScreenNavigator = () => {
               Perfect for testing designs & flows
             </Text>
           </View>
-
-          <View style={styles.statusSection}>
-            <Text style={styles.statusTitle}>🔧 Development Status</Text>
-            <View style={styles.statusItem}>
-              <Text style={styles.statusDot}>✅</Text>
-              <Text style={styles.statusText}>Loading Screen - Complete</Text>
-            </View>
-            <View style={styles.statusItem}>
-              <Text style={styles.statusDot}>✅</Text>
-              <Text style={styles.statusText}>Welcome Screen - Complete</Text>
-            </View>
-            <View style={styles.statusItem}>
-              <Text style={styles.statusDot}>✅</Text>
-              <Text style={styles.statusText}>Login Screen - Complete</Text>
-            </View>
-            <View style={styles.statusItem}>
-              <Text style={styles.statusDot}>✅</Text>
-              <Text style={styles.statusText}>Register Screen - Complete</Text>
-            </View>
-            <View style={styles.statusItem}>
-              <Text style={styles.statusDot}>✅</Text>
-              <Text style={styles.statusText}>Forgot Password - Complete</Text>
-            </View>
-            <View style={styles.statusItem}>
-              <Text style={styles.statusDot}>✅</Text>
-              <Text style={styles.statusText}>Verify Code - Complete</Text>
-            </View>
-            <View style={styles.statusItem}>
-              <Text style={styles.statusDot}>✅</Text>
-              <Text style={styles.statusText}>Reset Password - Complete</Text>
-            </View>
-          </View>
         </ScrollView>
       </SafeAreaView>
     );
   }
 
-  // Show current screen with back button
   return (
     <View style={styles.screenContainer}>
-      {/* Back Button */}
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => setCurrentScreen("navigator")}
@@ -207,7 +166,6 @@ const ScreenNavigator = () => {
         <Text style={styles.backButtonText}>← Back to Navigator</Text>
       </TouchableOpacity>
 
-      {/* Current Screen */}
       <View style={styles.screenContent}>{renderCurrentScreen()}</View>
     </View>
   );

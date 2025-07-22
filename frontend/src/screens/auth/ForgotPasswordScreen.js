@@ -51,7 +51,8 @@ const ForgotPasswordScreen = ({ onBackToLogin }) => {
         >
           <View style={styles.wrapper}>
             <View style={styles.successContainer}>
-              <Text style={styles.successIcon}>✅</Text>
+              {/* <Text style={styles.successIcon}>✅</Text> */} - Replace with
+              lucide
               <Text style={styles.successTitle}>Email Sent!</Text>
               <Text style={styles.successMessage}>
                 We've sent password reset instructions to{"\n"}

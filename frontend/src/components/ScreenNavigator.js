@@ -1,0 +1,384 @@
+// frontend/src/components/ScreenNavigator.js
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  ScrollView,
+} from "react-native";
+
+// Import all your auth screens
+import LoadingScreen from "../screens/auth/LoadingScreen";
+import WelcomeScreen from "../screens/auth/WelcomeScreen";
+import LoginScreen from "../screens/auth/LoginScreen";
+import RegisterScreen from "../screens/auth/RegisterScreen";
+import ForgotPasswordScreen from "../screens/auth/ForgotPasswordScreen";
+import VerifyCodeScreen from "../screens/auth/VerifyCodeScreen";
+import ResetPasswordScreen from "../screens/auth/ResetPasswordScreen";
+import ChangePasswordScreen from "../screens/auth/ChangePasswordScreen";
+import EmailVerificationScreen from "../screens/auth/EmailVerificationScreen";
+import ProfileSetupScreen from "../screens/auth/ProfileSetupScreen";
+
+const ScreenNavigator = () => {
+  const [currentScreen, setCurrentScreen] = useState("navigator");
+
+  // Screen data
+  const screens = [
+    {
+      id: "loading",
+      name: "Loading Screen",
+      component: LoadingScreen,
+      group: "Auth Flow",
+    },
+    {
+      id: "welcome",
+      name: "Welcome Screen",
+      component: WelcomeScreen,
+      group: "Auth Flow",
+    },
+    {
+      id: "login",
+      name: "Login Screen",
+      component: LoginScreen,
+      group: "Auth Flow",
+    },
+    {
+      id: "register",
+      name: "Register Screen",
+      component: RegisterScreen,
+      group: "Auth Flow",
+    },
+    {
+      id: "email-verify",
+      name: "Email Verification",
+      component: EmailVerificationScreen,
+      group: "Auth Flow",
+    },
+    {
+      id: "profile-setup",
+      name: "Profile Setup",
+      component: ProfileSetupScreen,
+      group: "Auth Flow",
+    },
+    {
+      id: "forgot",
+      name: "Forgot Password",
+      component: ForgotPasswordScreen,
+      group: "Password Reset",
+    },
+    {
+      id: "verify",
+      name: "Verify Code",
+      component: VerifyCodeScreen,
+      group: "Password Reset",
+    },
+    {
+      id: "reset",
+      name: "Reset Password",
+      component: ResetPasswordScreen,
+      group: "Password Reset",
+    },
+    {
+      id: "change",
+      name: "Change Password",
+      component: ChangePasswordScreen,
+      group: "Settings",
+    },
+  ];
+
+  // Mock handlers for screen interactions
+  const mockHandlers = {
+    onGetStarted: () => console.log("Get Started pressed"),
+    onLogin: (data) => console.log("Login successful:", data),
+    onRegister: (data) => console.log("Register successful:", data),
+    onSwitchToLogin: () => setCurrentScreen("login"),
+    onSwitchToRegister: () => setCurrentScreen("register"),
+    onBackToLogin: () => setCurrentScreen("login"),
+    onForgotPassword: () => setCurrentScreen("forgot"),
+    onBackToForgot: () => setCurrentScreen("forgot"),
+    onCodeVerified: (code) => {
+      console.log("Code verified:", code);
+      setCurrentScreen("reset");
+    },
+    onResendCode: () => console.log("Resend code requested"),
+    onPasswordReset: () => {
+      console.log("Password reset successful");
+      setCurrentScreen("login");
+    },
+    // Mock data for verification screens
+    email: "user@example.com",
+    verificationCode: "123456",
+  };
+
+  // Render the current screen
+  const renderCurrentScreen = () => {
+    const screen = screens.find((s) => s.id === currentScreen);
+    if (!screen) return null;
+
+    const ScreenComponent = screen.component;
+    return <ScreenComponent {...mockHandlers} />;
+  };
+
+  // Main navigator view
+  if (currentScreen === "navigator") {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <View style={styles.logoContainer}>
+            <View style={styles.logoIcon}>
+              <Text style={styles.logoEmoji}>⚡</Text>
+            </View>
+          </View>
+          <Text style={styles.title}>
+            Storm<Text style={styles.highlightText}>Neighbor</Text>
+          </Text>
+          <Text style={styles.subtitle}>Auth Screens Navigator</Text>
+        </View>
+
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          <Text style={styles.sectionTitle}>🎨 Auth Screens</Text>
+
+          {screens.map((screen) => (
+            <TouchableOpacity
+              key={screen.id}
+              style={styles.screenButton}
+              onPress={() => setCurrentScreen(screen.id)}
+            >
+              <Text style={styles.screenButtonText}>{screen.name}</Text>
+              <Text style={styles.screenButtonArrow}>→</Text>
+            </TouchableOpacity>
+          ))}
+
+          <View style={styles.infoSection}>
+            <Text style={styles.infoTitle}>💡 How to Use</Text>
+            <Text style={styles.infoText}>
+              • Tap any screen above to preview it{"\n"}• All interactions are
+              logged to console{"\n"}• Use back button to return here{"\n"}•
+              Perfect for testing designs & flows
+            </Text>
+          </View>
+
+          <View style={styles.statusSection}>
+            <Text style={styles.statusTitle}>🔧 Development Status</Text>
+            <View style={styles.statusItem}>
+              <Text style={styles.statusDot}>✅</Text>
+              <Text style={styles.statusText}>Loading Screen - Complete</Text>
+            </View>
+            <View style={styles.statusItem}>
+              <Text style={styles.statusDot}>✅</Text>
+              <Text style={styles.statusText}>Welcome Screen - Complete</Text>
+            </View>
+            <View style={styles.statusItem}>
+              <Text style={styles.statusDot}>✅</Text>
+              <Text style={styles.statusText}>Login Screen - Complete</Text>
+            </View>
+            <View style={styles.statusItem}>
+              <Text style={styles.statusDot}>✅</Text>
+              <Text style={styles.statusText}>Register Screen - Complete</Text>
+            </View>
+            <View style={styles.statusItem}>
+              <Text style={styles.statusDot}>✅</Text>
+              <Text style={styles.statusText}>Forgot Password - Complete</Text>
+            </View>
+            <View style={styles.statusItem}>
+              <Text style={styles.statusDot}>✅</Text>
+              <Text style={styles.statusText}>Verify Code - Complete</Text>
+            </View>
+            <View style={styles.statusItem}>
+              <Text style={styles.statusDot}>✅</Text>
+              <Text style={styles.statusText}>Reset Password - Complete</Text>
+            </View>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  // Show current screen with back button
+  return (
+    <View style={styles.screenContainer}>
+      {/* Back Button */}
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => setCurrentScreen("navigator")}
+      >
+        <Text style={styles.backButtonText}>← Back to Navigator</Text>
+      </TouchableOpacity>
+
+      {/* Current Screen */}
+      <View style={styles.screenContent}>{renderCurrentScreen()}</View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#F8FAFF",
+  },
+  header: {
+    alignItems: "center",
+    paddingTop: 40,
+    paddingBottom: 20,
+    paddingHorizontal: 24,
+  },
+  logoContainer: {
+    marginBottom: 12,
+  },
+  logoIcon: {
+    width: 60,
+    height: 60,
+    backgroundColor: "#3B82F6",
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#3B82F6",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  logoEmoji: {
+    fontSize: 24,
+    color: "#FFFFFF",
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "600",
+    color: "#1F2937",
+    fontFamily: "Inter",
+  },
+  highlightText: {
+    color: "#FBBF24",
+  },
+  subtitle: {
+    fontSize: 16,
+    color: "#1F2937",
+    fontFamily: "Inter",
+    fontWeight: "300",
+    opacity: 0.7,
+    marginTop: 4,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 24,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#1F2937",
+    fontFamily: "Inter",
+    marginBottom: 16,
+    marginTop: 8,
+  },
+  screenButton: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 12,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  screenButtonText: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#1F2937",
+    fontFamily: "Inter",
+  },
+  screenButtonArrow: {
+    fontSize: 16,
+    color: "#3B82F6",
+    fontWeight: "600",
+  },
+  infoSection: {
+    backgroundColor: "#EBF8FF",
+    borderRadius: 12,
+    padding: 20,
+    marginTop: 24,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#BFDBFE",
+  },
+  infoTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1F2937",
+    fontFamily: "Inter",
+    marginBottom: 12,
+  },
+  infoText: {
+    fontSize: 14,
+    color: "#1F2937",
+    fontFamily: "Inter",
+    fontWeight: "300",
+    lineHeight: 20,
+    opacity: 0.8,
+  },
+  statusSection: {
+    backgroundColor: "#F9FAFB",
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 40,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  statusTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1F2937",
+    fontFamily: "Inter",
+    marginBottom: 16,
+  },
+  statusItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  statusDot: {
+    fontSize: 14,
+    marginRight: 12,
+  },
+  statusText: {
+    fontSize: 14,
+    color: "#1F2937",
+    fontFamily: "Inter",
+    fontWeight: "400",
+  },
+  screenContainer: {
+    flex: 1,
+    backgroundColor: "#F8FAFF",
+  },
+  backButton: {
+    position: "absolute",
+    top: 50,
+    left: 20,
+    backgroundColor: "rgba(59, 130, 246, 0.1)",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    zIndex: 100,
+    borderWidth: 1,
+    borderColor: "#3B82F6",
+  },
+  backButtonText: {
+    color: "#3B82F6",
+    fontSize: 14,
+    fontWeight: "600",
+    fontFamily: "Inter",
+  },
+  screenContent: {
+    flex: 1,
+  },
+});
+
+export default ScreenNavigator;

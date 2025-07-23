@@ -11,7 +11,6 @@ const compression = require("compression");
 const rateLimit = require("express-rate-limit");
 const { createServer } = require("http");
 const { Server } = require("socket.io");
-const logger = require("./utils/logger");
 
 const app = express();
 const server = createServer(app);
@@ -65,7 +64,6 @@ app.get("/health", (req, res) => {
 
 try {
   app.use("/api/auth", require("./routes/auth"));
-  app.use("/api/users", require("./routes/users"));
   app.use("/api/neighborhoods", require("./routes/neighborhoods"));
   app.use("/api/posts", require("./routes/posts"));
   app.use("/api/alerts", require("./routes/alerts"));

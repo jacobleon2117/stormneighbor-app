@@ -1,4 +1,3 @@
-// backend/enable-postgis.js
 const { pool } = require("./src/config/database");
 
 async function enablePostGIS() {
@@ -7,11 +6,9 @@ async function enablePostGIS() {
   try {
     const client = await pool.connect();
 
-    // Check current PostgreSQL version
     const versionResult = await client.query("SELECT version()");
     console.log("📊 PostgreSQL version:", versionResult.rows[0].version);
 
-    // Check available extensions
     console.log("\n🔍 Checking available extensions...");
     const extensionsResult = await client.query(`
       SELECT name, installed_version, default_version, comment 
@@ -33,13 +30,11 @@ async function enablePostGIS() {
         console.log(`   - ${row.name}: ${row.comment}`);
       });
 
-      // Try to install PostGIS
       console.log("\n⚡ Attempting to install PostGIS...");
       try {
         await client.query("CREATE EXTENSION IF NOT EXISTS postgis;");
         console.log("✅ PostGIS extension created successfully!");
 
-        // Test if it worked
         const testResult = await client.query("SELECT PostGIS_Version()");
         console.log("🎉 PostGIS version:", testResult.rows[0].postgis_version);
       } catch (createError) {

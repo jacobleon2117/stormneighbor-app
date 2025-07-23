@@ -6,7 +6,6 @@ import { authStyles, colors } from "../../styles/authStyles";
 const LoadingScreen = () => {
   return (
     <AuthLayout scrollable={false}>
-      {/* Just the App Name */}
       <Text style={[authStyles.title, { fontSize: 36, fontWeight: "700" }]}>
         Storm<Text style={{ color: colors.primary }}>Neighbor</Text>
       </Text>

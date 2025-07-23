@@ -1,4 +1,4 @@
-// File path: frontend/src/screens/auth/EmailVerificationScreen.js
+// File: frontend/src/screens/auth/EmailVerificationScreen.js
 import { useState, useEffect } from "react";
 import {
   View,
@@ -7,7 +7,7 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
-import { CheckCircle, RotateCcw, ArrowLeft } from "lucide-react-native";
+import { CheckCircle, RotateCcw } from "lucide-react-native";
 
 import AuthLayout, {
   AuthHeader,
@@ -94,6 +94,12 @@ const EmailVerificationScreen = ({ userEmail, onVerified, onBack }) => {
     }
   };
 
+  const getResendButtonText = () => {
+    if (resendLoading) return "Sending...";
+    if (canResend) return "Resend Email";
+    return `Resend Email (${countdown}s)`;
+  };
+
   return (
     <AuthLayout showBackButton={!!onBack} onBack={onBack}>
       {/* Header */}
@@ -177,7 +183,7 @@ const EmailVerificationScreen = ({ userEmail, onVerified, onBack }) => {
           )}
         </TouchableOpacity>
 
-        {/* Resend Email Button with Timer */}
+        {/* Resend Email Button with Timer Inside */}
         <TouchableOpacity
           style={[
             authStyles.secondaryButton,
@@ -192,7 +198,7 @@ const EmailVerificationScreen = ({ userEmail, onVerified, onBack }) => {
             <View style={authStyles.buttonContent}>
               <RotateCcw size={20} color={colors.primary} />
               <Text style={authStyles.secondaryButtonText}>
-                {canResend ? "Resend Email" : `Resend Email ${countdown}s`}
+                {getResendButtonText()}
               </Text>
             </View>
           )}

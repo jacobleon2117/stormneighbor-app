@@ -1,4 +1,4 @@
-// File path: frontend/src/screens/auth/RegisterScreen.js
+// File: frontend/src/screens/auth/RegisterScreen.js
 import { useState } from "react";
 import {
   View,
@@ -85,24 +85,34 @@ const RegisterScreen = ({ onRegister, onSwitchToLogin }) => {
   };
 
   const handleGoogleSignUp = () => {
-    Alert.alert("Coming Soon", "Google sign-up will be available soon!");
+    Alert.alert(
+      "Feature In Development",
+      "Google sign-up is currently being developed and will be available in a future update.",
+      [{ text: "OK" }]
+    );
   };
 
   const handleAppleSignUp = () => {
-    Alert.alert("Coming Soon", "Apple sign-up will be available soon!");
+    Alert.alert(
+      "Feature In Development",
+      "Apple sign-up is currently being developed and will be available in a future update.",
+      [{ text: "OK" }]
+    );
   };
 
   return (
     <AuthLayout>
       {/* Header */}
-      <AuthHeader
-        title={<Text style={authStyles.title}>Create Account</Text>}
-        subtitle={
-          <Text style={authStyles.subtitle}>
-            Fill out your information to get started with your neighborhood
-          </Text>
-        }
-      />
+      <View style={{ paddingTop: 20 }}>
+        <AuthHeader
+          title={<Text style={authStyles.title}>Create Account</Text>}
+          subtitle={
+            <Text style={authStyles.subtitle}>
+              Fill out your information to get started with your neighborhood
+            </Text>
+          }
+        />
+      </View>
 
       {/* Full Name Input */}
       <Text style={authStyles.label}>Full Name</Text>

@@ -1,17 +1,21 @@
-// File path: frontend/src/screens/auth/profile/LocationSetupScreen.js
+// File: frontend/src/screens/auth/profile/LocationSetupScreen.js
 import { useState } from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
   Alert,
   ActivityIndicator,
-  ScrollView,
 } from "react-native";
-import { MapPin, ArrowRight, ArrowLeft } from "lucide-react-native";
+import { MapPin, ArrowRight } from "lucide-react-native";
+
+import AuthLayout, {
+  AuthHeader,
+  AuthButtons,
+  AuthInput,
+} from "../../../components/AuthLayout";
+import { authStyles, colors } from "../../../styles/authStyles";
 
 const LocationSetupScreen = ({ onNext, onBack, initialData = {} }) => {
   const [loading, setLoading] = useState(false);
@@ -21,21 +25,41 @@ const LocationSetupScreen = ({ onNext, onBack, initialData = {} }) => {
     state: initialData.state || "",
     zipCode: initialData.zipCode || "",
   });
+  const [errors, setErrors] = useState({});
 
   const updateField = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: null }));
+    }
   };
 
   const validateForm = () => {
-    if (!formData.city.trim() || !formData.state.trim()) {
-      Alert.alert("Required Fields", "Please enter your city and state");
-      return false;
+    const newErrors = {};
+
+    if (!formData.city.trim()) {
+      newErrors.city = "City is required";
     }
-    return true;
+
+    if (!formData.state.trim()) {
+      newErrors.state = "State is required";
+    } else if (formData.state.length !== 2) {
+      newErrors.state = "State must be 2 letters";
+    }
+
+    if (formData.zipCode && formData.zipCode.length !== 5) {
+      newErrors.zipCode = "ZIP code must be 5 digits";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleContinue = () => {
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      Alert.alert("Validation Error", "Please fix the errors below");
+      return;
+    }
 
     if (onNext) {
       onNext(formData);
@@ -48,242 +72,136 @@ const LocationSetupScreen = ({ onNext, onBack, initialData = {} }) => {
     }
   };
 
+  const handleStateChange = (value) => {
+    const filteredValue = value
+      .replace(/[^a-zA-Z]/g, "")
+      .slice(0, 2)
+      .toUpperCase();
+    updateField("state", filteredValue);
+  };
+
+  const handleZipChange = (value) => {
+    const filteredValue = value.replace(/[^0-9]/g, "").slice(0, 5);
+    updateField("zipCode", filteredValue);
+  };
+
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContainer}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.wrapper}>
-          {/* Back Button */}
-          {onBack && (
-            <TouchableOpacity style={styles.backButton} onPress={onBack}>
-              <ArrowLeft size={24} color="#1F2937" />
-            </TouchableOpacity>
-          )}
+    <AuthLayout showBackButton={!!onBack} onBack={onBack}>
+      {/* Header */}
+      <AuthHeader
+        icon={<MapPin size={32} color={colors.primary} />}
+        title={<Text style={authStyles.title}>Your Location</Text>}
+        subtitle={
+          <Text style={authStyles.subtitle}>
+            We use this information to find your neighborhood and provide local
+            weather alerts
+          </Text>
+        }
+      />
 
-          {/* Content */}
-          <View style={styles.content}>
-            <View style={styles.stepContainer}>
-              <View style={styles.stepContent}>
-                <View style={styles.header}>
-                  <MapPin size={32} color="#3B82F6" />
-                  <Text style={styles.title}>Your Location</Text>
-                  <Text style={styles.subtitle}>
-                    Help us connect you with your local community
-                  </Text>
-                </View>
+      {/* Address Input */}
+      <AuthInput label={<Text style={authStyles.label}>Street Address</Text>}>
+        <TextInput
+          style={authStyles.input}
+          value={formData.address}
+          onChangeText={(value) => updateField("address", value)}
+          placeholder="Your address (optional)"
+          placeholderTextColor={colors.text.muted}
+          autoCapitalize="words"
+        />
+      </AuthInput>
 
-                <View style={styles.formContainer}>
-                  <View style={styles.inputContainer}>
-                    <Text style={styles.label}>Street Address</Text>
-                    <TextInput
-                      style={styles.input}
-                      value={formData.address}
-                      onChangeText={(value) => updateField("address", value)}
-                      placeholder="Your address"
-                      placeholderTextColor="#9CA3AF"
-                    />
-                  </View>
-
-                  <View style={styles.rowContainer}>
-                    <View style={[styles.inputContainer, { flex: 2 }]}>
-                      <Text style={styles.label}>City</Text>
-                      <TextInput
-                        style={styles.input}
-                        value={formData.city}
-                        onChangeText={(value) => updateField("city", value)}
-                        placeholder="Your City"
-                        placeholderTextColor="#9CA3AF"
-                      />
-                    </View>
-
-                    <View
-                      style={[
-                        styles.inputContainer,
-                        { flex: 1, marginLeft: 12 },
-                      ]}
-                    >
-                      <Text style={styles.label}>State</Text>
-                      <TextInput
-                        style={styles.input}
-                        value={formData.state}
-                        onChangeText={(value) => updateField("state", value)}
-                        placeholder="TX"
-                        placeholderTextColor="#9CA3AF"
-                        maxLength={2}
-                        autoCapitalize="characters"
-                      />
-                    </View>
-                  </View>
-
-                  <View style={styles.inputContainer}>
-                    <Text style={styles.label}>Zip Code</Text>
-                    <TextInput
-                      style={styles.input}
-                      value={formData.zipCode}
-                      onChangeText={(value) => updateField("zipCode", value)}
-                      placeholder="Your zip code"
-                      placeholderTextColor="#9CA3AF"
-                      keyboardType="numeric"
-                      maxLength={5}
-                    />
-                  </View>
-                </View>
-              </View>
-            </View>
-
-            {/* Navigation */}
-            <View style={styles.navigation}>
-              <TouchableOpacity
-                style={[styles.button, loading && styles.buttonDisabled]}
-                onPress={handleContinue}
-                disabled={loading}
-              >
-                {loading ? (
-                  <ActivityIndicator color="#ffffff" />
-                ) : (
-                  <View style={styles.buttonContent}>
-                    <Text style={styles.buttonText}>Continue</Text>
-                    <ArrowRight size={20} color="#FFFFFF" />
-                  </View>
-                )}
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
-                <Text style={styles.skipButtonText}>Skip for now</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+      {/* City and State Row */}
+      <View style={authStyles.row}>
+        <View style={[authStyles.flex1, { marginRight: 12 }]}>
+          <AuthInput
+            label={<Text style={authStyles.label}>City</Text>}
+            error={errors.city}
+          >
+            <TextInput
+              style={[
+                authStyles.input,
+                errors.city && { borderColor: colors.error },
+              ]}
+              value={formData.city}
+              onChangeText={(value) => updateField("city", value)}
+              placeholder="Your city"
+              placeholderTextColor={colors.text.muted}
+              autoCapitalize="words"
+            />
+          </AuthInput>
         </View>
-      </ScrollView>
-    </SafeAreaView>
+
+        <View style={{ flex: 0.4 }}>
+          <AuthInput
+            label={<Text style={authStyles.label}>State</Text>}
+            error={errors.state}
+          >
+            <TextInput
+              style={[
+                authStyles.input,
+                errors.state && { borderColor: colors.error },
+              ]}
+              value={formData.state}
+              onChangeText={handleStateChange}
+              placeholder="TX"
+              placeholderTextColor={colors.text.muted}
+              maxLength={2}
+              autoCapitalize="characters"
+            />
+          </AuthInput>
+        </View>
+      </View>
+
+      {/* ZIP Code */}
+      <AuthInput
+        label={<Text style={authStyles.label}>ZIP Code</Text>}
+        error={errors.zipCode}
+      >
+        <TextInput
+          style={[
+            authStyles.input,
+            errors.zipCode && { borderColor: colors.error },
+          ]}
+          value={formData.zipCode}
+          onChangeText={handleZipChange}
+          placeholder="12345 (optional)"
+          placeholderTextColor={colors.text.muted}
+          keyboardType="numeric"
+          maxLength={5}
+        />
+      </AuthInput>
+
+      {/* Continue Button */}
+      <AuthButtons>
+        <TouchableOpacity
+          style={[
+            authStyles.primaryButton,
+            loading && authStyles.buttonDisabled,
+          ]}
+          onPress={handleContinue}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color={colors.text.inverse} />
+          ) : (
+            <View style={authStyles.buttonContent}>
+              <Text style={authStyles.primaryButtonText}>Continue</Text>
+              <ArrowRight size={20} color={colors.text.inverse} />
+            </View>
+          )}
+        </TouchableOpacity>
+
+        {/* Skip Button */}
+        <TouchableOpacity
+          style={authStyles.secondaryButton}
+          onPress={handleSkip}
+        >
+          <Text style={authStyles.secondaryButtonText}>Skip for now</Text>
+        </TouchableOpacity>
+      </AuthButtons>
+    </AuthLayout>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F8FAFF",
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingBottom: 40,
-  },
-  wrapper: {
-    flex: 1,
-    paddingTop: 20,
-  },
-  backButton: {
-    alignSelf: "flex-start",
-    padding: 8,
-    marginBottom: 20,
-  },
-  content: {
-    flex: 1,
-    justifyContent: "space-between",
-    paddingTop: 40,
-    paddingBottom: 40,
-  },
-  stepContainer: {
-    alignItems: "center",
-  },
-  stepContent: {
-    width: "100%",
-    alignItems: "center",
-  },
-  header: {
-    alignItems: "center",
-    marginBottom: 40,
-  },
-  title: {
-    fontSize: 32,
-    lineHeight: 40,
-    fontWeight: "600",
-    color: "#1F2937",
-    marginBottom: 12,
-    marginTop: 16,
-    textAlign: "center",
-    fontFamily: "Inter",
-  },
-  subtitle: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: "400",
-    color: "#6B7280",
-    textAlign: "center",
-    fontFamily: "Inter",
-  },
-  formContainer: {
-    width: "100%",
-    gap: 20,
-  },
-  inputContainer: {
-    marginBottom: 4,
-  },
-  rowContainer: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1F2937",
-    marginBottom: 8,
-    fontFamily: "Inter",
-  },
-  input: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    fontSize: 16,
-    color: "#1F2937",
-    fontFamily: "Inter",
-  },
-  navigation: {
-    paddingTop: 24,
-    paddingBottom: 20,
-  },
-  button: {
-    backgroundColor: "#3B82F6",
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 12,
-    alignItems: "center",
-    marginTop: 8,
-    marginBottom: 16,
-  },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
-  buttonContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  buttonText: {
-    fontSize: 16,
-    lineHeight: 20,
-    fontWeight: "600",
-    color: "#ffffff",
-    textAlign: "center",
-    fontFamily: "Inter",
-  },
-  skipButton: {
-    alignItems: "center",
-    paddingVertical: 12,
-  },
-  skipButtonText: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#6B7280",
-    fontFamily: "Inter",
-  },
-});
 
 export default LocationSetupScreen;

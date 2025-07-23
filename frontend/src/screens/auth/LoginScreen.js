@@ -1,4 +1,4 @@
-// File path: frontend/src/screens/auth/LoginScreen.js
+// File: frontend/src/screens/auth/LoginScreen.js
 import { useState } from "react";
 import {
   View,
@@ -50,25 +50,35 @@ const LoginScreen = ({ onLogin, onSwitchToRegister, onForgotPassword }) => {
   };
 
   const handleGoogleSignIn = () => {
-    Alert.alert("Coming Soon", "Google sign-in will be available soon!");
+    Alert.alert(
+      "Feature In Development",
+      "Google sign-in is currently being developed and will be available in a future update.",
+      [{ text: "OK" }]
+    );
   };
 
   const handleAppleSignIn = () => {
-    Alert.alert("Coming Soon", "Apple sign-in will be available soon!");
+    Alert.alert(
+      "Feature In Development",
+      "Apple sign-in is currently being developed and will be available in a future update.",
+      [{ text: "OK" }]
+    );
   };
 
   return (
     <AuthLayout>
       {/* Header */}
-      <AuthHeader
-        title={<Text style={authStyles.title}>Welcome Back</Text>}
-        subtitle={
-          <Text style={authStyles.subtitle}>
-            Sign in to your Storm
-            <Text style={{ color: colors.primary }}>Neighbor</Text> account
-          </Text>
-        }
-      />
+      <View style={{ paddingTop: 20 }}>
+        <AuthHeader
+          title={<Text style={authStyles.title}>Welcome Back</Text>}
+          subtitle={
+            <Text style={authStyles.subtitle}>
+              Sign in to your Storm
+              <Text style={{ color: colors.primary }}>Neighbor</Text> account
+            </Text>
+          }
+        />
+      </View>
 
       {/* Email Input */}
       <Text style={authStyles.label}>Email</Text>

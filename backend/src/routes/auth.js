@@ -47,8 +47,84 @@ const loginValidation = [
   body("password").notEmpty().withMessage("Password is required"),
 ];
 
+const forgotPasswordValidation = [
+  body("email")
+    .isEmail()
+    .normalizeEmail()
+    .withMessage("Please provide a valid email"),
+];
+
+const verifyCodeValidation = [
+  body("email")
+    .isEmail()
+    .normalizeEmail()
+    .withMessage("Please provide a valid email"),
+  body("code")
+    .isLength({ min: 6, max: 6 })
+    .isNumeric()
+    .withMessage("Code must be 6 digits"),
+];
+
+const resetPasswordValidation = [
+  body("email")
+    .isEmail()
+    .normalizeEmail()
+    .withMessage("Please provide a valid email"),
+  body("code")
+    .isLength({ min: 6, max: 6 })
+    .isNumeric()
+    .withMessage("Code must be 6 digits"),
+  body("newPassword")
+    .isLength({ min: 8 })
+    .withMessage("Password must be at least 8 characters long"),
+];
+
+const changePasswordValidation = [
+  body("currentPassword")
+    .notEmpty()
+    .withMessage("Current password is required"),
+  body("newPassword")
+    .isLength({ min: 8 })
+    .withMessage("New password must be at least 8 characters long"),
+];
+
 router.post("/register", registerValidation, authController.register);
 router.post("/login", loginValidation, authController.login);
+router.post(
+  "/forgot-password",
+  forgotPasswordValidation,
+  authController.forgotPassword
+);
+router.post("/verify-code", verifyCodeValidation, authController.verifyCode);
+router.post(
+  "/reset-password",
+  resetPasswordValidation,
+  authController.resetPassword
+);
+router.post(
+  "/resend-code",
+  [body("email").isEmail().normalizeEmail()],
+  authController.resendVerificationCode
+);
+
 router.get("/profile", auth, authController.getProfile);
+router.put("/profile", auth, authController.updateProfile);
+router.post(
+  "/change-password",
+  auth,
+  changePasswordValidation,
+  authController.changePassword
+);
+router.get("/verify-status", auth, authController.checkEmailVerification);
+router.post(
+  "/resend-verification",
+  auth,
+  authController.resendVerificationEmail
+);
+router.put(
+  "/notification-preferences",
+  auth,
+  authController.updateNotificationPreferences
+);
 
 module.exports = router;

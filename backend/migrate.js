@@ -1,4 +1,3 @@
-// backend/migrate.js
 const fs = require("fs");
 const path = require("path");
 const { pool } = require("./src/config/database");
@@ -7,11 +6,8 @@ async function runMigration() {
   console.log("🚀 Starting database migration...\n");
 
   try {
-    // Read the schema file
     const schemaPath = path.join(__dirname, "schema.sql");
     const schemaSql = fs.readFileSync(schemaPath, "utf8");
-
-    // Split into individual statements (rough split)
     const statements = schemaSql
       .split(";")
       .map((stmt) => stmt.trim())
@@ -38,7 +34,6 @@ async function runMigration() {
       }
     }
 
-    // Verify tables were created
     console.log("\n🔍 Verifying tables...");
     const tablesResult = await client.query(`
       SELECT table_name 
@@ -52,7 +47,6 @@ async function runMigration() {
       console.log(`   📋 ${row.table_name}`);
     });
 
-    // Test PostGIS functionality with neighborhoods
     console.log("\n🗺️  Testing PostGIS with sample data...");
 
     // Insert a sample neighborhood (Tulsa area)
@@ -67,7 +61,6 @@ async function runMigration() {
       ) ON CONFLICT DO NOTHING;
     `);
 
-    // Test location query
     const locationTest = await client.query(`
       SELECT name, 
              ST_AsText(center_point) as center,

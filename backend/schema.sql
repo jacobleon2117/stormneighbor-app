@@ -1,6 +1,3 @@
--- Database Schema for Weather Neighborhood App
--- Run this to create all your tables
-
 -- Users table
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
@@ -9,7 +6,7 @@ CREATE TABLE users (
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
     phone VARCHAR(20),
-    location GEOGRAPHY(POINT, 4326), -- PostGIS point for lat/lng
+    location GEOGRAPHY(POINT, 4326),
     address_street VARCHAR(255),
     address_city VARCHAR(100),
     address_state VARCHAR(50),
@@ -19,8 +16,8 @@ CREATE TABLE users (
     is_verified BOOLEAN DEFAULT FALSE,
     emergency_contact_name VARCHAR(100),
     emergency_contact_phone VARCHAR(20),
-    skills TEXT[], -- Array of skills they can offer (generator, medical, etc.)
-    preferences JSONB DEFAULT '{}', -- Notification preferences, etc.
+    skills TEXT[],
+    preferences JSONB DEFAULT '{}',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -33,9 +30,9 @@ CREATE TABLE neighborhoods (
     city VARCHAR(100) NOT NULL,
     state VARCHAR(50) NOT NULL,
     zip_code VARCHAR(10),
-    boundary GEOGRAPHY(POLYGON, 4326), -- PostGIS polygon for neighborhood boundary
-    center_point GEOGRAPHY(POINT, 4326), -- Center of neighborhood
-    radius_miles DECIMAL(5,2) DEFAULT 1.0, -- Default 1 mile radius
+    boundary GEOGRAPHY(POLYGON, 4326),
+    center_point GEOGRAPHY(POINT, 4326),
+    radius_miles DECIMAL(5,2) DEFAULT 1.0,
     is_active BOOLEAN DEFAULT TRUE,
     created_by INTEGER REFERENCES users(id),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -45,19 +42,19 @@ CREATE TABLE neighborhoods (
 -- Weather alerts table (from NOAA and user-generated)
 CREATE TABLE weather_alerts (
     id SERIAL PRIMARY KEY,
-    alert_id VARCHAR(100), -- NOAA alert ID if from external source
+    alert_id VARCHAR(100),
     title VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
-    severity VARCHAR(50) NOT NULL, -- CRITICAL, HIGH, MODERATE, LOW
-    alert_type VARCHAR(100) NOT NULL, -- tornado, thunderstorm, flood, etc.
-    source VARCHAR(50) NOT NULL DEFAULT 'NOAA', -- NOAA, USER, COMMUNITY
-    affected_areas GEOGRAPHY(MULTIPOLYGON, 4326), -- Geographic areas affected
+    severity VARCHAR(50) NOT NULL,
+    alert_type VARCHAR(100) NOT NULL,
+    source VARCHAR(50) NOT NULL DEFAULT 'NOAA',
+    affected_areas GEOGRAPHY(MULTIPOLYGON, 4326),
     start_time TIMESTAMP WITH TIME ZONE,
     end_time TIMESTAMP WITH TIME ZONE,
     is_active BOOLEAN DEFAULT TRUE,
     created_by INTEGER REFERENCES users(id),
     neighborhood_id INTEGER REFERENCES neighborhoods(id),
-    metadata JSONB DEFAULT '{}', -- Additional data from NOAA or user input
+    metadata JSONB DEFAULT '{}',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -69,15 +66,15 @@ CREATE TABLE posts (
     neighborhood_id INTEGER NOT NULL REFERENCES neighborhoods(id),
     title VARCHAR(255),
     content TEXT NOT NULL,
-    post_type VARCHAR(50) NOT NULL, -- safety_alert, help_request, help_offer, general, weather_update
-    priority VARCHAR(20) DEFAULT 'normal', -- urgent, high, normal, low
-    location GEOGRAPHY(POINT, 4326), -- Specific location if relevant
-    images TEXT[], -- Array of image URLs
-    tags TEXT[], -- Array of tags for categorization
+    post_type VARCHAR(50) NOT NULL,
+    priority VARCHAR(20) DEFAULT 'normal',
+    location GEOGRAPHY(POINT, 4326),
+    images TEXT[],
+    tags TEXT[],
     is_emergency BOOLEAN DEFAULT FALSE,
     is_resolved BOOLEAN DEFAULT FALSE,
-    expires_at TIMESTAMP WITH TIME ZONE, -- For time-sensitive posts
-    metadata JSONB DEFAULT '{}', -- Flexible data storage
+    expires_at TIMESTAMP WITH TIME ZONE,
+    metadata JSONB DEFAULT '{}',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -88,8 +85,8 @@ CREATE TABLE comments (
     post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     content TEXT NOT NULL,
-    parent_comment_id INTEGER REFERENCES comments(id), -- For threaded comments
-    images TEXT[], -- Array of image URLs
+    parent_comment_id INTEGER REFERENCES comments(id),
+    images TEXT[],
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -100,13 +97,12 @@ CREATE TABLE reactions (
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     post_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
     comment_id INTEGER REFERENCES comments(id) ON DELETE CASCADE,
-    reaction_type VARCHAR(20) NOT NULL, -- like, love, helpful, concerned, angry
+    reaction_type VARCHAR(20) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     
     -- Ensure user can only react once per post/comment
     UNIQUE(user_id, post_id),
     UNIQUE(user_id, comment_id),
-    -- Ensure reaction is either to post or comment, not both
     CHECK ((post_id IS NOT NULL) <> (comment_id IS NOT NULL))
 );
 
@@ -114,7 +110,7 @@ CREATE TABLE reactions (
 CREATE TABLE emergency_resources (
     id SERIAL PRIMARY KEY,
     neighborhood_id INTEGER NOT NULL REFERENCES neighborhoods(id),
-    resource_type VARCHAR(50) NOT NULL, -- shelter, medical, food, generator, etc.
+    resource_type VARCHAR(50) NOT NULL,
     title VARCHAR(255) NOT NULL,
     description TEXT,
     contact_name VARCHAR(100),
@@ -123,9 +119,9 @@ CREATE TABLE emergency_resources (
     address TEXT,
     location GEOGRAPHY(POINT, 4326),
     is_available BOOLEAN DEFAULT TRUE,
-    capacity INTEGER, -- How many people/items available
-    hours_available VARCHAR(100), -- "24/7", "9am-5pm", etc.
-    requirements TEXT, -- Any requirements or restrictions
+    capacity INTEGER,
+    hours_available VARCHAR(100),
+    requirements TEXT,
     created_by INTEGER REFERENCES users(id),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -137,12 +133,12 @@ CREATE TABLE notifications (
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     title VARCHAR(255) NOT NULL,
     message TEXT NOT NULL,
-    notification_type VARCHAR(50) NOT NULL, -- weather_alert, post_reply, emergency, etc.
-    related_id INTEGER, -- ID of related post, alert, etc.
-    related_type VARCHAR(50), -- post, alert, comment, etc.
+    notification_type VARCHAR(50) NOT NULL,
+    related_id INTEGER,
+    related_type VARCHAR(50),
     is_read BOOLEAN DEFAULT FALSE,
-    is_sent BOOLEAN DEFAULT FALSE, -- For tracking push notifications
-    priority VARCHAR(20) DEFAULT 'normal', -- urgent, high, normal, low
+    is_sent BOOLEAN DEFAULT FALSE,
+    priority VARCHAR(20) DEFAULT 'normal',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

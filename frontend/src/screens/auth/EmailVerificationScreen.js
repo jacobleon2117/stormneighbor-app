@@ -179,17 +179,13 @@ const EmailVerificationScreen = ({ userEmail, onVerified, onBack }) => {
                   <View style={styles.buttonContent}>
                     <RotateCcw size={20} color="#3B82F6" />
                     <Text style={styles.secondaryButtonText}>
-                      {canResend ? "Resend Email" : `Resend Email`}
+                      {canResend
+                        ? "Resend Email"
+                        : `Resend Email ${countdown}s`}
                     </Text>
                   </View>
                 )}
               </TouchableOpacity>
-
-              {!canResend && (
-                <Text style={styles.timerText}>
-                  You can resend in {countdown} seconds
-                </Text>
-              )}
             </View>
           </View>
 
@@ -347,13 +343,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 20,
     fontWeight: "500",
-    fontFamily: "Inter",
-  },
-  timerText: {
-    fontSize: 14,
-    fontWeight: "400",
-    color: "#6B7280",
-    textAlign: "center",
     fontFamily: "Inter",
   },
   footer: {

@@ -2,10 +2,7 @@
 
 - Create a screen called "AccountRecovery.js" to have the ability for the user(s) to recover their account(s).
 
-
-
 - Need to replace apple emoji with a lucide icon -> {/* <Text style={styles.successIcon}>✅</Text> */}
-
 
 - Create a screen called "AccountDeletion.js" to have the user(s) to delete their account and data. I would consider this apart of auth since it's dealing with data and personal information being deleted. This screen won't be available untill the user has created their account so therefor this screen isn't apart of any auth flow - This screen is apart of the settings screen which is apart of the main screens which aren't created yet.
 
@@ -22,3 +19,10 @@
 - Implement Google and Apple sign in.
 
 - After all auth pages are done and each auth screen has a flow either forward into the app or backwards then we can remove the "ScreenNavigator.js" file and make sure the main App.js file is setup to handle logging in and signing up. As well make sure it handles anything to deal with auth.
+
+
+(NEW)
+
+- Remove any emojis that are being used in the code (In the folders: backend and frontend)
+
+- Update the backend and frontend to match

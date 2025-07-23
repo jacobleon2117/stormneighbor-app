@@ -17,7 +17,12 @@ import VerifyCodeScreen from "../screens/auth/VerifyCodeScreen";
 import ResetPasswordScreen from "../screens/auth/ResetPasswordScreen";
 import ChangePasswordScreen from "../screens/auth/ChangePasswordScreen";
 import EmailVerificationScreen from "../screens/auth/EmailVerificationScreen";
-import ProfileSetupScreen from "../screens/auth/ProfileSetupScreen";
+
+// Profile Setup Screens
+import ProfileSetupFlow from "../screens/auth/profile/ProfileSetupFlow";
+import LocationSetupScreen from "../screens/auth/profile/LocationSetupScreen";
+import ProfileSetupScreenIndividual from "../screens/auth/profile/ProfileSetupScreenIndividual";
+import NotificationsSetupScreen from "../screens/auth/profile/NotificationsSetupScreen";
 
 const ScreenNavigator = () => {
   const [currentScreen, setCurrentScreen] = useState("navigator");
@@ -54,12 +59,6 @@ const ScreenNavigator = () => {
       group: "Auth Flow",
     },
     {
-      id: "profile-setup",
-      name: "Profile Setup",
-      component: ProfileSetupScreen,
-      group: "Auth Flow",
-    },
-    {
       id: "forgot",
       name: "Forgot Password",
       component: ForgotPasswordScreen,
@@ -83,6 +82,31 @@ const ScreenNavigator = () => {
       component: ChangePasswordScreen,
       group: "Settings",
     },
+    // Profile Setup Screens
+    {
+      id: "profile-setup-flow",
+      name: "Profile Setup Flow",
+      component: ProfileSetupFlow,
+      group: "Profile Setup",
+    },
+    {
+      id: "location-setup",
+      name: "Location Setup",
+      component: LocationSetupScreen,
+      group: "Profile Setup",
+    },
+    {
+      id: "profile-setup-individual",
+      name: "Profile Setup",
+      component: ProfileSetupScreenIndividual,
+      group: "Profile Setup",
+    },
+    {
+      id: "notifications-setup",
+      name: "Notifications Setup",
+      component: NotificationsSetupScreen,
+      group: "Profile Setup",
+    },
   ];
 
   const mockHandlers = {
@@ -103,6 +127,16 @@ const ScreenNavigator = () => {
       console.log("Password reset successful");
       setCurrentScreen("login");
     },
+    onSetupComplete: () => {
+      console.log("Profile setup completed!");
+      setCurrentScreen("navigator");
+    },
+    onBack: () => setCurrentScreen("navigator"),
+    onNext: (data) => console.log("Next step:", data),
+    onComplete: async (data) => {
+      console.log("Setup completed:", data);
+      setCurrentScreen("navigator");
+    },
     email: "user@example.com",
     verificationCode: "123456",
   };
@@ -114,6 +148,15 @@ const ScreenNavigator = () => {
     const ScreenComponent = screen.component;
     return <ScreenComponent {...mockHandlers} />;
   };
+
+  const groupedScreens = screens.reduce((groups, screen) => {
+    const group = screen.group;
+    if (!groups[group]) {
+      groups[group] = [];
+    }
+    groups[group].push(screen);
+    return groups;
+  }, {});
 
   if (currentScreen === "navigator") {
     return (
@@ -131,17 +174,21 @@ const ScreenNavigator = () => {
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          <Text style={styles.sectionTitle}>🎨 Auth Screens</Text>
+          {Object.entries(groupedScreens).map(([groupName, groupScreens]) => (
+            <View key={groupName} style={styles.screenGroup}>
+              <Text style={styles.sectionTitle}>{groupName}</Text>
 
-          {screens.map((screen) => (
-            <TouchableOpacity
-              key={screen.id}
-              style={styles.screenButton}
-              onPress={() => setCurrentScreen(screen.id)}
-            >
-              <Text style={styles.screenButtonText}>{screen.name}</Text>
-              <Text style={styles.screenButtonArrow}>→</Text>
-            </TouchableOpacity>
+              {groupScreens.map((screen) => (
+                <TouchableOpacity
+                  key={screen.id}
+                  style={styles.screenButton}
+                  onPress={() => setCurrentScreen(screen.id)}
+                >
+                  <Text style={styles.screenButtonText}>{screen.name}</Text>
+                  <Text style={styles.screenButtonArrow}>→</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           ))}
 
           <View style={styles.infoSection}>
@@ -149,7 +196,8 @@ const ScreenNavigator = () => {
             <Text style={styles.infoText}>
               • Tap any screen above to preview it{"\n"}• All interactions are
               logged to console{"\n"}• Use back button to return here{"\n"}•
-              Perfect for testing designs & flows
+              Perfect for testing designs & flows{"\n"}• Profile Setup Flow
+              connects all 3 setup screens
             </Text>
           </View>
         </ScrollView>
@@ -223,12 +271,15 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 24,
   },
+  screenGroup: {
+    marginBottom: 24,
+  },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "600",
     color: "#1F2937",
     fontFamily: "Inter",
-    marginBottom: 16,
+    marginBottom: 12,
     marginTop: 8,
   },
   screenButton: {
@@ -281,36 +332,6 @@ const styles = StyleSheet.create({
     fontWeight: "300",
     lineHeight: 20,
     opacity: 0.8,
-  },
-  statusSection: {
-    backgroundColor: "#F9FAFB",
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 40,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  statusTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1F2937",
-    fontFamily: "Inter",
-    marginBottom: 16,
-  },
-  statusItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  statusDot: {
-    fontSize: 14,
-    marginRight: 12,
-  },
-  statusText: {
-    fontSize: 14,
-    color: "#1F2937",
-    fontFamily: "Inter",
-    fontWeight: "400",
   },
   screenContainer: {
     flex: 1,

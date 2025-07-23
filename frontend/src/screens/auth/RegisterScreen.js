@@ -1,5 +1,4 @@
 // File path: frontend/src/screens/auth/RegisterScreen.js
-
 import { useState } from "react";
 import {
   View,
@@ -12,11 +11,8 @@ import {
 import { Mail, Eye, EyeOff, User } from "lucide-react-native";
 import { AntDesign } from "@expo/vector-icons";
 
-// Import our standardized components with correct paths
 import AuthLayout, {
   AuthHeader,
-  AuthForm,
-  AuthInput,
   AuthButtons,
   AuthFooter,
 } from "../../components/AuthLayout";
@@ -109,63 +105,68 @@ const RegisterScreen = ({ onRegister, onSwitchToLogin }) => {
       />
 
       {/* Full Name Input */}
-      <AuthInput label={<Text style={authStyles.label}>Full Name</Text>}>
-        <View style={authStyles.inputWrapper}>
-          <TextInput
-            style={[authStyles.input, { flex: 1, paddingVertical: 16 }]}
-            value={formData.fullName}
-            onChangeText={(value) => updateField("fullName", value)}
-            placeholder="Your name"
-            placeholderTextColor={colors.text.muted}
-            autoCapitalize="words"
-            autoCorrect={false}
-          />
-          <User size={18} color={colors.text.muted} />
-        </View>
-      </AuthInput>
+      <Text style={authStyles.label}>Full Name</Text>
+      <View style={{ position: "relative", marginBottom: 16 }}>
+        <TextInput
+          style={authStyles.input}
+          value={formData.fullName}
+          onChangeText={(value) => updateField("fullName", value)}
+          placeholder="Your name"
+          placeholderTextColor={colors.text.muted}
+          autoCapitalize="words"
+          autoCorrect={false}
+        />
+        <User
+          size={18}
+          color={colors.text.muted}
+          style={{ position: "absolute", right: 16, top: 16 }}
+        />
+      </View>
 
       {/* Email Input */}
-      <AuthInput label={<Text style={authStyles.label}>Email</Text>}>
-        <View style={authStyles.inputWrapper}>
-          <TextInput
-            style={[authStyles.input, { flex: 1, paddingVertical: 16 }]}
-            value={formData.email}
-            onChangeText={(value) => updateField("email", value)}
-            placeholder="Enter your email"
-            placeholderTextColor={colors.text.muted}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          <Mail size={18} color={colors.text.muted} />
-        </View>
-      </AuthInput>
+      <Text style={authStyles.label}>Email</Text>
+      <View style={{ position: "relative", marginBottom: 16 }}>
+        <TextInput
+          style={authStyles.input}
+          value={formData.email}
+          onChangeText={(value) => updateField("email", value)}
+          placeholder="Enter your email"
+          placeholderTextColor={colors.text.muted}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
+        <Mail
+          size={18}
+          color={colors.text.muted}
+          style={{ position: "absolute", right: 16, top: 16 }}
+        />
+      </View>
 
       {/* Password Input */}
-      <AuthInput label={<Text style={authStyles.label}>Password</Text>}>
-        <View style={authStyles.inputWrapper}>
-          <TextInput
-            style={[authStyles.input, { flex: 1, paddingVertical: 16 }]}
-            value={formData.password}
-            onChangeText={(value) => updateField("password", value)}
-            placeholder="At least 8 characters"
-            placeholderTextColor={colors.text.muted}
-            secureTextEntry={!showPassword}
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          <TouchableOpacity
-            style={{ padding: 8, marginLeft: 8 }}
-            onPress={() => setShowPassword(!showPassword)}
-          >
-            {showPassword ? (
-              <EyeOff size={18} color={colors.text.muted} />
-            ) : (
-              <Eye size={18} color={colors.text.muted} />
-            )}
-          </TouchableOpacity>
-        </View>
-      </AuthInput>
+      <Text style={authStyles.label}>Password</Text>
+      <View style={{ position: "relative", marginBottom: 16 }}>
+        <TextInput
+          style={[authStyles.input, { paddingRight: 50 }]}
+          value={formData.password}
+          onChangeText={(value) => updateField("password", value)}
+          placeholder="At least 8 characters"
+          placeholderTextColor={colors.text.muted}
+          secureTextEntry={!showPassword}
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
+        <TouchableOpacity
+          style={{ position: "absolute", right: 16, top: 16, padding: 8 }}
+          onPress={() => setShowPassword(!showPassword)}
+        >
+          {showPassword ? (
+            <EyeOff size={18} color={colors.text.muted} />
+          ) : (
+            <Eye size={18} color={colors.text.muted} />
+          )}
+        </TouchableOpacity>
+      </View>
 
       {/* Create Account Button */}
       <AuthButtons>
@@ -221,9 +222,5 @@ const RegisterScreen = ({ onRegister, onSwitchToLogin }) => {
     </AuthLayout>
   );
 };
-
-// ✅ NO MORE StyleSheet.create() - All styling comes from authStyles
-// ✅ NO MORE custom containers, wrappers, or conflicting styles
-// ✅ ONLY standardized components with consistent spacing
 
 export default RegisterScreen;

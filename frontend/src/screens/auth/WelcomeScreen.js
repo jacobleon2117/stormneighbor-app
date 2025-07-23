@@ -1,144 +1,51 @@
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
-  Image,
-  ScrollView,
-  Dimensions,
-} from "react-native";
-
-const { height } = Dimensions.get("window");
+// File path: frontend/src/screens/auth/WelcomeScreen.js
+import { View, Text, TouchableOpacity, Image } from "react-native";
+import AuthLayout from "../../components/AuthLayout";
+import { authStyles, colors } from "../../styles/authStyles";
 
 const WelcomeScreen = ({ onGetStarted, onSignIn }) => {
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.spaceBetweenContainer}>
-          {/* Illustration Image */}
-          <View style={styles.illustrationContainer}>
-            <Image
-              source={require("../../../assets/images/illustration.png")}
-              style={styles.illustrationImage}
-              resizeMode="contain"
-            />
-          </View>
+    <AuthLayout scrollable={false}>
+      {/* Illustration Image */}
+      <View style={{ alignItems: "center", marginBottom: 40 }}>
+        <Image
+          source={require("../../../assets/images/illustration.png")}
+          style={{
+            width: 200,
+            height: 200,
+            borderRadius: 100,
+          }}
+          resizeMode="contain"
+        />
+      </View>
 
-          {/* Title & Buttons */}
-          <View style={styles.bottomContainer}>
-            <Text style={styles.logoText}>
-              Storm<Text style={styles.logoHighlight}>Neighbor</Text>
-            </Text>
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity
-                style={styles.primaryButton}
-                onPress={onGetStarted}
-              >
-                <Text style={styles.primaryButtonText}>Let's get started</Text>
-              </TouchableOpacity>
+      {/* Logo Title */}
+      <View style={{ alignItems: "center", marginBottom: 40 }}>
+        <Text style={[authStyles.title, { fontSize: 36, fontWeight: "700" }]}>
+          Storm<Text style={{ color: colors.primary }}>Neighbor</Text>
+        </Text>
+        <Text style={[authStyles.subtitle, { marginTop: 8 }]}>
+          Connect with your community during weather emergencies
+        </Text>
+      </View>
 
-              <TouchableOpacity
-                style={styles.secondaryButton}
-                onPress={onSignIn}
-              >
-                <Text style={styles.secondaryButtonText}>
-                  I already have an account
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+      {/* Action Buttons */}
+      <View style={{ gap: 16, marginBottom: 20 }}>
+        <TouchableOpacity
+          style={authStyles.primaryButton}
+          onPress={onGetStarted}
+        >
+          <Text style={authStyles.primaryButtonText}>Let's get started</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={authStyles.secondaryButton} onPress={onSignIn}>
+          <Text style={authStyles.secondaryButtonText}>
+            I already have an account
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </AuthLayout>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F8FAFF",
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  spaceBetweenContainer: {
-    flex: 1,
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: height * 0.15,
-    width: "100%",
-  },
-  illustrationContainer: {
-    // Nothing needed here at the moment
-  },
-  illustrationImage: {
-    width: 250,
-    height: 250,
-    borderRadius: 125,
-  },
-  bottomContainer: {
-    width: "100%",
-    alignItems: "center",
-    gap: 16,
-    paddingHorizontal: 24,
-  },
-  logoText: {
-    fontSize: 32,
-    lineHeight: 40,
-    fontWeight: "700",
-    color: "#1F2937",
-    fontFamily: "Inter",
-    marginBottom: 12,
-    textAlign: "center",
-  },
-  logoHighlight: {
-    color: "#3B82F6",
-  },
-  buttonContainer: {
-    width: "100%",
-    gap: 16,
-    maxWidth: 350,
-    marginTop: 0,
-  },
-  primaryButton: {
-    backgroundColor: "#3B82F6",
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 12,
-    alignItems: "center",
-    marginTop: 8,
-    marginBottom: 16,
-  },
-  primaryButtonText: {
-    fontSize: 16,
-    lineHeight: 20,
-    fontWeight: "600",
-    color: "#ffffff",
-    textAlign: "center",
-    fontFamily: "Inter",
-  },
-  secondaryButton: {
-    backgroundColor: "transparent",
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  secondaryButtonText: {
-    fontSize: 16,
-    lineHeight: 20,
-    fontWeight: "500",
-    color: "#1F2937",
-    textAlign: "center",
-    fontFamily: "Inter",
-  },
-});
 
 export default WelcomeScreen;

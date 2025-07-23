@@ -1,13 +1,10 @@
 // File path: frontend/src/styles/authStyles.js
-
 import { StyleSheet } from "react-native";
-
-// Standardized styles for all auth screens
 export const authStyles = StyleSheet.create({
   // Text Styles
   title: {
-    fontSize: 32,
-    lineHeight: 40,
+    fontSize: 28,
+    lineHeight: 36,
     fontWeight: "600",
     color: "#1F2937",
     textAlign: "center",
@@ -60,6 +57,7 @@ export const authStyles = StyleSheet.create({
     fontSize: 16,
     color: "#1F2937",
     fontFamily: "Inter",
+    width: "100%",
   },
   inputWrapper: {
     flexDirection: "row",

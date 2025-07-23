@@ -1,6 +1,5 @@
 // File path: frontend/src/screens/auth/profile/LocationSetupScreen.js
-
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   View,
   Text,

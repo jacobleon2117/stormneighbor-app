@@ -13,7 +13,6 @@ const ProfileSetupFlow = ({ onSetupComplete, onBack }) => {
     notifications: {},
   });
 
-  // Handle Location Screen
   const handleLocationNext = (locationData) => {
     setSetupData((prev) => ({
       ...prev,
@@ -28,7 +27,6 @@ const ProfileSetupFlow = ({ onSetupComplete, onBack }) => {
     }
   };
 
-  // Handle Profile Screen
   const handleProfileNext = (profileData) => {
     setSetupData((prev) => ({
       ...prev,
@@ -41,7 +39,6 @@ const ProfileSetupFlow = ({ onSetupComplete, onBack }) => {
     setCurrentStep(1);
   };
 
-  // Handle Notifications Screen
   const handleNotificationsComplete = async (notificationData) => {
     const finalSetupData = {
       ...setupData.location,
@@ -68,7 +65,6 @@ const ProfileSetupFlow = ({ onSetupComplete, onBack }) => {
     setCurrentStep(2);
   };
 
-  // Render current step
   const renderCurrentStep = () => {
     switch (currentStep) {
       case 1:

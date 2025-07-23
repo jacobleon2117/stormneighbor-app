@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   View,
   Text,
@@ -18,7 +18,6 @@ import ResetPasswordScreen from "../screens/auth/ResetPasswordScreen";
 import ChangePasswordScreen from "../screens/auth/ChangePasswordScreen";
 import EmailVerificationScreen from "../screens/auth/EmailVerificationScreen";
 
-// Profile Setup Screens
 import ProfileSetupFlow from "../screens/auth/profile/ProfileSetupFlow";
 import LocationSetupScreen from "../screens/auth/profile/LocationSetupScreen";
 import ProfileSetupScreenIndividual from "../screens/auth/profile/ProfileSetupScreenIndividual";
@@ -82,7 +81,6 @@ const ScreenNavigator = () => {
       component: ChangePasswordScreen,
       group: "Settings",
     },
-    // Profile Setup Screens
     {
       id: "profile-setup-flow",
       name: "Profile Setup Flow",

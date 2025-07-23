@@ -1,18 +1,21 @@
-import React, { useState } from "react";
+// File path: frontend/src/screens/auth/ForgotPasswordScreen.js
+import { useState } from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
   ActivityIndicator,
-  ScrollView,
 } from "react-native";
-import { Mail } from "lucide-react-native";
+import { Mail, CheckCircle } from "lucide-react-native";
+
+import AuthLayout, {
+  AuthHeader,
+  AuthButtons,
+  AuthFooter,
+} from "../../components/AuthLayout";
+import { authStyles, colors } from "../../styles/authStyles";
 
 const ForgotPasswordScreen = ({ onBackToLogin }) => {
   const [email, setEmail] = useState("");
@@ -43,243 +46,107 @@ const ForgotPasswordScreen = ({ onBackToLogin }) => {
 
   if (emailSent) {
     return (
-      <SafeAreaView style={styles.container}>
-        <ScrollView
-          contentContainerStyle={styles.scrollContainer}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.wrapper}>
-            <View style={styles.successContainer}>
-              {/* <Text style={styles.successIcon}>✅</Text> */} - Replace with
-              lucide
-              <Text style={styles.successTitle}>Email Sent!</Text>
-              <Text style={styles.successMessage}>
-                We've sent password reset instructions to{"\n"}
-                <Text style={styles.emailText}>{email}</Text>
-              </Text>
-              <Text style={styles.instructionText}>
-                Please check your email and follow the link to reset your
-                password.
-              </Text>
-            </View>
+      <AuthLayout>
+        {/* Success Header with Lucide Icon */}
+        <AuthHeader
+          icon={<CheckCircle size={48} color={colors.success} />}
+          title={<Text style={authStyles.title}>Email Sent!</Text>}
+          subtitle={
+            <Text style={authStyles.subtitle}>
+              We've sent password reset instructions to{"\n"}
+              <Text style={authStyles.linkText}>{email}</Text>
+            </Text>
+          }
+        />
 
-            <TouchableOpacity style={styles.button} onPress={onBackToLogin}>
-              <Text style={styles.buttonText}>Back to Sign In</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
+        {/* Instructions */}
+        <View style={[authStyles.card, { marginBottom: 32 }]}>
+          <Text
+            style={[
+              authStyles.bodyText,
+              { textAlign: "center", lineHeight: 24 },
+            ]}
+          >
+            Please check your email and follow the link to reset your password.
+            Don't forget to check your spam folder!
+          </Text>
+        </View>
+
+        {/* Back to Sign In Button */}
+        <AuthButtons>
+          <TouchableOpacity
+            style={authStyles.primaryButton}
+            onPress={onBackToLogin}
+          >
+            <Text style={authStyles.primaryButtonText}>Back to Sign In</Text>
+          </TouchableOpacity>
+        </AuthButtons>
+      </AuthLayout>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContainer}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.wrapper}>
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.title}>Forgot Password?</Text>
-            <Text style={styles.subtitle}>
-              Don't worry! Enter your email address and we'll send you
-              instructions to reset your password.
+    <AuthLayout>
+      {/* Header */}
+      <AuthHeader
+        title={<Text style={authStyles.title}>Forgot Password?</Text>}
+        subtitle={
+          <Text style={authStyles.subtitle}>
+            Don't worry! Enter your email address and we'll send you
+            instructions to reset your password.
+          </Text>
+        }
+      />
+
+      {/* Email Input */}
+      <Text style={authStyles.label}>Email</Text>
+      <View style={{ position: "relative", marginBottom: 16 }}>
+        <TextInput
+          style={authStyles.input}
+          value={email}
+          onChangeText={setEmail}
+          placeholder="Enter your email"
+          placeholderTextColor={colors.text.muted}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
+        <Mail
+          size={18}
+          color={colors.text.muted}
+          style={{ position: "absolute", right: 16, top: 16 }}
+        />
+      </View>
+
+      {/* Send Reset Button */}
+      <AuthButtons>
+        <TouchableOpacity
+          style={[
+            authStyles.primaryButton,
+            loading && authStyles.buttonDisabled,
+          ]}
+          onPress={handleResetPassword}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color={colors.text.inverse} />
+          ) : (
+            <Text style={authStyles.primaryButtonText}>
+              Send Reset Instructions
             </Text>
-          </View>
+          )}
+        </TouchableOpacity>
+      </AuthButtons>
 
-          {/* Form */}
-          <View style={styles.form}>
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Email</Text>
-              <View style={styles.inputWrapper}>
-                <TextInput
-                  style={styles.input}
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder="Enter your email"
-                  placeholderTextColor="#9CA3AF"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-                <Mail size={18} color="#9CA3AF" />
-              </View>
-            </View>
-
-            <TouchableOpacity
-              style={[styles.button, loading && styles.buttonDisabled]}
-              onPress={handleResetPassword}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="#ffffff" />
-              ) : (
-                <Text style={styles.buttonText}>Send Reset Instructions</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-
-          {/* Footer */}
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Remember your password? </Text>
-            <TouchableOpacity onPress={onBackToLogin}>
-              <Text style={styles.footerLink}>Sign In</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+      {/* Footer */}
+      <AuthFooter>
+        <Text style={authStyles.bodyText}>Remember your password? </Text>
+        <TouchableOpacity onPress={onBackToLogin}>
+          <Text style={authStyles.linkText}>Sign In</Text>
+        </TouchableOpacity>
+      </AuthFooter>
+    </AuthLayout>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F8FAFF",
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingBottom: 40,
-    justifyContent: "center",
-  },
-  wrapper: {
-    justifyContent: "center",
-    minHeight: "100%",
-  },
-  header: {
-    alignItems: "center",
-    marginBottom: 32,
-  },
-  title: {
-    fontSize: 32,
-    lineHeight: 40,
-    fontWeight: "600",
-    color: "#1F2937",
-    marginBottom: 12,
-    textAlign: "center",
-    fontFamily: "Inter",
-  },
-  subtitle: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: "400",
-    color: "#6B7280",
-    textAlign: "center",
-    fontFamily: "Inter",
-  },
-  form: {
-    marginBottom: 24,
-  },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1F2937",
-    marginBottom: 8,
-    fontFamily: "Inter",
-  },
-  inputWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    paddingHorizontal: 16,
-  },
-  input: {
-    flex: 1,
-    paddingVertical: 16,
-    fontSize: 16,
-    color: "#1F2937",
-    fontFamily: "Inter",
-  },
-  button: {
-    backgroundColor: "#3B82F6",
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 12,
-    alignItems: "center",
-    marginTop: 8,
-    marginBottom: 16,
-  },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
-  buttonText: {
-    fontSize: 16,
-    lineHeight: 20,
-    fontWeight: "600",
-    color: "#ffffff",
-    textAlign: "center",
-    fontFamily: "Inter",
-  },
-  footer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 16,
-  },
-  footerText: {
-    fontSize: 16,
-    fontWeight: "400",
-    color: "#6B7280",
-    fontFamily: "Inter",
-  },
-  footerLink: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#3B82F6",
-    fontFamily: "Inter",
-  },
-  successContainer: {
-    alignItems: "center",
-    marginBottom: 32,
-  },
-  successIcon: {
-    fontSize: 80,
-    marginBottom: 24,
-  },
-  successTitle: {
-    fontSize: 32,
-    lineHeight: 40,
-    fontWeight: "600",
-    color: "#1F2937",
-    marginBottom: 12,
-    textAlign: "center",
-    fontFamily: "Inter",
-  },
-  successMessage: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: "400",
-    color: "#6B7280",
-    textAlign: "center",
-    marginBottom: 16,
-    fontFamily: "Inter",
-  },
-  emailText: {
-    fontWeight: "600",
-    color: "#3B82F6",
-  },
-  instructionText: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: "400",
-    color: "#6B7280",
-    textAlign: "center",
-    paddingHorizontal: 20,
-    fontFamily: "Inter",
-  },
-});
 
 export default ForgotPasswordScreen;

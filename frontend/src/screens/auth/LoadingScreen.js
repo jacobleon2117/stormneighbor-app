@@ -1,37 +1,17 @@
-import { View, Text, StyleSheet, SafeAreaView } from "react-native";
+// File path: frontend/src/screens/auth/LoadingScreen.js
+import { Text } from "react-native";
+import AuthLayout from "../../components/AuthLayout";
+import { authStyles, colors } from "../../styles/authStyles";
 
 const LoadingScreen = () => {
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.logoText}>
-          Storm<Text style={styles.logoHighlight}>Neighbor</Text>
-        </Text>
-      </View>
-    </SafeAreaView>
+    <AuthLayout scrollable={false}>
+      {/* Just the App Name */}
+      <Text style={[authStyles.title, { fontSize: 36, fontWeight: "700" }]}>
+        Storm<Text style={{ color: colors.primary }}>Neighbor</Text>
+      </Text>
+    </AuthLayout>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F8FAFF",
-  },
-  content: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  logoText: {
-    fontSize: 32,
-    lineHeight: 40,
-    fontWeight: "700",
-    color: "#1F2937",
-    fontFamily: "Inter",
-  },
-  logoHighlight: {
-    color: "#3B82F6",
-  },
-});
 
 export default LoadingScreen;

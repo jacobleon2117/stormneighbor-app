@@ -129,7 +129,6 @@ class ApiService {
     }
   }
 
-  // Posts
   async getPosts(neighborhoodId) {
     try {
       const response = await this.api.get("/api/posts", {

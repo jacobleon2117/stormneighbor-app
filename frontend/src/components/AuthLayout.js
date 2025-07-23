@@ -1,4 +1,4 @@
-import React from "react";
+// File path: frontend/src/components/AuthLayout.js
 import {
   View,
   SafeAreaView,
@@ -45,7 +45,6 @@ const AuthLayout = ({
   );
 };
 
-// Standard header component for consistency
 export const AuthHeader = ({ title, subtitle, icon }) => (
   <View style={styles.header}>
     {icon && <View style={styles.iconContainer}>{icon}</View>}
@@ -56,12 +55,10 @@ export const AuthHeader = ({ title, subtitle, icon }) => (
   </View>
 );
 
-// Standard form container
 export const AuthForm = ({ children }) => (
   <View style={styles.form}>{children}</View>
 );
 
-// Standard input container
 export const AuthInput = ({ label, children, error }) => (
   <View style={styles.inputContainer}>
     {label && <View style={styles.label}>{label}</View>}
@@ -70,12 +67,10 @@ export const AuthInput = ({ label, children, error }) => (
   </View>
 );
 
-// Standard button container
 export const AuthButtons = ({ children }) => (
   <View style={styles.buttonContainer}>{children}</View>
 );
 
-// Standard footer
 export const AuthFooter = ({ children }) => (
   <View style={styles.footer}>{children}</View>
 );
@@ -117,7 +112,7 @@ const styles = StyleSheet.create({
   // Header Styles
   header: {
     alignItems: "center",
-    marginBottom: 32,
+    marginBottom: 24,
   },
   iconContainer: {
     marginBottom: 16,
@@ -145,10 +140,10 @@ const styles = StyleSheet.create({
 
   // Form Styles
   form: {
-    marginBottom: 24,
+    marginBottom: 16,
   },
   inputContainer: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   label: {
     fontSize: 16,

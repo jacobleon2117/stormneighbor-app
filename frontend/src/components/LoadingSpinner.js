@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { View, Animated, StyleSheet } from "react-native";
 
 const LoadingSpinner = ({ size = 40, color = "#3B82F6", strokeWidth = 3 }) => {

@@ -126,8 +126,6 @@ const styles = StyleSheet.create({
     borderRadius: 9,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#FFFFFF",
   },
   badgeNumber: {
     color: "#FFFFFF",

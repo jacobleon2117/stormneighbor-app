@@ -1,6 +1,6 @@
 // File: frontend/src/screens/main/MainApp.js
 import { useState, useEffect } from "react";
-import { View, Alert } from "react-native";
+import { View, Alert, Modal } from "react-native";
 import { mainStyles } from "@styles/mainStyles";
 import TabNavigation from "@components/layout/TabNavigation";
 import apiService from "@services/api";
@@ -12,6 +12,7 @@ import ProfileScreen from "./ProfileScreen";
 
 const MainApp = ({ user, onLogout }) => {
   const [activeTab, setActiveTab] = useState("home");
+  const [showCreatePost, setShowCreatePost] = useState(false);
   const [alertCounts, setAlertCounts] = useState({
     total: 0,
     critical: 0,
@@ -47,22 +48,28 @@ const MainApp = ({ user, onLogout }) => {
   };
 
   const handleTabPress = (tabId) => {
-    setActiveTab(tabId);
+    if (tabId === "create") {
+      setShowCreatePost(true);
+    } else {
+      setActiveTab(tabId);
+    }
+  };
+
+  const handleCloseCreatePost = () => {
+    setShowCreatePost(false);
+  };
+
+  const handleCreatePost = (postData) => {
+    console.log("New post created:", postData);
+    setShowCreatePost(false);
   };
 
   const handleNavigateToPost = (postId) => {
-    // TODO: Navigate to post detail screen
     Alert.alert("Navigate to Post", `Post ID: ${postId}`);
   };
 
   const handleNavigateToProfile = (userId) => {
-    // TODO: Navigate to user profile screen
     Alert.alert("Navigate to Profile", `User ID: ${userId}`);
-  };
-
-  const handleCreatePost = () => {
-    // TODO: Navigate to create post screen
-    Alert.alert("Create Post", "This will open the create post screen");
   };
 
   const renderCurrentScreen = () => {
@@ -81,9 +88,6 @@ const MainApp = ({ user, onLogout }) => {
       case "weather":
         return <WeatherScreen {...screenProps} />;
 
-      case "create":
-        return <CreatePostScreen {...screenProps} />;
-
       case "alerts":
         return <AlertsScreen {...screenProps} alertCounts={alertCounts} />;
 
@@ -98,11 +102,26 @@ const MainApp = ({ user, onLogout }) => {
   return (
     <View style={mainStyles.container}>
       {renderCurrentScreen()}
-      <TabNavigation
-        activeTab={activeTab}
-        onTabPress={handleTabPress}
-        alertCounts={alertCounts}
-      />
+
+      {!showCreatePost && (
+        <TabNavigation
+          activeTab={activeTab}
+          onTabPress={handleTabPress}
+          alertCounts={alertCounts}
+        />
+      )}
+
+      <Modal
+        visible={showCreatePost}
+        animationType="slide"
+        presentationStyle="fullScreen"
+      >
+        <CreatePostScreen
+          user={user}
+          onCreatePost={handleCreatePost}
+          onClose={handleCloseCreatePost}
+        />
+      </Modal>
     </View>
   );
 };

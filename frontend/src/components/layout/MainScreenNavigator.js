@@ -1,4 +1,4 @@
-// File: frontend/src/components/MainScreenNavigator.js
+// File: frontend/src/components/layout/MainScreenNavigator.js
 import { useState } from "react";
 import {
   View,
@@ -8,6 +8,7 @@ import {
   SafeAreaView,
   ScrollView,
 } from "react-native";
+import { ArrowLeft } from "lucide-react-native";
 
 import MainApp from "@screens/main/MainApp";
 import HomeScreen from "@screens/main/HomeScreen";
@@ -43,42 +44,49 @@ const MainScreenNavigator = () => {
       name: "Complete Main App",
       description: "Full app with tab navigation",
       component: MainApp,
+      category: "Complete App",
     },
     {
       id: "homeOnly",
       name: "Home with Navigation",
       description: "Home screen with top nav + bottom tab nav",
       component: HomeOnlyTestScreen,
+      category: "Individual Screens",
     },
     {
       id: "home",
       name: "Home Screen Only",
       description: "Just the home screen content, no navigation",
       component: HomeScreen,
+      category: "Individual Screens",
     },
     {
       id: "weather",
       name: "Weather Screen",
       description: "Weather maps and forecasts",
       component: WeatherScreen,
+      category: "Individual Screens",
     },
     {
       id: "create",
       name: "Create Post Screen",
       description: "Emergency post creation with templates",
       component: CreatePostScreen,
+      category: "Individual Screens",
     },
     {
       id: "alerts",
       name: "Alerts Screen",
       description: "Weather and emergency alerts",
       component: AlertsScreen,
+      category: "Individual Screens",
     },
     {
       id: "profile",
       name: "Profile Screen",
       description: "User profile and settings",
       component: ProfileScreen,
+      category: "Individual Screens",
     },
   ];
 
@@ -103,26 +111,52 @@ const MainScreenNavigator = () => {
     return <ScreenComponent {...mockHandlers} />;
   };
 
-  if (currentScreen === "navigator") {
+  const groupedScreens = screens.reduce((acc, screen) => {
+    if (!acc[screen.category]) {
+      acc[screen.category] = [];
+    }
+    acc[screen.category].push(screen);
+    return acc;
+  }, {});
+
+  if (currentScreen !== "navigator") {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <View style={styles.logoContainer}>
-            <View style={styles.logoIcon}>
-              <Text style={styles.logoEmoji}>⚡</Text>
-            </View>
-          </View>
-          <Text style={styles.title}>
-            Storm<Text style={styles.highlightText}>Neighbor</Text>
-          </Text>
-          <Text style={styles.subtitle}>Main Screens Navigator</Text>
+      <View style={styles.screenContainer}>
+        <View style={styles.backButtonContainer}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => setCurrentScreen("navigator")}
+          >
+            <ArrowLeft size={16} color="#3B82F6" />
+            <Text style={styles.backButtonText}>Back to Navigator</Text>
+          </TouchableOpacity>
         </View>
 
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          <View style={styles.screenGroup}>
-            <Text style={styles.sectionTitle}>Main App Screens</Text>
+        <View style={styles.screenContent}>{renderCurrentScreen()}</View>
+      </View>
+    );
+  }
 
-            {screens.map((screen) => (
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <View style={styles.logoContainer}>
+          <View style={styles.logoIcon}>
+            <Text style={styles.logoEmoji}>⚡</Text>
+          </View>
+        </View>
+        <Text style={styles.title}>
+          Storm<Text style={styles.highlightText}>Neighbor</Text>
+        </Text>
+        <Text style={styles.subtitle}>Main Screens Navigator</Text>
+      </View>
+
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {Object.entries(groupedScreens).map(([category, categoryScreens]) => (
+          <View key={category} style={styles.screenGroup}>
+            <Text style={styles.sectionTitle}>{category}</Text>
+
+            {categoryScreens.map((screen) => (
               <TouchableOpacity
                 key={screen.id}
                 style={styles.screenButton}
@@ -138,26 +172,20 @@ const MainScreenNavigator = () => {
               </TouchableOpacity>
             ))}
           </View>
+        ))}
 
-          <View style={styles.infoSection}>
-            <Text style={styles.infoTitle}>Testing Info</Text>
-            <Text style={styles.infoText}>
-              • All screens use mock data for testing{"\n"}• Interactions are
-              logged to console{"\n"}• Use back button to return here{"\n"}•
-              Test different screen states and layouts{"\n"}• Main App shows
-              complete tab navigation{"\n"}• Home with Navigation shows home
-              screen with both nav bars
-            </Text>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    );
-  }
-
-  return (
-    <View style={styles.screenContainer}>
-      <View style={styles.screenContent}>{renderCurrentScreen()}</View>
-    </View>
+        <View style={styles.infoSection}>
+          <Text style={styles.infoTitle}>Development Info</Text>
+          <Text style={styles.infoText}>
+            • All screens use mock data for testing{"\n"}• Interactions are
+            logged to console{"\n"}• Use back button to return to navigator
+            {"\n"}• Test different screen states and layouts{"\n"}• Main App
+            shows complete tab navigation{"\n"}• Individual screens show
+            components in isolation
+          </Text>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
@@ -288,15 +316,19 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F8FAFF",
   },
-  backButton: {
+  backButtonContainer: {
     position: "absolute",
     top: 50,
     left: 20,
+    zIndex: 100,
+  },
+  backButton: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: "rgba(59, 130, 246, 0.1)",
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    zIndex: 100,
     borderWidth: 1,
     borderColor: "#3B82F6",
   },
@@ -305,6 +337,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     fontFamily: "Inter",
+    marginLeft: 6,
   },
   screenContent: {
     flex: 1,

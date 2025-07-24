@@ -1,16 +1,23 @@
-// File: frontend/src/screens/main/HomeScreen.js
+// File: frontend/src/screens/main/HomeOnlyTestScreen.js
 import { useState, useEffect } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet } from "react-native";
+
 import TopNav from "@components/layout/TopNav";
 import GreetingHeader from "@components/common/GreetingHeader";
 import PostCard from "@components/common/PostCard";
+import TabNavigation from "@components/layout/TabNavigation";
 import apiService from "@services/api";
 
-const HomeScreen = ({ user, onNavigateToPost, onNavigateToProfile }) => {
+const HomeOnlyTestScreen = ({
+  user,
+  onNavigateToPost,
+  onNavigateToProfile,
+}) => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [alertCounts, setAlertCounts] = useState({
+    total: 6,
     critical: 1,
     weather: 2,
     community: 3,
@@ -39,6 +46,42 @@ const HomeScreen = ({ user, onNavigateToPost, onNavigateToProfile }) => {
       postType: "weather_update",
       reactionCount: 24,
       commentCount: 8,
+      hasImage: false,
+    },
+    {
+      id: 3,
+      content:
+        "Hey neighbors! Just wanted to share that the local farmer's market will be open this Saturday from 8 AM to 2 PM. Fresh produce and local goods available. See you there!",
+      user: { firstName: "Sarah", lastName: "Johnson" },
+      createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+      isEmergency: false,
+      postType: "community",
+      reactionCount: 8,
+      commentCount: 3,
+      hasImage: false,
+    },
+    {
+      id: 4,
+      content:
+        "Power outage reported in the Oak Street area. Utility company estimates repair time of 2-3 hours. Please stay safe and avoid downed power lines.",
+      user: { firstName: "Emergency", lastName: "Services" },
+      createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000),
+      isEmergency: true,
+      postType: "safety_alert",
+      reactionCount: 15,
+      commentCount: 7,
+      hasImage: false,
+    },
+    {
+      id: 5,
+      content:
+        "Beautiful sunset tonight! Hope everyone is staying warm. Don't forget to bring in any outdoor plants if temperatures drop below freezing.",
+      user: { firstName: "Mike", lastName: "Chen" },
+      createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000),
+      isEmergency: false,
+      postType: "community",
+      reactionCount: 21,
+      commentCount: 4,
       hasImage: false,
     },
   ];
@@ -95,12 +138,14 @@ const HomeScreen = ({ user, onNavigateToPost, onNavigateToProfile }) => {
   };
 
   const handlePostPress = (post) => {
+    console.log("Post pressed:", post.id);
     if (onNavigateToPost) {
       onNavigateToPost(post.id);
     }
   };
 
   const handleLike = async (post) => {
+    console.log("Like pressed:", post.id);
     try {
       await apiService.addReaction(post.id, "like");
       loadHomeFeed();
@@ -109,24 +154,26 @@ const HomeScreen = ({ user, onNavigateToPost, onNavigateToProfile }) => {
     }
   };
 
+  const handleTabPress = (tabId) => {
+    console.log("Tab pressed (stays on home):", tabId);
+  };
+
   return (
     <View style={styles.container}>
       <TopNav title="Home" />
+
       <ScrollView
         style={styles.content}
         contentContainerStyle={styles.scrollContainer}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor="#3B82F6"
-            colors={["#3B82F6"]}
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.topSpacing} />
+
         <GreetingHeader user={user} alertCounts={alertCounts} />
+
         <View style={styles.feed}>
           {posts.map((post, index) => (
             <PostCard
@@ -142,6 +189,12 @@ const HomeScreen = ({ user, onNavigateToPost, onNavigateToProfile }) => {
           ))}
         </View>
       </ScrollView>
+
+      <TabNavigation
+        activeTab="home"
+        onTabPress={handleTabPress}
+        alertCounts={alertCounts}
+      />
     </View>
   );
 };
@@ -163,4 +216,4 @@ const styles = StyleSheet.create({
   feed: {},
 });
 
-export default HomeScreen;
+export default HomeOnlyTestScreen;

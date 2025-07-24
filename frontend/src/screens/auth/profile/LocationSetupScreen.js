@@ -87,7 +87,6 @@ const LocationSetupScreen = ({ onNext, onBack, initialData = {} }) => {
 
   return (
     <AuthLayout showBackButton={!!onBack} onBack={onBack}>
-      {/* Header */}
       <AuthHeader
         icon={<MapPin size={32} color={colors.primary} />}
         title={<Text style={authStyles.title}>Your Location</Text>}
@@ -99,7 +98,6 @@ const LocationSetupScreen = ({ onNext, onBack, initialData = {} }) => {
         }
       />
 
-      {/* Address Input */}
       <AuthInput label={<Text style={authStyles.label}>Street Address</Text>}>
         <TextInput
           style={authStyles.input}
@@ -111,7 +109,6 @@ const LocationSetupScreen = ({ onNext, onBack, initialData = {} }) => {
         />
       </AuthInput>
 
-      {/* City and State Row */}
       <View style={authStyles.row}>
         <View style={[authStyles.flex1, { marginRight: 12 }]}>
           <AuthInput
@@ -153,7 +150,6 @@ const LocationSetupScreen = ({ onNext, onBack, initialData = {} }) => {
         </View>
       </View>
 
-      {/* ZIP Code */}
       <AuthInput
         label={<Text style={authStyles.label}>ZIP Code</Text>}
         error={errors.zipCode}
@@ -172,7 +168,6 @@ const LocationSetupScreen = ({ onNext, onBack, initialData = {} }) => {
         />
       </AuthInput>
 
-      {/* Continue Button */}
       <AuthButtons>
         <TouchableOpacity
           style={[
@@ -192,7 +187,6 @@ const LocationSetupScreen = ({ onNext, onBack, initialData = {} }) => {
           )}
         </TouchableOpacity>
 
-        {/* Skip Button */}
         <TouchableOpacity
           style={authStyles.secondaryButton}
           onPress={handleSkip}

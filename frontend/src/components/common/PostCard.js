@@ -52,7 +52,6 @@ const PostCard = ({
       onPress={() => onPress && onPress(post)}
       activeOpacity={0.7}
     >
-      {/* Post Header */}
       <View style={styles.header}>
         <View style={styles.authorSection}>
           <View style={styles.avatar}>
@@ -81,19 +80,15 @@ const PostCard = ({
         </View>
       </View>
 
-      {/* Post Content */}
       <View style={styles.content}>
         {post.title && <Text style={styles.postTitle}>{post.title}</Text>}
         <Text style={styles.postText}>{post.content}</Text>
       </View>
 
-      {/* Placeholder Image ONLY for first post */}
       {index === 0 && <View style={styles.placeholderImage} />}
 
-      {/* Post Image Placeholder (if user adds img) */}
       {post.hasImage && <View style={styles.imagePlaceholder} />}
 
-      {/* Post Actions */}
       <View style={styles.actions}>
         <TouchableOpacity
           style={styles.actionButton}

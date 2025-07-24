@@ -1,7 +1,4 @@
 // File: frontend/src/screens/auth/profile/ProfileSetupFlow.js
-
-// This file is used for testing the auth flow for signing up (user account creation)
-
 import { useState } from "react";
 import { Alert } from "react-native";
 import LocationSetupScreen from "./LocationSetupScreen";

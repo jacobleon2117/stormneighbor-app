@@ -47,7 +47,6 @@ const ForgotPasswordScreen = ({ onBackToLogin }) => {
   if (emailSent) {
     return (
       <AuthLayout>
-        {/* Success Header with Lucide Icon */}
         <AuthHeader
           icon={<CheckCircle size={48} color={colors.success} />}
           title={<Text style={authStyles.title}>Email Sent!</Text>}
@@ -59,7 +58,6 @@ const ForgotPasswordScreen = ({ onBackToLogin }) => {
           }
         />
 
-        {/* Instructions */}
         <View style={[authStyles.card, { marginBottom: 32 }]}>
           <Text
             style={[
@@ -72,7 +70,6 @@ const ForgotPasswordScreen = ({ onBackToLogin }) => {
           </Text>
         </View>
 
-        {/* Back to Sign In Button */}
         <AuthButtons>
           <TouchableOpacity
             style={authStyles.primaryButton}
@@ -87,7 +84,6 @@ const ForgotPasswordScreen = ({ onBackToLogin }) => {
 
   return (
     <AuthLayout>
-      {/* Header */}
       <AuthHeader
         title={<Text style={authStyles.title}>Forgot Password?</Text>}
         subtitle={
@@ -98,7 +94,6 @@ const ForgotPasswordScreen = ({ onBackToLogin }) => {
         }
       />
 
-      {/* Email Input */}
       <Text style={authStyles.label}>Email</Text>
       <View style={{ position: "relative", marginBottom: 16 }}>
         <TextInput
@@ -118,7 +113,6 @@ const ForgotPasswordScreen = ({ onBackToLogin }) => {
         />
       </View>
 
-      {/* Send Reset Button */}
       <AuthButtons>
         <TouchableOpacity
           style={[
@@ -138,7 +132,6 @@ const ForgotPasswordScreen = ({ onBackToLogin }) => {
         </TouchableOpacity>
       </AuthButtons>
 
-      {/* Footer */}
       <AuthFooter>
         <Text style={authStyles.bodyText}>Remember your password? </Text>
         <TouchableOpacity onPress={onBackToLogin}>

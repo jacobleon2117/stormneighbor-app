@@ -94,7 +94,6 @@ const ChangePasswordScreen = ({ onBack, onPasswordChanged }) => {
 
   return (
     <AuthLayout showBackButton={!!onBack} onBack={onBack}>
-      {/* Header */}
       <AuthHeader
         title={<Text style={authStyles.title}>Change Password</Text>}
         subtitle={
@@ -104,7 +103,6 @@ const ChangePasswordScreen = ({ onBack, onPasswordChanged }) => {
         }
       />
 
-      {/* Current Password Input */}
       <Text style={authStyles.label}>Current Password</Text>
       <View style={{ position: "relative", marginBottom: 16 }}>
         <TextInput
@@ -129,7 +127,6 @@ const ChangePasswordScreen = ({ onBack, onPasswordChanged }) => {
         </TouchableOpacity>
       </View>
 
-      {/* New Password Input */}
       <Text style={authStyles.label}>NewPassword</Text>
       <View style={{ position: "relative", marginBottom: 16 }}>
         <TextInput
@@ -154,7 +151,6 @@ const ChangePasswordScreen = ({ onBack, onPasswordChanged }) => {
         </TouchableOpacity>
       </View>
 
-      {/* Confirm New Password Input */}
       <Text style={authStyles.label}>Confirm New Password</Text>
       <View style={{ position: "relative", marginBottom: 16 }}>
         <TextInput
@@ -179,7 +175,6 @@ const ChangePasswordScreen = ({ onBack, onPasswordChanged }) => {
         </TouchableOpacity>
       </View>
 
-      {/* Password Requirements */}
       <View style={[authStyles.card, { marginBottom: 24 }]}>
         <Text style={[authStyles.label, { marginBottom: 12 }]}>
           Password Requirements:
@@ -267,7 +262,6 @@ const ChangePasswordScreen = ({ onBack, onPasswordChanged }) => {
         </View>
       </View>
 
-      {/* Change Password Button */}
       <AuthButtons>
         <TouchableOpacity
           style={[
@@ -288,7 +282,6 @@ const ChangePasswordScreen = ({ onBack, onPasswordChanged }) => {
         </TouchableOpacity>
       </AuthButtons>
 
-      {/* Footer */}
       <AuthFooter>
         <Text style={authStyles.bodyText}>Need help? </Text>
         <TouchableOpacity

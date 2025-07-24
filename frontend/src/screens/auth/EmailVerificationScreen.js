@@ -102,7 +102,6 @@ const EmailVerificationScreen = ({ userEmail, onVerified, onBack }) => {
 
   return (
     <AuthLayout showBackButton={!!onBack} onBack={onBack}>
-      {/* Header */}
       <AuthHeader
         title={<Text style={authStyles.title}>Check Your Email</Text>}
         subtitle={
@@ -115,7 +114,6 @@ const EmailVerificationScreen = ({ userEmail, onVerified, onBack }) => {
         }
       />
 
-      {/* Instructions Card */}
       <View style={[authStyles.card, { marginBottom: 32 }]}>
         <Text style={[authStyles.label, { marginBottom: 16 }]}>
           What to do next:
@@ -157,9 +155,7 @@ const EmailVerificationScreen = ({ userEmail, onVerified, onBack }) => {
         </View>
       </View>
 
-      {/* Action Buttons */}
       <AuthButtons>
-        {/* I've Verified Button */}
         <TouchableOpacity
           style={[
             authStyles.primaryButton,
@@ -183,7 +179,6 @@ const EmailVerificationScreen = ({ userEmail, onVerified, onBack }) => {
           )}
         </TouchableOpacity>
 
-        {/* Resend Email Button with Timer Inside */}
         <TouchableOpacity
           style={[
             authStyles.secondaryButton,
@@ -205,7 +200,6 @@ const EmailVerificationScreen = ({ userEmail, onVerified, onBack }) => {
         </TouchableOpacity>
       </AuthButtons>
 
-      {/* Footer */}
       <AuthFooter>
         <Text style={authStyles.bodyText}>Wrong email address? </Text>
         <TouchableOpacity onPress={onBack}>

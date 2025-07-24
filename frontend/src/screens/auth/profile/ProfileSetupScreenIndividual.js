@@ -47,7 +47,6 @@ const ProfileSetupScreenIndividual = ({ onNext, onBack, initialData = {} }) => {
 
   return (
     <AuthLayout showBackButton={!!onBack} onBack={onBack}>
-      {/* Header */}
       <AuthHeader
         icon={<User size={32} color={colors.primary} />}
         title={<Text style={authStyles.title}>Your Profile</Text>}
@@ -59,7 +58,6 @@ const ProfileSetupScreenIndividual = ({ onNext, onBack, initialData = {} }) => {
         }
       />
 
-      {/* Profile Image Section */}
       <View style={[authStyles.alignCenter, authStyles.marginBottom24]}>
         <TouchableOpacity onPress={handleImagePicker}>
           {formData.profileImage ? (
@@ -78,7 +76,6 @@ const ProfileSetupScreenIndividual = ({ onNext, onBack, initialData = {} }) => {
         </TouchableOpacity>
       </View>
 
-      {/* Bio Input with Character Count */}
       <AuthInput
         label={<Text style={authStyles.label}>About You (Optional)</Text>}
       >
@@ -100,7 +97,6 @@ const ProfileSetupScreenIndividual = ({ onNext, onBack, initialData = {} }) => {
         </View>
       </AuthInput>
 
-      {/* Continue Button */}
       <AuthButtons>
         <TouchableOpacity
           style={[
@@ -120,7 +116,6 @@ const ProfileSetupScreenIndividual = ({ onNext, onBack, initialData = {} }) => {
           )}
         </TouchableOpacity>
 
-        {/* Skip Button */}
         <TouchableOpacity
           style={authStyles.secondaryButton}
           onPress={handleSkip}
@@ -132,7 +127,6 @@ const ProfileSetupScreenIndividual = ({ onNext, onBack, initialData = {} }) => {
   );
 };
 
-// Custom styles only for profile image and character count
 const profileImageStyles = {
   image: {
     width: 120,

@@ -102,7 +102,6 @@ const RegisterScreen = ({ onRegister, onSwitchToLogin }) => {
 
   return (
     <AuthLayout>
-      {/* Header */}
       <View style={{ paddingTop: 20 }}>
         <AuthHeader
           title={<Text style={authStyles.title}>Create Account</Text>}
@@ -114,7 +113,6 @@ const RegisterScreen = ({ onRegister, onSwitchToLogin }) => {
         />
       </View>
 
-      {/* Full Name Input */}
       <Text style={authStyles.label}>Full Name</Text>
       <View style={{ position: "relative", marginBottom: 16 }}>
         <TextInput
@@ -133,7 +131,6 @@ const RegisterScreen = ({ onRegister, onSwitchToLogin }) => {
         />
       </View>
 
-      {/* Email Input */}
       <Text style={authStyles.label}>Email</Text>
       <View style={{ position: "relative", marginBottom: 16 }}>
         <TextInput
@@ -153,7 +150,6 @@ const RegisterScreen = ({ onRegister, onSwitchToLogin }) => {
         />
       </View>
 
-      {/* Password Input */}
       <Text style={authStyles.label}>Password</Text>
       <View style={{ position: "relative", marginBottom: 16 }}>
         <TextInput
@@ -178,7 +174,6 @@ const RegisterScreen = ({ onRegister, onSwitchToLogin }) => {
         </TouchableOpacity>
       </View>
 
-      {/* Create Account Button */}
       <AuthButtons>
         <TouchableOpacity
           style={[
@@ -196,14 +191,12 @@ const RegisterScreen = ({ onRegister, onSwitchToLogin }) => {
         </TouchableOpacity>
       </AuthButtons>
 
-      {/* Social Login Divider */}
       <View style={authStyles.dividerContainer}>
         <View style={authStyles.dividerLine} />
         <Text style={authStyles.dividerText}>or continue with</Text>
         <View style={authStyles.dividerLine} />
       </View>
 
-      {/* Social Login Buttons */}
       <View style={authStyles.socialContainer}>
         <TouchableOpacity
           style={authStyles.socialButton}
@@ -222,7 +215,6 @@ const RegisterScreen = ({ onRegister, onSwitchToLogin }) => {
         </TouchableOpacity>
       </View>
 
-      {/* Footer */}
       <AuthFooter>
         <Text style={authStyles.bodyText}>Already have an account? </Text>
         <TouchableOpacity onPress={onSwitchToLogin}>

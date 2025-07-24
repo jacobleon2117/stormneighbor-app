@@ -2,10 +2,8 @@
 import { useState, useEffect } from "react";
 import { View, Alert } from "react-native";
 import { mainStyles } from "@styles/mainStyles";
-import TabNavigation from "@components//layout/TabNavigation";
+import TabNavigation from "@components/layout/TabNavigation";
 import apiService from "@services/api";
-
-// Import placeholder screens (we'll build these next)
 import HomeScreen from "./HomeScreen";
 import WeatherScreen from "./WeatherScreen";
 import CreatePostScreen from "./CreatePostScreen";
@@ -99,10 +97,7 @@ const MainApp = ({ user, onLogout }) => {
 
   return (
     <View style={mainStyles.container}>
-      {/* Current Screen */}
-      <View style={mainStyles.flex1}>{renderCurrentScreen()}</View>
-
-      {/* Tab Navigation */}
+      {renderCurrentScreen()}
       <TabNavigation
         activeTab={activeTab}
         onTabPress={handleTabPress}

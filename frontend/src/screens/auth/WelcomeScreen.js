@@ -6,7 +6,6 @@ import { authStyles, colors } from "@styles/authStyles";
 const WelcomeScreen = ({ onGetStarted, onSignIn }) => {
   return (
     <AuthLayout scrollable={false}>
-      {/* Illustration Image */}
       <View style={{ alignItems: "center", marginBottom: 40 }}>
         <Image
           source={require("../../../assets/images/illustration.png")}
@@ -19,7 +18,6 @@ const WelcomeScreen = ({ onGetStarted, onSignIn }) => {
         />
       </View>
 
-      {/* Logo Title */}
       <View style={{ alignItems: "center", marginBottom: 40 }}>
         <Text style={[authStyles.title, { fontSize: 36, fontWeight: "700" }]}>
           Storm<Text style={{ color: colors.primary }}>Neighbor</Text>
@@ -29,7 +27,6 @@ const WelcomeScreen = ({ onGetStarted, onSignIn }) => {
         </Text>
       </View>
 
-      {/* Action Buttons */}
       <View style={{ gap: 16, marginBottom: 20 }}>
         <TouchableOpacity
           style={authStyles.primaryButton}

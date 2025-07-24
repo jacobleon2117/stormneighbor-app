@@ -30,14 +30,12 @@ const AuthLayout = ({
     <SafeAreaView style={styles.container}>
       <ContentWrapper {...contentProps}>
         <View style={styles.wrapper}>
-          {/* Back Button */}
           {showBackButton && onBack && (
             <TouchableOpacity style={styles.backButton} onPress={onBack}>
               <ArrowLeft size={24} color="#1F2937" />
             </TouchableOpacity>
           )}
 
-          {/* Content */}
           <View style={styles.content}>{children}</View>
         </View>
       </ContentWrapper>

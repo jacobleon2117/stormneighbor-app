@@ -1,7 +1,6 @@
 // File path: frontend/src/styles/authStyles.js
 import { StyleSheet } from "react-native";
 export const authStyles = StyleSheet.create({
-  // Text Styles
   title: {
     fontSize: 28,
     lineHeight: 36,
@@ -46,7 +45,6 @@ export const authStyles = StyleSheet.create({
     fontFamily: "Inter",
   },
 
-  // Input Styles
   input: {
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
@@ -73,7 +71,6 @@ export const authStyles = StyleSheet.create({
     textAlignVertical: "top",
   },
 
-  // Button Styles
   primaryButton: {
     backgroundColor: "#3B82F6",
     paddingVertical: 16,
@@ -118,7 +115,6 @@ export const authStyles = StyleSheet.create({
     gap: 8,
   },
 
-  // Container Styles
   card: {
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
@@ -145,7 +141,6 @@ export const authStyles = StyleSheet.create({
     fontFamily: "Inter",
   },
 
-  // Spacing
   marginBottom8: { marginBottom: 8 },
   marginBottom12: { marginBottom: 12 },
   marginBottom16: { marginBottom: 16 },
@@ -159,14 +154,12 @@ export const authStyles = StyleSheet.create({
   marginTop24: { marginTop: 24 },
   marginTop32: { marginTop: 32 },
 
-  // Flex helpers
   row: { flexDirection: "row" },
   alignCenter: { alignItems: "center" },
   justifyCenter: { justifyContent: "center" },
   justifyBetween: { justifyContent: "space-between" },
   flex1: { flex: 1 },
 
-  // Common UI patterns
   footerLink: {
     flexDirection: "row",
     justifyContent: "center",
@@ -199,7 +192,6 @@ export const authStyles = StyleSheet.create({
   },
 });
 
-// Color constants
 export const colors = {
   primary: "#3B82F6",
   primaryDark: "#2563EB",
@@ -218,7 +210,6 @@ export const colors = {
   },
 };
 
-// Spacing constants
 export const spacing = {
   xs: 4,
   sm: 8,
@@ -230,7 +221,6 @@ export const spacing = {
   xxxxl: 40,
 };
 
-// Typography constants
 export const typography = {
   fontFamily: "Inter",
   sizes: {

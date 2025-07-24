@@ -104,7 +104,6 @@ const NotificationsSetupScreen = ({
 
   return (
     <AuthLayout showBackButton={!!onBack} onBack={onBack}>
-      {/* Header */}
       <AuthHeader
         icon={<Bell size={32} color={colors.primary} />}
         title={<Text style={authStyles.title}>Notifications</Text>}
@@ -116,7 +115,6 @@ const NotificationsSetupScreen = ({
         }
       />
 
-      {/* Notification Preferences */}
       <View style={authStyles.marginBottom24}>
         {renderToggleItem(
           "weatherAlerts",
@@ -140,7 +138,6 @@ const NotificationsSetupScreen = ({
         )}
       </View>
 
-      {/* Complete Button */}
       <AuthButtons>
         <TouchableOpacity
           style={[
@@ -160,7 +157,6 @@ const NotificationsSetupScreen = ({
           )}
         </TouchableOpacity>
 
-        {/* Skip Button */}
         <TouchableOpacity
           style={authStyles.secondaryButton}
           onPress={handleSkip}
@@ -173,7 +169,6 @@ const NotificationsSetupScreen = ({
   );
 };
 
-// Custom toggle styles
 const toggleStyles = {
   container: {
     width: 50,

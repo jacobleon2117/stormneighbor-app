@@ -36,7 +36,6 @@ const LoginScreen = ({ onLogin, onSwitchToRegister, onForgotPassword }) => {
       const result = await apiService.login(email.trim(), password);
 
       if (result.success) {
-        // NO MORE POPUP ALERT - Just call onLogin directly
         onLogin(result.data);
       } else {
         Alert.alert("Login Failed", result.error);
@@ -50,7 +49,7 @@ const LoginScreen = ({ onLogin, onSwitchToRegister, onForgotPassword }) => {
 
   const handleGoogleSignIn = () => {
     Alert.alert(
-      "Feature In Development", 
+      "Feature In Development",
       "Google sign-in is currently being developed and will be available in a future update.",
       [{ text: "OK" }]
     );
@@ -58,7 +57,7 @@ const LoginScreen = ({ onLogin, onSwitchToRegister, onForgotPassword }) => {
 
   const handleAppleSignIn = () => {
     Alert.alert(
-      "Feature In Development", 
+      "Feature In Development",
       "Apple sign-in is currently being developed and will be available in a future update.",
       [{ text: "OK" }]
     );
@@ -66,7 +65,6 @@ const LoginScreen = ({ onLogin, onSwitchToRegister, onForgotPassword }) => {
 
   return (
     <AuthLayout>
-      {/* Header with extra top padding for dynamic island */}
       <View style={{ paddingTop: 20 }}>
         <AuthHeader
           title={<Text style={authStyles.title}>Welcome Back</Text>}
@@ -79,7 +77,6 @@ const LoginScreen = ({ onLogin, onSwitchToRegister, onForgotPassword }) => {
         />
       </View>
 
-      {/* Email Input */}
       <Text style={authStyles.label}>Email</Text>
       <View style={{ position: "relative", marginBottom: 16 }}>
         <TextInput
@@ -99,7 +96,6 @@ const LoginScreen = ({ onLogin, onSwitchToRegister, onForgotPassword }) => {
         />
       </View>
 
-      {/* Password Input */}
       <Text style={authStyles.label}>Password</Text>
       <View style={{ position: "relative", marginBottom: 16 }}>
         <TextInput
@@ -124,7 +120,6 @@ const LoginScreen = ({ onLogin, onSwitchToRegister, onForgotPassword }) => {
         </TouchableOpacity>
       </View>
 
-      {/* Sign In Button */}
       <AuthButtons>
         <TouchableOpacity
           style={[
@@ -142,7 +137,6 @@ const LoginScreen = ({ onLogin, onSwitchToRegister, onForgotPassword }) => {
         </TouchableOpacity>
       </AuthButtons>
 
-      {/* Forgot Password Link */}
       <TouchableOpacity
         style={{ alignItems: "center", marginBottom: 16 }}
         onPress={onForgotPassword}
@@ -150,14 +144,12 @@ const LoginScreen = ({ onLogin, onSwitchToRegister, onForgotPassword }) => {
         <Text style={authStyles.linkText}>Forgot Password?</Text>
       </TouchableOpacity>
 
-      {/* Social Login Divider */}
       <View style={authStyles.dividerContainer}>
         <View style={authStyles.dividerLine} />
         <Text style={authStyles.dividerText}>or continue with</Text>
         <View style={authStyles.dividerLine} />
       </View>
 
-      {/* Social Login Buttons */}
       <View style={authStyles.socialContainer}>
         <TouchableOpacity
           style={authStyles.socialButton}
@@ -176,7 +168,6 @@ const LoginScreen = ({ onLogin, onSwitchToRegister, onForgotPassword }) => {
         </TouchableOpacity>
       </View>
 
-      {/* Footer */}
       <AuthFooter>
         <Text style={authStyles.bodyText}>Don't have an account? </Text>
         <TouchableOpacity onPress={onSwitchToRegister}>

@@ -43,7 +43,6 @@ const ContactSupportScreen = ({ onBack, userEmail }) => {
 
     setLoading(true);
     try {
-      // I'll compose an email for now, but i'm looking to add an support system
       const emailSubject = encodeURIComponent(
         `StormNeighbor Support: ${formData.subject}`
       );
@@ -87,7 +86,6 @@ const ContactSupportScreen = ({ onBack, userEmail }) => {
 
   return (
     <AuthLayout showBackButton={!!onBack} onBack={onBack}>
-      {/* Header */}
       <AuthHeader
         icon={<MessageCircle size={32} color={colors.primary} />}
         title={<Text style={authStyles.title}>Contact Support</Text>}
@@ -99,7 +97,6 @@ const ContactSupportScreen = ({ onBack, userEmail }) => {
         }
       />
 
-      {/* Contact Options */}
       <View style={[authStyles.card, { marginBottom: 24 }]}>
         <Text style={[authStyles.label, { marginBottom: 16 }]}>
           Quick Contact Options:
@@ -120,7 +117,6 @@ const ContactSupportScreen = ({ onBack, userEmail }) => {
         </TouchableOpacity>
       </View>
 
-      {/* Contact Form */}
       <Text style={authStyles.label}>Your Email</Text>
       <TextInput
         style={authStyles.input}
@@ -155,7 +151,6 @@ const ContactSupportScreen = ({ onBack, userEmail }) => {
         autoCapitalize="sentences"
       />
 
-      {/* Send Message Button */}
       <AuthButtons>
         <TouchableOpacity
           style={[
@@ -176,7 +171,6 @@ const ContactSupportScreen = ({ onBack, userEmail }) => {
         </TouchableOpacity>
       </AuthButtons>
 
-      {/* Help Text */}
       <View style={[authStyles.card, { backgroundColor: colors.background }]}>
         <Text style={authStyles.smallText}>
           <Text style={{ fontWeight: "600" }}>Response Time:</Text> We typically
@@ -191,7 +185,6 @@ const ContactSupportScreen = ({ onBack, userEmail }) => {
   );
 };
 
-// Custom styles for contact options
 const contactStyles = {
   contactOption: {
     flexDirection: "row",

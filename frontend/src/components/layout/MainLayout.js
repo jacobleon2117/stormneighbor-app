@@ -40,7 +40,6 @@ const MainLayout = ({
     <SafeAreaView style={[mainStyles.safeArea, { backgroundColor }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* Header */}
       {showHeader && (
         <View style={mainStyles.header}>
           <Text style={mainStyles.headerTitle}>{title}</Text>
@@ -78,7 +77,6 @@ const MainLayout = ({
         </View>
       )}
 
-      {/* Content */}
       <ContentWrapper {...contentProps}>{children}</ContentWrapper>
     </SafeAreaView>
   );

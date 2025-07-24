@@ -2,7 +2,6 @@
 import { StyleSheet } from "react-native";
 
 export const mainStyles = StyleSheet.create({
-  // Layout Styles
   container: {
     flex: 1,
     backgroundColor: "#F8FAFF",
@@ -18,7 +17,6 @@ export const mainStyles = StyleSheet.create({
     flexGrow: 1,
   },
 
-  // Header Styles
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -48,7 +46,6 @@ export const mainStyles = StyleSheet.create({
     backgroundColor: "#EBF8FF",
   },
 
-  // Card Styles
   card: {
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
@@ -80,7 +77,6 @@ export const mainStyles = StyleSheet.create({
     fontFamily: "Inter",
   },
 
-  // Post Styles
   postCard: {
     backgroundColor: "#FFFFFF",
     marginBottom: 8,
@@ -146,7 +142,6 @@ export const mainStyles = StyleSheet.create({
     fontFamily: "Inter",
   },
 
-  // Button Styles
   primaryButton: {
     backgroundColor: "#3B82F6",
     paddingVertical: 12,
@@ -188,7 +183,6 @@ export const mainStyles = StyleSheet.create({
     opacity: 0.7,
   },
 
-  // Action Styles
   actionButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -210,7 +204,6 @@ export const mainStyles = StyleSheet.create({
     fontWeight: "500",
   },
 
-  // Badge Styles
   badge: {
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -247,7 +240,6 @@ export const mainStyles = StyleSheet.create({
     color: "#10B981",
   },
 
-  // Form Styles
   input: {
     backgroundColor: "#FFFFFF",
     borderRadius: 8,
@@ -275,7 +267,6 @@ export const mainStyles = StyleSheet.create({
     marginBottom: 8,
   },
 
-  // Text Styles
   title: {
     fontSize: 24,
     fontWeight: "600",
@@ -306,7 +297,6 @@ export const mainStyles = StyleSheet.create({
     fontFamily: "Inter",
   },
 
-  // Layout Utilities
   row: {
     flexDirection: "row",
   },
@@ -323,7 +313,6 @@ export const mainStyles = StyleSheet.create({
     flex: 1,
   },
 
-  // Spacing Utilities
   marginBottom8: { marginBottom: 8 },
   marginBottom12: { marginBottom: 12 },
   marginBottom16: { marginBottom: 16 },
@@ -336,7 +325,6 @@ export const mainStyles = StyleSheet.create({
   paddingVertical12: { paddingVertical: 12 },
   paddingVertical16: { paddingVertical: 16 },
 
-  // Loading & Empty States
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
@@ -372,7 +360,6 @@ export const mainStyles = StyleSheet.create({
     lineHeight: 24,
   },
 
-  // Tab Navigation Styles
   tabBar: {
     flexDirection: "row",
     backgroundColor: "#FFFFFF",
@@ -399,7 +386,6 @@ export const mainStyles = StyleSheet.create({
   },
 });
 
-// Color constants for main app
 export const mainColors = {
   primary: "#3B82F6",
   primaryDark: "#2563EB",

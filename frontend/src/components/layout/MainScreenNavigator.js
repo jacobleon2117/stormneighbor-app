@@ -11,6 +11,7 @@ import {
 
 import MainApp from "@screens/main/MainApp";
 import HomeScreen from "@screens/main/HomeScreen";
+import HomeOnlyTestScreen from "@screens/main/HomeOnlyTestScreen";
 import WeatherScreen from "@screens/main/WeatherScreen";
 import CreatePostScreen from "@screens/main/CreatePostScreen";
 import AlertsScreen from "@screens/main/AlertsScreen";
@@ -44,9 +45,15 @@ const MainScreenNavigator = () => {
       component: MainApp,
     },
     {
+      id: "homeOnly",
+      name: "Home with Navigation",
+      description: "Home screen with top nav + bottom tab nav",
+      component: HomeOnlyTestScreen,
+    },
+    {
       id: "home",
-      name: "Home Screen",
-      description: "Neighborhood feed and welcome",
+      name: "Home Screen Only",
+      description: "Just the home screen content, no navigation",
       component: HomeScreen,
     },
     {
@@ -138,7 +145,8 @@ const MainScreenNavigator = () => {
               • All screens use mock data for testing{"\n"}• Interactions are
               logged to console{"\n"}• Use back button to return here{"\n"}•
               Test different screen states and layouts{"\n"}• Main App shows
-              complete tab navigation
+              complete tab navigation{"\n"}• Home with Navigation shows home
+              screen with both nav bars
             </Text>
           </View>
         </ScrollView>
@@ -148,14 +156,6 @@ const MainScreenNavigator = () => {
 
   return (
     <View style={styles.screenContainer}>
-      {/*
-    <TouchableOpacity
-      style={styles.backButton}
-      onPress={() => setCurrentScreen("navigator")}
-    >
-      <Text style={styles.backButtonText}>← Back to Navigator</Text>
-    </TouchableOpacity>
-    */}
       <View style={styles.screenContent}>{renderCurrentScreen()}</View>
     </View>
   );

@@ -86,7 +86,6 @@ const ResetPasswordScreen = ({
 
   return (
     <AuthLayout showBackButton={!!onBack} onBack={onBack}>
-      {/* Header */}
       <AuthHeader
         icon={<Lock size={32} color={colors.primary} />}
         title={<Text style={authStyles.title}>Reset Password</Text>}
@@ -97,7 +96,6 @@ const ResetPasswordScreen = ({
         }
       />
 
-      {/* New Password Input */}
       <Text style={authStyles.label}>New Password</Text>
       <View style={{ position: "relative", marginBottom: 16 }}>
         <TextInput
@@ -122,7 +120,6 @@ const ResetPasswordScreen = ({
         </TouchableOpacity>
       </View>
 
-      {/* Confirm Password Input */}
       <Text style={authStyles.label}>Confirm Password</Text>
       <View style={{ position: "relative", marginBottom: 16 }}>
         <TextInput
@@ -147,7 +144,6 @@ const ResetPasswordScreen = ({
         </TouchableOpacity>
       </View>
 
-      {/* Password Requirements */}
       <View style={[authStyles.card, { marginBottom: 24 }]}>
         <Text style={[authStyles.label, { marginBottom: 12 }]}>
           Password Requirements:
@@ -207,7 +203,6 @@ const ResetPasswordScreen = ({
         </View>
       </View>
 
-      {/* Reset Password Button */}
       <AuthButtons>
         <TouchableOpacity
           style={[
@@ -228,7 +223,6 @@ const ResetPasswordScreen = ({
         </TouchableOpacity>
       </AuthButtons>
 
-      {/* Footer */}
       <AuthFooter>
         <Text style={authStyles.bodyText}>Remember your password? </Text>
         <TouchableOpacity onPress={onPasswordReset}>

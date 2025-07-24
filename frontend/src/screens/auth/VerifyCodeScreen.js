@@ -108,7 +108,6 @@ const VerifyCodeScreen = ({ email, onCodeVerified, onBack, onResendCode }) => {
 
   return (
     <AuthLayout showBackButton={!!onBack} onBack={onBack}>
-      {/* Header */}
       <AuthHeader
         icon={<Shield size={32} color={colors.primary} />}
         title={<Text style={authStyles.title}>Enter Verification Code</Text>}
@@ -120,7 +119,6 @@ const VerifyCodeScreen = ({ email, onCodeVerified, onBack, onResendCode }) => {
         }
       />
 
-      {/* Code Input Grid */}
       <View style={{ marginBottom: 32 }}>
         <View style={codeInputStyles.container}>
           {code.map((digit, index) => (
@@ -143,7 +141,6 @@ const VerifyCodeScreen = ({ email, onCodeVerified, onBack, onResendCode }) => {
         </View>
       </View>
 
-      {/* Verify Button */}
       <AuthButtons>
         <TouchableOpacity
           style={[
@@ -160,7 +157,6 @@ const VerifyCodeScreen = ({ email, onCodeVerified, onBack, onResendCode }) => {
           )}
         </TouchableOpacity>
 
-        {/* Resend Button */}
         <TouchableOpacity
           style={[
             authStyles.secondaryButton,
@@ -182,7 +178,6 @@ const VerifyCodeScreen = ({ email, onCodeVerified, onBack, onResendCode }) => {
         </TouchableOpacity>
       </AuthButtons>
 
-      {/* Footer */}
       <AuthFooter>
         <Text style={authStyles.bodyText}>Didn't receive the code? </Text>
         <TouchableOpacity onPress={onBack}>
@@ -193,7 +188,6 @@ const VerifyCodeScreen = ({ email, onCodeVerified, onBack, onResendCode }) => {
   );
 };
 
-// Custom styles for code input grid
 const codeInputStyles = {
   container: {
     flexDirection: "row",

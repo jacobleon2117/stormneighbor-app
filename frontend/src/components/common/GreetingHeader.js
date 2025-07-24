@@ -22,10 +22,8 @@ const GreetingHeader = ({ user, alertCounts = {} }) => {
 
     return (
       <View style={[styles.notificationCard, { backgroundColor: bgColor }]}>
-        {/* Main Icon */}
         <View style={styles.iconContainer}>{icon}</View>
 
-        {/* Number Badge */}
         <View style={[styles.numberBadge, { backgroundColor: badgeColor }]}>
           <Text style={styles.badgeNumber}>{count}</Text>
         </View>

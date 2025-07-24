@@ -3,7 +3,6 @@ const path = require("path");
 
 const config = getDefaultConfig(__dirname);
 
-// Add alias support
 config.resolver.alias = {
   "@": path.resolve(__dirname, "frontend/src"),
   "@components": path.resolve(__dirname, "frontend/src/components"),

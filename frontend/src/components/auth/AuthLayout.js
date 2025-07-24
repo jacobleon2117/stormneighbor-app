@@ -76,7 +76,6 @@ export const AuthFooter = ({ children }) => (
 );
 
 const styles = StyleSheet.create({
-  // Layout Styles
   container: {
     flex: 1,
     backgroundColor: "#F8FAFF",
@@ -108,8 +107,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     minHeight: "80%",
   },
-
-  // Header Styles
   header: {
     alignItems: "center",
     marginBottom: 24,
@@ -137,8 +134,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontFamily: "Inter",
   },
-
-  // Form Styles
   form: {
     marginBottom: 16,
   },
@@ -159,14 +154,10 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontFamily: "Inter",
   },
-
-  // Button Styles
   buttonContainer: {
     marginTop: 8,
     marginBottom: 24,
   },
-
-  // Footer Styles
   footer: {
     flexDirection: "row",
     justifyContent: "center",

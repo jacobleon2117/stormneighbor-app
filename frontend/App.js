@@ -1,5 +1,5 @@
-import ScreenNavigator from "./src/components/ScreenNavigator";
+import MainScreenNavigator from "./src/components/MainScreenNavigator";
 
 export default function App() {
-  return <ScreenNavigator />;
+  return <MainScreenNavigator />;
 }

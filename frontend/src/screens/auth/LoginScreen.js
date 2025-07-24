@@ -1,4 +1,4 @@
-// File: frontend/src/screens/auth/LoginScreen.js
+// File: frontend/src/screens/auth/LoginScreen.js (UPDATED - NO POPUPS)
 import { useState } from "react";
 import {
   View,
@@ -36,9 +36,8 @@ const LoginScreen = ({ onLogin, onSwitchToRegister, onForgotPassword }) => {
       const result = await apiService.login(email.trim(), password);
 
       if (result.success) {
-        Alert.alert("Success", "Welcome back!", [
-          { text: "OK", onPress: () => onLogin(result.data) },
-        ]);
+        // NO MORE POPUP ALERT - Just call onLogin directly
+        onLogin(result.data);
       } else {
         Alert.alert("Login Failed", result.error);
       }
@@ -51,7 +50,7 @@ const LoginScreen = ({ onLogin, onSwitchToRegister, onForgotPassword }) => {
 
   const handleGoogleSignIn = () => {
     Alert.alert(
-      "Feature In Development",
+      "Feature In Development", 
       "Google sign-in is currently being developed and will be available in a future update.",
       [{ text: "OK" }]
     );
@@ -59,7 +58,7 @@ const LoginScreen = ({ onLogin, onSwitchToRegister, onForgotPassword }) => {
 
   const handleAppleSignIn = () => {
     Alert.alert(
-      "Feature In Development",
+      "Feature In Development", 
       "Apple sign-in is currently being developed and will be available in a future update.",
       [{ text: "OK" }]
     );
@@ -67,7 +66,7 @@ const LoginScreen = ({ onLogin, onSwitchToRegister, onForgotPassword }) => {
 
   return (
     <AuthLayout>
-      {/* Header */}
+      {/* Header with extra top padding for dynamic island */}
       <View style={{ paddingTop: 20 }}>
         <AuthHeader
           title={<Text style={authStyles.title}>Welcome Back</Text>}

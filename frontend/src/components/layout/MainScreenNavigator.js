@@ -9,12 +9,12 @@ import {
   ScrollView,
 } from "react-native";
 
-import MainApp from "../../screens/main/MainApp";
-import HomeScreen from "../../screens/main/home/HomeScreen";
-import WeatherScreen from "../../screens/main/WeatherScreen";
-import CreatePostScreen from "../../screens/main/CreatePostScreen";
-import AlertsScreen from "../../screens/main/AlertsScreen";
-import ProfileScreen from "../../screens/main/ProfileScreen";
+import MainApp from "@screens/main/MainApp";
+import HomeScreen from "@screens/main/HomeScreen";
+import WeatherScreen from "@screens/main/WeatherScreen";
+import CreatePostScreen from "@screens/main/CreatePostScreen";
+import AlertsScreen from "@screens/main/AlertsScreen";
+import ProfileScreen from "@screens/main/ProfileScreen";
 
 const MainScreenNavigator = () => {
   const [currentScreen, setCurrentScreen] = useState("navigator");

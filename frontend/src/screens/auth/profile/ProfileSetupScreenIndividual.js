@@ -15,8 +15,8 @@ import AuthLayout, {
   AuthHeader,
   AuthButtons,
   AuthInput,
-} from "../../../components/AuthLayout";
-import { authStyles, colors } from "../../../styles/authStyles";
+} from "@components/AuthLayout";
+import { authStyles, colors } from "@styles/authStyles";
 
 const ProfileSetupScreenIndividual = ({ onNext, onBack, initialData = {} }) => {
   const [loading, setLoading] = useState(false);

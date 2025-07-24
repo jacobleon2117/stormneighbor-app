@@ -9,11 +9,8 @@ import {
 } from "react-native";
 import { Bell, ArrowRight } from "lucide-react-native";
 
-import AuthLayout, {
-  AuthHeader,
-  AuthButtons,
-} from "../../../components/AuthLayout";
-import { authStyles, colors } from "../../../styles/authStyles";
+import AuthLayout, { AuthHeader, AuthButtons } from "@components/AuthLayout";
+import { authStyles, colors } from "@styles/authStyles";
 
 const NotificationsSetupScreen = ({
   onNext,

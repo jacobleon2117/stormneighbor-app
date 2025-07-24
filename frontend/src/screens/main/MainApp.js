@@ -1,12 +1,12 @@
 // File: frontend/src/screens/main/MainApp.js
 import { useState, useEffect } from "react";
 import { View, Alert } from "react-native";
-import { mainStyles } from "../../styles/mainStyles";
-import TabNavigation from "../../components/TabNavigation";
-import apiService from "../../services/api";
+import { mainStyles } from "@styles/mainStyles";
+import TabNavigation from "@components//layout/TabNavigation";
+import apiService from "@services/api";
 
 // Import placeholder screens (we'll build these next)
-import HomeScreen from "./home/HomeScreen";
+import HomeScreen from "./HomeScreen";
 import WeatherScreen from "./WeatherScreen";
 import CreatePostScreen from "./CreatePostScreen";
 import AlertsScreen from "./AlertsScreen";

@@ -14,8 +14,8 @@ import AuthLayout, {
   AuthHeader,
   AuthButtons,
   AuthFooter,
-} from "../../components/AuthLayout";
-import { authStyles, colors } from "../../styles/authStyles";
+} from "@components/AuthLayout";
+import { authStyles, colors } from "@styles/authStyles";
 
 const ForgotPasswordScreen = ({ onBackToLogin }) => {
   const [email, setEmail] = useState("");

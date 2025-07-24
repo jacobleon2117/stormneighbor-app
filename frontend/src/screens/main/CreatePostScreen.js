@@ -1,6 +1,6 @@
 // File: frontend/src/screens/main/CreatePostScreen.js
 import { View, StyleSheet } from "react-native";
-import TopNav from "../../components/TopNav";
+import TopNav from "@components/layout/TopNav";
 
 const CreatePostScreen = ({ user, onCreatePost }) => {
   return (

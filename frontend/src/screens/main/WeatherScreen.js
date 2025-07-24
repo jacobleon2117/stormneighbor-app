@@ -1,6 +1,6 @@
 // File: frontend/src/screens/main/WeatherScreen.js
 import { View, StyleSheet } from "react-native";
-import TopNav from "../../components/TopNav";
+import TopNav from "@components/layout/TopNav";
 
 const WeatherScreen = ({ user }) => {
   return (

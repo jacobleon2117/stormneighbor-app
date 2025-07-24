@@ -15,9 +15,9 @@ import AuthLayout, {
   AuthHeader,
   AuthButtons,
   AuthFooter,
-} from "../../components/AuthLayout";
-import { authStyles, colors } from "../../styles/authStyles";
-import apiService from "../../services/api";
+} from "@components/AuthLayout";
+import { authStyles, colors } from "@styles/authStyles";
+import apiService from "@services/api";
 
 const RegisterScreen = ({ onRegister, onSwitchToLogin }) => {
   const [formData, setFormData] = useState({

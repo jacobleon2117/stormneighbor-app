@@ -2,10 +2,10 @@
 import { useState, useEffect } from "react";
 import { View, ScrollView, RefreshControl, StyleSheet } from "react-native";
 
-import TopNav from "../../components/TopNav";
-import GreetingHeader from "./GreetingHeader";
-import PostCard from "../../../components/common/PostCard";
-import apiService from "../../../services/api";
+import TopNav from "@components/layout/TopNav";
+import GreetingHeader from "@components/common/GreetingHeader";
+import PostCard from "@components/common/PostCard";
+import apiService from "@services/api";
 
 const HomeScreen = ({ user, onNavigateToPost, onNavigateToProfile }) => {
   const [posts, setPosts] = useState([]);

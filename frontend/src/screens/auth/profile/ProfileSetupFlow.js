@@ -7,7 +7,7 @@ import { Alert } from "react-native";
 import LocationSetupScreen from "./LocationSetupScreen";
 import ProfileSetupScreenIndividual from "./ProfileSetupScreenIndividual";
 import NotificationsSetupScreen from "./NotificationsSetupScreen";
-import apiService from "../../../services/api";
+import apiService from "@services/api";
 
 const ProfileSetupFlow = ({ onSetupComplete, onBack }) => {
   const [currentStep, setCurrentStep] = useState(1);

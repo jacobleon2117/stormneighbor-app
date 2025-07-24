@@ -1,7 +1,7 @@
 // File path: frontend/src/screens/auth/WelcomeScreen.js
 import { View, Text, TouchableOpacity, Image } from "react-native";
-import AuthLayout from "../../components/AuthLayout";
-import { authStyles, colors } from "../../styles/authStyles";
+import AuthLayout from "@components/AuthLayout";
+import { authStyles, colors } from "@styles/authStyles";
 
 const WelcomeScreen = ({ onGetStarted, onSignIn }) => {
   return (

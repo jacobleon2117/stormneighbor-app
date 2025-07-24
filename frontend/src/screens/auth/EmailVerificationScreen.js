@@ -13,9 +13,9 @@ import AuthLayout, {
   AuthHeader,
   AuthButtons,
   AuthFooter,
-} from "../../components/AuthLayout";
-import { authStyles, colors } from "../../styles/authStyles";
-import apiService from "../../services/api";
+} from "@components/AuthLayout";
+import { authStyles, colors } from "@styles/authStyles";
+import apiService from "@services/api";
 
 const EmailVerificationScreen = ({ userEmail, onVerified, onBack }) => {
   const [loading, setLoading] = useState(false);

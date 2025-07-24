@@ -1,6 +1,6 @@
 // File: frontend/src/screens/main/ProfileScreen.js
 import { View, StyleSheet } from "react-native";
-import TopNav from "../../components/TopNav";
+import TopNav from "@components/layout/TopNav";
 
 const ProfileScreen = ({ user, onLogout }) => {
   return (

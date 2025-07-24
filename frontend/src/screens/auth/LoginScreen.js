@@ -15,9 +15,9 @@ import AuthLayout, {
   AuthHeader,
   AuthButtons,
   AuthFooter,
-} from "../../components/AuthLayout";
-import { authStyles, colors } from "../../styles/authStyles";
-import apiService from "../../services/api";
+} from "@components/AuthLayout";
+import { authStyles, colors } from "@styles/authStyles";
+import apiService from "@services/api";
 
 const LoginScreen = ({ onLogin, onSwitchToRegister, onForgotPassword }) => {
   const [email, setEmail] = useState("");

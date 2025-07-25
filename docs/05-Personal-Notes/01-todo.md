@@ -75,3 +75,8 @@
 - [❌] ERROR: 'bio' is declared but its value is never read | CODE: bio, LINE: 255 | FILE: authController.js
 
 ---
+
+### 07/25/2025
+
+remove all placeholder data/text/numbers/etc from every screen.
+the home screen grettings card needs to only show notifcations from the user

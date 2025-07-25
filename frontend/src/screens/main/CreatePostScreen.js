@@ -1,5 +1,5 @@
 // File: frontend/src/screens/main/CreatePostScreen.js
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { TouchableWithoutFeedback } from "react-native";
 import {
   View,
@@ -11,6 +11,7 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
+  Animated,
 } from "react-native";
 import {
   X,
@@ -27,6 +28,7 @@ import {
   Gift,
   ChevronDown,
   Check,
+  LayoutDashboard,
 } from "lucide-react-native";
 import TopNav from "@components/layout/TopNav";
 import { mainStyles } from "@styles/mainStyles";
@@ -39,18 +41,38 @@ const CreatePostScreen = ({ user, onCreatePost, onClose }) => {
   const [showLocation, setShowLocation] = useState(true);
   const [mentionsOff, setMentionsOff] = useState(false);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const [showQuickActions, setShowQuickActions] = useState(true);
+  const [publicScope, setPublicScope] = useState("public");
+  const [showPublicOptions, setShowPublicOptions] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [storedKeyboardHeight, setStoredKeyboardHeight] = useState(0);
+  const quickActionsOpacity = useRef(new Animated.Value(1)).current;
+  const quickActionsHeight = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
       "keyboardDidShow",
-      () => {
+      (event) => {
         setIsKeyboardVisible(true);
+        const height = event.endCoordinates.height;
+        setKeyboardHeight(height);
+        setStoredKeyboardHeight(height);
+        if (showQuickActions) {
+          animateQuickActionsOut(() => {
+            setShowQuickActions(false);
+          });
+        }
       }
     );
     const keyboardDidHideListener = Keyboard.addListener(
       "keyboardDidHide",
       () => {
         setIsKeyboardVisible(false);
+        setKeyboardHeight(0);
+        if (!showQuickActions && !postContent.trim()) {
+          setShowQuickActions(true);
+          animateQuickActionsIn();
+        }
       }
     );
 
@@ -58,7 +80,7 @@ const CreatePostScreen = ({ user, onCreatePost, onClose }) => {
       keyboardDidShowListener?.remove();
       keyboardDidHideListener?.remove();
     };
-  }, []);
+  }, [showQuickActions, postContent]);
 
   const quickActions = [
     {
@@ -135,6 +157,8 @@ const CreatePostScreen = ({ user, onCreatePost, onClose }) => {
 
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
+      Keyboard.dismiss();
+
       Alert.alert(
         "Success!",
         "Your post has been shared with the neighborhood",
@@ -174,8 +198,59 @@ const CreatePostScreen = ({ user, onCreatePost, onClose }) => {
     }
   };
 
-  const [publicScope, setPublicScope] = useState("public");
-  const [showPublicOptions, setShowPublicOptions] = useState(false);
+  const handleInputFocus = () => {
+    if (showQuickActions) {
+      animateQuickActionsOut(() => {
+        setShowQuickActions(false);
+      });
+    }
+  };
+
+  const handleMorePress = () => {
+    if (showQuickActions) {
+      animateQuickActionsOut(() => {
+        setShowQuickActions(false);
+      });
+    } else {
+      Keyboard.dismiss();
+      setTimeout(() => {
+        setShowQuickActions(true);
+        animateQuickActionsIn();
+      }, 100);
+    }
+  };
+
+  const animateQuickActionsIn = () => {
+    Animated.parallel([
+      Animated.timing(quickActionsOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: false,
+      }),
+      Animated.timing(quickActionsHeight, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: false,
+      }),
+    ]).start();
+  };
+
+  const animateQuickActionsOut = (callback) => {
+    Animated.parallel([
+      Animated.timing(quickActionsOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: false,
+      }),
+      Animated.timing(quickActionsHeight, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: false,
+      }),
+    ]).start(() => {
+      callback && callback();
+    });
+  };
 
   return (
     <KeyboardAvoidingView
@@ -257,6 +332,7 @@ const CreatePostScreen = ({ user, onCreatePost, onClose }) => {
                     style={styles.publicOptionButton}
                     onPress={() => {
                       setPublicScope(option.value);
+                      setShowPublicOptions(false);
                     }}
                   >
                     <Text style={styles.publicOptionText}>{option.label}</Text>
@@ -312,6 +388,7 @@ const CreatePostScreen = ({ user, onCreatePost, onClose }) => {
           multiline
           textAlignVertical="top"
           maxLength={500}
+          onFocus={handleInputFocus}
         />
       </View>
 
@@ -348,39 +425,62 @@ const CreatePostScreen = ({ user, onCreatePost, onClose }) => {
 
         <View style={styles.spacer} />
 
-        <TouchableOpacity style={styles.moreButton}>
-          <Text style={styles.moreButtonText}>More</Text>
-        </TouchableOpacity>
+        {!showQuickActions && (
+          <TouchableOpacity
+            style={styles.settingButton}
+            onPress={handleMorePress}
+          >
+            <LayoutDashboard size={16} color="#6B7280" />
+            <Text style={styles.settingText}>More</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
-      {!isKeyboardVisible && (
-        <View style={styles.quickActionsSection}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <View style={styles.quickActionsGrid}>
-            {quickActions.map((action) => {
-              const IconComponent = action.icon;
-              const isSelected = selectedBadge?.id === action.id;
-              return (
-                <TouchableOpacity
-                  key={action.id}
-                  style={[
-                    styles.quickActionButton,
-                    { backgroundColor: action.bgColor },
-                    isSelected && styles.quickActionButtonSelected,
-                  ]}
-                  onPress={() => handleTemplateSelect(action)}
-                >
-                  <IconComponent size={20} color={action.color} />
-                  <Text
-                    style={[styles.quickActionText, { color: action.color }]}
+      {showQuickActions && (
+        <Animated.View
+          style={[
+            styles.quickActionsSection,
+            {
+              opacity: quickActionsOpacity,
+              transform: [
+                {
+                  scaleY: quickActionsHeight,
+                },
+              ],
+              height: storedKeyboardHeight > 0 ? storedKeyboardHeight : "auto",
+              maxHeight:
+                storedKeyboardHeight > 0 ? storedKeyboardHeight : undefined,
+            },
+          ]}
+        >
+          <View style={styles.quickActionsContent}>
+            <Text style={styles.sectionTitle}>Quick Actions</Text>
+            <View style={styles.quickActionsGrid}>
+              {quickActions.map((action) => {
+                const IconComponent = action.icon;
+                const isSelected = selectedBadge?.id === action.id;
+                return (
+                  <TouchableOpacity
+                    key={action.id}
+                    style={[
+                      styles.quickActionButton,
+                      { backgroundColor: action.bgColor },
+                      isSelected && styles.quickActionButtonSelected,
+                    ]}
+                    onPress={() => handleTemplateSelect(action)}
                   >
-                    {action.title}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
+                    <IconComponent size={20} color={action.color} />
+                    <Text
+                      style={[styles.quickActionText, { color: action.color }]}
+                    >
+                      {action.title}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           </View>
-        </View>
+        </Animated.View>
       )}
     </KeyboardAvoidingView>
   );
@@ -527,25 +627,13 @@ const styles = StyleSheet.create({
   mediaButton: {
     padding: 8,
   },
-  spacer: {
-    flex: 1,
-  },
-  moreButton: {
-    backgroundColor: "#F3F4F6",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  moreButtonText: {
-    fontSize: 14,
-    color: "#6B7280",
-    fontWeight: "500",
-  },
   quickActionsSection: {
     paddingHorizontal: 16,
     paddingVertical: 20,
     backgroundColor: "#F8FAFF",
-    marginTop: 20,
+  },
+  quickActionsContent: {
+    flex: 1,
   },
   sectionTitle: {
     fontSize: 16,

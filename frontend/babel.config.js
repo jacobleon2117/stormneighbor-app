@@ -14,6 +14,7 @@ module.exports = function (api) {
             "@styles": "./src/styles",
             "@services": "./src/services",
             "@assets": "./assets",
+            "@contexts": "./src/contexts",
           },
         },
       ],

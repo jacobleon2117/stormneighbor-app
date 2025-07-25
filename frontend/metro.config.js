@@ -10,6 +10,7 @@ config.resolver.alias = {
   "@styles": path.resolve(__dirname, "frontend/src/styles"),
   "@services": path.resolve(__dirname, "frontend/src/services"),
   "@assets": path.resolve(__dirname, "frontend/assets"),
+  "@contexts": "./src/contexts",
 };
 
 module.exports = config;

@@ -1,133 +1,198 @@
 // File: frontend/src/screens/main/HomeScreen.js
-import { useState, useEffect } from "react";
-import { View, ScrollView, RefreshControl, StyleSheet } from "react-native";
-import TopNav from "@components/layout/TopNav";
+import React, { useState, useEffect, useCallback } from "react";
+import { View, Text, ActivityIndicator } from "react-native";
+import { globalStyles, colors, spacing } from "@styles/designSystem";
+import { useAuth } from "@contexts/AuthContext";
+import ScreenLayout from "@components/layout/ScreenLayout";
 import GreetingHeader from "@components/common/GreetingHeader";
 import PostCard from "@components/common/PostCard";
 import apiService from "@services/api";
 
-const HomeScreen = ({ user, onNavigateToPost, onNavigateToProfile }) => {
+const HomeScreen = ({ onNavigateToPost, onNavigateToProfile }) => {
+  const { user } = useAuth();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [alertCounts, setAlertCounts] = useState({
-    critical: 1,
-    weather: 2,
-    community: 3,
+    critical: 0,
+    weather: 0,
+    community: 0,
+    total: 0,
   });
-
-  const mockPosts = [
-    {
-      id: 1,
-      content:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-      user: { firstName: "John", lastName: "Doe" },
-      createdAt: new Date(Date.now() - 30 * 60 * 1000),
-      isEmergency: true,
-      postType: "safety_alert",
-      reactionCount: 12,
-      commentCount: 5,
-      hasImage: false,
-    },
-    {
-      id: 2,
-      content:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-      user: { firstName: "Weather", lastName: "Service" },
-      createdAt: new Date(Date.now() - 60 * 60 * 1000),
-      isEmergency: false,
-      postType: "weather_update",
-      reactionCount: 24,
-      commentCount: 8,
-      hasImage: false,
-    },
-  ];
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    loadHomeFeed();
-    loadAlertCounts();
-  }, []);
+    if (user?.neighborhoodId) {
+      loadInitialData();
+    }
+  }, [user?.neighborhoodId]);
+
+  const loadInitialData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      await Promise.all([loadHomeFeed(), loadAlertCounts()]);
+    } catch (error) {
+      console.error("Error loading initial data:", error);
+      setError("Failed to load data. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.neighborhoodId]);
 
   const loadHomeFeed = async () => {
-    try {
-      if (!user?.neighborhoodId) {
-        setPosts(mockPosts);
-        setLoading(false);
-        return;
-      }
+    if (!user?.neighborhoodId) {
+      setPosts([]);
+      return;
+    }
 
-      const result = await apiService.getPosts(user.neighborhoodId);
+    try {
+      const result = await apiService.getPosts(user.neighborhoodId, {
+        limit: 20,
+        sortBy: "createdAt",
+        order: "desc",
+      });
+
       if (result.success) {
-        setPosts(result.data.posts || mockPosts);
+        setPosts(result.data.posts || []);
       } else {
-        setPosts(mockPosts);
+        console.error("Failed to load posts:", result.error);
+        setError(result.error || "Failed to load posts");
       }
     } catch (error) {
       console.error("Error loading home feed:", error);
-      setPosts(mockPosts);
-    } finally {
-      setLoading(false);
+      setError("Failed to load posts");
     }
   };
 
   const loadAlertCounts = async () => {
-    try {
-      if (!user?.neighborhoodId) return;
+    if (!user?.neighborhoodId) {
+      return;
+    }
 
+    try {
       const result = await apiService.getAlerts(user.neighborhoodId);
       if (result.success) {
         const alerts = result.data.alerts || [];
-        setAlertCounts({
+        const counts = {
           critical: alerts.filter((a) => a.severity === "CRITICAL").length,
           weather: alerts.filter((a) => a.source === "NOAA").length,
           community: alerts.filter((a) => a.source === "USER").length,
-        });
+        };
+        counts.total = counts.critical + counts.weather + counts.community;
+        setAlertCounts(counts);
       }
     } catch (error) {
-      console.error("Error loading alerts:", error);
+      console.error("Error loading alert counts:", error);
     }
   };
 
-  const onRefresh = async () => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([loadHomeFeed(), loadAlertCounts()]);
-    setRefreshing(false);
-  };
-
-  const handlePostPress = (post) => {
-    if (onNavigateToPost) {
-      onNavigateToPost(post.id);
-    }
-  };
-
-  const handleLike = async (post) => {
     try {
-      await apiService.addReaction(post.id, "like");
-      loadHomeFeed();
+      await Promise.all([loadHomeFeed(), loadAlertCounts()]);
+    } catch (error) {
+      console.error("Error refreshing:", error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
+
+  const handlePostPress = useCallback(
+    (post) => {
+      if (onNavigateToPost) {
+        onNavigateToPost(post.id);
+      }
+    },
+    [onNavigateToPost]
+  );
+
+  const handleLike = useCallback(async (post) => {
+    try {
+      const result = await apiService.addReaction(post.id, "like");
+      if (result.success) {
+        // Update the post in the local state
+        setPosts((prevPosts) =>
+          prevPosts.map((p) =>
+            p.id === post.id
+              ? { ...p, reactionCount: (p.reactionCount || 0) + 1 }
+              : p
+          )
+        );
+      }
     } catch (error) {
       console.error("Error liking post:", error);
     }
-  };
+  }, []);
 
-  return (
-    <View style={styles.container}>
-      <TopNav title="Home" />
-      <ScrollView
-        style={styles.content}
-        contentContainerStyle={styles.scrollContainer}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor="#3B82F6"
-            colors={["#3B82F6"]}
-          />
-        }
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.topSpacing} />
-        <GreetingHeader user={user} alertCounts={alertCounts} />
-        <View style={styles.feed}>
+  const handleComment = useCallback(
+    (post) => {
+      if (onNavigateToPost) {
+        onNavigateToPost(post.id);
+      }
+    },
+    [onNavigateToPost]
+  );
+
+  const handleShare = useCallback((post) => {
+    // TODO: Implement share functionality
+    console.log("Share post:", post.id);
+  }, []);
+
+  const handleMore = useCallback((post) => {
+    // TODO: Implement more options
+    console.log("More options for post:", post.id);
+  }, []);
+
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <View style={globalStyles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={globalStyles.loadingText}>Loading your feed...</Text>
+        </View>
+      );
+    }
+
+    if (error) {
+      return (
+        <View style={globalStyles.emptyContainer}>
+          <Text style={globalStyles.emptyTitle}>Something went wrong</Text>
+          <Text style={globalStyles.emptyText}>{error}</Text>
+        </View>
+      );
+    }
+
+    if (!user?.neighborhoodId) {
+      return (
+        <View style={globalStyles.emptyContainer}>
+          <Text style={globalStyles.emptyTitle}>Welcome to StormNeighbor!</Text>
+          <Text style={globalStyles.emptyText}>
+            Complete your profile setup to connect with your neighborhood.
+          </Text>
+        </View>
+      );
+    }
+
+    if (posts.length === 0) {
+      return (
+        <View style={globalStyles.emptyContainer}>
+          <Text style={globalStyles.emptyTitle}>No posts yet</Text>
+          <Text style={globalStyles.emptyText}>
+            Be the first to share something with your neighborhood!
+          </Text>
+        </View>
+      );
+    }
+
+    return (
+      <>
+        <View style={{ marginTop: spacing.lg }}>
+          <GreetingHeader user={user} alertCounts={alertCounts} />
+        </View>
+
+        <View style={{ marginTop: spacing.lg }}>
           {posts.map((post, index) => (
             <PostCard
               key={post.id}
@@ -135,32 +200,21 @@ const HomeScreen = ({ user, onNavigateToPost, onNavigateToProfile }) => {
               index={index}
               onPress={handlePostPress}
               onLike={handleLike}
-              onComment={handlePostPress}
-              onShare={(post) => console.log("Share post:", post.id)}
-              onMore={(post) => console.log("More options:", post.id)}
+              onComment={handleComment}
+              onShare={handleShare}
+              onMore={handleMore}
             />
           ))}
         </View>
-      </ScrollView>
-    </View>
+      </>
+    );
+  };
+
+  return (
+    <ScreenLayout title="Home" refreshing={refreshing} onRefresh={onRefresh}>
+      {renderContent()}
+    </ScreenLayout>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F8FAFF",
-  },
-  content: {
-    flex: 1,
-  },
-  scrollContainer: {
-    paddingBottom: 120,
-  },
-  topSpacing: {
-    height: 16,
-  },
-  feed: {},
-});
 
 export default HomeScreen;

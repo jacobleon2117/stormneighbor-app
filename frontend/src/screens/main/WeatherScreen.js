@@ -28,7 +28,9 @@ import {
   CloudSnow,
   CloudDrizzle,
 } from "lucide-react-native";
-import TopNav from "@components/layout/TopNav";
+import { globalStyles, colors, spacing } from "@styles/designSystem";
+import ScreenLayout from "@components/layout/ScreenLayout";
+import StandardHeader from "@components/layout/StandardHeader";
 
 const OPENWEATHER_API_KEY = "";
 const WEATHER_API_BASE = "https://api.openweathermap.org/data/2.5";

@@ -1,180 +1,233 @@
-// File: frontend/src/screens/auth/LoginScreen.js (UPDATED - NO POPUPS)
-import { useState } from "react";
+// File: frontend/src/screens/auth/LoginScreen.js
+import React, { useState } from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { Mail, Eye, EyeOff } from "lucide-react-native";
-import { AntDesign } from "@expo/vector-icons";
+import {
+  globalStyles,
+  colors,
+  spacing,
+  createButtonStyle,
+} from "@styles/designSystem";
+import ScreenLayout from "@components/layout/ScreenLayout";
 
-import AuthLayout, {
-  AuthHeader,
-  AuthButtons,
-  AuthFooter,
-} from "@components/AuthLayout";
-import { authStyles, colors } from "@styles/authStyles";
-import apiService from "@services/api";
-
-const LoginScreen = ({ onLogin, onSwitchToRegister, onForgotPassword }) => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+const LoginScreen = ({
+  onLogin,
+  onSwitchToRegister,
+  onForgotPassword,
+  loading = false,
+}) => {
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
   const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  const updateField = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: null }));
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "Enter a valid email address";
+    }
+
+    if (!formData.password.trim()) {
+      newErrors.password = "Password is required";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) {
-      Alert.alert("Error", "Please enter both email and password");
+    if (!validateForm()) {
       return;
     }
 
-    setLoading(true);
     try {
-      const result = await apiService.login(email.trim(), password);
-
-      if (result.success) {
-        onLogin(result.data);
-      } else {
-        Alert.alert("Login Failed", result.error);
-      }
+      await onLogin(formData.email.trim(), formData.password);
     } catch (error) {
+      console.error("Login error:", error);
       Alert.alert("Error", "Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
     }
   };
 
-  const handleGoogleSignIn = () => {
-    Alert.alert(
-      "Feature In Development",
-      "Google sign-in is currently being developed and will be available in a future update.",
-      [{ text: "OK" }]
-    );
-  };
+  const renderHeader = () => (
+    <View style={[globalStyles.center, { marginBottom: spacing.xxxl }]}>
+      <Text style={[globalStyles.title, { marginBottom: spacing.md }]}>
+        Welcome Back
+      </Text>
+      <Text style={globalStyles.bodySecondary}>
+        Sign in to your StormNeighbor account
+      </Text>
+    </View>
+  );
 
-  const handleAppleSignIn = () => {
-    Alert.alert(
-      "Feature In Development",
-      "Apple sign-in is currently being developed and will be available in a future update.",
-      [{ text: "OK" }]
-    );
-  };
-
-  return (
-    <AuthLayout>
-      <View style={{ paddingTop: 20 }}>
-        <AuthHeader
-          title={<Text style={authStyles.title}>Welcome Back</Text>}
-          subtitle={
-            <Text style={authStyles.subtitle}>
-              Sign in to your Storm
-              <Text style={{ color: colors.primary }}>Neighbor</Text> account
-            </Text>
-          }
-        />
+  const renderForm = () => (
+    <View style={{ marginBottom: spacing.xxl }}>
+      {/* Email Field */}
+      <View style={{ marginBottom: spacing.lg }}>
+        <Text style={globalStyles.label}>Email</Text>
+        <View style={{ position: "relative" }}>
+          <TextInput
+            style={[
+              globalStyles.input,
+              errors.email && { borderColor: colors.error, borderWidth: 2 },
+              { paddingRight: spacing.xxxxl },
+            ]}
+            value={formData.email}
+            onChangeText={(value) => updateField("email", value)}
+            placeholder="Enter your email"
+            placeholderTextColor={colors.text.muted}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            editable={!loading}
+          />
+          <View
+            style={{
+              position: "absolute",
+              right: spacing.lg,
+              top: spacing.md,
+              justifyContent: "center",
+            }}
+          >
+            <Mail size={18} color={colors.text.muted} />
+          </View>
+        </View>
+        {errors.email && (
+          <Text
+            style={[
+              globalStyles.caption,
+              { color: colors.error, marginTop: spacing.xs },
+            ]}
+          >
+            {errors.email}
+          </Text>
+        )}
       </View>
 
-      <Text style={authStyles.label}>Email</Text>
-      <View style={{ position: "relative", marginBottom: 16 }}>
-        <TextInput
-          style={authStyles.input}
-          value={email}
-          onChangeText={setEmail}
-          placeholder="Enter your email"
-          placeholderTextColor={colors.text.muted}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-        <Mail
-          size={18}
-          color={colors.text.muted}
-          style={{ position: "absolute", right: 16, top: 16 }}
-        />
+      {/* Password Field */}
+      <View style={{ marginBottom: spacing.lg }}>
+        <Text style={globalStyles.label}>Password</Text>
+        <View style={{ position: "relative" }}>
+          <TextInput
+            style={[
+              globalStyles.input,
+              errors.password && { borderColor: colors.error, borderWidth: 2 },
+              { paddingRight: spacing.xxxxl },
+            ]}
+            value={formData.password}
+            onChangeText={(value) => updateField("password", value)}
+            placeholder="Enter your password"
+            placeholderTextColor={colors.text.muted}
+            secureTextEntry={!showPassword}
+            autoCapitalize="none"
+            autoCorrect={false}
+            editable={!loading}
+          />
+          <TouchableOpacity
+            style={{
+              position: "absolute",
+              right: spacing.lg,
+              top: spacing.md,
+              padding: spacing.xs,
+            }}
+            onPress={() => setShowPassword(!showPassword)}
+            disabled={loading}
+          >
+            {showPassword ? (
+              <EyeOff size={18} color={colors.text.muted} />
+            ) : (
+              <Eye size={18} color={colors.text.muted} />
+            )}
+          </TouchableOpacity>
+        </View>
+        {errors.password && (
+          <Text
+            style={[
+              globalStyles.caption,
+              { color: colors.error, marginTop: spacing.xs },
+            ]}
+          >
+            {errors.password}
+          </Text>
+        )}
       </View>
+    </View>
+  );
 
-      <Text style={authStyles.label}>Password</Text>
-      <View style={{ position: "relative", marginBottom: 16 }}>
-        <TextInput
-          style={[authStyles.input, { paddingRight: 50 }]}
-          value={password}
-          onChangeText={setPassword}
-          placeholder="Enter your password"
-          placeholderTextColor={colors.text.muted}
-          secureTextEntry={!showPassword}
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-        <TouchableOpacity
-          style={{ position: "absolute", right: 16, top: 16, padding: 8 }}
-          onPress={() => setShowPassword(!showPassword)}
-        >
-          {showPassword ? (
-            <EyeOff size={18} color={colors.text.muted} />
-          ) : (
-            <Eye size={18} color={colors.text.muted} />
-          )}
-        </TouchableOpacity>
-      </View>
-
-      <AuthButtons>
-        <TouchableOpacity
-          style={[
-            authStyles.primaryButton,
-            loading && authStyles.buttonDisabled,
-          ]}
-          onPress={handleLogin}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color={colors.text.inverse} />
-          ) : (
-            <Text style={authStyles.primaryButtonText}>Sign In</Text>
-          )}
-        </TouchableOpacity>
-      </AuthButtons>
-
+  const renderButtons = () => (
+    <View style={{ marginBottom: spacing.xl }}>
       <TouchableOpacity
-        style={{ alignItems: "center", marginBottom: 16 }}
-        onPress={onForgotPassword}
+        style={[
+          createButtonStyle("primary", "large"),
+          loading && globalStyles.buttonDisabled,
+        ]}
+        onPress={handleLogin}
+        disabled={loading}
       >
-        <Text style={authStyles.linkText}>Forgot Password?</Text>
+        {loading ? (
+          <ActivityIndicator color={colors.text.inverse} />
+        ) : (
+          <Text style={globalStyles.buttonPrimaryText}>Sign In</Text>
+        )}
       </TouchableOpacity>
 
-      <View style={authStyles.dividerContainer}>
-        <View style={authStyles.dividerLine} />
-        <Text style={authStyles.dividerText}>or continue with</Text>
-        <View style={authStyles.dividerLine} />
+      <TouchableOpacity
+        style={{ alignItems: "center", marginTop: spacing.lg }}
+        onPress={onForgotPassword}
+        disabled={loading}
+      >
+        <Text style={globalStyles.link}>Forgot Password?</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderFooter = () => (
+    <View style={[globalStyles.row, globalStyles.center]}>
+      <Text style={globalStyles.bodySecondary}>Don't have an account? </Text>
+      <TouchableOpacity onPress={onSwitchToRegister} disabled={loading}>
+        <Text style={globalStyles.link}>Sign Up</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  return (
+    <ScreenLayout
+      showHeader={false}
+      scrollable={false}
+      backgroundColor={colors.background}
+    >
+      <View
+        style={[
+          globalStyles.flex1,
+          globalStyles.justifyCenter,
+          { paddingHorizontal: spacing.lg },
+        ]}
+      >
+        {renderHeader()}
+        {renderForm()}
+        {renderButtons()}
+        {renderFooter()}
       </View>
-
-      <View style={authStyles.socialContainer}>
-        <TouchableOpacity
-          style={authStyles.socialButton}
-          onPress={handleGoogleSignIn}
-        >
-          <AntDesign name="google" size={20} color="#DB4437" />
-          <Text style={authStyles.socialText}>Google</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={authStyles.socialButton}
-          onPress={handleAppleSignIn}
-        >
-          <AntDesign name="apple1" size={20} color="#000000" />
-          <Text style={authStyles.socialText}>Apple</Text>
-        </TouchableOpacity>
-      </View>
-
-      <AuthFooter>
-        <Text style={authStyles.bodyText}>Don't have an account? </Text>
-        <TouchableOpacity onPress={onSwitchToRegister}>
-          <Text style={authStyles.linkText}>Sign Up</Text>
-        </TouchableOpacity>
-      </AuthFooter>
-    </AuthLayout>
+    </ScreenLayout>
   );
 };
 

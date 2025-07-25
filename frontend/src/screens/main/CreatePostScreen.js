@@ -30,8 +30,9 @@ import {
   Check,
   LayoutDashboard,
 } from "lucide-react-native";
-import TopNav from "@components/layout/TopNav";
-import { mainStyles } from "@styles/mainStyles";
+import { globalStyles, colors, spacing } from "@styles/designSystem";
+import ScreenLayout from "@components/layout/ScreenLayout";
+import StandardHeader from "@components/layout/StandardHeader";
 
 const CreatePostScreen = ({ user, onCreatePost, onClose }) => {
   const [postContent, setPostContent] = useState("");

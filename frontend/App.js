@@ -1,20 +1,30 @@
 // File: frontend/App.js
-import MainApp from "@screens/main/MainApp";
+import { StatusBar } from "expo-status-bar";
+import { AuthProvider, useAuth } from "./src/contexts/AuthContext";
+import { colors } from "./src/styles/designSystem";
+import AuthFlow from "./src/screens/auth/AuthFlow";
+import MainApp from "./src/screens/main/MainApp";
+import LoadingScreen from "./src/screens/auth/LoadingScreen";
+
+const AppContent = () => {
+  const { isAuthenticated, loading, user } = useAuth();
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
+
+  if (!isAuthenticated) {
+    return <AuthFlow />;
+  }
+
+  return <MainApp user={user} />;
+};
 
 export default function App() {
-  const mockUser = {
-    id: 1,
-    email: "test@example.com",
-    firstName: "Test",
-    lastName: "User",
-    neighborhoodId: 1,
-    neighborhoodName: "Downtown Test Area",
-    isVerified: true,
-  };
-
-  const handleLogout = () => {
-    console.log("Logout pressed");
-  };
-
-  return <MainApp user={mockUser} onLogout={handleLogout} />;
+  return (
+    <AuthProvider>
+      <StatusBar style="dark" backgroundColor={colors.surface} />
+      <AppContent />
+    </AuthProvider>
+  );
 }

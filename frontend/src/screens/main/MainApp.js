@@ -1,7 +1,8 @@
 // File: frontend/src/screens/main/MainApp.js
-import { useState, useEffect } from "react";
-import { View, Alert, Modal } from "react-native";
-import { mainStyles } from "@styles/mainStyles";
+import React, { useState, useEffect } from "react";
+import { View, Modal } from "react-native";
+import { globalStyles } from "@styles/designSystem";
+import { useAuth } from "@contexts/AuthContext";
 import TabNavigation from "@components/layout/TabNavigation";
 import apiService from "@services/api";
 import HomeScreen from "./HomeScreen";
@@ -10,7 +11,8 @@ import CreatePostScreen from "./CreatePostScreen";
 import AlertsScreen from "./AlertsScreen";
 import ProfileScreen from "./ProfileScreen";
 
-const MainApp = ({ user, onLogout }) => {
+const MainApp = ({ user }) => {
+  const { logout } = useAuth();
   const [activeTab, setActiveTab] = useState("home");
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [alertCounts, setAlertCounts] = useState({
@@ -21,16 +23,20 @@ const MainApp = ({ user, onLogout }) => {
   });
 
   useEffect(() => {
-    loadAlertCounts();
+    if (user?.neighborhoodId) {
+      loadAlertCounts();
 
-    const interval = setInterval(loadAlertCounts, 30000);
-    return () => clearInterval(interval);
+      const interval = setInterval(loadAlertCounts, 30000);
+      return () => clearInterval(interval);
+    }
   }, [user?.neighborhoodId]);
 
   const loadAlertCounts = async () => {
-    try {
-      if (!user?.neighborhoodId) return;
+    if (!user?.neighborhoodId) {
+      return;
+    }
 
+    try {
       const result = await apiService.getAlerts(user.neighborhoodId);
       if (result.success) {
         const alerts = result.data.alerts || [];
@@ -59,17 +65,33 @@ const MainApp = ({ user, onLogout }) => {
     setShowCreatePost(false);
   };
 
-  const handleCreatePost = (postData) => {
-    console.log("New post created:", postData);
-    setShowCreatePost(false);
+  const handleCreatePost = async (postData) => {
+    try {
+      const result = await apiService.createPost({
+        ...postData,
+        neighborhoodId: user.neighborhoodId,
+      });
+
+      if (result.success) {
+        console.log("Post created successfully:", result.data);
+        setShowCreatePost(false);
+
+        if (activeTab === "home") {
+        }
+      }
+    } catch (error) {
+      console.error("Error creating post:", error);
+    }
   };
 
   const handleNavigateToPost = (postId) => {
-    Alert.alert("Navigate to Post", `Post ID: ${postId}`);
+    // TODO: Implement post detail navigation
+    console.log("Navigate to post:", postId);
   };
 
   const handleNavigateToProfile = (userId) => {
-    Alert.alert("Navigate to Profile", `User ID: ${userId}`);
+    // TODO: Implement profile navigation
+    console.log("Navigate to profile:", userId);
   };
 
   const renderCurrentScreen = () => {
@@ -78,29 +100,30 @@ const MainApp = ({ user, onLogout }) => {
       onNavigateToPost: handleNavigateToPost,
       onNavigateToProfile: handleNavigateToProfile,
       onCreatePost: handleCreatePost,
-      onLogout,
+      onLogout: logout,
+      alertCounts,
     };
 
     switch (activeTab) {
       case "home":
-        return <HomeScreen {...screenProps} alertCounts={alertCounts} />;
+        return <HomeScreen {...screenProps} />;
 
       case "weather":
         return <WeatherScreen {...screenProps} />;
 
       case "alerts":
-        return <AlertsScreen {...screenProps} alertCounts={alertCounts} />;
+        return <AlertsScreen {...screenProps} />;
 
       case "profile":
         return <ProfileScreen {...screenProps} />;
 
       default:
-        return <HomeScreen {...screenProps} alertCounts={alertCounts} />;
+        return <HomeScreen {...screenProps} />;
     }
   };
 
   return (
-    <View style={mainStyles.container}>
+    <View style={globalStyles.container}>
       {renderCurrentScreen()}
 
       {!showCreatePost && (

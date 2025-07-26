@@ -22,7 +22,7 @@ const ScreenLayout = ({
   backgroundColor = colors.background,
   contentPadding = true,
   keyboardAvoiding = false,
-  safeAreaBackground = colors.surface,
+  safeAreaBackground = colors.background,
 }) => {
   const ContentWrapper = scrollable ? ScrollView : View;
 

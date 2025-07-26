@@ -32,7 +32,6 @@ const LoginScreen = ({
 
   const updateField = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: null }));
     }
@@ -212,7 +211,7 @@ const LoginScreen = ({
   return (
     <ScreenLayout
       showHeader={false}
-      scrollable={false}
+      scrollable={true}
       backgroundColor={colors.background}
     >
       <View

@@ -4,7 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 const getBaseURL = () => {
   if (__DEV__) {
     // For development
-    return "http://localhost:3000";
+    return "http://192.168.1.89:3000";
   } else {
     // Production URL
     return "https://your-production-backend.com";

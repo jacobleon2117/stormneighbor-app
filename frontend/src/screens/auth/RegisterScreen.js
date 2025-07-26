@@ -271,7 +271,7 @@ const RegisterScreen = ({ onRegister, onSwitchToLogin, loading = false }) => {
   return (
     <ScreenLayout
       showHeader={false}
-      scrollable={false}
+      scrollable={true}
       backgroundColor={colors.background}
     >
       <View

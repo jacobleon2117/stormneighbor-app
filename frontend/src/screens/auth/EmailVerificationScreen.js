@@ -1,5 +1,5 @@
 // File: frontend/src/screens/auth/EmailVerificationScreen.js
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,13 +8,14 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { CheckCircle, RotateCcw } from "lucide-react-native";
-
-import AuthLayout, {
-  AuthHeader,
-  AuthButtons,
-  AuthFooter,
-} from "@components/AuthLayout";
-import { authStyles, colors } from "@styles/authStyles";
+import {
+  globalStyles,
+  colors,
+  spacing,
+  createButtonStyle,
+} from "@styles/designSystem";
+import ScreenLayout from "@components/layout/ScreenLayout";
+import StandardHeader from "@components/layout/StandardHeader";
 import apiService from "@services/api";
 
 const EmailVerificationScreen = ({ userEmail, onVerified, onBack }) => {
@@ -41,13 +42,7 @@ const EmailVerificationScreen = ({ userEmail, onVerified, onBack }) => {
   const handleCheckVerification = async () => {
     setChecking(true);
     try {
-      const checkingAlert = setTimeout(() => {
-        Alert.alert("Checking...", "We're checking your verification status");
-      }, 500);
-
       const result = await apiService.checkEmailVerification();
-
-      clearTimeout(checkingAlert);
 
       if (result.success && result.verified) {
         Alert.alert("Success!", "Your email has been verified!", [
@@ -101,112 +96,143 @@ const EmailVerificationScreen = ({ userEmail, onVerified, onBack }) => {
   };
 
   return (
-    <AuthLayout showBackButton={!!onBack} onBack={onBack}>
-      <AuthHeader
-        title={<Text style={authStyles.title}>Check Your Email</Text>}
-        subtitle={
-          <Text style={authStyles.subtitle}>
+    <ScreenLayout
+      showHeader={false}
+      scrollable={false}
+      backgroundColor={colors.background}
+    >
+      <StandardHeader showBack={!!onBack} onBack={onBack} title="" />
+
+      <View
+        style={[
+          globalStyles.flex1,
+          globalStyles.justifyCenter,
+          { paddingHorizontal: spacing.lg },
+        ]}
+      >
+        <View style={[globalStyles.center, { marginBottom: spacing.xxxxl }]}>
+          <Text style={[globalStyles.title, { marginBottom: spacing.md }]}>
+            Check Your Email
+          </Text>
+          <Text style={[globalStyles.bodySecondary, { textAlign: "center" }]}>
             We sent a verification email to{" "}
-            <Text style={authStyles.linkText}>
+            <Text style={globalStyles.link}>
               {userEmail || "your email address"}
             </Text>
           </Text>
-        }
-      />
+        </View>
 
-      <View style={[authStyles.card, { marginBottom: 32 }]}>
-        <Text style={[authStyles.label, { marginBottom: 16 }]}>
-          What to do next:
-        </Text>
+        <View style={[globalStyles.card, { marginBottom: spacing.xxxxl }]}>
+          <Text
+            style={[
+              globalStyles.body,
+              { fontWeight: "600", marginBottom: spacing.lg },
+            ]}
+          >
+            What to do next:
+          </Text>
 
-        <View style={{ gap: 12 }}>
-          <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
-            <Text
-              style={[authStyles.linkText, { marginRight: 12, minWidth: 20 }]}
-            >
-              1
-            </Text>
-            <Text style={[authStyles.bodyText, { flex: 1 }]}>
-              Check your email inbox (and spam folder)
-            </Text>
-          </View>
+          <View style={{ gap: spacing.md }}>
+            <View style={globalStyles.row}>
+              <Text
+                style={[
+                  globalStyles.link,
+                  { marginRight: spacing.md, minWidth: 20 },
+                ]}
+              >
+                1
+              </Text>
+              <Text style={[globalStyles.bodySecondary, globalStyles.flex1]}>
+                Check your email inbox (and spam folder)
+              </Text>
+            </View>
 
-          <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
-            <Text
-              style={[authStyles.linkText, { marginRight: 12, minWidth: 20 }]}
-            >
-              2
-            </Text>
-            <Text style={[authStyles.bodyText, { flex: 1 }]}>
-              Click the "Verify Email" button in the email
-            </Text>
-          </View>
+            <View style={globalStyles.row}>
+              <Text
+                style={[
+                  globalStyles.link,
+                  { marginRight: spacing.md, minWidth: 20 },
+                ]}
+              >
+                2
+              </Text>
+              <Text style={[globalStyles.bodySecondary, globalStyles.flex1]}>
+                Click the "Verify Email" button in the email
+              </Text>
+            </View>
 
-          <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
-            <Text
-              style={[authStyles.linkText, { marginRight: 12, minWidth: 20 }]}
-            >
-              3
-            </Text>
-            <Text style={[authStyles.bodyText, { flex: 1 }]}>
-              Come back here and tap "I've Verified"
-            </Text>
+            <View style={globalStyles.row}>
+              <Text
+                style={[
+                  globalStyles.link,
+                  { marginRight: spacing.md, minWidth: 20 },
+                ]}
+              >
+                3
+              </Text>
+              <Text style={[globalStyles.bodySecondary, globalStyles.flex1]}>
+                Come back here and tap "I've Verified"
+              </Text>
+            </View>
           </View>
         </View>
+
+        <View style={{ marginBottom: spacing.xl }}>
+          <TouchableOpacity
+            style={[
+              createButtonStyle("primary", "large"),
+              (checking || loading) && globalStyles.buttonDisabled,
+            ]}
+            onPress={handleCheckVerification}
+            disabled={checking || loading}
+          >
+            {checking ? (
+              <View style={globalStyles.buttonContent}>
+                <ActivityIndicator color={colors.text.inverse} size="small" />
+                <Text style={globalStyles.buttonPrimaryText}>
+                  Checking verification...
+                </Text>
+              </View>
+            ) : (
+              <View style={globalStyles.buttonContent}>
+                <CheckCircle size={20} color={colors.text.inverse} />
+                <Text style={globalStyles.buttonPrimaryText}>
+                  I've Verified
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              createButtonStyle("secondary", "large"),
+              { marginTop: spacing.md },
+              (!canResend || resendLoading) && globalStyles.buttonDisabled,
+            ]}
+            onPress={handleResendEmail}
+            disabled={!canResend || resendLoading}
+          >
+            {resendLoading ? (
+              <ActivityIndicator color={colors.primary} />
+            ) : (
+              <View style={globalStyles.buttonContent}>
+                <RotateCcw size={20} color={colors.primary} />
+                <Text style={globalStyles.buttonSecondaryText}>
+                  {getResendButtonText()}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        <View style={[globalStyles.row, globalStyles.center]}>
+          <Text style={globalStyles.bodySecondary}>Wrong email address? </Text>
+          <TouchableOpacity onPress={onBack}>
+            <Text style={globalStyles.link}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-
-      <AuthButtons>
-        <TouchableOpacity
-          style={[
-            authStyles.primaryButton,
-            (checking || loading) && authStyles.buttonDisabled,
-          ]}
-          onPress={handleCheckVerification}
-          disabled={checking || loading}
-        >
-          {checking ? (
-            <View style={authStyles.buttonContent}>
-              <ActivityIndicator color={colors.text.inverse} size="small" />
-              <Text style={authStyles.primaryButtonText}>
-                Checking verification...
-              </Text>
-            </View>
-          ) : (
-            <View style={authStyles.buttonContent}>
-              <CheckCircle size={20} color={colors.text.inverse} />
-              <Text style={authStyles.primaryButtonText}>I've Verified</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            authStyles.secondaryButton,
-            (!canResend || resendLoading) && authStyles.buttonDisabled,
-          ]}
-          onPress={handleResendEmail}
-          disabled={!canResend || resendLoading}
-        >
-          {resendLoading ? (
-            <ActivityIndicator color={colors.primary} />
-          ) : (
-            <View style={authStyles.buttonContent}>
-              <RotateCcw size={20} color={colors.primary} />
-              <Text style={authStyles.secondaryButtonText}>
-                {getResendButtonText()}
-              </Text>
-            </View>
-          )}
-        </TouchableOpacity>
-      </AuthButtons>
-
-      <AuthFooter>
-        <Text style={authStyles.bodyText}>Wrong email address? </Text>
-        <TouchableOpacity onPress={onBack}>
-          <Text style={authStyles.linkText}>Go Back</Text>
-        </TouchableOpacity>
-      </AuthFooter>
-    </AuthLayout>
+    </ScreenLayout>
   );
 };
 

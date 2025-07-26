@@ -1,227 +1,292 @@
 // File: frontend/src/screens/auth/RegisterScreen.js
-import { useState } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { Mail, Eye, EyeOff, User } from "lucide-react-native";
-import { AntDesign } from "@expo/vector-icons";
+import {
+  globalStyles,
+  colors,
+  spacing,
+  createButtonStyle,
+} from "@styles/designSystem";
+import ScreenLayout from "@components/layout/ScreenLayout";
 
-import AuthLayout, {
-  AuthHeader,
-  AuthButtons,
-  AuthFooter,
-} from "@components/AuthLayout";
-import { authStyles, colors } from "@styles/authStyles";
-import apiService from "@services/api";
-
-const RegisterScreen = ({ onRegister, onSwitchToLogin }) => {
+const RegisterScreen = ({ onRegister, onSwitchToLogin, loading = false }) => {
   const [formData, setFormData] = useState({
-    fullName: "",
+    firstName: "",
+    lastName: "",
     email: "",
     password: "",
   });
-  const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState({});
 
   const updateField = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: null }));
+    }
   };
 
   const validateForm = () => {
-    const { fullName, email, password } = formData;
+    const newErrors = {};
 
-    if (!fullName.trim() || !email.trim() || !password.trim()) {
-      Alert.alert("Error", "Please fill in all required fields");
-      return false;
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = "First name is required";
     }
 
-    if (password.length < 8) {
-      Alert.alert("Error", "Password must be at least 8 characters long");
-      return false;
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = "Last name is required";
     }
 
-    if (!/\S+@\S+\.\S+/.test(email)) {
-      Alert.alert("Error", "Please enter a valid email address");
-      return false;
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "Enter a valid email address";
     }
 
-    return true;
+    if (!formData.password.trim()) {
+      newErrors.password = "Password is required";
+    } else if (formData.password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleRegister = async () => {
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      return;
+    }
 
-    setLoading(true);
     try {
-      const userData = formData;
-      const nameParts = userData.fullName.trim().split(" ");
-      const firstName = nameParts.shift() || "";
-      const lastName = nameParts.join(" ") || "";
-
-      const result = await apiService.register({
-        ...userData,
-        firstName: firstName,
-        lastName: lastName,
-        email: userData.email.trim(),
-      });
-
-      if (result.success) {
-        Alert.alert("Success", "Account created successfully!", [
-          { text: "OK", onPress: () => onRegister(result.data) },
-        ]);
-      } else {
-        Alert.alert("Registration Failed", result.error);
-      }
+      await onRegister(formData);
     } catch (error) {
+      console.error("Register error:", error);
       Alert.alert("Error", "Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
     }
   };
 
-  const handleGoogleSignUp = () => {
-    Alert.alert(
-      "Feature In Development",
-      "Google sign-up is currently being developed and will be available in a future update.",
-      [{ text: "OK" }]
-    );
-  };
+  const renderHeader = () => (
+    <View style={[globalStyles.center, { marginBottom: spacing.xxxl }]}>
+      <Text style={[globalStyles.title, { marginBottom: spacing.md }]}>
+        Create Account
+      </Text>
+      <Text style={globalStyles.bodySecondary}>
+        Join your neighborhood community
+      </Text>
+    </View>
+  );
 
-  const handleAppleSignUp = () => {
-    Alert.alert(
-      "Feature In Development",
-      "Apple sign-up is currently being developed and will be available in a future update.",
-      [{ text: "OK" }]
-    );
-  };
+  const renderForm = () => (
+    <View style={{ marginBottom: spacing.xxl }}>
+      {/* Name Fields */}
+      <View
+        style={[
+          globalStyles.row,
+          { marginBottom: spacing.lg, gap: spacing.md },
+        ]}
+      >
+        <View style={globalStyles.flex1}>
+          <Text style={globalStyles.label}>First Name</Text>
+          <TextInput
+            style={[
+              globalStyles.input,
+              errors.firstName && { borderColor: colors.error, borderWidth: 2 },
+            ]}
+            value={formData.firstName}
+            onChangeText={(value) => updateField("firstName", value)}
+            placeholder="First name"
+            placeholderTextColor={colors.text.muted}
+            autoCapitalize="words"
+            editable={!loading}
+          />
+          {errors.firstName && (
+            <Text
+              style={[
+                globalStyles.caption,
+                { color: colors.error, marginTop: spacing.xs },
+              ]}
+            >
+              {errors.firstName}
+            </Text>
+          )}
+        </View>
+
+        <View style={globalStyles.flex1}>
+          <Text style={globalStyles.label}>Last Name</Text>
+          <TextInput
+            style={[
+              globalStyles.input,
+              errors.lastName && { borderColor: colors.error, borderWidth: 2 },
+            ]}
+            value={formData.lastName}
+            onChangeText={(value) => updateField("lastName", value)}
+            placeholder="Last name"
+            placeholderTextColor={colors.text.muted}
+            autoCapitalize="words"
+            editable={!loading}
+          />
+          {errors.lastName && (
+            <Text
+              style={[
+                globalStyles.caption,
+                { color: colors.error, marginTop: spacing.xs },
+              ]}
+            >
+              {errors.lastName}
+            </Text>
+          )}
+        </View>
+      </View>
+
+      {/* Email Field */}
+      <View style={{ marginBottom: spacing.lg }}>
+        <Text style={globalStyles.label}>Email</Text>
+        <View style={{ position: "relative" }}>
+          <TextInput
+            style={[
+              globalStyles.input,
+              errors.email && { borderColor: colors.error, borderWidth: 2 },
+              { paddingRight: spacing.xxxxl },
+            ]}
+            value={formData.email}
+            onChangeText={(value) => updateField("email", value)}
+            placeholder="Enter your email"
+            placeholderTextColor={colors.text.muted}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            editable={!loading}
+          />
+          <View
+            style={{
+              position: "absolute",
+              right: spacing.lg,
+              top: spacing.md,
+              justifyContent: "center",
+            }}
+          >
+            <Mail size={18} color={colors.text.muted} />
+          </View>
+        </View>
+        {errors.email && (
+          <Text
+            style={[
+              globalStyles.caption,
+              { color: colors.error, marginTop: spacing.xs },
+            ]}
+          >
+            {errors.email}
+          </Text>
+        )}
+      </View>
+
+      {/* Password Field */}
+      <View style={{ marginBottom: spacing.lg }}>
+        <Text style={globalStyles.label}>Password</Text>
+        <View style={{ position: "relative" }}>
+          <TextInput
+            style={[
+              globalStyles.input,
+              errors.password && { borderColor: colors.error, borderWidth: 2 },
+              { paddingRight: spacing.xxxxl },
+            ]}
+            value={formData.password}
+            onChangeText={(value) => updateField("password", value)}
+            placeholder="At least 8 characters"
+            placeholderTextColor={colors.text.muted}
+            secureTextEntry={!showPassword}
+            autoCapitalize="none"
+            autoCorrect={false}
+            editable={!loading}
+          />
+          <TouchableOpacity
+            style={{
+              position: "absolute",
+              right: spacing.lg,
+              top: spacing.md,
+              padding: spacing.xs,
+            }}
+            onPress={() => setShowPassword(!showPassword)}
+            disabled={loading}
+          >
+            {showPassword ? (
+              <EyeOff size={18} color={colors.text.muted} />
+            ) : (
+              <Eye size={18} color={colors.text.muted} />
+            )}
+          </TouchableOpacity>
+        </View>
+        {errors.password && (
+          <Text
+            style={[
+              globalStyles.caption,
+              { color: colors.error, marginTop: spacing.xs },
+            ]}
+          >
+            {errors.password}
+          </Text>
+        )}
+      </View>
+    </View>
+  );
+
+  const renderButtons = () => (
+    <View style={{ marginBottom: spacing.xl }}>
+      <TouchableOpacity
+        style={[
+          createButtonStyle("primary", "large"),
+          loading && globalStyles.buttonDisabled,
+        ]}
+        onPress={handleRegister}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color={colors.text.inverse} />
+        ) : (
+          <Text style={globalStyles.buttonPrimaryText}>Create Account</Text>
+        )}
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderFooter = () => (
+    <View style={[globalStyles.row, globalStyles.center]}>
+      <Text style={globalStyles.bodySecondary}>Already have an account? </Text>
+      <TouchableOpacity onPress={onSwitchToLogin} disabled={loading}>
+        <Text style={globalStyles.link}>Sign In</Text>
+      </TouchableOpacity>
+    </View>
+  );
 
   return (
-    <AuthLayout>
-      <View style={{ paddingTop: 20 }}>
-        <AuthHeader
-          title={<Text style={authStyles.title}>Create Account</Text>}
-          subtitle={
-            <Text style={authStyles.subtitle}>
-              Fill out your information to get started with your neighborhood
-            </Text>
-          }
-        />
+    <ScreenLayout
+      showHeader={false}
+      scrollable={false}
+      backgroundColor={colors.background}
+    >
+      <View
+        style={[
+          globalStyles.flex1,
+          globalStyles.justifyCenter,
+          { paddingHorizontal: spacing.lg },
+        ]}
+      >
+        {renderHeader()}
+        {renderForm()}
+        {renderButtons()}
+        {renderFooter()}
       </View>
-
-      <Text style={authStyles.label}>Full Name</Text>
-      <View style={{ position: "relative", marginBottom: 16 }}>
-        <TextInput
-          style={authStyles.input}
-          value={formData.fullName}
-          onChangeText={(value) => updateField("fullName", value)}
-          placeholder="Your name"
-          placeholderTextColor={colors.text.muted}
-          autoCapitalize="words"
-          autoCorrect={false}
-        />
-        <User
-          size={18}
-          color={colors.text.muted}
-          style={{ position: "absolute", right: 16, top: 16 }}
-        />
-      </View>
-
-      <Text style={authStyles.label}>Email</Text>
-      <View style={{ position: "relative", marginBottom: 16 }}>
-        <TextInput
-          style={authStyles.input}
-          value={formData.email}
-          onChangeText={(value) => updateField("email", value)}
-          placeholder="Enter your email"
-          placeholderTextColor={colors.text.muted}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-        <Mail
-          size={18}
-          color={colors.text.muted}
-          style={{ position: "absolute", right: 16, top: 16 }}
-        />
-      </View>
-
-      <Text style={authStyles.label}>Password</Text>
-      <View style={{ position: "relative", marginBottom: 16 }}>
-        <TextInput
-          style={[authStyles.input, { paddingRight: 50 }]}
-          value={formData.password}
-          onChangeText={(value) => updateField("password", value)}
-          placeholder="At least 8 characters"
-          placeholderTextColor={colors.text.muted}
-          secureTextEntry={!showPassword}
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-        <TouchableOpacity
-          style={{ position: "absolute", right: 16, top: 16, padding: 8 }}
-          onPress={() => setShowPassword(!showPassword)}
-        >
-          {showPassword ? (
-            <EyeOff size={18} color={colors.text.muted} />
-          ) : (
-            <Eye size={18} color={colors.text.muted} />
-          )}
-        </TouchableOpacity>
-      </View>
-
-      <AuthButtons>
-        <TouchableOpacity
-          style={[
-            authStyles.primaryButton,
-            loading && authStyles.buttonDisabled,
-          ]}
-          onPress={handleRegister}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color={colors.text.inverse} />
-          ) : (
-            <Text style={authStyles.primaryButtonText}>Create Account</Text>
-          )}
-        </TouchableOpacity>
-      </AuthButtons>
-
-      <View style={authStyles.dividerContainer}>
-        <View style={authStyles.dividerLine} />
-        <Text style={authStyles.dividerText}>or continue with</Text>
-        <View style={authStyles.dividerLine} />
-      </View>
-
-      <View style={authStyles.socialContainer}>
-        <TouchableOpacity
-          style={authStyles.socialButton}
-          onPress={handleGoogleSignUp}
-        >
-          <AntDesign name="google" size={20} color="#DB4437" />
-          <Text style={authStyles.socialText}>Google</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={authStyles.socialButton}
-          onPress={handleAppleSignUp}
-        >
-          <AntDesign name="apple1" size={20} color="#000000" />
-          <Text style={authStyles.socialText}>Apple</Text>
-        </TouchableOpacity>
-      </View>
-
-      <AuthFooter>
-        <Text style={authStyles.bodyText}>Already have an account? </Text>
-        <TouchableOpacity onPress={onSwitchToLogin}>
-          <Text style={authStyles.linkText}>Sign In</Text>
-        </TouchableOpacity>
-      </AuthFooter>
-    </AuthLayout>
+    </ScreenLayout>
   );
 };
 

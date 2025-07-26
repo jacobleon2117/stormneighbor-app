@@ -1,5 +1,6 @@
-// File: frontend/src/components/PostCard.js
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+// File: frontend/src/components/common/PostCard.js
+import React from "react";
+import { View, Text, TouchableOpacity, StyleSheet, Image } from "react-native";
 import {
   Heart,
   MessageSquare,
@@ -7,6 +8,7 @@ import {
   MoreHorizontal,
   MapPin,
 } from "lucide-react-native";
+import { globalStyles, colors, spacing } from "@styles/designSystem";
 
 const PostCard = ({
   post,
@@ -23,26 +25,74 @@ const PostCard = ({
     const diffInMinutes = Math.floor((now - postTime) / (1000 * 60));
 
     if (diffInMinutes < 1) return "Just now";
-    if (diffInMinutes < 60) return `${diffInMinutes}mins`;
-    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h`;
-    return `${Math.floor(diffInMinutes / 1440)} d`;
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
+    return `${Math.floor(diffInMinutes / 1440)}d ago`;
   };
 
   const getPostTypeBadge = () => {
-    if (post.isEmergency || post.postType === "safety_alert") {
+    if (
+      post.isEmergency ||
+      post.postType === "safety_alert" ||
+      post.postType === "safety"
+    ) {
       return (
-        <View style={styles.safetyAlertBadge}>
-          <Text style={styles.safetyAlertText}>Safety Alert</Text>
+        <View style={[styles.badge, styles.safetyBadge]}>
+          <Text style={[styles.badgeText, styles.safetyBadgeText]}>
+            Safety Alert
+          </Text>
         </View>
       );
     }
-    if (post.postType === "weather_update") {
+
+    if (post.postType === "weather_update" || post.postType === "weather") {
       return (
-        <View style={styles.weatherAlertBadge}>
-          <Text style={styles.weatherAlertText}>Weather Alert</Text>
+        <View style={[styles.badge, styles.weatherBadge]}>
+          <Text style={[styles.badgeText, styles.weatherBadgeText]}>
+            Weather Alert
+          </Text>
         </View>
       );
     }
+
+    if (post.postType === "announcement") {
+      return (
+        <View style={[styles.badge, styles.announcementBadge]}>
+          <Text style={[styles.badgeText, styles.announcementBadgeText]}>
+            Announcement
+          </Text>
+        </View>
+      );
+    }
+
+    if (post.postType === "event") {
+      return (
+        <View style={[styles.badge, styles.eventBadge]}>
+          <Text style={[styles.badgeText, styles.eventBadgeText]}>Event</Text>
+        </View>
+      );
+    }
+
+    if (post.postType === "question") {
+      return (
+        <View style={[styles.badge, styles.questionBadge]}>
+          <Text style={[styles.badgeText, styles.questionBadgeText]}>
+            Question
+          </Text>
+        </View>
+      );
+    }
+
+    if (post.postType === "help") {
+      return (
+        <View style={[styles.badge, styles.helpBadge]}>
+          <Text style={[styles.badgeText, styles.helpBadgeText]}>
+            Offer Help
+          </Text>
+        </View>
+      );
+    }
+
     return null;
   };
 
@@ -56,14 +106,17 @@ const PostCard = ({
         <View style={styles.authorSection}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>
-              {post.user?.firstName?.[0] || "U"}
+              {post.user?.firstName?.[0] || post.author?.[0] || "U"}
             </Text>
           </View>
+
           <View style={styles.authorInfo}>
             <View style={styles.authorNameAndBadge}>
               <View style={styles.authorNameRow}>
                 <Text style={styles.authorName}>
-                  {post.user?.firstName} {post.user?.lastName}
+                  {post.user?.firstName && post.user?.lastName
+                    ? `${post.user.firstName} ${post.user.lastName}`
+                    : post.author || "Unknown User"}
                 </Text>
                 <Text style={styles.dot}>·</Text>
                 <Text style={styles.postTime}>
@@ -72,9 +125,12 @@ const PostCard = ({
               </View>
               {getPostTypeBadge()}
             </View>
+
             <View style={styles.locationRow}>
-              <MapPin size={12} color="#6B7280" />
-              <Text style={styles.postLocation}>Downtown Area</Text>
+              <MapPin size={12} color={colors.text.muted} />
+              <Text style={styles.postLocation}>
+                {post.location || post.neighborhoodName || "Local Area"}
+              </Text>
             </View>
           </View>
         </View>
@@ -85,16 +141,21 @@ const PostCard = ({
         <Text style={styles.postText}>{post.content}</Text>
       </View>
 
-      {index === 0 && <View style={styles.placeholderImage} />}
-
-      {post.hasImage && <View style={styles.imagePlaceholder} />}
+      {/* Only show image if user actually uploaded one */}
+      {post.imageUrl && (
+        <Image
+          source={{ uri: post.imageUrl }}
+          style={styles.postImage}
+          resizeMode="cover"
+        />
+      )}
 
       <View style={styles.actions}>
         <TouchableOpacity
           style={styles.actionButton}
           onPress={() => onLike && onLike(post)}
         >
-          <Heart size={18} color="#6B7280" />
+          <Heart size={18} color={colors.text.muted} />
           <Text style={styles.actionText}>{post.reactionCount || 0}</Text>
         </TouchableOpacity>
 
@@ -102,7 +163,7 @@ const PostCard = ({
           style={styles.actionButton}
           onPress={() => onComment && onComment(post)}
         >
-          <MessageSquare size={18} color="#6B7280" />
+          <MessageSquare size={18} color={colors.text.muted} />
           <Text style={styles.actionText}>{post.commentCount || 0}</Text>
         </TouchableOpacity>
 
@@ -110,15 +171,15 @@ const PostCard = ({
           style={styles.actionButton}
           onPress={() => onShare && onShare(post)}
         >
-          <Share size={18} color="#6B7280" />
+          <Share size={18} color={colors.text.muted} />
           <Text style={styles.actionText}>Share</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.saveButton}
+          style={styles.moreButton}
           onPress={() => onMore && onMore(post)}
         >
-          <MoreHorizontal size={18} color="#6B7280" />
+          <MoreHorizontal size={18} color={colors.text.muted} />
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
@@ -127,10 +188,10 @@ const PostCard = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#FFFFFF",
-    marginHorizontal: 16,
-    marginBottom: 16,
-    paddingVertical: 16,
+    backgroundColor: colors.surface,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
+    paddingVertical: spacing.lg,
     borderRadius: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -138,159 +199,210 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: colors.borderLight,
   },
+
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    paddingHorizontal: 16,
-    marginBottom: 12,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md,
   },
-  dot: {
-    fontSize: 24,
-    color: "#6B7280",
-    marginHorizontal: 6,
-  },
+
   authorSection: {
     flexDirection: "row",
     alignItems: "flex-start",
     flex: 1,
   },
+
   avatar: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#E5E7EB",
+    backgroundColor: colors.borderLight,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    marginRight: spacing.md,
   },
+
   avatarText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#6B7280",
+    color: colors.text.muted,
+    fontFamily: "Inter",
   },
+
   authorInfo: {
     flex: 1,
   },
-  authorNameRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
-    marginBottom: 2,
-  },
-  authorName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1F2937",
-  },
+
   authorNameAndBadge: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 2,
+    marginBottom: spacing.xs,
   },
-  safetyAlertBadge: {
+
+  authorNameRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    height: 28,
-    width: 110,
-    borderWidth: 1,
-    borderColor: "#EF4444",
-    paddingHorizontal: 8,
-    borderRadius: 12,
-    backgroundColor: "#FEE2E2",
+    flexWrap: "wrap",
   },
-  safetyAlertText: {
-    fontSize: 12,
-    fontWeight: "500",
-    color: "#EF4444",
+
+  authorName: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.text.primary,
+    fontFamily: "Inter",
   },
-  weatherAlertBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    height: 28,
-    width: 110,
-    borderWidth: 1,
-    borderColor: "#F59E0B",
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    backgroundColor: "#FEF3C7",
+
+  dot: {
+    fontSize: 24,
+    color: colors.text.muted,
+    marginHorizontal: spacing.xs,
   },
-  weatherAlertText: {
-    fontSize: 12,
-    fontWeight: "500",
-    color: "#F59E0B",
-  },
+
   postTime: {
     fontSize: 14,
-    color: "#6B7280",
+    color: colors.text.muted,
+    fontFamily: "Inter",
   },
-  postLocation: {
-    fontSize: 14,
-    color: "#6B7280",
-    marginLeft: 4,
-  },
+
   locationRow: {
     flexDirection: "row",
     alignItems: "center",
   },
-  content: {
-    paddingHorizontal: 16,
-    marginBottom: 12,
+
+  postLocation: {
+    fontSize: 14,
+    color: colors.text.muted,
+    marginLeft: spacing.xs,
+    fontFamily: "Inter",
   },
+
+  // Badge styles
+  badge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+
+  badgeText: {
+    fontSize: 12,
+    fontWeight: "500",
+    fontFamily: "Inter",
+  },
+
+  safetyBadge: {
+    backgroundColor: colors.errorLight,
+    borderColor: colors.error,
+  },
+
+  safetyBadgeText: {
+    color: colors.error,
+  },
+
+  weatherBadge: {
+    backgroundColor: colors.warningLight,
+    borderColor: colors.warning,
+  },
+
+  weatherBadgeText: {
+    color: colors.warning,
+  },
+
+  announcementBadge: {
+    backgroundColor: colors.primaryLight,
+    borderColor: colors.primary,
+  },
+
+  announcementBadgeText: {
+    color: colors.primary,
+  },
+
+  eventBadge: {
+    backgroundColor: colors.primaryLight,
+    borderColor: colors.primary,
+  },
+
+  eventBadgeText: {
+    color: colors.primary,
+  },
+
+  questionBadge: {
+    backgroundColor: colors.successLight,
+    borderColor: colors.success,
+  },
+
+  questionBadgeText: {
+    color: colors.success,
+  },
+
+  helpBadge: {
+    backgroundColor: "#FED7AA",
+    borderColor: "#F97316",
+  },
+
+  helpBadgeText: {
+    color: "#F97316",
+  },
+
+  // Content styles
+  content: {
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+  },
+
   postTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#1F2937",
-    marginBottom: 4,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
+    fontFamily: "Inter",
   },
+
   postText: {
     fontSize: 15,
     lineHeight: 22,
-    color: "#374151",
+    color: colors.text.secondary,
+    fontFamily: "Inter",
   },
-  placeholderImage: {
-    height: 180,
-    marginHorizontal: 16,
-    marginBottom: 12,
-    backgroundColor: "#E0E0E0",
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#CCC",
-  },
-  imagePlaceholder: {
+
+  // Image styles
+  postImage: {
     height: 200,
-    marginHorizontal: 16,
-    marginBottom: 12,
-    backgroundColor: "#F3F4F6",
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
   },
+
+  // Actions
   actions: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingTop: 8,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
   },
+
   actionButton: {
     flexDirection: "row",
     alignItems: "center",
-    marginRight: 24,
-    paddingVertical: 4,
+    marginRight: spacing.xl,
+    paddingVertical: spacing.xs,
   },
+
   actionText: {
     fontSize: 14,
-    color: "#6B7280",
-    marginLeft: 6,
+    color: colors.text.muted,
+    marginLeft: spacing.xs,
+    fontFamily: "Inter",
   },
-  saveButton: {
+
+  moreButton: {
     marginLeft: "auto",
-    padding: 4,
+    padding: spacing.xs,
   },
 });
 

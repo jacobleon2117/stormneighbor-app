@@ -1,48 +1,90 @@
-// File path: frontend/src/screens/auth/WelcomeScreen.js
+// File: frontend/src/screens/auth/WelcomeScreen.js
+import React from "react";
 import { View, Text, TouchableOpacity, Image } from "react-native";
-import AuthLayout from "@components/AuthLayout";
-import { authStyles, colors } from "@styles/authStyles";
+import {
+  globalStyles,
+  colors,
+  spacing,
+  createButtonStyle,
+} from "@styles/designSystem";
+import ScreenLayout from "@components/layout/ScreenLayout";
 
 const WelcomeScreen = ({ onGetStarted, onSignIn }) => {
   return (
-    <AuthLayout scrollable={false}>
-      <View style={{ alignItems: "center", marginBottom: 40 }}>
-        <Image
-          source={require("../../../assets/images/illustration.png")}
-          style={{
-            width: 200,
-            height: 200,
-            borderRadius: 100,
-          }}
-          resizeMode="contain"
-        />
-      </View>
+    <ScreenLayout
+      showHeader={false}
+      scrollable={false}
+      backgroundColor={colors.surface}
+    >
+      <View
+        style={[
+          globalStyles.flex1,
+          globalStyles.justifyCenter,
+          { paddingHorizontal: spacing.lg },
+        ]}
+      >
+        {/* Illustration */}
+        <View style={[globalStyles.center, { marginBottom: spacing.xxxxl }]}>
+          <Image
+            source={require("../../../assets/images/illustration.png")}
+            style={styles.illustration}
+            resizeMode="contain"
+          />
+        </View>
 
-      <View style={{ alignItems: "center", marginBottom: 40 }}>
-        <Text style={[authStyles.title, { fontSize: 36, fontWeight: "700" }]}>
-          Storm<Text style={{ color: colors.primary }}>Neighbor</Text>
-        </Text>
-        <Text style={[authStyles.subtitle, { marginTop: 8 }]}>
-          Connect with your community during weather emergencies
-        </Text>
-      </View>
-
-      <View style={{ gap: 16, marginBottom: 20 }}>
-        <TouchableOpacity
-          style={authStyles.primaryButton}
-          onPress={onGetStarted}
-        >
-          <Text style={authStyles.primaryButtonText}>Let's get started</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={authStyles.secondaryButton} onPress={onSignIn}>
-          <Text style={authStyles.secondaryButtonText}>
-            I already have an account
+        {/* Logo and Title */}
+        <View style={[globalStyles.center, { marginBottom: spacing.xxxxl }]}>
+          <Text style={[globalStyles.title, { fontSize: 36 }]}>
+            Storm<Text style={{ color: colors.primary }}>Neighbor</Text>
           </Text>
-        </TouchableOpacity>
+
+          <Text
+            style={[
+              globalStyles.bodySecondary,
+              { textAlign: "center", marginTop: spacing.md },
+            ]}
+          >
+            Connect with your community during weather emergencies and stay
+            informed about local events
+          </Text>
+        </View>
+
+        {/* Action Buttons */}
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={createButtonStyle("primary", "large")}
+            onPress={onGetStarted}
+          >
+            <Text style={globalStyles.buttonPrimaryText}>Get Started</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              createButtonStyle("secondary", "large"),
+              { marginTop: spacing.md },
+            ]}
+            onPress={onSignIn}
+          >
+            <Text style={globalStyles.buttonSecondaryText}>
+              I already have an account
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
-    </AuthLayout>
+    </ScreenLayout>
   );
+};
+
+const styles = {
+  illustration: {
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+  },
+
+  buttonContainer: {
+    marginBottom: spacing.xl,
+  },
 };
 
 export default WelcomeScreen;

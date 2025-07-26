@@ -1,16 +1,22 @@
 // File: frontend/src/screens/auth/profile/NotificationsSetupScreen.js
-import { useState } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  StyleSheet,
 } from "react-native";
 import { Bell, ArrowRight } from "lucide-react-native";
-
-import AuthLayout, { AuthHeader, AuthButtons } from "@components/AuthLayout";
-import { authStyles, colors } from "@styles/authStyles";
+import {
+  globalStyles,
+  colors,
+  spacing,
+  createButtonStyle,
+} from "@styles/designSystem";
+import ScreenLayout from "@components/layout/ScreenLayout";
+import StandardHeader from "@components/layout/StandardHeader";
 
 const NotificationsSetupScreen = ({
   onNext,
@@ -76,15 +82,15 @@ const NotificationsSetupScreen = ({
   const renderToggleItem = (key, title, subtitle, value) => (
     <TouchableOpacity
       key={key}
-      style={[authStyles.card, authStyles.marginBottom16]}
+      style={[globalStyles.card, styles.toggleCard]}
       onPress={() => updateNestedField("notificationPreferences", key, !value)}
     >
-      <View style={[authStyles.row, authStyles.alignCenter]}>
-        <View style={authStyles.flex1}>
-          <Text style={[authStyles.bodyText, { fontWeight: "600" }]}>
+      <View style={[globalStyles.row, globalStyles.alignCenter]}>
+        <View style={globalStyles.flex1}>
+          <Text style={[globalStyles.body, { fontWeight: "600" }]}>
             {title}
           </Text>
-          <Text style={[authStyles.smallText, authStyles.marginTop8]}>
+          <Text style={[globalStyles.caption, { marginTop: spacing.xs }]}>
             {subtitle}
           </Text>
         </View>
@@ -92,85 +98,128 @@ const NotificationsSetupScreen = ({
         {/* Custom Toggle */}
         <View
           style={[
-            toggleStyles.container,
-            value && toggleStyles.containerActive,
+            styles.toggleContainer,
+            value && styles.toggleContainerActive,
           ]}
         >
-          <View style={[toggleStyles.dot, value && toggleStyles.dotActive]} />
+          <View style={[styles.toggleDot, value && styles.toggleDotActive]} />
         </View>
       </View>
     </TouchableOpacity>
   );
 
   return (
-    <AuthLayout showBackButton={!!onBack} onBack={onBack}>
-      <AuthHeader
-        icon={<Bell size={32} color={colors.primary} />}
-        title={<Text style={authStyles.title}>Notifications</Text>}
-        subtitle={
-          <Text style={authStyles.subtitle}>
+    <ScreenLayout showHeader={false} backgroundColor={colors.background}>
+      <StandardHeader
+        showBack={!!onBack}
+        onBack={onBack}
+        title="Notifications"
+      />
+
+      <View style={styles.container}>
+        <View style={[globalStyles.center, styles.headerSection]}>
+          <Bell size={32} color={colors.primary} />
+          <Text style={[globalStyles.title, styles.title]}>Notifications</Text>
+          <Text style={[globalStyles.bodySecondary, styles.subtitle]}>
             Choose what updates you'd like to receive. You can change these
             anytime in settings
           </Text>
-        }
-      />
+        </View>
 
-      <View style={authStyles.marginBottom24}>
-        {renderToggleItem(
-          "weatherAlerts",
-          "Weather Alerts",
-          "Severe weather warnings and updates",
-          formData.notificationPreferences.weatherAlerts
-        )}
-
-        {renderToggleItem(
-          "communityPosts",
-          "Community Posts",
-          "New posts and updates from neighbors",
-          formData.notificationPreferences.communityPosts
-        )}
-
-        {renderToggleItem(
-          "emergencyAlerts",
-          "Emergency Alerts",
-          "Critical emergency notifications",
-          formData.notificationPreferences.emergencyAlerts
-        )}
-      </View>
-
-      <AuthButtons>
-        <TouchableOpacity
-          style={[
-            authStyles.primaryButton,
-            loading && authStyles.buttonDisabled,
-          ]}
-          onPress={handleComplete}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color={colors.text.inverse} />
-          ) : (
-            <View style={authStyles.buttonContent}>
-              <Text style={authStyles.primaryButtonText}>Complete Setup</Text>
-              <ArrowRight size={20} color={colors.text.inverse} />
-            </View>
+        <View style={styles.toggleSection}>
+          {renderToggleItem(
+            "weatherAlerts",
+            "Weather Alerts",
+            "Severe weather warnings and updates",
+            formData.notificationPreferences.weatherAlerts
           )}
-        </TouchableOpacity>
 
-        <TouchableOpacity
-          style={authStyles.secondaryButton}
-          onPress={handleSkip}
-          disabled={loading}
-        >
-          <Text style={authStyles.secondaryButtonText}>Skip for now</Text>
-        </TouchableOpacity>
-      </AuthButtons>
-    </AuthLayout>
+          {renderToggleItem(
+            "communityPosts",
+            "Community Posts",
+            "New posts and updates from neighbors",
+            formData.notificationPreferences.communityPosts
+          )}
+
+          {renderToggleItem(
+            "emergencyAlerts",
+            "Emergency Alerts",
+            "Critical emergency notifications",
+            formData.notificationPreferences.emergencyAlerts
+          )}
+        </View>
+
+        <View style={styles.buttonSection}>
+          <TouchableOpacity
+            style={[
+              createButtonStyle("primary", "large"),
+              loading && globalStyles.buttonDisabled,
+            ]}
+            onPress={handleComplete}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color={colors.text.inverse} />
+            ) : (
+              <View style={globalStyles.buttonContent}>
+                <Text style={globalStyles.buttonPrimaryText}>
+                  Complete Setup
+                </Text>
+                <ArrowRight size={20} color={colors.text.inverse} />
+              </View>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[createButtonStyle("secondary", "large"), styles.skipButton]}
+            onPress={handleSkip}
+            disabled={loading}
+          >
+            <Text style={globalStyles.buttonSecondaryText}>Skip for now</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </ScreenLayout>
   );
 };
 
-const toggleStyles = {
+const styles = StyleSheet.create({
   container: {
+    paddingHorizontal: spacing.lg,
+    flex: 1,
+  },
+
+  headerSection: {
+    marginBottom: spacing.xl,
+    marginTop: spacing.xl,
+  },
+
+  title: {
+    marginTop: spacing.lg,
+    marginBottom: spacing.md,
+  },
+
+  subtitle: {
+    textAlign: "center",
+  },
+
+  toggleSection: {
+    marginBottom: spacing.xl,
+  },
+
+  toggleCard: {
+    marginBottom: spacing.lg,
+  },
+
+  buttonSection: {
+    marginBottom: spacing.xl,
+  },
+
+  skipButton: {
+    marginTop: spacing.md,
+  },
+
+  toggleContainer: {
     width: 50,
     height: 30,
     borderRadius: 15,
@@ -178,10 +227,12 @@ const toggleStyles = {
     justifyContent: "center",
     paddingHorizontal: 2,
   },
-  containerActive: {
+
+  toggleContainerActive: {
     backgroundColor: colors.primary,
   },
-  dot: {
+
+  toggleDot: {
     width: 26,
     height: 26,
     borderRadius: 13,
@@ -192,9 +243,10 @@ const toggleStyles = {
     shadowRadius: 2,
     elevation: 2,
   },
-  dotActive: {
+
+  toggleDotActive: {
     transform: [{ translateX: 20 }],
   },
-};
+});
 
 export default NotificationsSetupScreen;

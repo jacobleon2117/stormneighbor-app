@@ -1,18 +1,16 @@
 // File: frontend/src/screens/main/AlertsScreen.js
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   ScrollView,
-  StyleSheet,
-  Alert,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import {
   AlertTriangle,
   Zap,
-  Eye,
   MapPin,
   Share,
   Construction,
@@ -20,219 +18,74 @@ import {
   Users,
   Droplets,
   Wind,
+  Eye,
 } from "lucide-react-native";
 import { globalStyles, colors, spacing } from "@styles/designSystem";
 import ScreenLayout from "@components/layout/ScreenLayout";
-import StandardHeader from "@components/layout/StandardHeader";
-
-const OPENWEATHER_API_KEY = "";
-const WEATHER_API_BASE = "https://api.openweathermap.org/data/2.5";
-
-const ALERT_COLORS = {
-  CRITICAL: {
-    background: "#FEE2E2",
-    border: "#EF4444",
-    text: "#EF4444",
-    badge: "#EF4444",
-  },
-  HIGH: {
-    background: "#FEF3C7",
-    border: "#F59E0B",
-    text: "#F59E0B",
-    badge: "#F59E0B",
-  },
-  WATCH: {
-    background: "#FEF3C7",
-    border: "#FBBF24",
-    text: "#FBBF24",
-    badge: "#FBBF24",
-  },
-  COMMUNITY: {
-    background: "#DBEAFE",
-    border: "#3B82F6",
-    text: "#3B82F6",
-    badge: "#3B82F6",
-  },
-};
+import apiService from "@services/api";
 
 const AlertsScreen = ({ user, alertCounts }) => {
   const [selectedFilter, setSelectedFilter] = useState("All");
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    loadAlerts();
-  }, []);
+    if (user?.neighborhoodId) {
+      loadAlerts();
+    } else {
+      setLoading(false);
+    }
+  }, [user?.neighborhoodId]);
 
-  const loadAlerts = async () => {
+  const loadAlerts = useCallback(async () => {
+    if (!user?.neighborhoodId) {
+      setAlerts([]);
+      setLoading(false);
+      return;
+    }
+
     try {
-      setLoading(true);
+      setError(null);
+      const result = await apiService.getAlerts(user.neighborhoodId);
 
-      const [weatherAlerts, communityAlerts] = await Promise.all([
-        fetchWeatherAlerts(),
-        fetchCommunityAlerts(),
-      ]);
+      if (result.success) {
+        const alertsData = result.data.alerts || [];
 
-      const allAlerts = [...weatherAlerts, ...communityAlerts];
+        // Sort alerts by severity and timestamp
+        alertsData.sort((a, b) => {
+          const severityOrder = {
+            CRITICAL: 4,
+            HIGH: 3,
+            WATCH: 2,
+            COMMUNITY: 1,
+          };
+          if (severityOrder[a.severity] !== severityOrder[b.severity]) {
+            return severityOrder[b.severity] - severityOrder[a.severity];
+          }
+          return new Date(b.createdAt) - new Date(a.createdAt);
+        });
 
-      allAlerts.sort((a, b) => {
-        const severityOrder = { CRITICAL: 4, HIGH: 3, WATCH: 2, COMMUNITY: 1 };
-        if (severityOrder[a.type] !== severityOrder[b.type]) {
-          return severityOrder[b.type] - severityOrder[a.type];
-        }
-        return new Date(b.timestamp) - new Date(a.timestamp);
-      });
-
-      setAlerts(allAlerts);
+        setAlerts(alertsData);
+      } else {
+        setError(result.error || "Failed to load alerts");
+        setAlerts([]);
+      }
     } catch (error) {
       console.error("Error loading alerts:", error);
+      setError("Failed to load alerts");
+      setAlerts([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.neighborhoodId]);
 
-  const fetchWeatherAlerts = async () => {
-    try {
-      if (!OPENWEATHER_API_KEY || OPENWEATHER_API_KEY === "YOUR_API_KEY_HERE") {
-        return getMockWeatherAlerts();
-      }
-
-      const lat = 36.1539;
-      const lon = -95.9928;
-
-      const response = await fetch(
-        `https://api.openweathermap.org/data/3.0/onecall?lat=${lat}&lon=${lon}&appid=${OPENWEATHER_API_KEY}`
-      );
-
-      if (!response.ok) {
-        console.log("Using mock weather alerts - API not available");
-        return getMockWeatherAlerts();
-      }
-
-      const data = await response.json();
-
-      const weatherAlerts = (data.alerts || []).map((alert, index) => ({
-        id: `weather_${index}`,
-        type: getAlertSeverity(alert.event),
-        title: alert.event,
-        description: alert.description,
-        location: `${data.timezone}`,
-        timeAgo: getTimeAgo(alert.start),
-        timestamp: new Date(alert.start * 1000),
-        icon: getWeatherIcon(alert.event),
-        category: "weather",
-        isActive: alert.end > Date.now() / 1000,
-        source: "National Weather Service",
-      }));
-
-      return weatherAlerts.length > 0 ? weatherAlerts : getMockWeatherAlerts();
-    } catch (error) {
-      console.error("Error fetching weather alerts:", error);
-      return getMockWeatherAlerts();
-    }
-  };
-
-  const getMockWeatherAlerts = () => [
-    {
-      id: "weather_1",
-      type: "CRITICAL",
-      title: "Tornado Warning",
-      description:
-        "Tornado spotted 3 miles southwest of downtown. Take shelter immediately in interior room on lowest floor.",
-      location: "Tulsa, Rogers Counties",
-      timeAgo: "5 min ago",
-      timestamp: new Date(Date.now() - 5 * 60 * 1000),
-      icon: AlertTriangle,
-      category: "weather",
-      isActive: true,
-      source: "National Weather Service",
-    },
-    {
-      id: "weather_2",
-      type: "HIGH",
-      title: "Severe Thunderstorm Warning",
-      description:
-        "Severe thunderstorm with 70 mph winds and quarter-size hail moving northeast at 35 mph.",
-      location: "Tulsa, Rogers Counties",
-      timeAgo: "12 min ago",
-      timestamp: new Date(Date.now() - 12 * 60 * 1000),
-      icon: Zap,
-      category: "weather",
-      isActive: true,
-      source: "National Weather Service",
-    },
-  ];
-
-  const fetchCommunityAlerts = async () => {
-    try {
-      return [
-        {
-          id: "community_1",
-          type: "COMMUNITY",
-          title: "Road Closure Update",
-          description:
-            "Main Street closed between 1st and 3rd due to water main break. Expected to reopen by 6 PM.",
-          location: "Tulsa, Rogers Counties",
-          timeAgo: "2 hours ago",
-          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-          icon: Construction,
-          category: "community",
-          isActive: false,
-          source: "Community Member",
-          author: "City Manager",
-        },
-        {
-          id: "community_2",
-          type: "COMMUNITY",
-          title: "Neighborhood Watch Alert",
-          description:
-            "Suspicious activity reported on Oak Street. Residents advised to keep doors locked and report any unusual activity.",
-          location: "Oak Street Area",
-          timeAgo: "4 hours ago",
-          timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000),
-          icon: Users,
-          category: "safety",
-          isActive: false,
-          source: "Community Member",
-          author: "Neighborhood Watch",
-        },
-      ];
-    } catch (error) {
-      console.error("Error fetching community alerts:", error);
-      return [];
-    }
-  };
-
-  const getAlertSeverity = (event) => {
-    const eventLower = event.toLowerCase();
-    if (eventLower.includes("tornado") || eventLower.includes("emergency"))
-      return "CRITICAL";
-    if (eventLower.includes("severe") || eventLower.includes("warning"))
-      return "HIGH";
-    if (eventLower.includes("watch") || eventLower.includes("advisory"))
-      return "WATCH";
-    return "COMMUNITY";
-  };
-
-  const getWeatherIcon = (event) => {
-    const eventLower = event.toLowerCase();
-    if (eventLower.includes("tornado")) return AlertTriangle;
-    if (eventLower.includes("thunderstorm") || eventLower.includes("lightning"))
-      return Zap;
-    if (eventLower.includes("flood") || eventLower.includes("rain"))
-      return Droplets;
-    if (eventLower.includes("wind")) return Wind;
-    return Cloud;
-  };
-
-  const getTimeAgo = (timestamp) => {
-    const now = Date.now() / 1000;
-    const diff = now - timestamp;
-
-    if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
-    return `${Math.floor(diff / 86400)} days ago`;
-  };
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadAlerts();
+    setRefreshing(false);
+  }, [loadAlerts]);
 
   const getFilteredAlerts = () => {
     if (selectedFilter === "All") return alerts;
@@ -240,27 +93,96 @@ const AlertsScreen = ({ user, alertCounts }) => {
     return alerts.filter((alert) => {
       switch (selectedFilter) {
         case "Critical":
-          return alert.type === "CRITICAL";
+          return alert.severity === "CRITICAL";
         case "High":
-          return alert.type === "HIGH";
-        case "Low":
+          return alert.severity === "HIGH";
         case "Watch":
-          return alert.type === "WATCH";
+          return alert.severity === "WATCH";
         case "Weather":
-          return alert.category === "weather";
+          return alert.source === "NOAA" || alert.category === "weather";
         case "Safety":
           return alert.category === "safety";
         case "Community":
-          return alert.category === "community" || alert.type === "COMMUNITY";
+          return alert.source === "USER" || alert.category === "community";
         default:
           return true;
       }
     });
   };
 
-  const filteredAlerts = getFilteredAlerts();
-  const activeAlerts = filteredAlerts.filter((alert) => alert.isActive);
-  const recentAlerts = filteredAlerts.filter((alert) => !alert.isActive);
+  const getAlertIcon = (alert) => {
+    if (alert.category === "weather") {
+      if (alert.title?.toLowerCase().includes("tornado")) return AlertTriangle;
+      if (alert.title?.toLowerCase().includes("thunder")) return Zap;
+      if (alert.title?.toLowerCase().includes("flood")) return Droplets;
+      if (alert.title?.toLowerCase().includes("wind")) return Wind;
+      return Cloud;
+    }
+
+    if (alert.category === "safety") return AlertTriangle;
+    if (alert.category === "community") return Users;
+    return Construction;
+  };
+
+  const getAlertColors = (severity) => {
+    switch (severity) {
+      case "CRITICAL":
+        return {
+          background: colors.alert.critical.bg,
+          border: colors.alert.critical.border,
+          text: colors.alert.critical.text,
+        };
+      case "HIGH":
+        return {
+          background: colors.alert.warning.bg,
+          border: colors.alert.warning.border,
+          text: colors.alert.warning.text,
+        };
+      case "WATCH":
+        return {
+          background: colors.alert.warning.bg,
+          border: colors.alert.warning.border,
+          text: colors.alert.warning.text,
+        };
+      default:
+        return {
+          background: colors.alert.info.bg,
+          border: colors.alert.info.border,
+          text: colors.alert.info.text,
+        };
+    }
+  };
+
+  const formatTimeAgo = (timestamp) => {
+    const now = new Date();
+    const alertTime = new Date(timestamp);
+    const diffInMinutes = Math.floor((now - alertTime) / (1000 * 60));
+
+    if (diffInMinutes < 1) return "Just now";
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
+    return `${Math.floor(diffInMinutes / 1440)}d ago`;
+  };
+
+  const handleAlertPress = (alert) => {
+    Alert.alert(
+      alert.title,
+      `${alert.description}\n\nLocation: ${
+        alert.location || "Local area"
+      }\nTime: ${formatTimeAgo(alert.createdAt)}`,
+      [
+        { text: "OK" },
+        {
+          text: "View Details",
+          onPress: () => console.log("View alert details:", alert.id),
+        },
+      ]
+    );
+  };
+
+  const handleShareAlert = (alert) => {
+    Alert.alert("Share Alert", `Share "${alert.title}" with neighbors?`);
+  };
 
   const filters = [
     { id: "All", label: "All" },
@@ -272,31 +194,9 @@ const AlertsScreen = ({ user, alertCounts }) => {
     { id: "Community", label: "Community" },
   ];
 
-  const handleFilterPress = (filterId) => {
-    setSelectedFilter(filterId);
-  };
-
-  const handleAlertPress = (alert) => {
-    Alert.alert(
-      alert.title,
-      `${alert.description}\n\nLocation: ${alert.location}\nTime: ${alert.timeAgo}`,
-      [
-        { text: "OK" },
-        {
-          text: "View Details",
-          onPress: () => console.log("View alert details"),
-        },
-      ]
-    );
-  };
-
-  const handleShareAlert = (alert) => {
-    Alert.alert("Share Alert", `Share "${alert.title}" with neighbors?`);
-  };
-
-  const handleViewDetails = (alert) => {
-    console.log("View details for:", alert.title);
-  };
+  const filteredAlerts = getFilteredAlerts();
+  const activeAlerts = filteredAlerts.filter((alert) => alert.isActive);
+  const recentAlerts = filteredAlerts.filter((alert) => !alert.isActive);
 
   const renderFilterChips = () => (
     <ScrollView
@@ -312,7 +212,7 @@ const AlertsScreen = ({ user, alertCounts }) => {
             styles.filterChip,
             selectedFilter === filter.id && styles.filterChipActive,
           ]}
-          onPress={() => handleFilterPress(filter.id)}
+          onPress={() => setSelectedFilter(filter.id)}
         >
           <Text
             style={[
@@ -328,8 +228,8 @@ const AlertsScreen = ({ user, alertCounts }) => {
   );
 
   const renderAlertCard = (alert, isActive = true) => {
-    const colors = ALERT_COLORS[alert.type];
-    const IconComponent = alert.icon;
+    const alertColors = getAlertColors(alert.severity);
+    const IconComponent = getAlertIcon(alert);
 
     return (
       <TouchableOpacity
@@ -337,8 +237,8 @@ const AlertsScreen = ({ user, alertCounts }) => {
         style={[
           styles.alertCard,
           {
-            backgroundColor: colors.background,
-            borderColor: colors.border,
+            backgroundColor: alertColors.background,
+            borderColor: alertColors.border,
           },
         ]}
         onPress={() => handleAlertPress(alert)}
@@ -346,13 +246,15 @@ const AlertsScreen = ({ user, alertCounts }) => {
       >
         <View style={styles.alertHeader}>
           <View style={styles.alertTitleRow}>
-            <IconComponent size={20} color={colors.text} />
-            <Text style={[styles.alertTitle, { color: colors.text }]}>
+            <IconComponent size={20} color={alertColors.text} />
+            <Text style={[styles.alertTitle, { color: alertColors.text }]}>
               {alert.title}
             </Text>
           </View>
-          <View style={[styles.alertBadge, { backgroundColor: colors.badge }]}>
-            <Text style={styles.alertBadgeText}>{alert.type}</Text>
+          <View
+            style={[styles.alertBadge, { backgroundColor: alertColors.text }]}
+          >
+            <Text style={styles.alertBadgeText}>{alert.severity}</Text>
           </View>
         </View>
 
@@ -360,17 +262,19 @@ const AlertsScreen = ({ user, alertCounts }) => {
 
         <View style={styles.alertFooter}>
           <View style={styles.alertLocation}>
-            <MapPin size={14} color="#6B7280" />
-            <Text style={styles.alertLocationText}>{alert.location}</Text>
+            <MapPin size={14} color={colors.text.muted} />
+            <Text style={styles.alertLocationText}>
+              {alert.location || "Local area"}
+            </Text>
           </View>
-          <Text style={styles.alertTime}>{alert.timeAgo}</Text>
+          <Text style={styles.alertTime}>{formatTimeAgo(alert.createdAt)}</Text>
         </View>
 
         {isActive && (
           <View style={styles.alertActions}>
             <TouchableOpacity
               style={styles.viewDetailsButton}
-              onPress={() => handleViewDetails(alert)}
+              onPress={() => console.log("View details:", alert.id)}
             >
               <Text style={styles.viewDetailsText}>View Details</Text>
             </TouchableOpacity>
@@ -378,6 +282,7 @@ const AlertsScreen = ({ user, alertCounts }) => {
               style={styles.shareButton}
               onPress={() => handleShareAlert(alert)}
             >
+              <Share size={16} color={colors.text.secondary} />
               <Text style={styles.shareText}>Share</Text>
             </TouchableOpacity>
           </View>
@@ -386,254 +291,261 @@ const AlertsScreen = ({ user, alertCounts }) => {
     );
   };
 
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <TopNav title="Alerts" />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#3B82F6" />
-          <Text style={styles.loadingText}>Loading alerts...</Text>
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <View style={globalStyles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={globalStyles.loadingText}>Loading alerts...</Text>
         </View>
-      </View>
-    );
-  }
+      );
+    }
 
-  return (
-    <View style={styles.container}>
-      <TopNav title="Alerts" />
+    if (error) {
+      return (
+        <View style={globalStyles.emptyContainer}>
+          <AlertTriangle size={64} color={colors.error} />
+          <Text style={globalStyles.emptyTitle}>Failed to Load Alerts</Text>
+          <Text style={globalStyles.emptyText}>{error}</Text>
+          <TouchableOpacity
+            style={[globalStyles.buttonPrimary, { marginTop: spacing.lg }]}
+            onPress={loadAlerts}
+          >
+            <Text style={globalStyles.buttonPrimaryText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+    if (!user?.neighborhoodId) {
+      return (
+        <View style={globalStyles.emptyContainer}>
+          <AlertTriangle size={64} color={colors.text.muted} />
+          <Text style={globalStyles.emptyTitle}>No Neighborhood Set</Text>
+          <Text style={globalStyles.emptyText}>
+            Complete your profile setup to receive local alerts
+          </Text>
+        </View>
+      );
+    }
+
+    if (filteredAlerts.length === 0) {
+      return (
+        <View style={globalStyles.emptyContainer}>
+          <Eye size={64} color={colors.text.muted} />
+          <Text style={globalStyles.emptyTitle}>
+            No {selectedFilter.toLowerCase()} alerts
+          </Text>
+          <Text style={globalStyles.emptyText}>
+            {selectedFilter === "All"
+              ? "No alerts in your area right now"
+              : `No ${selectedFilter.toLowerCase()} alerts at this time`}
+          </Text>
+        </View>
+      );
+    }
+
+    return (
+      <>
         {renderFilterChips()}
 
-        {filteredAlerts.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyTitle}>
-              No {selectedFilter.toLowerCase()} alerts
-            </Text>
-            <Text style={styles.emptyText}>
-              {selectedFilter === "All"
-                ? "No alerts in your area right now"
-                : `No ${selectedFilter.toLowerCase()} alerts at this time`}
-            </Text>
-          </View>
-        ) : (
-          <>
-            {activeAlerts.length > 0 && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>
-                  Active Alerts{" "}
-                  {selectedFilter !== "All" && `(${selectedFilter})`}
-                </Text>
-                <View style={styles.alertsList}>
-                  {activeAlerts.map((alert) => renderAlertCard(alert, true))}
-                </View>
-              </View>
-            )}
+        <ScrollView
+          style={styles.alertsContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          {activeAlerts.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>
+                Active Alerts{" "}
+                {selectedFilter !== "All" && `(${selectedFilter})`}
+              </Text>
+              {activeAlerts.map((alert) => renderAlertCard(alert, true))}
+            </View>
+          )}
 
-            {recentAlerts.length > 0 && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>
-                  Recent Alerts{" "}
-                  {selectedFilter !== "All" && `(${selectedFilter})`}
-                </Text>
-                <View style={styles.alertsList}>
-                  {recentAlerts.map((alert) => renderAlertCard(alert, false))}
-                </View>
-              </View>
-            )}
-          </>
-        )}
+          {recentAlerts.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>
+                Recent Alerts{" "}
+                {selectedFilter !== "All" && `(${selectedFilter})`}
+              </Text>
+              {recentAlerts.map((alert) => renderAlertCard(alert, false))}
+            </View>
+          )}
 
-        <View style={styles.bottomSpacing} />
-      </ScrollView>
-    </View>
+          <View style={{ height: spacing.xxxxl }} />
+        </ScrollView>
+      </>
+    );
+  };
+
+  return (
+    <ScreenLayout title="Alerts" refreshing={refreshing} onRefresh={onRefresh}>
+      {renderContent()}
+    </ScreenLayout>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F8FAFF",
-  },
-  content: {
-    flex: 1,
+const styles = {
+  filtersContainer: {
+    marginTop: spacing.lg,
+    marginBottom: spacing.md,
   },
 
-  filtersContainer: {
-    marginTop: 16,
-    marginBottom: 8,
-  },
   filtersContent: {
-    paddingHorizontal: 16,
-    gap: 8,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
   },
+
   filterChip: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
-    marginRight: 8,
+    borderColor: colors.border,
+    marginRight: spacing.sm,
   },
+
   filterChipActive: {
-    backgroundColor: "#3B82F6",
-    borderColor: "#3B82F6",
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
+
   filterText: {
     fontSize: 14,
     fontWeight: "500",
-    color: "#374151",
+    color: colors.text.secondary,
   },
+
   filterTextActive: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontWeight: "600",
   },
 
-  section: {
-    marginTop: 24,
-    paddingHorizontal: 16,
+  alertsContainer: {
+    flex: 1,
   },
+
+  section: {
+    marginBottom: spacing.xl,
+  },
+
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#1F2937",
-    marginBottom: 16,
-  },
-  alertsList: {
-    gap: 12,
+    color: colors.text.primary,
+    marginBottom: spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
 
   alertCard: {
     borderRadius: 12,
-    padding: 16,
+    padding: spacing.lg,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    ...globalStyles.card,
   },
+
   alertHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
+
   alertTitleRow: {
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
-    marginRight: 12,
+    marginRight: spacing.md,
   },
+
   alertTitle: {
     fontSize: 16,
     fontWeight: "600",
-    marginLeft: 8,
+    marginLeft: spacing.sm,
     flex: 1,
   },
+
   alertBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
     borderRadius: 6,
   },
+
   alertBadgeText: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#FFFFFF",
+    color: colors.text.inverse,
   },
+
   alertDescription: {
     fontSize: 14,
-    color: "#374151",
+    color: colors.text.secondary,
     lineHeight: 20,
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
+
   alertFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
+
   alertLocation: {
     flexDirection: "row",
     alignItems: "center",
   },
+
   alertLocationText: {
     fontSize: 13,
-    color: "#6B7280",
-    marginLeft: 4,
+    color: colors.text.muted,
+    marginLeft: spacing.xs,
   },
+
   alertTime: {
     fontSize: 13,
-    color: "#6B7280",
+    color: colors.text.muted,
   },
 
   alertActions: {
     flexDirection: "row",
-    gap: 12,
+    gap: spacing.md,
   },
+
   viewDetailsButton: {
-    backgroundColor: "#3B82F6",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
     borderRadius: 8,
   },
+
   viewDetailsText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#FFFFFF",
+    color: colors.text.inverse,
   },
+
   shareButton: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: "transparent",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: colors.border,
+    gap: spacing.xs,
   },
+
   shareText: {
     fontSize: 14,
     fontWeight: "500",
-    color: "#374151",
+    color: colors.text.secondary,
   },
-
-  bottomSpacing: {
-    height: 100,
-  },
-
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 32,
-  },
-  loadingText: {
-    fontSize: 16,
-    color: "#6B7280",
-    marginTop: 16,
-    textAlign: "center",
-  },
-
-  emptyState: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 32,
-    paddingTop: 60,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#1F2937",
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  emptyText: {
-    fontSize: 16,
-    color: "#6B7280",
-    textAlign: "center",
-    lineHeight: 24,
-  },
-});
+};
 
 export default AlertsScreen;

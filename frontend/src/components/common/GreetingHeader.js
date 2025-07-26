@@ -1,6 +1,8 @@
-// File: frontend/src/components/GreetingHeader.js
-import { View, Text, StyleSheet } from "react-native";
+// File: frontend/src/components/common/GreetingHeader.js
+import React from "react";
+import { View, Text } from "react-native";
 import { AlertTriangle, Cloud, Bell, Sun } from "lucide-react-native";
+import { globalStyles, colors, spacing } from "@styles/designSystem";
 
 const GreetingHeader = ({ user, alertCounts = {} }) => {
   const getGreeting = () => {
@@ -18,14 +20,16 @@ const GreetingHeader = ({ user, alertCounts = {} }) => {
     iconColor,
     badgeColor
   ) => {
-    if (count <= 0) return null;
+    if (!count || count <= 0) return null;
 
     return (
       <View style={[styles.notificationCard, { backgroundColor: bgColor }]}>
         <View style={styles.iconContainer}>{icon}</View>
 
         <View style={[styles.numberBadge, { backgroundColor: badgeColor }]}>
-          <Text style={styles.badgeNumber}>{count}</Text>
+          <Text style={styles.badgeNumber}>
+            {count > 99 ? "99+" : String(count)}
+          </Text>
         </View>
       </View>
     );
@@ -34,7 +38,7 @@ const GreetingHeader = ({ user, alertCounts = {} }) => {
   return (
     <View style={styles.container}>
       <View style={styles.greetingLeft}>
-        <Sun size={20} color="#F59E0B" style={styles.greetingIcon} />
+        <Sun size={20} color={colors.warning} style={styles.greetingIcon} />
         <Text style={styles.greetingText}>
           {getGreeting()}, {user?.firstName || "Neighbor"}
         </Text>
@@ -42,69 +46,69 @@ const GreetingHeader = ({ user, alertCounts = {} }) => {
 
       <View style={styles.notificationCards}>
         {renderNotificationCard(
-          <AlertTriangle size={18} color="#EF4444" />,
+          <AlertTriangle size={18} color={colors.error} />,
           alertCounts.critical,
-          "#FEE2E2",
-          "#EF4444",
-          "#EF4444"
+          colors.errorLight,
+          colors.error,
+          colors.error
         )}
 
         {renderNotificationCard(
-          <Cloud size={18} color="#F59E0B" />,
+          <Cloud size={18} color={colors.warning} />,
           alertCounts.weather,
-          "#FEF3C7",
-          "#F59E0B",
-          "#F59E0B"
+          colors.warningLight,
+          colors.warning,
+          colors.warning
         )}
 
         {renderNotificationCard(
-          <Bell size={18} color="#3B82F6" />,
+          <Bell size={18} color={colors.primary} />,
           alertCounts.community,
-          "#DBEAFE",
-          "#3B82F6",
-          "#3B82F6"
+          colors.primaryLight,
+          colors.primary,
+          colors.primary
         )}
       </View>
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const styles = {
   container: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: "#FFFFFF",
-    marginHorizontal: 16,
-    marginBottom: 16,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.surface,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
     borderRadius: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
+    ...globalStyles.card,
   },
+
   greetingLeft: {
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
   },
+
   greetingIcon: {
-    marginRight: 8,
+    marginRight: spacing.sm,
   },
+
   greetingText: {
     fontSize: 16,
     fontWeight: "500",
-    color: "#1F2937",
+    color: colors.text.primary,
+    fontFamily: "Inter",
   },
+
   notificationCards: {
     flexDirection: "row",
-    gap: 8,
+    gap: spacing.sm,
   },
+
   notificationCard: {
     width: 40,
     height: 40,
@@ -113,10 +117,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     position: "relative",
   },
+
   iconContainer: {
     justifyContent: "center",
     alignItems: "center",
   },
+
   numberBadge: {
     position: "absolute",
     top: -4,
@@ -127,12 +133,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+
   badgeNumber: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 10,
     fontWeight: "700",
     textAlign: "center",
+    fontFamily: "Inter",
   },
-});
+};
 
 export default GreetingHeader;

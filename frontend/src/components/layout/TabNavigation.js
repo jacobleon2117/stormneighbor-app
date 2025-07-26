@@ -1,6 +1,8 @@
-// File: frontend/src/components/TabNavigation.js
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+// File: frontend/src/components/layout/TabNavigation.js
+import React from "react";
+import { View, Text, TouchableOpacity } from "react-native";
 import { Home, Cloud, Plus, AlertTriangle, User } from "lucide-react-native";
+import { globalStyles, colors, spacing } from "@styles/designSystem";
 
 const TabNavigation = ({ activeTab, onTabPress, alertCounts = {} }) => {
   const tabs = [
@@ -46,7 +48,7 @@ const TabNavigation = ({ activeTab, onTabPress, alertCounts = {} }) => {
           activeOpacity={0.7}
         >
           <View style={styles.createButtonCircle}>
-            <IconComponent size={18} color="#FFFFFF" />
+            <IconComponent size={18} color={colors.text.inverse} />
           </View>
         </TouchableOpacity>
       );
@@ -60,7 +62,10 @@ const TabNavigation = ({ activeTab, onTabPress, alertCounts = {} }) => {
         activeOpacity={0.7}
       >
         <View style={{ position: "relative" }}>
-          <IconComponent size={18} color={isActive ? "#3B82F6" : "#6B7280"} />
+          <IconComponent
+            size={18}
+            color={isActive ? colors.primary : colors.text.muted}
+          />
 
           {typeof tab.badge === "number" && tab.badge > 0 && (
             <View style={styles.badge}>
@@ -85,87 +90,90 @@ const TabNavigation = ({ activeTab, onTabPress, alertCounts = {} }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const styles = {
   container: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.lg,
     paddingBottom: 34,
   },
+
   tabBar: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderRadius: 999,
-    paddingVertical: 8,
-    marginHorizontal: 30,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-    borderWidth: 0.5,
-    borderColor: "#E5E7EB",
+    paddingVertical: spacing.sm,
+    marginHorizontal: spacing.xl,
     height: 64,
     zIndex: 2,
+    ...globalStyles.card,
   },
+
   tabItem: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 1,
+    paddingVertical: spacing.xs,
   },
+
   tabLabel: {
     fontSize: 11,
     fontWeight: "500",
-    color: "#6B7280",
-    marginTop: 2,
+    color: colors.text.muted,
+    marginTop: spacing.xs / 2,
+    fontFamily: "Inter",
   },
+
   tabLabelActive: {
-    color: "#3B82F6",
+    color: colors.primary,
     fontWeight: "600",
   },
+
   createButton: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 0,
   },
+
   createButtonCircle: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: "#3B82F6",
+    backgroundColor: colors.primary,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#3B82F6",
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 5,
-    marginTop: 0,
   },
+
   badge: {
     position: "absolute",
     top: -5,
     right: -5,
-    backgroundColor: "#EF4444",
+    backgroundColor: colors.error,
     borderRadius: 8,
     minWidth: 16,
     height: 16,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
-    borderColor: "#FFFFFF",
+    borderColor: colors.surface,
   },
+
   badgeText: {
-    color: "#FFFFFF",
+    color: colors.text.inverse,
     fontSize: 10,
     fontWeight: "600",
     textAlign: "center",
+    fontFamily: "Inter",
   },
-});
+};
 
 export default TabNavigation;

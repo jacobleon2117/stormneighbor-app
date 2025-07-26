@@ -1,7 +1,13 @@
-import { useEffect, useRef } from "react";
-import { View, Animated, StyleSheet } from "react-native";
+// File: frontend/src/components/common/LoadingSpinner.js
+import React, { useEffect, useRef } from "react";
+import { View, Animated } from "react-native";
+import { colors } from "@styles/designSystem";
 
-const LoadingSpinner = ({ size = 40, color = "#3B82F6", strokeWidth = 3 }) => {
+const LoadingSpinner = ({
+  size = 40,
+  color = colors.primary,
+  strokeWidth = 3,
+}) => {
   const spinValue = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -14,7 +20,7 @@ const LoadingSpinner = ({ size = 40, color = "#3B82F6", strokeWidth = 3 }) => {
       }).start(() => spin());
     };
     spin();
-  }, []);
+  }, [spinValue]);
 
   const spin = spinValue.interpolate({
     inputRange: [0, 1],
@@ -43,12 +49,13 @@ const LoadingSpinner = ({ size = 40, color = "#3B82F6", strokeWidth = 3 }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const styles = {
   container: {
     justifyContent: "center",
     alignItems: "center",
   },
+
   spinner: {},
-});
+};
 
 export default LoadingSpinner;

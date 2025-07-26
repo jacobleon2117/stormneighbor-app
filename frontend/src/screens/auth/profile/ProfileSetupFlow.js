@@ -1,12 +1,13 @@
 // File: frontend/src/screens/auth/profile/ProfileSetupFlow.js
-import { useState } from "react";
+import React, { useState } from "react";
 import { Alert } from "react-native";
 import LocationSetupScreen from "./LocationSetupScreen";
 import ProfileSetupScreenIndividual from "./ProfileSetupScreenIndividual";
 import NotificationsSetupScreen from "./NotificationsSetupScreen";
-import apiService from "@services/api";
+import { useAuth } from "@contexts/AuthContext";
 
 const ProfileSetupFlow = ({ onSetupComplete, onBack }) => {
+  const { updateProfile } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [setupData, setSetupData] = useState({
     location: {},
@@ -48,7 +49,7 @@ const ProfileSetupFlow = ({ onSetupComplete, onBack }) => {
     };
 
     try {
-      const result = await apiService.updateProfile(finalSetupData);
+      const result = await updateProfile(finalSetupData);
 
       if (result.success) {
         Alert.alert("Success!", "Your profile has been set up successfully!", [

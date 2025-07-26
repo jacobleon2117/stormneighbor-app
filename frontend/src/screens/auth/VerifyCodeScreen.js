@@ -1,5 +1,5 @@
-// File path: frontend/src/screens/auth/VerifyCodeScreen.js
-import { useState, useRef, useEffect } from "react";
+// File: frontend/src/screens/auth/VerifyCodeScreen.js
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,14 +8,15 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
-import { Shield, ArrowLeft, RotateCcw } from "lucide-react-native";
-
-import AuthLayout, {
-  AuthHeader,
-  AuthButtons,
-  AuthFooter,
-} from "@components/AuthLayout";
-import { authStyles, colors } from "@styles/authStyles";
+import { Shield, RotateCcw } from "lucide-react-native";
+import {
+  globalStyles,
+  colors,
+  spacing,
+  createButtonStyle,
+} from "@styles/designSystem";
+import ScreenLayout from "@components/layout/ScreenLayout";
+import StandardHeader from "@components/layout/StandardHeader";
 import apiService from "@services/api";
 
 const VerifyCodeScreen = ({ email, onCodeVerified, onBack, onResendCode }) => {
@@ -107,94 +108,120 @@ const VerifyCodeScreen = ({ email, onCodeVerified, onBack, onResendCode }) => {
   };
 
   return (
-    <AuthLayout showBackButton={!!onBack} onBack={onBack}>
-      <AuthHeader
-        icon={<Shield size={32} color={colors.primary} />}
-        title={<Text style={authStyles.title}>Enter Verification Code</Text>}
-        subtitle={
-          <Text style={authStyles.subtitle}>
-            We've sent a 6-digit code to{"\n"}
-            <Text style={authStyles.linkText}>{email}</Text>
-          </Text>
-        }
-      />
+    <ScreenLayout
+      showHeader={false}
+      scrollable={false}
+      backgroundColor={colors.background}
+    >
+      <StandardHeader showBack={!!onBack} onBack={onBack} title="" />
 
-      <View style={{ marginBottom: 32 }}>
-        <View style={codeInputStyles.container}>
-          {code.map((digit, index) => (
-            <TextInput
-              key={index}
-              ref={(ref) => (inputRefs.current[index] = ref)}
-              style={[
-                codeInputStyles.input,
-                digit ? codeInputStyles.inputFilled : null,
-              ]}
-              value={digit}
-              onChangeText={(value) => handleCodeChange(value.slice(-1), index)}
-              onKeyPress={(e) => handleKeyPress(e, index)}
-              keyboardType="numeric"
-              maxLength={1}
-              textAlign="center"
-              autoFocus={index === 0}
-            />
-          ))}
+      <View
+        style={[
+          globalStyles.flex1,
+          globalStyles.justifyCenter,
+          { paddingHorizontal: spacing.lg },
+        ]}
+      >
+        <View style={[globalStyles.center, { marginBottom: spacing.xxxxl }]}>
+          <Shield size={32} color={colors.primary} />
+          <Text
+            style={[
+              globalStyles.title,
+              { marginTop: spacing.lg, marginBottom: spacing.md },
+            ]}
+          >
+            Enter Verification Code
+          </Text>
+          <Text style={[globalStyles.bodySecondary, { textAlign: "center" }]}>
+            We've sent a 6-digit code to{"\n"}
+            <Text style={globalStyles.link}>{email}</Text>
+          </Text>
+        </View>
+
+        <View style={{ marginBottom: spacing.xxxxl }}>
+          <View style={styles.codeInputContainer}>
+            {code.map((digit, index) => (
+              <TextInput
+                key={index}
+                ref={(ref) => (inputRefs.current[index] = ref)}
+                style={[
+                  styles.codeInput,
+                  digit ? styles.codeInputFilled : null,
+                ]}
+                value={digit}
+                onChangeText={(value) =>
+                  handleCodeChange(value.slice(-1), index)
+                }
+                onKeyPress={(e) => handleKeyPress(e, index)}
+                keyboardType="numeric"
+                maxLength={1}
+                textAlign="center"
+                autoFocus={index === 0}
+                editable={!loading && !resendLoading}
+              />
+            ))}
+          </View>
+        </View>
+
+        <View style={{ marginBottom: spacing.xl }}>
+          <TouchableOpacity
+            style={[
+              createButtonStyle("primary", "large"),
+              loading && globalStyles.buttonDisabled,
+            ]}
+            onPress={handleVerifyCode}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color={colors.text.inverse} />
+            ) : (
+              <Text style={globalStyles.buttonPrimaryText}>Verify Code</Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              createButtonStyle("secondary", "large"),
+              { marginTop: spacing.md },
+              (!canResend || resendLoading) && globalStyles.buttonDisabled,
+            ]}
+            onPress={handleResendCode}
+            disabled={!canResend || resendLoading}
+          >
+            {resendLoading ? (
+              <ActivityIndicator color={colors.primary} />
+            ) : (
+              <View style={globalStyles.buttonContent}>
+                <RotateCcw size={20} color={colors.primary} />
+                <Text style={globalStyles.buttonSecondaryText}>
+                  {canResend ? "Resend Code" : `Resend Code (${countdown}s)`}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        <View style={[globalStyles.row, globalStyles.center]}>
+          <Text style={globalStyles.bodySecondary}>
+            Didn't receive the code?{" "}
+          </Text>
+          <TouchableOpacity onPress={onBack}>
+            <Text style={globalStyles.link}>Change Email</Text>
+          </TouchableOpacity>
         </View>
       </View>
-
-      <AuthButtons>
-        <TouchableOpacity
-          style={[
-            authStyles.primaryButton,
-            loading && authStyles.buttonDisabled,
-          ]}
-          onPress={handleVerifyCode}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color={colors.text.inverse} />
-          ) : (
-            <Text style={authStyles.primaryButtonText}>Verify Code</Text>
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            authStyles.secondaryButton,
-            (!canResend || resendLoading) && authStyles.buttonDisabled,
-          ]}
-          onPress={handleResendCode}
-          disabled={!canResend || resendLoading}
-        >
-          {resendLoading ? (
-            <ActivityIndicator color={colors.primary} />
-          ) : (
-            <View style={authStyles.buttonContent}>
-              <RotateCcw size={20} color={colors.primary} />
-              <Text style={authStyles.secondaryButtonText}>
-                {canResend ? "Resend Code" : `Resend Code ${countdown}s`}
-              </Text>
-            </View>
-          )}
-        </TouchableOpacity>
-      </AuthButtons>
-
-      <AuthFooter>
-        <Text style={authStyles.bodyText}>Didn't receive the code? </Text>
-        <TouchableOpacity onPress={onBack}>
-          <Text style={authStyles.linkText}>Change Email</Text>
-        </TouchableOpacity>
-      </AuthFooter>
-    </AuthLayout>
+    </ScreenLayout>
   );
 };
 
-const codeInputStyles = {
-  container: {
+const styles = {
+  codeInputContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    gap: 8,
+    gap: spacing.sm,
   },
-  input: {
+
+  codeInput: {
     width: 48,
     height: 56,
     backgroundColor: colors.surface,
@@ -204,10 +231,12 @@ const codeInputStyles = {
     fontSize: 24,
     fontWeight: "600",
     color: colors.text.primary,
+    fontFamily: "Inter",
   },
-  inputFilled: {
+
+  codeInputFilled: {
     borderColor: colors.primary,
-    backgroundColor: `${colors.primary}10`,
+    backgroundColor: colors.primaryLight,
   },
 };
 

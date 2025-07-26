@@ -1,5 +1,5 @@
 // File: frontend/src/screens/auth/profile/LocationSetupScreen.js
-import { useState } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -9,13 +9,14 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { MapPin, ArrowRight } from "lucide-react-native";
-
-import AuthLayout, {
-  AuthHeader,
-  AuthButtons,
-  AuthInput,
-} from "@components/AuthLayout";
-import { authStyles, colors } from "@styles/authStyles";
+import {
+  globalStyles,
+  colors,
+  spacing,
+  createButtonStyle,
+} from "@styles/designSystem";
+import ScreenLayout from "@components/layout/ScreenLayout";
+import StandardHeader from "@components/layout/StandardHeader";
 
 const LocationSetupScreen = ({ onNext, onBack, initialData = {} }) => {
   const [loading, setLoading] = useState(false);
@@ -44,10 +45,10 @@ const LocationSetupScreen = ({ onNext, onBack, initialData = {} }) => {
     if (!formData.state.trim()) {
       newErrors.state = "State is required";
     } else if (formData.state.length !== 2) {
-      newErrors.state = "State must be 2 letters";
+      newErrors.state = "State must be 2 letters (e.g., TX)";
     }
 
-    if (formData.zipCode && formData.zipCode.length !== 5) {
+    if (formData.zipCode && !/^\d{5}$/.test(formData.zipCode)) {
       newErrors.zipCode = "ZIP code must be 5 digits";
     }
 
@@ -86,58 +87,88 @@ const LocationSetupScreen = ({ onNext, onBack, initialData = {} }) => {
   };
 
   return (
-    <AuthLayout showBackButton={!!onBack} onBack={onBack}>
-      <AuthHeader
-        icon={<MapPin size={32} color={colors.primary} />}
-        title={<Text style={authStyles.title}>Your Location</Text>}
-        subtitle={
-          <Text style={authStyles.subtitle}>
+    <ScreenLayout showHeader={false} backgroundColor={colors.background}>
+      <StandardHeader
+        showBack={!!onBack}
+        onBack={onBack}
+        title="Location Setup"
+      />
+
+      <View style={{ paddingHorizontal: spacing.lg, flex: 1 }}>
+        <View
+          style={[
+            globalStyles.center,
+            { marginBottom: spacing.xl, marginTop: spacing.xl },
+          ]}
+        >
+          <MapPin size={32} color={colors.primary} />
+          <Text
+            style={[
+              globalStyles.title,
+              { marginTop: spacing.lg, marginBottom: spacing.md },
+            ]}
+          >
+            Your Location
+          </Text>
+          <Text style={[globalStyles.bodySecondary, { textAlign: "center" }]}>
             We use this information to find your neighborhood and provide local
             weather alerts
           </Text>
-        }
-      />
+        </View>
 
-      <AuthInput label={<Text style={authStyles.label}>Street Address</Text>}>
-        <TextInput
-          style={authStyles.input}
-          value={formData.address}
-          onChangeText={(value) => updateField("address", value)}
-          placeholder="Your address (optional)"
-          placeholderTextColor={colors.text.muted}
-          autoCapitalize="words"
-        />
-      </AuthInput>
+        {/* Street Address Field */}
+        <View style={{ marginBottom: spacing.lg }}>
+          <Text style={globalStyles.label}>Street Address</Text>
+          <TextInput
+            style={globalStyles.input}
+            value={formData.address}
+            onChangeText={(value) => updateField("address", value)}
+            placeholder="Your address (optional)"
+            placeholderTextColor={colors.text.muted}
+            autoCapitalize="words"
+            editable={!loading}
+          />
+        </View>
 
-      <View style={authStyles.row}>
-        <View style={[authStyles.flex1, { marginRight: 12 }]}>
-          <AuthInput
-            label={<Text style={authStyles.label}>City</Text>}
-            error={errors.city}
-          >
+        {/* City and State Row */}
+        <View
+          style={[
+            globalStyles.row,
+            { marginBottom: spacing.lg, gap: spacing.md },
+          ]}
+        >
+          <View style={[globalStyles.flex1, { marginRight: spacing.md }]}>
+            <Text style={globalStyles.label}>City</Text>
             <TextInput
               style={[
-                authStyles.input,
-                errors.city && { borderColor: colors.error },
+                globalStyles.input,
+                errors.city && { borderColor: colors.error, borderWidth: 2 },
               ]}
               value={formData.city}
               onChangeText={(value) => updateField("city", value)}
               placeholder="Your city"
               placeholderTextColor={colors.text.muted}
               autoCapitalize="words"
+              editable={!loading}
             />
-          </AuthInput>
-        </View>
+            {errors.city && (
+              <Text
+                style={[
+                  globalStyles.caption,
+                  { color: colors.error, marginTop: spacing.xs },
+                ]}
+              >
+                {errors.city}
+              </Text>
+            )}
+          </View>
 
-        <View style={{ flex: 0.4 }}>
-          <AuthInput
-            label={<Text style={authStyles.label}>State</Text>}
-            error={errors.state}
-          >
+          <View style={{ flex: 0.4 }}>
+            <Text style={globalStyles.label}>State</Text>
             <TextInput
               style={[
-                authStyles.input,
-                errors.state && { borderColor: colors.error },
+                globalStyles.input,
+                errors.state && { borderColor: colors.error, borderWidth: 2 },
               ]}
               value={formData.state}
               onChangeText={handleStateChange}
@@ -145,56 +176,81 @@ const LocationSetupScreen = ({ onNext, onBack, initialData = {} }) => {
               placeholderTextColor={colors.text.muted}
               maxLength={2}
               autoCapitalize="characters"
+              editable={!loading}
             />
-          </AuthInput>
+            {errors.state && (
+              <Text
+                style={[
+                  globalStyles.caption,
+                  { color: colors.error, marginTop: spacing.xs },
+                ]}
+              >
+                {errors.state}
+              </Text>
+            )}
+          </View>
+        </View>
+
+        {/* ZIP Code Field */}
+        <View style={{ marginBottom: spacing.xl }}>
+          <Text style={globalStyles.label}>ZIP Code</Text>
+          <TextInput
+            style={[
+              globalStyles.input,
+              errors.zipCode && { borderColor: colors.error, borderWidth: 2 },
+            ]}
+            value={formData.zipCode}
+            onChangeText={handleZipChange}
+            placeholder="12345 (optional)"
+            placeholderTextColor={colors.text.muted}
+            keyboardType="numeric"
+            maxLength={5}
+            editable={!loading}
+          />
+          {errors.zipCode && (
+            <Text
+              style={[
+                globalStyles.caption,
+                { color: colors.error, marginTop: spacing.xs },
+              ]}
+            >
+              {errors.zipCode}
+            </Text>
+          )}
+        </View>
+
+        <View style={{ marginBottom: spacing.xl }}>
+          <TouchableOpacity
+            style={[
+              createButtonStyle("primary", "large"),
+              loading && globalStyles.buttonDisabled,
+            ]}
+            onPress={handleContinue}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color={colors.text.inverse} />
+            ) : (
+              <View style={globalStyles.buttonContent}>
+                <Text style={globalStyles.buttonPrimaryText}>Continue</Text>
+                <ArrowRight size={20} color={colors.text.inverse} />
+              </View>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              createButtonStyle("secondary", "large"),
+              { marginTop: spacing.md },
+            ]}
+            onPress={handleSkip}
+            disabled={loading}
+          >
+            <Text style={globalStyles.buttonSecondaryText}>Skip for now</Text>
+          </TouchableOpacity>
         </View>
       </View>
-
-      <AuthInput
-        label={<Text style={authStyles.label}>ZIP Code</Text>}
-        error={errors.zipCode}
-      >
-        <TextInput
-          style={[
-            authStyles.input,
-            errors.zipCode && { borderColor: colors.error },
-          ]}
-          value={formData.zipCode}
-          onChangeText={handleZipChange}
-          placeholder="12345 (optional)"
-          placeholderTextColor={colors.text.muted}
-          keyboardType="numeric"
-          maxLength={5}
-        />
-      </AuthInput>
-
-      <AuthButtons>
-        <TouchableOpacity
-          style={[
-            authStyles.primaryButton,
-            loading && authStyles.buttonDisabled,
-          ]}
-          onPress={handleContinue}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color={colors.text.inverse} />
-          ) : (
-            <View style={authStyles.buttonContent}>
-              <Text style={authStyles.primaryButtonText}>Continue</Text>
-              <ArrowRight size={20} color={colors.text.inverse} />
-            </View>
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={authStyles.secondaryButton}
-          onPress={handleSkip}
-        >
-          <Text style={authStyles.secondaryButtonText}>Skip for now</Text>
-        </TouchableOpacity>
-      </AuthButtons>
-    </AuthLayout>
+    </ScreenLayout>
   );
 };
 

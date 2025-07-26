@@ -1,5 +1,5 @@
-// File path: frontend/src/screens/auth/ChangePasswordScreen.js
-import { useState } from "react";
+// File: frontend/src/screens/auth/ChangePasswordScreen.js
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -9,13 +9,14 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Eye, EyeOff, Lock } from "lucide-react-native";
-
-import AuthLayout, {
-  AuthHeader,
-  AuthButtons,
-  AuthFooter,
-} from "@components/AuthLayout";
-import { authStyles, colors } from "@styles/authStyles";
+import {
+  globalStyles,
+  colors,
+  spacing,
+  createButtonStyle,
+} from "@styles/designSystem";
+import ScreenLayout from "@components/layout/ScreenLayout";
+import StandardHeader from "@components/layout/StandardHeader";
 import apiService from "@services/api";
 
 const ChangePasswordScreen = ({ onBack, onPasswordChanged }) => {
@@ -28,42 +29,43 @@ const ChangePasswordScreen = ({ onBack, onPasswordChanged }) => {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [errors, setErrors] = useState({});
 
   const updateField = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: null }));
+    }
   };
 
   const validateForm = () => {
+    const newErrors = {};
     const { currentPassword, newPassword, confirmPassword } = formData;
 
-    if (
-      !currentPassword.trim() ||
-      !newPassword.trim() ||
-      !confirmPassword.trim()
-    ) {
-      Alert.alert("Error", "Please fill in all fields");
-      return false;
+    if (!currentPassword.trim()) {
+      newErrors.currentPassword = "Current password is required";
     }
 
-    if (newPassword.length < 8) {
-      Alert.alert("Error", "New password must be at least 8 characters long");
-      return false;
+    if (!newPassword.trim()) {
+      newErrors.newPassword = "New password is required";
+    } else if (newPassword.length < 8) {
+      newErrors.newPassword = "New password must be at least 8 characters long";
     }
 
-    if (newPassword !== confirmPassword) {
-      Alert.alert("Error", "New passwords do not match");
-      return false;
+    if (!confirmPassword.trim()) {
+      newErrors.confirmPassword = "Please confirm your new password";
+    } else if (newPassword !== confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
     }
 
-    if (currentPassword === newPassword) {
-      Alert.alert(
-        "Error",
-        "New password must be different from current password"
-      );
-      return false;
+    if (currentPassword === newPassword && newPassword) {
+      newErrors.newPassword =
+        "New password must be different from current password";
     }
 
-    return true;
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleChangePassword = async () => {
@@ -92,181 +94,242 @@ const ChangePasswordScreen = ({ onBack, onPasswordChanged }) => {
     }
   };
 
-  return (
-    <AuthLayout showBackButton={!!onBack} onBack={onBack}>
-      <AuthHeader
-        title={<Text style={authStyles.title}>Change Password</Text>}
-        subtitle={
-          <Text style={authStyles.subtitle}>
-            Update your password to keep your account secure
-          </Text>
-        }
-      />
+  const renderPasswordRequirements = () => {
+    const requirements = [
+      {
+        text: "At least 8 characters",
+        met: formData.newPassword.length >= 8,
+      },
+      {
+        text: "Passwords match",
+        met:
+          formData.newPassword === formData.confirmPassword &&
+          formData.newPassword,
+      },
+      {
+        text: "Different from current password",
+        met:
+          formData.currentPassword !== formData.newPassword &&
+          formData.newPassword,
+      },
+    ];
 
-      <Text style={authStyles.label}>Current Password</Text>
-      <View style={{ position: "relative", marginBottom: 16 }}>
-        <TextInput
-          style={[authStyles.input, { paddingRight: 50 }]}
-          value={formData.currentPassword}
-          onChangeText={(value) => updateField("currentPassword", value)}
-          placeholder="Enter current password"
-          placeholderTextColor={colors.text.muted}
-          secureTextEntry={!showCurrentPassword}
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-        <TouchableOpacity
-          style={{ position: "absolute", right: 16, top: 16, padding: 8 }}
-          onPress={() => setShowCurrentPassword(!showCurrentPassword)}
+    return (
+      <View style={[globalStyles.card, { marginBottom: spacing.xl }]}>
+        <Text
+          style={[
+            globalStyles.body,
+            { fontWeight: "600", marginBottom: spacing.md },
+          ]}
         >
-          {showCurrentPassword ? (
-            <EyeOff size={18} color={colors.text.muted} />
-          ) : (
-            <Eye size={18} color={colors.text.muted} />
-          )}
-        </TouchableOpacity>
-      </View>
-
-      <Text style={authStyles.label}>NewPassword</Text>
-      <View style={{ position: "relative", marginBottom: 16 }}>
-        <TextInput
-          style={[authStyles.input, { paddingRight: 50 }]}
-          value={formData.password}
-          onChangeText={(value) => updateField("password", value)}
-          placeholder="At least 8 characters"
-          placeholderTextColor={colors.text.muted}
-          secureTextEntry={!showPassword}
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-        <TouchableOpacity
-          style={{ position: "absolute", right: 16, top: 16, padding: 8 }}
-          onPress={() => setShowPassword(!showPassword)}
-        >
-          {showPassword ? (
-            <EyeOff size={18} color={colors.text.muted} />
-          ) : (
-            <Eye size={18} color={colors.text.muted} />
-          )}
-        </TouchableOpacity>
-      </View>
-
-      <Text style={authStyles.label}>Confirm New Password</Text>
-      <View style={{ position: "relative", marginBottom: 16 }}>
-        <TextInput
-          style={[authStyles.input, { paddingRight: 50 }]}
-          value={formData.confirmPassword}
-          onChangeText={(value) => updateField("confirmPassword", value)}
-          placeholder="Re-enter new password"
-          placeholderTextColor={colors.text.muted}
-          secureTextEntry={!showConfirmPassword}
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-        <TouchableOpacity
-          style={{ position: "absolute", right: 16, top: 16, padding: 8 }}
-          onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-        >
-          {showConfirmPassword ? (
-            <EyeOff size={18} color={colors.text.muted} />
-          ) : (
-            <Eye size={18} color={colors.text.muted} />
-          )}
-        </TouchableOpacity>
-      </View>
-
-      <View style={[authStyles.card, { marginBottom: 24 }]}>
-        <Text style={[authStyles.label, { marginBottom: 12 }]}>
           Password Requirements:
         </Text>
-        <View style={{ gap: 8 }}>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Text
-              style={[
-                authStyles.smallText,
-                { marginRight: 8 },
-                formData.newPassword.length >= 8
-                  ? { color: colors.success }
-                  : null,
-              ]}
-            >
-              {formData.newPassword.length >= 8 ? "✓" : "•"}
-            </Text>
-            <Text
-              style={[
-                authStyles.smallText,
-                formData.newPassword.length >= 8
-                  ? { color: colors.success }
-                  : null,
-              ]}
-            >
-              At least 8 characters
-            </Text>
-          </View>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Text
-              style={[
-                authStyles.smallText,
-                { marginRight: 8 },
-                formData.newPassword === formData.confirmPassword &&
-                formData.newPassword
-                  ? { color: colors.success }
-                  : null,
-              ]}
-            >
-              {formData.newPassword === formData.confirmPassword &&
-              formData.newPassword
-                ? "✓"
-                : "•"}
-            </Text>
-            <Text
-              style={[
-                authStyles.smallText,
-                formData.newPassword === formData.confirmPassword &&
-                formData.newPassword
-                  ? { color: colors.success }
-                  : null,
-              ]}
-            >
-              Passwords match
-            </Text>
-          </View>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Text
-              style={[
-                authStyles.smallText,
-                { marginRight: 8 },
-                formData.currentPassword !== formData.newPassword &&
-                formData.newPassword
-                  ? { color: colors.success }
-                  : null,
-              ]}
-            >
-              {formData.currentPassword !== formData.newPassword &&
-              formData.newPassword
-                ? "✓"
-                : "•"}
-            </Text>
-            <Text
-              style={[
-                authStyles.smallText,
-                formData.currentPassword !== formData.newPassword &&
-                formData.newPassword
-                  ? { color: colors.success }
-                  : null,
-              ]}
-            >
-              Different from current password
-            </Text>
-          </View>
+        <View style={{ gap: spacing.sm }}>
+          {requirements.map((req, index) => (
+            <View key={index} style={globalStyles.row}>
+              <Text
+                style={[
+                  globalStyles.caption,
+                  { marginRight: spacing.sm, minWidth: 16 },
+                  req.met && { color: colors.success },
+                ]}
+              >
+                {req.met ? "✓" : "•"}
+              </Text>
+              <Text
+                style={[
+                  globalStyles.caption,
+                  req.met && { color: colors.success },
+                ]}
+              >
+                {req.text}
+              </Text>
+            </View>
+          ))}
         </View>
       </View>
+    );
+  };
 
-      <AuthButtons>
+  return (
+    <ScreenLayout showHeader={false} backgroundColor={colors.background}>
+      <StandardHeader
+        showBack={!!onBack}
+        onBack={onBack}
+        title="Change Password"
+      />
+
+      <View style={{ paddingHorizontal: spacing.lg, flex: 1 }}>
+        <View
+          style={[
+            globalStyles.center,
+            { marginBottom: spacing.xl, marginTop: spacing.xl },
+          ]}
+        >
+          <Text style={globalStyles.bodySecondary}>
+            Update your password to keep your account secure
+          </Text>
+        </View>
+
+        {/* Current Password Field */}
+        <View style={{ marginBottom: spacing.lg }}>
+          <Text style={globalStyles.label}>Current Password</Text>
+          <View style={{ position: "relative" }}>
+            <TextInput
+              style={[
+                globalStyles.input,
+                errors.currentPassword && {
+                  borderColor: colors.error,
+                  borderWidth: 2,
+                },
+                { paddingRight: spacing.xxxxl },
+              ]}
+              value={formData.currentPassword}
+              onChangeText={(value) => updateField("currentPassword", value)}
+              placeholder="Enter current password"
+              placeholderTextColor={colors.text.muted}
+              secureTextEntry={!showCurrentPassword}
+              autoCapitalize="none"
+              autoCorrect={false}
+              editable={!loading}
+            />
+            <TouchableOpacity
+              style={{
+                position: "absolute",
+                right: spacing.lg,
+                top: spacing.md,
+                padding: spacing.xs,
+              }}
+              onPress={() => setShowCurrentPassword(!showCurrentPassword)}
+              disabled={loading}
+            >
+              {showCurrentPassword ? (
+                <EyeOff size={18} color={colors.text.muted} />
+              ) : (
+                <Eye size={18} color={colors.text.muted} />
+              )}
+            </TouchableOpacity>
+          </View>
+          {errors.currentPassword && (
+            <Text
+              style={[
+                globalStyles.caption,
+                { color: colors.error, marginTop: spacing.xs },
+              ]}
+            >
+              {errors.currentPassword}
+            </Text>
+          )}
+        </View>
+
+        {/* New Password Field */}
+        <View style={{ marginBottom: spacing.lg }}>
+          <Text style={globalStyles.label}>New Password</Text>
+          <View style={{ position: "relative" }}>
+            <TextInput
+              style={[
+                globalStyles.input,
+                errors.newPassword && {
+                  borderColor: colors.error,
+                  borderWidth: 2,
+                },
+                { paddingRight: spacing.xxxxl },
+              ]}
+              value={formData.newPassword}
+              onChangeText={(value) => updateField("newPassword", value)}
+              placeholder="At least 8 characters"
+              placeholderTextColor={colors.text.muted}
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+              autoCorrect={false}
+              editable={!loading}
+            />
+            <TouchableOpacity
+              style={{
+                position: "absolute",
+                right: spacing.lg,
+                top: spacing.md,
+                padding: spacing.xs,
+              }}
+              onPress={() => setShowPassword(!showPassword)}
+              disabled={loading}
+            >
+              {showPassword ? (
+                <EyeOff size={18} color={colors.text.muted} />
+              ) : (
+                <Eye size={18} color={colors.text.muted} />
+              )}
+            </TouchableOpacity>
+          </View>
+          {errors.newPassword && (
+            <Text
+              style={[
+                globalStyles.caption,
+                { color: colors.error, marginTop: spacing.xs },
+              ]}
+            >
+              {errors.newPassword}
+            </Text>
+          )}
+        </View>
+
+        {/* Confirm Password Field */}
+        <View style={{ marginBottom: spacing.lg }}>
+          <Text style={globalStyles.label}>Confirm New Password</Text>
+          <View style={{ position: "relative" }}>
+            <TextInput
+              style={[
+                globalStyles.input,
+                errors.confirmPassword && {
+                  borderColor: colors.error,
+                  borderWidth: 2,
+                },
+                { paddingRight: spacing.xxxxl },
+              ]}
+              value={formData.confirmPassword}
+              onChangeText={(value) => updateField("confirmPassword", value)}
+              placeholder="Re-enter new password"
+              placeholderTextColor={colors.text.muted}
+              secureTextEntry={!showConfirmPassword}
+              autoCapitalize="none"
+              autoCorrect={false}
+              editable={!loading}
+            />
+            <TouchableOpacity
+              style={{
+                position: "absolute",
+                right: spacing.lg,
+                top: spacing.md,
+                padding: spacing.xs,
+              }}
+              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+              disabled={loading}
+            >
+              {showConfirmPassword ? (
+                <EyeOff size={18} color={colors.text.muted} />
+              ) : (
+                <Eye size={18} color={colors.text.muted} />
+              )}
+            </TouchableOpacity>
+          </View>
+          {errors.confirmPassword && (
+            <Text
+              style={[
+                globalStyles.caption,
+                { color: colors.error, marginTop: spacing.xs },
+              ]}
+            >
+              {errors.confirmPassword}
+            </Text>
+          )}
+        </View>
+
+        {renderPasswordRequirements()}
+
         <TouchableOpacity
           style={[
-            authStyles.primaryButton,
-            loading && authStyles.buttonDisabled,
+            createButtonStyle("primary", "large"),
+            loading && globalStyles.buttonDisabled,
           ]}
           onPress={handleChangePassword}
           disabled={loading}
@@ -274,28 +337,36 @@ const ChangePasswordScreen = ({ onBack, onPasswordChanged }) => {
           {loading ? (
             <ActivityIndicator color={colors.text.inverse} />
           ) : (
-            <View style={authStyles.buttonContent}>
+            <View style={globalStyles.buttonContent}>
               <Lock size={20} color={colors.text.inverse} />
-              <Text style={authStyles.primaryButtonText}>Change Password</Text>
+              <Text style={globalStyles.buttonPrimaryText}>
+                Change Password
+              </Text>
             </View>
           )}
         </TouchableOpacity>
-      </AuthButtons>
 
-      <AuthFooter>
-        <Text style={authStyles.bodyText}>Need help? </Text>
-        <TouchableOpacity
-          onPress={() =>
-            Alert.alert(
-              "Contact Support",
-              "Email us at support@stormneighbor.com"
-            )
-          }
+        <View
+          style={[
+            globalStyles.row,
+            globalStyles.center,
+            { marginTop: spacing.xl },
+          ]}
         >
-          <Text style={authStyles.linkText}>Contact Support</Text>
-        </TouchableOpacity>
-      </AuthFooter>
-    </AuthLayout>
+          <Text style={globalStyles.bodySecondary}>Need help? </Text>
+          <TouchableOpacity
+            onPress={() =>
+              Alert.alert(
+                "Contact Support",
+                "Email us at support@stormneighbor.com"
+              )
+            }
+          >
+            <Text style={globalStyles.link}>Contact Support</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </ScreenLayout>
   );
 };
 

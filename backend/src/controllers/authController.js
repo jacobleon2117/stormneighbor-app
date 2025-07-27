@@ -4,17 +4,14 @@ const crypto = require("crypto");
 const { pool } = require("../config/database");
 const { validationResult } = require("express-validator");
 
-// Helper function to generate verification code
 const generateVerificationCode = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-// Helper function to generate JWT token
 const generateToken = (userId) => {
   return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: "7d" });
 };
 
-// Helper function to send email (mock implementation - replace with actual email service)
 const sendEmail = async (to, subject, text) => {
   // TODO: Implement actual email sending (using SendGrid, AWS SES, etc.)
   console.log(`Email to ${to}: ${subject} - ${text}`);
@@ -45,7 +42,6 @@ const register = async (req, res) => {
     const client = await pool.connect();
 
     try {
-      // Check if user already exists
       const existingUser = await client.query(
         "SELECT id FROM users WHERE email = $1",
         [email]
@@ -57,15 +53,12 @@ const register = async (req, res) => {
           .json({ message: "User already exists with this email" });
       }
 
-      // Hash password
       const saltRounds = 12;
       const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-      // Generate verification code
       const verificationCode = generateVerificationCode();
-      const codeExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+      const codeExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-      // Create location point if coordinates provided
       let locationQuery = "";
       let locationValue = "";
       const values = [
@@ -102,14 +95,12 @@ const register = async (req, res) => {
       const result = await client.query(insertQuery, values);
       const newUser = result.rows[0];
 
-      // Send verification email
       await sendEmail(
         email,
         "Verify your email address",
         `Your verification code is: ${verificationCode}`
       );
 
-      // Generate token
       const token = generateToken(newUser.id);
 
       res.status(201).json({
@@ -164,7 +155,6 @@ const login = async (req, res) => {
         return res.status(401).json({ message: "Account is deactivated" });
       }
 
-      // Check password
       const isValidPassword = await bcrypt.compare(
         password,
         user.password_hash
@@ -173,7 +163,6 @@ const login = async (req, res) => {
         return res.status(401).json({ message: "Invalid email or password" });
       }
 
-      // Generate token
       const token = generateToken(user.id);
 
       res.json({
@@ -212,7 +201,6 @@ const forgotPassword = async (req, res) => {
       ]);
 
       if (user.rows.length === 0) {
-        // Don't reveal if email exists or not
         return res.json({
           message:
             "If an account with that email exists, a reset code has been sent.",
@@ -220,7 +208,7 @@ const forgotPassword = async (req, res) => {
       }
 
       const resetCode = generateVerificationCode();
-      const codeExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+      const codeExpiry = new Date(Date.now() + 60 * 60 * 1000);
 
       await client.query(
         "UPDATE users SET password_reset_code = $1, password_reset_expires = $2 WHERE email = $3",
@@ -279,7 +267,6 @@ const verifyCode = async (req, res) => {
           .json({ message: "Verification code has expired" });
       }
 
-      // Mark email as verified
       await client.query(
         `UPDATE users SET 
          email_verified = true, 
@@ -330,11 +317,9 @@ const resetPassword = async (req, res) => {
         return res.status(400).json({ message: "Reset code has expired" });
       }
 
-      // Hash new password
       const saltRounds = 12;
       const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
 
-      // Update password and clear reset code
       await client.query(
         `UPDATE users SET 
          password_hash = $1, 
@@ -379,7 +364,7 @@ const resendVerificationCode = async (req, res) => {
       }
 
       const verificationCode = generateVerificationCode();
-      const codeExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+      const codeExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
       await client.query(
         "UPDATE users SET email_verification_code = $1, email_verification_expires = $2 WHERE email = $3",
@@ -610,7 +595,6 @@ const changePassword = async (req, res) => {
 
       const user = result.rows[0];
 
-      // Verify current password
       const isValidPassword = await bcrypt.compare(
         currentPassword,
         user.password_hash
@@ -621,11 +605,9 @@ const changePassword = async (req, res) => {
           .json({ message: "Current password is incorrect" });
       }
 
-      // Hash new password
       const saltRounds = 12;
       const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
 
-      // Update password
       await client.query(
         "UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2",
         [hashedPassword, userId]
@@ -690,7 +672,7 @@ const resendVerificationEmail = async (req, res) => {
       }
 
       const verificationCode = generateVerificationCode();
-      const codeExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+      const codeExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
       await client.query(
         "UPDATE users SET email_verification_code = $1, email_verification_expires = $2 WHERE id = $3",

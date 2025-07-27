@@ -1,5 +1,5 @@
 // File: frontend/src/screens/auth/profile/ProfileSetupScreenIndividual.js
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   View,
   Text,

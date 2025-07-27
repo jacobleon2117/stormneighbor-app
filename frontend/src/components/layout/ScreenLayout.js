@@ -1,5 +1,4 @@
 // File: frontend/src/components/layout/ScreenLayout.js
-import React from "react";
 import {
   View,
   SafeAreaView,
@@ -23,8 +22,8 @@ const ScreenLayout = ({
   backgroundColor = colors.background,
   contentPadding = true,
   keyboardAvoiding = false,
-  safeAreaBackground = colors.surface, // Header background color
-  showDefaultActions = true, // New prop to control default header actions
+  safeAreaBackground = colors.surface,
+  showDefaultActions = true,
 }) => {
   const ContentWrapper = scrollable ? ScrollView : View;
 
@@ -72,7 +71,6 @@ const ScreenLayout = ({
         />
       )}
 
-      {/* Custom header component (like GreetingHeader) */}
       {customHeaderComponent && (
         <View style={styles.customHeaderContainer}>
           {customHeaderComponent}

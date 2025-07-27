@@ -1,5 +1,5 @@
 // File: frontend/src/screens/auth/ForgotPasswordScreen.js
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   View,
   Text,

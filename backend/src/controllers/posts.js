@@ -16,7 +16,6 @@ const getPosts = async (req, res) => {
     const client = await pool.connect();
 
     try {
-      // Get user's location preferences
       const userResult = await client.query(
         `SELECT 
           ST_X(location::geometry) as longitude,
@@ -36,12 +35,82 @@ const getPosts = async (req, res) => {
       const user = userResult.rows[0];
 
       if (!user.latitude || !user.longitude) {
-        return res.status(400).json({
-          message: "Location not set. Please complete your profile setup.",
+        console.log("User has no coordinates, trying city-based query");
+
+        const simpleQuery = `
+          SELECT 
+            p.id, p.title, p.content, p.post_type, p.priority,
+            p.is_emergency, p.is_resolved, p.images, p.tags,
+            p.location_city, p.location_state, p.created_at, p.updated_at,
+            0 as distance_miles,
+            u.first_name as author_first_name, 
+            u.last_name as author_last_name, 
+            u.profile_image_url as author_profile_image,
+            p.user_id
+          FROM posts p
+          JOIN users u ON p.user_id = u.id
+          WHERE (p.expires_at IS NULL OR p.expires_at > NOW())
+          ORDER BY 
+            CASE WHEN p.is_emergency = true THEN 1 ELSE 2 END,
+            CASE p.priority 
+              WHEN 'urgent' THEN 1 
+              WHEN 'high' THEN 2 
+              WHEN 'normal' THEN 3 
+              WHEN 'low' THEN 4 
+            END,
+            p.created_at DESC
+          LIMIT $1 OFFSET $2
+        `;
+
+        const result = await client.query(simpleQuery, [
+          parseInt(limit),
+          parseInt(offset),
+        ]);
+
+        const posts = result.rows.map((row) => ({
+          id: row.id,
+          title: row.title,
+          content: row.content,
+          postType: row.post_type,
+          priority: row.priority,
+          isEmergency: row.is_emergency,
+          isResolved: row.is_resolved,
+          images: row.images || [],
+          tags: row.tags || [],
+          location:
+            row.location_city && row.location_state
+              ? `${row.location_city}, ${row.location_state}`
+              : null,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+          distanceMiles: 0,
+          user: {
+            id: row.user_id,
+            firstName: row.author_first_name,
+            lastName: row.author_last_name,
+            profileImageUrl: row.author_profile_image,
+          },
+          commentCount: 0,
+          reactionCount: 0,
+          userHasLiked: false, // TODO: Add actual reaction status
+        }));
+
+        return res.json({
+          posts,
+          pagination: {
+            limit: parseInt(limit),
+            offset: parseInt(offset),
+            total: posts.length,
+          },
+          location: {
+            city: user.location_city,
+            state: user.location_state,
+            radiusMiles: user.location_radius_miles,
+            cityOnly: user.show_city_only,
+          },
         });
       }
 
-      // Build the query using our geographic function
       let functionCall = `
         SELECT * FROM get_nearby_posts(
           ${user.latitude},
@@ -55,51 +124,9 @@ const getPosts = async (req, res) => {
         )
       `;
 
-      // Add filters if specified
-      let whereClause = "";
-      let queryParams = [];
-      let paramCount = 0;
+      console.log("Trying geographic function query");
 
-      if (postType) {
-        paramCount++;
-        whereClause += `${
-          whereClause ? " AND" : " WHERE"
-        } post_type = $${paramCount}`;
-        queryParams.push(postType);
-      }
-
-      if (priority) {
-        paramCount++;
-        whereClause += `${
-          whereClause ? " AND" : " WHERE"
-        } priority = $${paramCount}`;
-        queryParams.push(priority);
-      }
-
-      if (isEmergency !== undefined) {
-        paramCount++;
-        whereClause += `${
-          whereClause ? " AND" : " WHERE"
-        } is_emergency = $${paramCount}`;
-        queryParams.push(isEmergency === "true");
-      }
-
-      if (isResolved !== undefined) {
-        paramCount++;
-        whereClause += `${
-          whereClause ? " AND" : " WHERE"
-        } is_resolved = $${paramCount}`;
-        queryParams.push(isResolved === "true");
-      }
-
-      let finalQuery;
-      if (whereClause) {
-        finalQuery = `SELECT * FROM (${functionCall}) AS posts ${whereClause}`;
-      } else {
-        finalQuery = functionCall;
-      }
-
-      const result = await client.query(finalQuery, queryParams);
+      const result = await client.query(functionCall);
 
       const posts = result.rows.map((row) => ({
         id: row.id,
@@ -124,8 +151,9 @@ const getPosts = async (req, res) => {
           lastName: row.author_last_name,
           profileImageUrl: row.author_profile_image,
         },
-        commentCount: 0, // TODO: Add comment count
-        reactionCount: 0, // TODO: Add reaction count
+        commentCount: 0,
+        reactionCount: 0,
+        userHasLiked: false, // TODO: Add actual reaction status
       }));
 
       res.json({
@@ -147,7 +175,10 @@ const getPosts = async (req, res) => {
     }
   } catch (error) {
     console.error("Get posts error:", error);
-    res.status(500).json({ message: "Server error fetching posts" });
+    res.status(500).json({
+      message: "Server error fetching posts",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -246,7 +277,6 @@ const createPost = async (req, res) => {
     const client = await pool.connect();
 
     try {
-      // Get user's location info
       const userResult = await client.query(
         `SELECT 
           location_city,
@@ -264,7 +294,6 @@ const createPost = async (req, res) => {
 
       const user = userResult.rows[0];
 
-      // Use provided coordinates or fall back to user's location
       const postLat = latitude || user.user_latitude;
       const postLng = longitude || user.user_longitude;
       const postCity = user.location_city;
@@ -281,7 +310,7 @@ const createPost = async (req, res) => {
       let locationValue = null;
       const values = [
         userId,
-        title, // Now using the processed title
+        title,
         content,
         postType,
         priority,
@@ -634,7 +663,6 @@ const addReaction = async (req, res) => {
       );
 
       if (existingReaction.rows.length > 0) {
-        // If same reaction type, remove it (toggle off)
         if (existingReaction.rows[0].reaction_type === reactionType) {
           await client.query(
             "DELETE FROM reactions WHERE user_id = $1 AND post_id = $2",
@@ -648,7 +676,6 @@ const addReaction = async (req, res) => {
             action: "removed",
           });
         } else {
-          // Different reaction type, update it
           await client.query(
             "UPDATE reactions SET reaction_type = $1 WHERE user_id = $2 AND post_id = $3",
             [reactionType, userId, postId]
@@ -662,7 +689,6 @@ const addReaction = async (req, res) => {
           });
         }
       } else {
-        // No existing reaction, add new one
         await client.query(
           "INSERT INTO reactions (user_id, post_id, reaction_type) VALUES ($1, $2, $3)",
           [userId, postId, reactionType]

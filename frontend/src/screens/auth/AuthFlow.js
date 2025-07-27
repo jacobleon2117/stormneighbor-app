@@ -1,5 +1,5 @@
 // File: frontend/src/screens/auth/AuthFlow.js
-import React, { useState } from "react";
+import { useState } from "react";
 import { View, Alert } from "react-native";
 import { useAuth } from "@contexts/AuthContext";
 import LoadingScreen from "./LoadingScreen";
@@ -18,7 +18,6 @@ const AuthFlow = () => {
     const result = await login(email, password);
 
     if (result.success) {
-      // Navigation will be handled by the main app based on auth state
       return;
     }
 
@@ -32,14 +31,12 @@ const AuthFlow = () => {
 
     if (result.success) {
       console.log("Registration successful, triggering profile setup");
-      // User registered successfully, send them to profile setup
       setUserNeedsSetup(true);
       setCurrentScreen("profileSetup");
       return;
     }
 
     if (result.error) {
-      // Check if error indicates user already exists
       if (
         result.error.toLowerCase().includes("already exists") ||
         result.error.toLowerCase().includes("user already") ||
@@ -65,21 +62,18 @@ const AuthFlow = () => {
   const handleProfileSetupComplete = () => {
     console.log("Profile setup completed");
     setUserNeedsSetup(false);
-    // This should trigger the main app to show
   };
 
   if (loading && currentScreen === "welcome") {
     return <LoadingScreen />;
   }
 
-  // Force profile setup if user needs it
   if (userNeedsSetup && currentScreen === "profileSetup") {
     console.log("Showing profile setup flow");
     return (
       <ProfileSetupFlow
         onSetupComplete={handleProfileSetupComplete}
         onBack={() => {
-          // Don't allow going back to registration after successful signup
           console.log("Profile setup back pressed - staying in setup");
         }}
       />
@@ -120,7 +114,6 @@ const AuthFlow = () => {
       );
 
     case "profileSetup":
-      // This should also show profile setup
       console.log("Profile setup case triggered");
       return (
         <ProfileSetupFlow

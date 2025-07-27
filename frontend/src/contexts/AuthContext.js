@@ -1,9 +1,8 @@
-// File: frontend/src/contexts/AuthContext.js
-import React, { createContext, useContext, useReducer, useEffect } from "react";
+// File: AuthContext.js
+import { createContext, useContext, useReducer, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiService from "@services/api";
 
-// Auth state interface
 const authReducer = (state, action) => {
   switch (action.type) {
     case "SET_LOADING":
@@ -14,7 +13,7 @@ const authReducer = (state, action) => {
         ...state,
         user: action.payload,
         isAuthenticated: !!action.payload,
-        needsProfileSetup: false, // User is fully authenticated and setup
+        needsProfileSetup: false,
         loading: false,
       };
 
@@ -79,7 +78,6 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  // Check authentication status on app start
   useEffect(() => {
     checkAuthStatus();
   }, []);
@@ -94,41 +92,34 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
-      // Verify token with backend
       const result = await apiService.getProfile();
       if (result.success) {
         const user = result.data;
 
-        // Check if this is a brand new user who just registered
         const profileSetupCompleted = await AsyncStorage.getItem(
           "profileSetupCompleted"
         );
 
-        // More comprehensive check for profile completion
         const hasBasicProfile = user.firstName && user.lastName && user.email;
-        const hasLocationInfo = user.address?.city && user.address?.state;
-        const hasNeighborhood = user.neighborhoodId;
+        const hasLocationInfo =
+          (user.location?.city && user.location?.state) ||
+          (user.address?.city && user.address?.state) ||
+          (user.location_city && user.address_state);
 
-        // If user has completed basic registration and has location/neighborhood, they're fully set up
-        const isProfileComplete =
-          hasBasicProfile && (hasLocationInfo || hasNeighborhood);
+        const isProfileComplete = hasBasicProfile && hasLocationInfo;
 
         if (!isProfileComplete && !profileSetupCompleted) {
-          // User needs to complete profile setup
           dispatch({
             type: "SET_USER_NEEDS_SETUP",
             payload: { user, needsSetup: true },
           });
         } else {
-          // User is fully set up
           dispatch({ type: "SET_USER", payload: user });
-          // Mark profile setup as completed if it wasn't already
           if (!profileSetupCompleted) {
             await AsyncStorage.setItem("profileSetupCompleted", "true");
           }
         }
       } else {
-        // Token is invalid, remove it
         await AsyncStorage.removeItem("authToken");
         await AsyncStorage.removeItem("profileSetupCompleted");
         dispatch({ type: "SET_USER", payload: null });
@@ -153,16 +144,16 @@ export const AuthProvider = ({ children }) => {
 
         const user = result.data.user;
 
-        // Check if returning user has completed profile setup
         const profileSetupCompleted = await AsyncStorage.getItem(
           "profileSetupCompleted"
         );
         const hasBasicProfile = user.firstName && user.lastName && user.email;
-        const hasLocationInfo = user.address?.city && user.address?.state;
-        const hasNeighborhood = user.neighborhoodId;
+        const hasLocationInfo =
+          (user.location?.city && user.location?.state) ||
+          (user.address?.city && user.address?.state) ||
+          (user.location_city && user.address_state);
 
-        const isProfileComplete =
-          hasBasicProfile && (hasLocationInfo || hasNeighborhood);
+        const isProfileComplete = hasBasicProfile && hasLocationInfo;
 
         if (!isProfileComplete && !profileSetupCompleted) {
           dispatch({
@@ -197,10 +188,8 @@ export const AuthProvider = ({ children }) => {
 
       if (result.success) {
         await AsyncStorage.setItem("authToken", result.data.token);
-        // Remove any existing profile setup completion flag for new registrations
         await AsyncStorage.removeItem("profileSetupCompleted");
 
-        // New users always need profile setup
         dispatch({
           type: "SET_USER_NEEDS_SETUP",
           payload: { user: result.data.user, needsSetup: true },
@@ -225,7 +214,6 @@ export const AuthProvider = ({ children }) => {
       dispatch({ type: "LOGOUT" });
     } catch (error) {
       console.error("Logout failed:", error);
-      // Force logout even if AsyncStorage fails
       dispatch({ type: "LOGOUT" });
     }
   };
@@ -260,13 +248,10 @@ export const AuthProvider = ({ children }) => {
       const result = await apiService.updateProfile(profileData);
 
       if (result.success) {
-        // Mark profile setup as completed
         await AsyncStorage.setItem("profileSetupCompleted", "true");
 
-        // Complete the profile setup flow
         dispatch({ type: "COMPLETE_PROFILE_SETUP" });
 
-        // Refresh user data
         const profileResult = await apiService.getProfile();
         if (profileResult.success) {
           dispatch({ type: "SET_USER", payload: profileResult.data });
@@ -287,11 +272,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   const completeProfileSetup = async () => {
-    // Mark setup as completed and update state
     await AsyncStorage.setItem("profileSetupCompleted", "true");
     dispatch({ type: "COMPLETE_PROFILE_SETUP" });
 
-    // Refresh user data to get the latest profile
     try {
       const profileResult = await apiService.getProfile();
       if (profileResult.success) {
@@ -311,14 +294,12 @@ export const AuthProvider = ({ children }) => {
   };
 
   const value = {
-    // State
     user: state.user,
     isAuthenticated: state.isAuthenticated,
     needsProfileSetup: state.needsProfileSetup,
     loading: state.loading,
     error: state.error,
 
-    // Actions
     login,
     register,
     logout,

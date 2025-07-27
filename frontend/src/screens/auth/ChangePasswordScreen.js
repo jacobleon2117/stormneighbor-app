@@ -1,5 +1,5 @@
 // File: frontend/src/screens/auth/ChangePasswordScreen.js
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   View,
   Text,
@@ -33,7 +33,6 @@ const ChangePasswordScreen = ({ onBack, onPasswordChanged }) => {
 
   const updateField = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: null }));
     }
@@ -171,7 +170,6 @@ const ChangePasswordScreen = ({ onBack, onPasswordChanged }) => {
           </Text>
         </View>
 
-        {/* Current Password Field */}
         <View style={{ marginBottom: spacing.lg }}>
           <Text style={globalStyles.label}>Current Password</Text>
           <View style={{ position: "relative" }}>
@@ -273,7 +271,6 @@ const ChangePasswordScreen = ({ onBack, onPasswordChanged }) => {
           )}
         </View>
 
-        {/* Confirm Password Field */}
         <View style={{ marginBottom: spacing.lg }}>
           <Text style={globalStyles.label}>Confirm New Password</Text>
           <View style={{ position: "relative" }}>

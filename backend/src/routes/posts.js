@@ -1,9 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const { body } = require("express-validator");
-const auth = require("../middleware/auth"); // Adjust path as needed
+const auth = require("../middleware/auth");
 
-// Import controller functions
 const {
   getPosts,
   getPost,
@@ -14,11 +13,11 @@ const {
   createComment,
   addReaction,
   removeReaction,
-} = require("../controllers/posts"); // This should point to your controller file
+} = require("../controllers/posts");
 
 const createPostValidation = [
   body("title")
-    .optional({ nullable: true }) // Allow null/undefined titles
+    .optional({ nullable: true })
     .trim()
     .isLength({ max: 200 })
     .withMessage("Title must be under 200 characters"),
@@ -55,7 +54,6 @@ const createPostValidation = [
   body("tags").optional().isArray().withMessage("Tags must be an array"),
 ];
 
-// Validation middleware for updating posts
 const updatePostValidation = [
   body("title")
     .optional({ nullable: true })
@@ -87,19 +85,50 @@ const updatePostValidation = [
   body("tags").optional().isArray().withMessage("Tags must be an array"),
 ];
 
-// Posts routes
 router.get("/", auth, getPosts);
 router.get("/:id", auth, getPost);
 router.post("/", auth, createPostValidation, createPost);
 router.put("/:id", auth, updatePostValidation, updatePost);
 router.delete("/:id", auth, deletePost);
 
-// Comments routes
 router.get("/:postId/comments", auth, getComments);
 router.post("/:postId/comments", auth, createComment);
 
-// Reactions routes
 router.post("/:postId/reactions", auth, addReaction);
 router.delete("/:postId/reactions", auth, removeReaction);
+
+router.get("/test", auth, async (req, res) => {
+  try {
+    const client = await pool.connect();
+
+    try {
+      const result = await client.query(`
+        SELECT COUNT(*) as count FROM posts
+      `);
+
+      const userResult = await client.query(
+        `
+        SELECT id, first_name, location_city FROM users WHERE id = $1
+      `,
+        [req.user.userId]
+      );
+
+      res.json({
+        message: "Posts endpoint is working!",
+        postCount: result.rows[0].count,
+        user: userResult.rows[0] || null,
+        timestamp: new Date().toISOString(),
+      });
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error("Test endpoint error:", error);
+    res.status(500).json({
+      message: "Test failed",
+      error: error.message,
+    });
+  }
+});
 
 module.exports = router;

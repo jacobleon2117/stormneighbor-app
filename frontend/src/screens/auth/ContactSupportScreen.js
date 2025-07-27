@@ -1,5 +1,5 @@
 // File: frontend/src/screens/auth/ContactSupportScreen.js
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   View,
   Text,
@@ -156,7 +156,6 @@ const ContactSupportScreen = ({ onBack, userEmail }) => {
           </TouchableOpacity>
         </View>
 
-        {/* Email Field */}
         <View style={{ marginBottom: spacing.lg }}>
           <Text style={globalStyles.label}>Your Email</Text>
           <TextInput
@@ -184,7 +183,6 @@ const ContactSupportScreen = ({ onBack, userEmail }) => {
           )}
         </View>
 
-        {/* Subject Field */}
         <View style={{ marginBottom: spacing.lg }}>
           <Text style={globalStyles.label}>Subject</Text>
           <TextInput
@@ -211,7 +209,6 @@ const ContactSupportScreen = ({ onBack, userEmail }) => {
           )}
         </View>
 
-        {/* Message Field */}
         <View style={{ marginBottom: spacing.xl }}>
           <Text style={globalStyles.label}>Message</Text>
           <TextInput

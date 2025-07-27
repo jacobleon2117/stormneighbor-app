@@ -1,128 +1,124 @@
--- Updated schema.sql - Location-based communities instead of fixed neighborhoods
+-- Fixed schema.sql - Proper ALTER statements instead of DROP/CREATE
 
--- Drop old neighborhood-based foreign keys first
-ALTER TABLE users DROP CONSTRAINT IF EXISTS fk_users_neighborhood;
-ALTER TABLE posts DROP CONSTRAINT IF EXISTS posts_neighborhood_id_fkey;
-ALTER TABLE weather_alerts DROP CONSTRAINT IF EXISTS weather_alerts_neighborhood_id_fkey;
-ALTER TABLE emergency_resources DROP CONSTRAINT IF EXISTS emergency_resources_neighborhood_id_fkey;
+-- Enable PostGIS if not already enabled
+CREATE EXTENSION IF NOT EXISTS postgis;
+CREATE EXTENSION IF NOT EXISTS postgis_topology;
 
--- Users table - Enhanced location data
-ALTER TABLE users 
-  DROP COLUMN IF EXISTS neighborhood_id,
-  ADD COLUMN IF NOT EXISTS location_city VARCHAR(100),
-  ADD COLUMN IF NOT EXISTS location_county VARCHAR(100),
-  ADD COLUMN IF NOT EXISTS location_radius_miles DECIMAL(4,1) DEFAULT 10.0,
-  ADD COLUMN IF NOT EXISTS show_city_only BOOLEAN DEFAULT FALSE;
+-- Update users table with proper ALTER statements (no data loss)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS location_city VARCHAR(100);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS location_county VARCHAR(100);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS location_radius_miles DECIMAL(4,1) DEFAULT 10.0;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS show_city_only BOOLEAN DEFAULT FALSE;
 
--- Update users table structure
-CREATE TABLE IF NOT EXISTS users_new (
+-- Update existing users to use their address_city as location_city
+UPDATE users 
+SET location_city = address_city 
+WHERE address_city IS NOT NULL AND location_city IS NULL;
+
+-- Update posts table with proper ALTER statements
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS location_city VARCHAR(100);
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS location_state VARCHAR(50);
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS location_county VARCHAR(100);
+
+-- Create missing tables for future features
+
+-- Comments table (for future commenting feature)
+CREATE TABLE IF NOT EXISTS comments (
     id SERIAL PRIMARY KEY,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    first_name VARCHAR(100) NOT NULL,
-    last_name VARCHAR(100) NOT NULL,
-    phone VARCHAR(20),
-    location GEOGRAPHY(POINT, 4326),
-    address_street VARCHAR(255),
-    address_city VARCHAR(100),
-    address_state VARCHAR(50),
-    address_zip VARCHAR(10),
-    location_city VARCHAR(100), -- Normalized city name
-    location_county VARCHAR(100), -- County for broader area
-    location_radius_miles DECIMAL(4,1) DEFAULT 10.0, -- User's preferred radius
-    show_city_only BOOLEAN DEFAULT FALSE, -- True = city only, False = use radius
-    profile_image_url VARCHAR(500),
-    is_verified BOOLEAN DEFAULT FALSE,
-    emergency_contact_name VARCHAR(100),
-    emergency_contact_phone VARCHAR(20),
-    skills TEXT[],
-    preferences JSONB DEFAULT '{}',
+    post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    parent_comment_id INTEGER REFERENCES comments(id) ON DELETE CASCADE,
+    images TEXT[],
+    is_edited BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Copy data if users table exists
-INSERT INTO users_new SELECT 
-    id, email, password_hash, first_name, last_name, phone, location,
-    address_street, address_city, address_state, address_zip,
-    address_city as location_city, -- Use address_city as location_city
-    NULL as location_county,
-    10.0 as location_radius_miles,
-    FALSE as show_city_only,
-    profile_image_url, is_verified, emergency_contact_name, emergency_contact_phone,
-    skills, preferences, created_at, updated_at
-FROM users 
-ON CONFLICT (id) DO NOTHING;
-
--- Replace old users table
-DROP TABLE IF EXISTS users CASCADE;
-ALTER TABLE users_new RENAME TO users;
-
--- Remove neighborhoods table since we're not using fixed neighborhoods
-DROP TABLE IF EXISTS neighborhoods CASCADE;
-
--- Posts table - Location-based instead of neighborhood-based
-ALTER TABLE posts 
-  DROP COLUMN IF EXISTS neighborhood_id,
-  ADD COLUMN IF NOT EXISTS location_city VARCHAR(100),
-  ADD COLUMN IF NOT EXISTS location_state VARCHAR(50),
-  ADD COLUMN IF NOT EXISTS location_county VARCHAR(100);
-
--- Update posts table structure  
-CREATE TABLE IF NOT EXISTS posts_new (
+-- Reactions table (for future like/reaction feature)
+CREATE TABLE IF NOT EXISTS reactions (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    title VARCHAR(255),
-    content TEXT NOT NULL,
-    post_type VARCHAR(50) NOT NULL,
-    priority VARCHAR(20) DEFAULT 'normal',
-    location GEOGRAPHY(POINT, 4326),
-    location_city VARCHAR(100), -- City where post was made
-    location_state VARCHAR(50), -- State
-    location_county VARCHAR(100), -- County for broader queries
-    images TEXT[],
-    tags TEXT[],
-    is_emergency BOOLEAN DEFAULT FALSE,
-    is_resolved BOOLEAN DEFAULT FALSE,
-    expires_at TIMESTAMP WITH TIME ZONE,
+    post_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
+    comment_id INTEGER REFERENCES comments(id) ON DELETE CASCADE,
+    reaction_type VARCHAR(20) NOT NULL, -- 'like', 'love', 'helpful', 'concerned', 'angry'
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    CONSTRAINT reactions_target_check CHECK (
+        (post_id IS NOT NULL AND comment_id IS NULL) OR 
+        (post_id IS NULL AND comment_id IS NOT NULL)
+    ),
+    UNIQUE(user_id, post_id, reaction_type),
+    UNIQUE(user_id, comment_id, reaction_type)
+);
+
+-- Weather alerts table (for future weather integration)
+CREATE TABLE IF NOT EXISTS weather_alerts (
+    id SERIAL PRIMARY KEY,
+    alert_id VARCHAR(255) UNIQUE,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    severity VARCHAR(20) NOT NULL, -- 'CRITICAL', 'HIGH', 'MODERATE', 'LOW'
+    alert_type VARCHAR(50) NOT NULL,
+    source VARCHAR(50) DEFAULT 'USER', -- 'NOAA', 'USER', 'SYSTEM'
+    affected_areas GEOGRAPHY(POLYGON, 4326),
+    location_city VARCHAR(100),
+    location_state VARCHAR(50),
+    location_county VARCHAR(100),
+    start_time TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    end_time TIMESTAMP WITH TIME ZONE,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
     metadata JSONB DEFAULT '{}',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Copy existing posts data
-INSERT INTO posts_new SELECT 
-    id, user_id, title, content, post_type, priority, location,
-    NULL as location_city, NULL as location_state, NULL as location_county,
-    images, tags, is_emergency, is_resolved, expires_at, metadata, created_at, updated_at
-FROM posts 
-ON CONFLICT (id) DO NOTHING;
+-- Emergency resources table (for future emergency features)
+CREATE TABLE IF NOT EXISTS emergency_resources (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    resource_type VARCHAR(50) NOT NULL, -- 'SHELTER', 'HOSPITAL', 'FIRE_STATION', 'POLICE'
+    address VARCHAR(255),
+    location GEOGRAPHY(POINT, 4326),
+    location_city VARCHAR(100),
+    location_state VARCHAR(50),
+    location_county VARCHAR(100),
+    phone VARCHAR(20),
+    website VARCHAR(255),
+    hours_of_operation VARCHAR(255),
+    capacity INTEGER,
+    current_availability INTEGER,
+    is_active BOOLEAN DEFAULT TRUE,
+    metadata JSONB DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
--- Replace posts table
-DROP TABLE IF EXISTS posts CASCADE;
-ALTER TABLE posts_new RENAME TO posts;
+-- Notifications table (for future notification features)
+CREATE TABLE IF NOT EXISTS notifications (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    message TEXT,
+    notification_type VARCHAR(50) NOT NULL, -- 'POST', 'COMMENT', 'REACTION', 'WEATHER', 'EMERGENCY'
+    related_post_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
+    related_comment_id INTEGER REFERENCES comments(id) ON DELETE CASCADE,
+    related_alert_id INTEGER REFERENCES weather_alerts(id) ON DELETE CASCADE,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
--- Weather alerts table - Location-based
-ALTER TABLE weather_alerts 
-  DROP COLUMN IF EXISTS neighborhood_id,
-  ADD COLUMN IF NOT EXISTS location_city VARCHAR(100),
-  ADD COLUMN IF NOT EXISTS location_state VARCHAR(50),
-  ADD COLUMN IF NOT EXISTS location_county VARCHAR(100);
-
--- Emergency resources table - Location-based  
-ALTER TABLE emergency_resources 
-  DROP COLUMN IF EXISTS neighborhood_id,
-  ADD COLUMN IF NOT EXISTS location_city VARCHAR(100),
-  ADD COLUMN IF NOT EXISTS location_state VARCHAR(50),
-  ADD COLUMN IF NOT EXISTS location_county VARCHAR(100);
-
--- Create indexes for geographic queries
+-- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_users_location ON users USING GIST (location);
-CREATE INDEX IF NOT EXISTS idx_users_city ON users(location_city, location_state);
+CREATE INDEX IF NOT EXISTS idx_users_city ON users(location_city, address_state);
 CREATE INDEX IF NOT EXISTS idx_posts_location ON posts USING GIST (location);
 CREATE INDEX IF NOT EXISTS idx_posts_city ON posts(location_city, location_state);
 CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_posts_type_priority ON posts(post_type, priority);
+CREATE INDEX IF NOT EXISTS idx_comments_post ON comments(post_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_reactions_post ON reactions(post_id);
+CREATE INDEX IF NOT EXISTS idx_reactions_user ON reactions(user_id);
 CREATE INDEX IF NOT EXISTS idx_weather_alerts_location ON weather_alerts USING GIST (affected_areas);
 CREATE INDEX IF NOT EXISTS idx_weather_alerts_city ON weather_alerts(location_city, location_state);
 CREATE INDEX IF NOT EXISTS idx_emergency_resources_location ON emergency_resources USING GIST (location);
@@ -294,14 +290,18 @@ DROP TRIGGER IF EXISTS update_posts_updated_at ON posts;
 CREATE TRIGGER update_posts_updated_at BEFORE UPDATE ON posts 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-DROP TRIGGER IF EXISTS update_weather_alerts_updated_at ON weather_alerts;
-CREATE TRIGGER update_weather_alerts_updated_at BEFORE UPDATE ON weather_alerts 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
 DROP TRIGGER IF EXISTS update_comments_updated_at ON comments;
 CREATE TRIGGER update_comments_updated_at BEFORE UPDATE ON comments 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_weather_alerts_updated_at ON weather_alerts;
+CREATE TRIGGER update_weather_alerts_updated_at BEFORE UPDATE ON weather_alerts 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 DROP TRIGGER IF EXISTS update_emergency_resources_updated_at ON emergency_resources;
 CREATE TRIGGER update_emergency_resources_updated_at BEFORE UPDATE ON emergency_resources 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS update_notifications_updated_at ON notifications;
+CREATE TRIGGER update_notifications_updated_at BEFORE UPDATE ON notifications 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

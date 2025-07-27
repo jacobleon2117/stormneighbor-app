@@ -1,7 +1,6 @@
 // File: frontend/src/styles/designSystem.js
 import { StyleSheet } from "react-native";
 
-// Core Design Tokens
 export const spacing = {
   xs: 4,
   sm: 8,

@@ -1,4 +1,3 @@
-// File: backend/location-migration.js
 const fs = require("fs");
 const path = require("path");
 const { pool } = require("./src/config/database");
@@ -11,7 +10,6 @@ async function runLocationMigration() {
 
     console.log("📊 Step 1: Adding new location columns to users table...");
 
-    // Add location columns to users table
     const userColumns = [
       "ALTER TABLE users ADD COLUMN IF NOT EXISTS location_city VARCHAR(100)",
       "ALTER TABLE users ADD COLUMN IF NOT EXISTS location_county VARCHAR(100)",
@@ -30,7 +28,6 @@ async function runLocationMigration() {
 
     console.log("\n📊 Step 2: Adding location columns to posts table...");
 
-    // Add location columns to posts table
     const postColumns = [
       "ALTER TABLE posts ADD COLUMN IF NOT EXISTS location_city VARCHAR(100)",
       "ALTER TABLE posts ADD COLUMN IF NOT EXISTS location_state VARCHAR(50)",
@@ -50,7 +47,6 @@ async function runLocationMigration() {
       "\n📊 Step 3: Adding location columns to weather_alerts table..."
     );
 
-    // Add location columns to weather_alerts table
     const alertColumns = [
       "ALTER TABLE weather_alerts ADD COLUMN IF NOT EXISTS location_city VARCHAR(100)",
       "ALTER TABLE weather_alerts ADD COLUMN IF NOT EXISTS location_state VARCHAR(50)",
@@ -70,7 +66,6 @@ async function runLocationMigration() {
       "\n📊 Step 4: Adding location columns to emergency_resources table..."
     );
 
-    // Add location columns to emergency_resources table
     const resourceColumns = [
       "ALTER TABLE emergency_resources ADD COLUMN IF NOT EXISTS location_city VARCHAR(100)",
       "ALTER TABLE emergency_resources ADD COLUMN IF NOT EXISTS location_state VARCHAR(50)",
@@ -88,7 +83,6 @@ async function runLocationMigration() {
 
     console.log("\n📊 Step 5: Dropping old neighborhood constraints...");
 
-    // Remove old neighborhood foreign keys if they exist
     const dropConstraints = [
       "ALTER TABLE users DROP CONSTRAINT IF EXISTS fk_users_neighborhood",
       "ALTER TABLE posts DROP CONSTRAINT IF EXISTS posts_neighborhood_id_fkey",
@@ -107,7 +101,6 @@ async function runLocationMigration() {
 
     console.log("\n📊 Step 6: Dropping old neighborhood columns...");
 
-    // Remove neighborhood_id columns
     const dropColumns = [
       "ALTER TABLE users DROP COLUMN IF EXISTS neighborhood_id",
       "ALTER TABLE posts DROP COLUMN IF EXISTS neighborhood_id",
@@ -126,7 +119,6 @@ async function runLocationMigration() {
 
     console.log("\n📊 Step 7: Creating location-based indexes...");
 
-    // Create new indexes
     const indexes = [
       "CREATE INDEX IF NOT EXISTS idx_users_city ON users(location_city, address_state)",
       "CREATE INDEX IF NOT EXISTS idx_posts_city ON posts(location_city, location_state)",
@@ -145,7 +137,6 @@ async function runLocationMigration() {
 
     console.log("\n📊 Step 8: Creating get_nearby_posts function...");
 
-    // Create the get_nearby_posts function
     const nearbyPostsFunction = `
       CREATE OR REPLACE FUNCTION get_nearby_posts(
           user_latitude DECIMAL,
@@ -249,7 +240,6 @@ async function runLocationMigration() {
       "\n📊 Step 9: Creating get_weather_alerts_for_location function..."
     );
 
-    // Create the weather alerts function
     const weatherAlertsFunction = `
       CREATE OR REPLACE FUNCTION get_weather_alerts_for_location(
           user_latitude DECIMAL,
@@ -314,7 +304,6 @@ async function runLocationMigration() {
 
     console.log("\n📊 Step 10: Updating existing user data...");
 
-    // Update existing users to use their address_city as location_city
     try {
       const updateUsers = `
         UPDATE users 

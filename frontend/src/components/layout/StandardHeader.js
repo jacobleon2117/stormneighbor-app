@@ -1,5 +1,4 @@
 // File: frontend/src/components/layout/StandardHeader.js
-import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import {
   ArrowLeft,
@@ -20,9 +19,8 @@ const StandardHeader = ({
   onBack,
   actions = [],
   style,
-  showDefaultActions = true, // New prop to control default icons
+  showDefaultActions = true,
 }) => {
-  // Default action handlers
   const handleSearch = () => {
     Alert.alert("Search", "Search functionality coming soon!");
   };
@@ -35,7 +33,6 @@ const StandardHeader = ({
     Alert.alert("More Options", "More options coming soon!");
   };
 
-  // Default actions (search, messages, more)
   const defaultActions = [
     {
       icon: <Search size={24} color={colors.text.primary} />,
@@ -51,7 +48,6 @@ const StandardHeader = ({
     },
   ];
 
-  // Combine custom actions with default actions
   const allActions = showDefaultActions
     ? [...actions, ...defaultActions]
     : actions;

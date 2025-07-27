@@ -112,10 +112,9 @@ const getAlerts = async (req, res) => {
     const { latitude, longitude, radius } = req.query;
     const userId = req.user?.userId;
 
-    // If no lat/lng provided, try to get from authenticated user
     let userLat = latitude;
     let userLng = longitude;
-    let searchRadius = radius || 25; // Default 25 miles for weather alerts
+    let searchRadius = radius || 25;
 
     if ((!userLat || !userLng) && userId) {
       const client = await pool.connect();
@@ -149,13 +148,11 @@ const getAlerts = async (req, res) => {
     const client = await pool.connect();
 
     try {
-      // Use our geographic function to get weather alerts
       const alertsResult = await client.query(
         `SELECT * FROM get_weather_alerts_for_location($1, $2, $3)`,
         [userLat, userLng, searchRadius]
       );
 
-      // Also try to get NOAA alerts
       let noaaAlerts = [];
       try {
         const noaaResponse = await axios.get(
@@ -181,7 +178,7 @@ const getAlerts = async (req, res) => {
             endTime: alert.properties.expires,
             isActive: true,
             createdAt: alert.properties.sent,
-            distanceMiles: 0, // NOAA alerts are location-specific
+            distanceMiles: 0,
             metadata: {
               urgency: alert.properties.urgency,
               certainty: alert.properties.certainty,
@@ -193,7 +190,6 @@ const getAlerts = async (req, res) => {
         console.warn("Failed to fetch NOAA alerts:", noaaError.message);
       }
 
-      // Combine database alerts with NOAA alerts
       const dbAlerts = alertsResult.rows.map((row) => ({
         id: row.id,
         alertId: row.alert_id,
@@ -212,7 +208,6 @@ const getAlerts = async (req, res) => {
 
       const allAlerts = [...dbAlerts, ...noaaAlerts];
 
-      // Sort by severity and distance
       allAlerts.sort((a, b) => {
         const severityOrder = { CRITICAL: 1, HIGH: 2, MODERATE: 3, LOW: 4 };
         const aSeverity = severityOrder[a.severity] || 5;
@@ -222,7 +217,6 @@ const getAlerts = async (req, res) => {
           return aSeverity - bSeverity;
         }
 
-        // Then by distance
         return (a.distanceMiles || 0) - (b.distanceMiles || 0);
       });
 
@@ -267,7 +261,6 @@ const createAlert = async (req, res) => {
     const client = await pool.connect();
 
     try {
-      // Get user's location info for the alert
       const userResult = await client.query(
         `SELECT 
           location_city,
@@ -285,7 +278,6 @@ const createAlert = async (req, res) => {
 
       const user = userResult.rows[0];
 
-      // Use provided coordinates or fall back to user's location
       const alertLat = latitude || user.user_latitude;
       const alertLng = longitude || user.user_longitude;
       const alertCity = user.location_city;
@@ -334,7 +326,6 @@ const createAlert = async (req, res) => {
       const result = await client.query(insertQuery, values);
       const newAlert = result.rows[0];
 
-      // Notify nearby users via real-time updates
       if (req.io) {
         req.io.emit("emergency-alert", {
           alertId: newAlert.id,

@@ -1,5 +1,4 @@
 // File: frontend/src/screens/auth/WelcomeScreen.js
-import React from "react";
 import { View, Text, TouchableOpacity, Image } from "react-native";
 import {
   globalStyles,
@@ -24,7 +23,6 @@ const WelcomeScreen = ({ onGetStarted, onSignIn }) => {
           { paddingHorizontal: spacing.lg },
         ]}
       >
-        {/* Logo and Title */}
         <View style={[globalStyles.center, { marginBottom: spacing.xxxxl }]}>
           <Text style={[globalStyles.title, styles.appTitle]}>
             Storm<Text style={{ color: colors.primary }}>Neighbor</Text>
@@ -41,7 +39,6 @@ const WelcomeScreen = ({ onGetStarted, onSignIn }) => {
           </Text>
         </View>
 
-        {/* Illustration */}
         <View style={[globalStyles.center, { marginBottom: spacing.xxxxl }]}>
           <Image
             source={require("../../../assets/images/illustration.png")}
@@ -50,7 +47,6 @@ const WelcomeScreen = ({ onGetStarted, onSignIn }) => {
           />
         </View>
 
-        {/* Action Buttons */}
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={createButtonStyle("primary", "large")}
@@ -80,7 +76,7 @@ const styles = {
   appTitle: {
     fontSize: 36,
     textAlign: "center",
-    lineHeight: 44, // Ensure proper line height
+    lineHeight: 44,
   },
 
   illustration: {
@@ -95,4 +91,3 @@ const styles = {
 };
 
 export default WelcomeScreen;
- 

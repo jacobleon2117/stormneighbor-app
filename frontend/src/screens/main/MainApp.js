@@ -1,5 +1,5 @@
 // File: frontend/src/screens/main/MainApp.js
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { View, Modal } from "react-native";
 import { globalStyles } from "@styles/designSystem";
 import { useAuth } from "@contexts/AuthContext";
@@ -67,19 +67,17 @@ const MainApp = ({ user }) => {
 
   const handleCreatePost = async (postData) => {
     try {
-      console.log("Creating post with data:", postData); // Add this line
+      console.log("Creating post with data:", postData);
 
       const result = await apiService.createPost({
         ...postData,
-        // Remove this line since we don't use neighborhoodId anymore:
-        // neighborhoodId: user.neighborhoodId,
       });
 
       if (result.success) {
         console.log("Post created successfully:", result.data);
         setShowCreatePost(false);
       } else {
-        console.log("Post creation failed:", result.error); // Add this line
+        console.log("Post creation failed:", result.error);
       }
     } catch (error) {
       console.error("Error creating post:", error);

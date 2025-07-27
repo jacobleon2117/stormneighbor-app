@@ -1,5 +1,5 @@
 // File: frontend/src/screens/main/HomeScreen.js
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { View, Text, ActivityIndicator } from "react-native";
 import { globalStyles, colors, spacing } from "@styles/designSystem";
 import { useAuth } from "@contexts/AuthContext";
@@ -48,7 +48,6 @@ const HomeScreen = ({ onNavigateToPost, onNavigateToProfile }) => {
   }, [user?.locationCity, user?.address?.city]);
 
   const loadHomeFeed = async () => {
-    // Check for location data instead of neighborhoodId
     if (!user?.location?.city && !user?.address?.city) {
       setPosts([]);
       return;
@@ -60,7 +59,6 @@ const HomeScreen = ({ onNavigateToPost, onNavigateToProfile }) => {
         user?.location?.city || user?.address?.city
       );
 
-      // Call getPosts without neighborhoodId parameter since it's location-based now
       const result = await apiService.getPosts(null, {
         limit: 20,
         sortBy: "createdAt",
@@ -84,7 +82,6 @@ const HomeScreen = ({ onNavigateToPost, onNavigateToProfile }) => {
   };
 
   const loadAlertCounts = async () => {
-    // Use user coordinates for alerts instead of neighborhoodId
     if (!user?.location?.latitude || !user?.location?.longitude) {
       return;
     }
@@ -136,7 +133,6 @@ const HomeScreen = ({ onNavigateToPost, onNavigateToProfile }) => {
       const result = await apiService.addReaction(post.id, "like");
 
       if (result.success) {
-        // Update based on the action returned from backend
         setPosts((prevPosts) =>
           prevPosts.map((p) =>
             p.id === post.id
@@ -202,7 +198,6 @@ const HomeScreen = ({ onNavigateToPost, onNavigateToProfile }) => {
       );
     }
 
-    // Check for location data instead of neighborhoodId
     if (!user?.location?.city && !user?.address?.city) {
       return (
         <View style={globalStyles.emptyContainer}>
@@ -243,7 +238,6 @@ const HomeScreen = ({ onNavigateToPost, onNavigateToProfile }) => {
     );
   };
 
-  // Custom header component that includes the greeting
   const customHeaderComponent = (
     <View>
       <GreetingHeader user={user} alertCounts={alertCounts} />

@@ -1,5 +1,5 @@
 // File: frontend/src/screens/auth/EmailVerificationScreen.js
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,

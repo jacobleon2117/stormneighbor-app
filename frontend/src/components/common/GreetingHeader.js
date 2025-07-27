@@ -1,5 +1,4 @@
 // File: frontend/src/components/common/GreetingHeader.js
-import React from "react";
 import { View, Text } from "react-native";
 import { AlertTriangle, Cloud, Bell, Sun } from "lucide-react-native";
 import { globalStyles, colors, spacing } from "@styles/designSystem";
@@ -82,7 +81,7 @@ const styles = {
     paddingVertical: spacing.lg,
     backgroundColor: colors.surface,
     marginHorizontal: spacing.lg,
-    marginBottom: spacing.md, // Reduced margin since it's now positioned by layout
+    marginBottom: spacing.md,
     borderRadius: 16,
     ...globalStyles.card,
   },

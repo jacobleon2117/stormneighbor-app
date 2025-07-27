@@ -1,5 +1,4 @@
 // File: frontend/src/components/common/PostCard.js
-import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Image } from "react-native";
 import {
   Heart,
@@ -50,7 +49,6 @@ const PostCard = ({
       badgeStyle = styles.helpBadge;
       textStyle = styles.helpBadgeText;
     } else if (post.postType === "general") {
-      // Check the title to determine badge type
       if (post.title?.toLowerCase().includes("announcement")) {
         badgeText = "Announcement";
         badgeStyle = styles.announcementBadge;
@@ -68,7 +66,7 @@ const PostCard = ({
         badgeStyle = styles.weatherBadge;
         textStyle = styles.weatherBadgeText;
       } else {
-        return null; // No badge for general posts without specific titles
+        return null;
       }
     }
 
@@ -87,7 +85,6 @@ const PostCard = ({
       onPress={() => onPress && onPress(post)}
       activeOpacity={0.7}
     >
-      {/* Header with profile image, name, timestamp, and badge */}
       <View style={styles.header}>
         <View style={styles.userSection}>
           <View style={styles.avatar}>
@@ -127,12 +124,10 @@ const PostCard = ({
         {getPostTypeBadge()}
       </View>
 
-      {/* Content */}
       <View style={styles.content}>
         <Text style={styles.postText}>{post.content}</Text>
       </View>
 
-      {/* Image if exists */}
       {post.imageUrl && (
         <Image
           source={{ uri: post.imageUrl }}
@@ -141,7 +136,6 @@ const PostCard = ({
         />
       )}
 
-      {/* Actions */}
       <View style={styles.actions}>
         <TouchableOpacity
           style={styles.actionButton}
@@ -319,7 +313,6 @@ const styles = StyleSheet.create({
     padding: spacing.xs,
   },
 
-  // Badge styles - same as CreatePostScreen text input badges
   badge: {
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
@@ -333,7 +326,6 @@ const styles = StyleSheet.create({
     fontFamily: "Inter",
   },
 
-  // Badge color variants
   safetyBadge: {
     backgroundColor: colors.errorLight,
     borderColor: colors.error,

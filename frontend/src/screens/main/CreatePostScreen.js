@@ -1,5 +1,5 @@
 // File: frontend/src/screens/main/CreatePostScreen.js
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -78,22 +78,22 @@ const CreatePostScreen = ({ user, onCreatePost, onClose }) => {
 
   const quickActions = [
     {
-      id: "announcement", // Keep unique ID but map to general
+      id: "announcement",
       title: "Announcement",
       icon: Megaphone,
       color: colors.text.link,
       bgColor: colors.primaryLight,
       badgeText: "Announcement",
-      postType: "general", // Add this field
+      postType: "general",
     },
     {
-      id: "event", // Keep unique ID but map to general
+      id: "event",
       title: "Create Event",
       icon: Calendar,
       color: colors.primary,
       bgColor: colors.primaryLight,
       badgeText: "Event",
-      postType: "general", // Add this field
+      postType: "general",
     },
     {
       id: "safety_alert",
@@ -102,25 +102,25 @@ const CreatePostScreen = ({ user, onCreatePost, onClose }) => {
       color: colors.error,
       bgColor: colors.errorLight,
       badgeText: "Safety Alert",
-      postType: "safety_alert", // Add this field
+      postType: "safety_alert",
     },
     {
-      id: "weather", // Keep unique ID but map to general
+      id: "weather",
       title: "Weather Alert",
       icon: Cloud,
       color: colors.warning,
       bgColor: colors.warningLight,
       badgeText: "Weather Alert",
-      postType: "general", // Add this field
+      postType: "general",
     },
     {
-      id: "question", // Keep unique ID but map to general
+      id: "question",
       title: "Ask Question",
       icon: HelpCircle,
       color: colors.success,
       bgColor: colors.successLight,
       badgeText: "Question",
-      postType: "general", // Add this field
+      postType: "general",
     },
     {
       id: "help_offer",
@@ -129,7 +129,7 @@ const CreatePostScreen = ({ user, onCreatePost, onClose }) => {
       color: "#F97316",
       bgColor: "#FED7AA",
       badgeText: "Offer Help",
-      postType: "help_offer", // Add this field
+      postType: "help_offer",
     },
   ];
 
@@ -389,7 +389,6 @@ const CreatePostScreen = ({ user, onCreatePost, onClose }) => {
       </TouchableWithoutFeedback>
     );
 
-  // Header actions for the close button
   const headerActions = [
     {
       icon: <X size={24} color={colors.text.primary} />,

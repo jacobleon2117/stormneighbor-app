@@ -1,5 +1,5 @@
 // File: frontend/src/screens/auth/LoginScreen.js
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -32,7 +32,6 @@ const LoginScreen = ({
   const [errors, setErrors] = useState({});
   const [autoLoginAttempted, setAutoLoginAttempted] = useState(false);
 
-  // Auto-login effect when both email and password are filled
   useEffect(() => {
     const autoLoginTimer = setTimeout(() => {
       if (
@@ -45,14 +44,14 @@ const LoginScreen = ({
         Keyboard.dismiss();
         handleLogin();
       }
-    }, 500); // Small delay to allow for autofill completion
+    }, 500);
 
     return () => clearTimeout(autoLoginTimer);
   }, [formData.email, formData.password, autoLoginAttempted, loading]);
 
   const updateField = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    setAutoLoginAttempted(false); // Reset auto-login attempt when user manually types
+    setAutoLoginAttempted(false);
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: null }));
     }
@@ -85,7 +84,7 @@ const LoginScreen = ({
     } catch (error) {
       console.error("Login error:", error);
       Alert.alert("Error", "Something went wrong. Please try again.");
-      setAutoLoginAttempted(false); // Allow retry
+      setAutoLoginAttempted(false);
     }
   };
 
@@ -102,7 +101,6 @@ const LoginScreen = ({
 
   const renderForm = () => (
     <View style={{ marginBottom: spacing.xxl }}>
-      {/* Email Field */}
       <View style={{ marginBottom: spacing.lg }}>
         <Text style={globalStyles.label}>Email</Text>
         <View style={{ position: "relative" }}>
@@ -123,9 +121,7 @@ const LoginScreen = ({
             textContentType="emailAddress"
             editable={!loading}
             onSubmitEditing={() => {
-              // Focus password field if email is filled
               if (formData.email.trim()) {
-                // Password field will be focused automatically
               }
             }}
           />
@@ -152,7 +148,6 @@ const LoginScreen = ({
         )}
       </View>
 
-      {/* Password Field */}
       <View style={{ marginBottom: spacing.lg }}>
         <Text style={globalStyles.label}>Password</Text>
         <View style={{ position: "relative" }}>

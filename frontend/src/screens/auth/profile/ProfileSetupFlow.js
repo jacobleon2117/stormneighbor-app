@@ -1,5 +1,5 @@
 // File: frontend/src/screens/auth/profile/ProfileSetupFlow.js
-import React, { useState } from "react";
+import { useState } from "react";
 import { Alert } from "react-native";
 import LocationSetupScreen from "./LocationSetupScreen";
 import ProfileSetupScreenIndividual from "./ProfileSetupScreenIndividual";
@@ -56,10 +56,8 @@ const ProfileSetupFlow = ({ onSetupComplete, onBack }) => {
       if (result.success) {
         console.log("Profile update successful, completing setup...");
 
-        // Mark setup as completed and update auth state
         await completeProfileSetup();
 
-        // Seamlessly transition to main app
         console.log("Setup completed, calling onSetupComplete");
         if (onSetupComplete) {
           onSetupComplete();

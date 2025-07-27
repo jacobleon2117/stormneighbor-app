@@ -1,5 +1,5 @@
 // File: frontend/src/screens/auth/RegisterScreen.js
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   View,
   Text,
@@ -29,7 +29,6 @@ const RegisterScreen = ({ onRegister, onSwitchToLogin, loading = false }) => {
 
   const updateField = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: null }));
     }
@@ -88,7 +87,6 @@ const RegisterScreen = ({ onRegister, onSwitchToLogin, loading = false }) => {
 
   const renderForm = () => (
     <View style={{ marginBottom: spacing.xxl }}>
-      {/* Name Fields */}
       <View
         style={[
           globalStyles.row,
@@ -148,7 +146,6 @@ const RegisterScreen = ({ onRegister, onSwitchToLogin, loading = false }) => {
         </View>
       </View>
 
-      {/* Email Field */}
       <View style={{ marginBottom: spacing.lg }}>
         <Text style={globalStyles.label}>Email</Text>
         <View style={{ position: "relative" }}>
@@ -190,7 +187,6 @@ const RegisterScreen = ({ onRegister, onSwitchToLogin, loading = false }) => {
         )}
       </View>
 
-      {/* Password Field */}
       <View style={{ marginBottom: spacing.lg }}>
         <Text style={globalStyles.label}>Password</Text>
         <View style={{ position: "relative" }}>

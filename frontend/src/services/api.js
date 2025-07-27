@@ -1,12 +1,12 @@
+// File: frontend/src/services/api.js
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const getBaseURL = () => {
   if (__DEV__) {
-    // Use your actual IP address instead of localhost
-    return "http://192.168.1.89:3000";
+    return process.env.EXPO_PUBLIC_API_URL || "http://192.168.1.89:3000";
   } else {
-    return "https://your-production-backend.com";
+    return process.env.EXPO_PUBLIC_API_URL || "https://production-backend.com";
   }
 };
 
@@ -20,22 +20,29 @@ class ApiService {
       },
     });
 
-    // REQUEST INTERCEPTOR WITH DEBUGGING
+    console.log(
+      "🔧 API Service initialized with base URL:",
+      this.api.defaults.baseURL
+    );
+
     this.api.interceptors.request.use(
       async (config) => {
-        console.log(
-          "🚀 API Request:",
-          config.method?.toUpperCase(),
-          config.url
-        );
-        console.log("🚀 Base URL:", config.baseURL);
+        if (__DEV__) {
+          console.log(
+            "🚀 API Request:",
+            config.method?.toUpperCase(),
+            config.url
+          );
+          console.log("🚀 Base URL:", config.baseURL);
+        }
+
         try {
           const token = await AsyncStorage.getItem("authToken");
           if (token) {
             config.headers.Authorization = `Bearer ${token}`;
-            console.log("🔑 Token added to request");
+            if (__DEV__) console.log("🔑 Token added to request");
           } else {
-            console.log("⚠️ No token found");
+            if (__DEV__) console.log("⚠️ No token found");
           }
         } catch (error) {
           console.error("❌ Error getting auth token:", error);
@@ -48,15 +55,16 @@ class ApiService {
       }
     );
 
-    // RESPONSE INTERCEPTOR WITH DEBUGGING
     this.api.interceptors.response.use(
       (response) => {
-        console.log(
-          "✅ API Success:",
-          response.config.method?.toUpperCase(),
-          response.config.url,
-          response.status
-        );
+        if (__DEV__) {
+          console.log(
+            "✅ API Success:",
+            response.config.method?.toUpperCase(),
+            response.config.url,
+            response.status
+          );
+        }
         return response;
       },
       async (error) => {
@@ -79,7 +87,11 @@ class ApiService {
     );
   }
 
-  // ADD THIS NEW TEST METHOD
+  updateBaseURL(newBaseURL) {
+    this.api.defaults.baseURL = newBaseURL;
+    console.log("🔧 API Base URL updated to:", newBaseURL);
+  }
+
   async testNetwork() {
     try {
       console.log(
@@ -100,7 +112,6 @@ class ApiService {
     }
   }
 
-  // Keep all your existing methods below this...
   async testConnection() {
     try {
       const response = await this.api.get("/health");
@@ -445,11 +456,10 @@ class ApiService {
     }
   }
 
-  async getAlerts(neighborhoodId) {
+  async getAlerts(neighborhoodId, locationParams = {}) {
     try {
-      const response = await this.api.get("/api/alerts", {
-        params: { neighborhoodId },
-      });
+      const params = locationParams.latitude ? locationParams : {};
+      const response = await this.api.get("/api/alerts", { params });
       return { success: true, data: response.data };
     } catch (error) {
       return {

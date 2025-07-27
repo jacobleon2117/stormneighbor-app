@@ -1,5 +1,5 @@
 // File: frontend/src/screens/main/WeatherScreen.js
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -30,7 +30,7 @@ import {
 import { globalStyles, colors, spacing } from "@styles/designSystem";
 import ScreenLayout from "@components/layout/ScreenLayout";
 
-const OPENWEATHER_API_KEY = "2a8fe08c288abdad20a5f3fa9a21d8bd"; // Add your API key here when ready
+const OPENWEATHER_API_KEY = "2a8fe08c288abdad20a5f3fa9a21d8bd";
 
 const WeatherScreen = ({ user }) => {
   const [currentWeather, setCurrentWeather] = useState(null);
@@ -55,7 +55,6 @@ const WeatherScreen = ({ user }) => {
       setLoading(true);
       setError(null);
 
-      // Request location permission
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
         setError("Location permission is required for weather data");
@@ -63,7 +62,6 @@ const WeatherScreen = ({ user }) => {
         return;
       }
 
-      // Get current location
       const currentLocation = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.High,
         timeout: 10000,
@@ -78,7 +76,6 @@ const WeatherScreen = ({ user }) => {
         longitudeDelta: 1.0,
       });
 
-      // Fetch weather data
       await fetchWeatherData(latitude, longitude);
     } catch (error) {
       console.error("Error initializing weather:", error);
@@ -214,12 +211,10 @@ const WeatherScreen = ({ user }) => {
         </View>
       ) : currentWeather ? (
         <View>
-          {/* Location */}
           <Text style={styles.locationText}>
             {currentWeather.name || "Current Location"}
           </Text>
 
-          {/* Temperature and Icon Row */}
           <View style={styles.tempRow}>
             <Text style={styles.temperatureText}>
               {formatTemperature(currentWeather.main.temp)}
@@ -229,7 +224,6 @@ const WeatherScreen = ({ user }) => {
             </View>
           </View>
 
-          {/* Conditions */}
           <Text style={styles.conditionsText}>
             {currentWeather.weather?.[0]?.description || "Clear"}
           </Text>
@@ -339,7 +333,6 @@ const WeatherScreen = ({ user }) => {
   return (
     <ScreenLayout title="Weather" scrollable={false} contentPadding={false}>
       <View style={styles.container}>
-        {/* Map Background */}
         <MapView
           style={styles.map}
           region={mapRegion}
@@ -358,13 +351,8 @@ const WeatherScreen = ({ user }) => {
           )}
         </MapView>
 
-        {/* Weather Card Overlay */}
         {renderWeatherCard()}
-
-        {/* Map Controls */}
         {renderMapControls()}
-
-        {/* Filters at Bottom */}
         {renderFilters()}
       </View>
     </ScreenLayout>
@@ -426,7 +414,7 @@ const styles = StyleSheet.create({
 
   filtersContainer: {
     position: "absolute",
-    bottom: spacing.xxxxl + 80, // Above tab navigation
+    bottom: spacing.xxxxl + 80,
     left: 0,
     right: 0,
     backgroundColor: "transparent",
@@ -459,7 +447,7 @@ const styles = StyleSheet.create({
 
   mapControls: {
     position: "absolute",
-    bottom: spacing.xxxxl + 140, // Above filters
+    bottom: spacing.xxxxl + 140,
     right: spacing.lg,
   },
 

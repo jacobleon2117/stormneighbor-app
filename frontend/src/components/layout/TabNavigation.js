@@ -1,5 +1,4 @@
 // File: frontend/src/components/layout/TabNavigation.js
-import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Home, Cloud, Plus, AlertTriangle, User } from "lucide-react-native";
 import { globalStyles, colors, spacing } from "@styles/designSystem";

@@ -1,5 +1,5 @@
 // File: frontend/src/screens/main/ProfileScreen.js
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   View,
   Text,
@@ -213,7 +213,6 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xxxxl,
   },
 
-  // Profile Header
   profileHeader: {
     backgroundColor: colors.surface,
     borderRadius: 12,
@@ -307,7 +306,6 @@ const styles = StyleSheet.create({
     fontFamily: "Inter",
   },
 
-  // Settings Card
   settingsCard: {
     backgroundColor: colors.surface,
     borderRadius: 12,
@@ -371,7 +369,6 @@ const styles = StyleSheet.create({
     fontFamily: "Inter",
   },
 
-  // Logout Button
   logoutButton: {
     flexDirection: "row",
     alignItems: "center",

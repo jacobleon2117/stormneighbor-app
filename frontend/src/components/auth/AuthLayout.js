@@ -1,4 +1,4 @@
-// File path: frontend/src/components/AuthLayout.js
+// File: frontend/src/components/AuthLayout.js
 import {
   View,
   SafeAreaView,

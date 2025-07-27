@@ -1,5 +1,4 @@
 // File: frontend/src/screens/auth/LoadingScreen.js
-import React from "react";
 import { View, Text } from "react-native";
 import { globalStyles, colors, spacing } from "@styles/designSystem";
 import ScreenLayout from "@components/layout/ScreenLayout";
@@ -19,7 +18,6 @@ const LoadingScreen = () => {
           { paddingHorizontal: spacing.lg },
         ]}
       >
-        {/* App Title Only */}
         <Text style={styles.appTitle}>
           Storm<Text style={{ color: colors.primary }}>Neighbor</Text>
         </Text>
@@ -35,7 +33,7 @@ const styles = {
     color: colors.text.primary,
     fontFamily: "Inter",
     textAlign: "center",
-    lineHeight: 44, // Proper line height to prevent cutoff
+    lineHeight: 44,
   },
 };
 

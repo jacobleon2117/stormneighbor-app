@@ -1,5 +1,5 @@
 // File: frontend/src/components/common/LoadingSpinner.js
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { View, Animated } from "react-native";
 import { colors } from "@styles/designSystem";
 

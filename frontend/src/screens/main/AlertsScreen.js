@@ -1,5 +1,5 @@
 // File: frontend/src/screens/main/AlertsScreen.js
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -53,7 +53,6 @@ const AlertsScreen = ({ user, alertCounts }) => {
       if (result.success) {
         const alertsData = result.data.alerts || [];
 
-        // Sort alerts by severity and timestamp
         alertsData.sort((a, b) => {
           const severityOrder = {
             CRITICAL: 4,

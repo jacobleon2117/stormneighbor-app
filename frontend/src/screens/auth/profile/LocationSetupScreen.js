@@ -1,5 +1,5 @@
 // File: frontend/src/screens/auth/profile/LocationSetupScreen.js
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -92,7 +92,6 @@ const LocationSetupScreen = ({ onNext, onBack, initialData = {} }) => {
 
       const { latitude, longitude } = location.coords;
 
-      // Reverse geocode to get address info
       const reverseGeocode = await Location.reverseGeocodeAsync({
         latitude,
         longitude,
@@ -113,7 +112,6 @@ const LocationSetupScreen = ({ onNext, onBack, initialData = {} }) => {
             prev.address,
         }));
 
-        // Clear any previous errors since we now have location data
         setErrors({});
       }
     } catch (error) {
@@ -240,9 +238,7 @@ const LocationSetupScreen = ({ onNext, onBack, initialData = {} }) => {
           createButtonStyle("secondary", "large"),
           { marginTop: spacing.md },
         ]}
-        onPress={() => {
-          /* Keep current form, just don't auto-fill */
-        }}
+        onPress={() => {}}
         disabled={locationLoading}
       >
         <Text style={globalStyles.buttonSecondaryText}>Enter Manually</Text>
@@ -387,7 +383,6 @@ const LocationSetupScreen = ({ onNext, onBack, initialData = {} }) => {
           ? renderLocationPermissionCard()
           : renderLocationSummary()}
 
-        {/* Manual Address Fields - Always Visible */}
         <View style={{ marginBottom: spacing.lg }}>
           <Text style={globalStyles.label}>Street Address (Optional)</Text>
           <TextInput

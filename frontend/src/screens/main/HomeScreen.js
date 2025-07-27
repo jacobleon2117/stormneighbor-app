@@ -8,7 +8,11 @@ import GreetingHeader from "@components/common/GreetingHeader";
 import PostCard from "@components/common/PostCard";
 import apiService from "@services/api";
 
-const HomeScreen = ({ onNavigateToPost, onNavigateToProfile }) => {
+const HomeScreen = ({
+  onNavigateToPost,
+  onNavigateToComments,
+  onNavigateToProfile,
+}) => {
   const { user } = useAuth();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -162,11 +166,11 @@ const HomeScreen = ({ onNavigateToPost, onNavigateToProfile }) => {
 
   const handleComment = useCallback(
     (post) => {
-      if (onNavigateToPost) {
-        onNavigateToPost(post.id);
+      if (onNavigateToComments) {
+        onNavigateToComments(post);
       }
     },
-    [onNavigateToPost]
+    [onNavigateToComments]
   );
 
   const handleShare = useCallback((post) => {

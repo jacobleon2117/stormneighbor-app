@@ -187,31 +187,37 @@ const HomeScreen = ({ onNavigateToPost, onNavigateToProfile }) => {
     }
 
     return (
-      <>
-        <View style={{ marginTop: spacing.lg }}>
-          <GreetingHeader user={user} alertCounts={alertCounts} />
-        </View>
-
-        <View style={{ marginTop: spacing.lg }}>
-          {posts.map((post, index) => (
-            <PostCard
-              key={post.id}
-              post={post}
-              index={index}
-              onPress={handlePostPress}
-              onLike={handleLike}
-              onComment={handleComment}
-              onShare={handleShare}
-              onMore={handleMore}
-            />
-          ))}
-        </View>
-      </>
+      <View style={{ flex: 1 }}>
+        {posts.map((post, index) => (
+          <PostCard
+            key={post.id}
+            post={post}
+            index={index}
+            onPress={handlePostPress}
+            onLike={handleLike}
+            onComment={handleComment}
+            onShare={handleShare}
+            onMore={handleMore}
+          />
+        ))}
+      </View>
     );
   };
 
+  // Custom header component that includes the greeting
+  const customHeaderComponent = (
+    <View>
+      <GreetingHeader user={user} alertCounts={alertCounts} />
+    </View>
+  );
+
   return (
-    <ScreenLayout title="Home" refreshing={refreshing} onRefresh={onRefresh}>
+    <ScreenLayout
+      title="Home"
+      refreshing={refreshing}
+      onRefresh={onRefresh}
+      customHeaderComponent={customHeaderComponent}
+    >
       {renderContent()}
     </ScreenLayout>
   );

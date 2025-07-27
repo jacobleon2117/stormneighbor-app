@@ -17,6 +17,21 @@ const authReducer = (state, action) => {
         loading: false,
       };
 
+    case "SET_USER_NEEDS_SETUP":
+      return {
+        ...state,
+        user: action.payload.user,
+        isAuthenticated: true,
+        needsProfileSetup: action.payload.needsSetup,
+        loading: false,
+      };
+
+    case "COMPLETE_PROFILE_SETUP":
+      return {
+        ...state,
+        needsProfileSetup: false,
+      };
+
     case "SET_ERROR":
       return {
         ...state,
@@ -32,6 +47,7 @@ const authReducer = (state, action) => {
         ...state,
         user: null,
         isAuthenticated: false,
+        needsProfileSetup: false,
         loading: false,
         error: null,
       };
@@ -44,6 +60,7 @@ const authReducer = (state, action) => {
 const initialState = {
   user: null,
   isAuthenticated: false,
+  needsProfileSetup: false,
   loading: true,
   error: null,
 };
@@ -79,7 +96,18 @@ export const AuthProvider = ({ children }) => {
       // Verify token with backend
       const result = await apiService.getProfile();
       if (result.success) {
-        dispatch({ type: "SET_USER", payload: result.data.user });
+        // Check if user needs profile setup (no neighborhood, missing key info, etc.)
+        const user = result.data;
+        const needsSetup = !user.neighborhoodId || !user.address?.city;
+
+        if (needsSetup) {
+          dispatch({
+            type: "SET_USER_NEEDS_SETUP",
+            payload: { user, needsSetup: true },
+          });
+        } else {
+          dispatch({ type: "SET_USER", payload: user });
+        }
       } else {
         // Token is invalid, remove it
         await AsyncStorage.removeItem("authToken");
@@ -101,7 +129,20 @@ export const AuthProvider = ({ children }) => {
 
       if (result.success) {
         await AsyncStorage.setItem("authToken", result.data.token);
-        dispatch({ type: "SET_USER", payload: result.data.user });
+
+        // Check if user needs profile setup
+        const user = result.data.user;
+        const needsSetup = !user.neighborhoodId || !user.address?.city;
+
+        if (needsSetup) {
+          dispatch({
+            type: "SET_USER_NEEDS_SETUP",
+            payload: { user, needsSetup: true },
+          });
+        } else {
+          dispatch({ type: "SET_USER", payload: user });
+        }
+
         return { success: true };
       } else {
         dispatch({ type: "SET_ERROR", payload: result.error });
@@ -123,7 +164,13 @@ export const AuthProvider = ({ children }) => {
 
       if (result.success) {
         await AsyncStorage.setItem("authToken", result.data.token);
-        dispatch({ type: "SET_USER", payload: result.data.user });
+
+        // New users always need profile setup
+        dispatch({
+          type: "SET_USER_NEEDS_SETUP",
+          payload: { user: result.data.user, needsSetup: true },
+        });
+
         return { success: true };
       } else {
         dispatch({ type: "SET_ERROR", payload: result.error });
@@ -177,7 +224,15 @@ export const AuthProvider = ({ children }) => {
       const result = await apiService.updateProfile(profileData);
 
       if (result.success) {
-        dispatch({ type: "SET_USER", payload: result.data.user });
+        // After successful profile update, mark setup as complete
+        dispatch({ type: "COMPLETE_PROFILE_SETUP" });
+
+        // Refresh user data
+        const profileResult = await apiService.getProfile();
+        if (profileResult.success) {
+          dispatch({ type: "SET_USER", payload: profileResult.data });
+        }
+
         return { success: true };
       } else {
         dispatch({ type: "SET_ERROR", payload: result.error });
@@ -192,6 +247,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const completeProfileSetup = () => {
+    dispatch({ type: "COMPLETE_PROFILE_SETUP" });
+  };
+
   const updateUser = (userData) => {
     dispatch({ type: "SET_USER", payload: { ...state.user, ...userData } });
   };
@@ -204,6 +263,7 @@ export const AuthProvider = ({ children }) => {
     // State
     user: state.user,
     isAuthenticated: state.isAuthenticated,
+    needsProfileSetup: state.needsProfileSetup,
     loading: state.loading,
     error: state.error,
 
@@ -213,6 +273,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     forgotPassword,
     updateProfile,
+    completeProfileSetup,
     updateUser,
     clearError,
     checkAuthStatus,
@@ -220,3 +281,5 @@ export const AuthProvider = ({ children }) => {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
+
+export default AuthContext;

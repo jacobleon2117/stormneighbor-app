@@ -16,13 +16,15 @@ const ScreenLayout = ({
   title,
   showHeader = true,
   headerActions,
+  customHeaderComponent,
   scrollable = true,
   refreshing = false,
   onRefresh,
   backgroundColor = colors.background,
   contentPadding = true,
   keyboardAvoiding = false,
-  safeAreaBackground = colors.background,
+  safeAreaBackground = colors.surface, // Header background color
+  showDefaultActions = true, // New prop to control default header actions
 }) => {
   const ContentWrapper = scrollable ? ScrollView : View;
 
@@ -51,8 +53,8 @@ const ScreenLayout = ({
       };
 
   return (
-    <SafeAreaView
-      style={[globalStyles.safeArea, { backgroundColor: safeAreaBackground }]}
+    <View
+      style={[styles.fullContainer, { backgroundColor: safeAreaBackground }]}
     >
       <StatusBar
         barStyle="dark-content"
@@ -60,16 +62,43 @@ const ScreenLayout = ({
         translucent={false}
       />
 
-      {showHeader && <StandardHeader title={title} actions={headerActions} />}
+      <SafeAreaView style={styles.safeAreaTop} />
 
-      <View style={[globalStyles.container, { backgroundColor }]}>
+      {showHeader && (
+        <StandardHeader
+          title={title}
+          actions={headerActions}
+          showDefaultActions={showDefaultActions}
+        />
+      )}
+
+      {/* Custom header component (like GreetingHeader) */}
+      {customHeaderComponent && (
+        <View style={styles.customHeaderContainer}>
+          {customHeaderComponent}
+        </View>
+      )}
+
+      <View style={[styles.contentContainer, { backgroundColor }]}>
         <ContentWrapper {...contentProps}>{children}</ContentWrapper>
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  fullContainer: {
+    flex: 1,
+  },
+
+  safeAreaTop: {
+    flex: 0,
+  },
+
+  contentContainer: {
+    flex: 1,
+  },
+
   scrollView: {
     flex: 1,
   },
@@ -83,6 +112,11 @@ const styles = StyleSheet.create({
   staticContainer: {
     flex: 1,
     paddingHorizontal: spacing.lg,
+  },
+
+  customHeaderContainer: {
+    backgroundColor: colors.background,
+    paddingTop: spacing.md,
   },
 });
 

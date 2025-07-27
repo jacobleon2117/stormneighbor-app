@@ -1,5 +1,5 @@
 // File: frontend/src/screens/auth/LoginScreen.js
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Keyboard,
 } from "react-native";
 import { Mail, Eye, EyeOff } from "lucide-react-native";
 import {
@@ -29,9 +30,29 @@ const LoginScreen = ({
   });
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
+  const [autoLoginAttempted, setAutoLoginAttempted] = useState(false);
+
+  // Auto-login effect when both email and password are filled
+  useEffect(() => {
+    const autoLoginTimer = setTimeout(() => {
+      if (
+        formData.email.trim() &&
+        formData.password.trim() &&
+        !autoLoginAttempted &&
+        !loading
+      ) {
+        setAutoLoginAttempted(true);
+        Keyboard.dismiss();
+        handleLogin();
+      }
+    }, 500); // Small delay to allow for autofill completion
+
+    return () => clearTimeout(autoLoginTimer);
+  }, [formData.email, formData.password, autoLoginAttempted, loading]);
 
   const updateField = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    setAutoLoginAttempted(false); // Reset auto-login attempt when user manually types
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: null }));
     }
@@ -64,6 +85,7 @@ const LoginScreen = ({
     } catch (error) {
       console.error("Login error:", error);
       Alert.alert("Error", "Something went wrong. Please try again.");
+      setAutoLoginAttempted(false); // Allow retry
     }
   };
 
@@ -97,7 +119,15 @@ const LoginScreen = ({
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
+            autoComplete="email"
+            textContentType="emailAddress"
             editable={!loading}
+            onSubmitEditing={() => {
+              // Focus password field if email is filled
+              if (formData.email.trim()) {
+                // Password field will be focused automatically
+              }
+            }}
           />
           <View
             style={{
@@ -139,7 +169,10 @@ const LoginScreen = ({
             secureTextEntry={!showPassword}
             autoCapitalize="none"
             autoCorrect={false}
+            autoComplete="password"
+            textContentType="password"
             editable={!loading}
+            onSubmitEditing={handleLogin}
           />
           <TouchableOpacity
             style={{
@@ -183,7 +216,10 @@ const LoginScreen = ({
         disabled={loading}
       >
         {loading ? (
-          <ActivityIndicator color={colors.text.inverse} />
+          <View style={globalStyles.buttonContent}>
+            <ActivityIndicator color={colors.text.inverse} />
+            <Text style={globalStyles.buttonPrimaryText}>Signing In...</Text>
+          </View>
         ) : (
           <Text style={globalStyles.buttonPrimaryText}>Sign In</Text>
         )}
@@ -213,6 +249,7 @@ const LoginScreen = ({
       showHeader={false}
       scrollable={true}
       backgroundColor={colors.background}
+      safeAreaBackground={colors.background}
     >
       <View
         style={[

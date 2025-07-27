@@ -31,31 +31,57 @@ const AuthFlow = () => {
     const result = await register(userData);
 
     if (result.success) {
-      // Check if user needs profile setup
+      console.log("Registration successful, triggering profile setup");
+      // User registered successfully, send them to profile setup
       setUserNeedsSetup(true);
       setCurrentScreen("profileSetup");
       return;
     }
 
     if (result.error) {
-      Alert.alert("Registration Failed", result.error);
+      // Check if error indicates user already exists
+      if (
+        result.error.toLowerCase().includes("already exists") ||
+        result.error.toLowerCase().includes("user already") ||
+        result.error.toLowerCase().includes("email already")
+      ) {
+        Alert.alert(
+          "Account Exists",
+          "An account with this email already exists. Please sign in instead.",
+          [
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Sign In",
+              onPress: () => setCurrentScreen("login"),
+            },
+          ]
+        );
+      } else {
+        Alert.alert("Registration Failed", result.error);
+      }
     }
   };
 
   const handleProfileSetupComplete = () => {
+    console.log("Profile setup completed");
     setUserNeedsSetup(false);
-    // Navigation will be handled by the main app
+    // This should trigger the main app to show
   };
 
   if (loading && currentScreen === "welcome") {
     return <LoadingScreen />;
   }
 
-  if (userNeedsSetup || currentScreen === "profileSetup") {
+  // Force profile setup if user needs it
+  if (userNeedsSetup && currentScreen === "profileSetup") {
+    console.log("Showing profile setup flow");
     return (
       <ProfileSetupFlow
         onSetupComplete={handleProfileSetupComplete}
-        onBack={() => setCurrentScreen("register")}
+        onBack={() => {
+          // Don't allow going back to registration after successful signup
+          console.log("Profile setup back pressed - staying in setup");
+        }}
       />
     );
   }
@@ -91,6 +117,16 @@ const AuthFlow = () => {
     case "forgotPassword":
       return (
         <ForgotPasswordScreen onBackToLogin={() => setCurrentScreen("login")} />
+      );
+
+    case "profileSetup":
+      // This should also show profile setup
+      console.log("Profile setup case triggered");
+      return (
+        <ProfileSetupFlow
+          onSetupComplete={handleProfileSetupComplete}
+          onBack={() => setCurrentScreen("register")}
+        />
       );
 
     default:

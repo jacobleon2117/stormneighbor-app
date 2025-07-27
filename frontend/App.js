@@ -5,9 +5,16 @@ import { colors } from "./src/styles/designSystem";
 import AuthFlow from "./src/screens/auth/AuthFlow";
 import MainApp from "./src/screens/main/MainApp";
 import LoadingScreen from "./src/screens/auth/LoadingScreen";
+import ProfileSetupFlow from "./src/screens/auth/profile/ProfileSetupFlow";
 
 const AppContent = () => {
-  const { isAuthenticated, loading, user } = useAuth();
+  const {
+    isAuthenticated,
+    needsProfileSetup,
+    loading,
+    user,
+    completeProfileSetup,
+  } = useAuth();
 
   if (loading) {
     return <LoadingScreen />;
@@ -15,6 +22,19 @@ const AppContent = () => {
 
   if (!isAuthenticated) {
     return <AuthFlow />;
+  }
+
+  // If user is authenticated but needs profile setup
+  if (needsProfileSetup) {
+    return (
+      <ProfileSetupFlow
+        onSetupComplete={completeProfileSetup}
+        onBack={() => {
+          // Don't allow going back after successful registration
+          console.log("Profile setup back pressed - staying in setup");
+        }}
+      />
+    );
   }
 
   return <MainApp user={user} />;

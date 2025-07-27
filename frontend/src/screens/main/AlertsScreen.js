@@ -199,32 +199,33 @@ const AlertsScreen = ({ user, alertCounts }) => {
   const recentAlerts = filteredAlerts.filter((alert) => !alert.isActive);
 
   const renderFilterChips = () => (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      style={styles.filtersContainer}
-      contentContainerStyle={styles.filtersContent}
-    >
-      {filters.map((filter) => (
-        <TouchableOpacity
-          key={filter.id}
-          style={[
-            styles.filterChip,
-            selectedFilter === filter.id && styles.filterChipActive,
-          ]}
-          onPress={() => setSelectedFilter(filter.id)}
-        >
-          <Text
+    <View style={styles.filtersContainer}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.filtersContent}
+      >
+        {filters.map((filter) => (
+          <TouchableOpacity
+            key={filter.id}
             style={[
-              styles.filterText,
-              selectedFilter === filter.id && styles.filterTextActive,
+              styles.filterChip,
+              selectedFilter === filter.id && styles.filterChipActive,
             ]}
+            onPress={() => setSelectedFilter(filter.id)}
           >
-            {filter.label}
-          </Text>
-        </TouchableOpacity>
-      ))}
-    </ScrollView>
+            <Text
+              style={[
+                styles.filterText,
+                selectedFilter === filter.id && styles.filterTextActive,
+              ]}
+            >
+              {filter.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </View>
   );
 
   const renderAlertCard = (alert, isActive = true) => {
@@ -346,7 +347,7 @@ const AlertsScreen = ({ user, alertCounts }) => {
     }
 
     return (
-      <>
+      <View style={{ flex: 1 }}>
         {renderFilterChips()}
 
         <ScrollView
@@ -375,12 +376,17 @@ const AlertsScreen = ({ user, alertCounts }) => {
 
           <View style={{ height: spacing.xxxxl }} />
         </ScrollView>
-      </>
+      </View>
     );
   };
 
   return (
-    <ScreenLayout title="Alerts" refreshing={refreshing} onRefresh={onRefresh}>
+    <ScreenLayout
+      title="Alerts"
+      refreshing={refreshing}
+      onRefresh={onRefresh}
+      contentPadding={false}
+    >
       {renderContent()}
     </ScreenLayout>
   );
@@ -388,8 +394,9 @@ const AlertsScreen = ({ user, alertCounts }) => {
 
 const styles = {
   filtersContainer: {
-    marginTop: spacing.lg,
-    marginBottom: spacing.md,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
+    backgroundColor: colors.background,
   },
 
   filtersContent: {

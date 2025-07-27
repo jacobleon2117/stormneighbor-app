@@ -7,6 +7,7 @@ import {
   Alert,
   ActivityIndicator,
   ScrollView,
+  StyleSheet,
 } from "react-native";
 import MapView, { UrlTile } from "react-native-maps";
 import * as Location from "expo-location";
@@ -29,7 +30,7 @@ import {
 import { globalStyles, colors, spacing } from "@styles/designSystem";
 import ScreenLayout from "@components/layout/ScreenLayout";
 
-const OPENWEATHER_API_KEY = ""; // Add your API key here when ready
+const OPENWEATHER_API_KEY = "2a8fe08c288abdad20a5f3fa9a21d8bd"; // Add your API key here when ready
 
 const WeatherScreen = ({ user }) => {
   const [currentWeather, setCurrentWeather] = useState(null);
@@ -89,13 +90,18 @@ const WeatherScreen = ({ user }) => {
   const fetchWeatherData = async (lat, lon) => {
     try {
       if (!OPENWEATHER_API_KEY) {
-        setError("Weather API key not configured");
+        // Mock data for testing
+        setCurrentWeather({
+          name: "Owasso",
+          main: { temp: 72 },
+          weather: [{ description: "Partly cloudy", icon: "02d" }],
+        });
         setLoading(false);
         return;
       }
 
       const response = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${OPENWEATHER_API_KEY}&units=metric`
+        `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${OPENWEATHER_API_KEY}&units=imperial`
       );
 
       if (!response.ok) {
@@ -113,7 +119,7 @@ const WeatherScreen = ({ user }) => {
   };
 
   const getWeatherIcon = (iconCode, size = 32) => {
-    if (!iconCode) return <Cloud size={size} color={colors.text.muted} />;
+    if (!iconCode) return <Cloud size={size} color={colors.text.primary} />;
 
     const iconMap = {
       "01": Sun,
@@ -128,14 +134,14 @@ const WeatherScreen = ({ user }) => {
     };
 
     const IconComponent = iconMap[iconCode.substring(0, 2)] || Cloud;
-    return <IconComponent size={size} color={colors.text.muted} />;
+    return <IconComponent size={size} color={colors.text.primary} />;
   };
 
   const formatTemperature = (temp) => {
     if (temp === null || temp === undefined || isNaN(temp)) {
-      return "0°";
+      return "0°F";
     }
-    return `${Math.round(temp)}°C`;
+    return `${Math.round(temp)}°F`;
   };
 
   const getTileUrl = () => {
@@ -166,10 +172,6 @@ const WeatherScreen = ({ user }) => {
     }
   };
 
-  const handlePlayPause = () => {
-    setIsPlaying(!isPlaying);
-  };
-
   const handleFilterChange = (filterId) => {
     setSelectedLayer(filterId);
   };
@@ -179,7 +181,12 @@ const WeatherScreen = ({ user }) => {
       {loading ? (
         <View style={globalStyles.center}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={[globalStyles.caption, { marginTop: spacing.sm }]}>
+          <Text
+            style={[
+              globalStyles.caption,
+              { marginTop: spacing.sm, color: colors.text.primary },
+            ]}
+          >
             Loading weather...
           </Text>
         </View>
@@ -189,7 +196,11 @@ const WeatherScreen = ({ user }) => {
           <Text
             style={[
               globalStyles.body,
-              { textAlign: "center", marginTop: spacing.sm },
+              {
+                textAlign: "center",
+                marginTop: spacing.sm,
+                color: colors.text.primary,
+              },
             ]}
           >
             {error}
@@ -202,35 +213,32 @@ const WeatherScreen = ({ user }) => {
           </TouchableOpacity>
         </View>
       ) : currentWeather ? (
-        <View style={globalStyles.row}>
-          <View style={globalStyles.flex1}>
-            <Text style={globalStyles.body}>
-              {currentWeather.name || "Current Location"}
-            </Text>
-            <Text
-              style={[
-                globalStyles.title,
-                { fontSize: 48, marginVertical: spacing.sm },
-              ]}
-            >
+        <View>
+          {/* Location */}
+          <Text style={styles.locationText}>
+            {currentWeather.name || "Current Location"}
+          </Text>
+
+          {/* Temperature and Icon Row */}
+          <View style={styles.tempRow}>
+            <Text style={styles.temperatureText}>
               {formatTemperature(currentWeather.main.temp)}
             </Text>
+            <View style={styles.weatherIconContainer}>
+              {getWeatherIcon(currentWeather.weather?.[0]?.icon, 48)}
+            </View>
           </View>
-          <View style={globalStyles.alignCenter}>
-            {getWeatherIcon(currentWeather.weather?.[0]?.icon, 48)}
-            <Text
-              style={[
-                globalStyles.caption,
-                { marginTop: spacing.xs, textAlign: "center" },
-              ]}
-            >
-              {currentWeather.weather?.[0]?.description || "Clear"}
-            </Text>
-          </View>
+
+          {/* Conditions */}
+          <Text style={styles.conditionsText}>
+            {currentWeather.weather?.[0]?.description || "Clear"}
+          </Text>
         </View>
       ) : (
         <View style={globalStyles.center}>
-          <Text style={globalStyles.body}>No weather data available</Text>
+          <Text style={[globalStyles.body, { color: colors.text.primary }]}>
+            No weather data available
+          </Text>
         </View>
       )}
     </View>
@@ -255,44 +263,48 @@ const WeatherScreen = ({ user }) => {
     ];
 
     return (
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.filtersContainer}
-        contentContainerStyle={styles.filtersContent}
-      >
-        {filters.map((filter) => {
-          const isActive = selectedLayer === filter.id;
-          const IconComponent = filter.icon;
+      <View style={styles.filtersContainer}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filtersContent}
+        >
+          {filters.map((filter) => {
+            const isActive = selectedLayer === filter.id;
+            const IconComponent = filter.icon;
 
-          return (
-            <TouchableOpacity
-              key={filter.id}
-              style={[
-                styles.filterChip,
-                isActive && {
-                  backgroundColor: filter.color,
-                  borderColor: filter.color,
-                },
-              ]}
-              onPress={() => handleFilterChange(filter.id)}
-            >
-              <IconComponent
-                size={16}
-                color={isActive ? colors.text.inverse : filter.color}
-              />
-              <Text
+            return (
+              <TouchableOpacity
+                key={filter.id}
                 style={[
-                  styles.filterText,
-                  isActive && { color: colors.text.inverse, fontWeight: "600" },
+                  styles.filterChip,
+                  isActive && {
+                    backgroundColor: filter.color,
+                    borderColor: filter.color,
+                  },
                 ]}
+                onPress={() => handleFilterChange(filter.id)}
               >
-                {filter.name}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+                <IconComponent
+                  size={16}
+                  color={isActive ? colors.text.inverse : filter.color}
+                />
+                <Text
+                  style={[
+                    styles.filterText,
+                    isActive && {
+                      color: colors.text.inverse,
+                      fontWeight: "600",
+                    },
+                  ]}
+                >
+                  {filter.name}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
     );
   };
 
@@ -325,72 +337,99 @@ const WeatherScreen = ({ user }) => {
   }
 
   return (
-    <View style={globalStyles.container}>
-      <MapView
-        style={styles.map}
-        region={mapRegion}
-        onRegionChangeComplete={setMapRegion}
-        showsUserLocation={true}
-        showsMyLocationButton={false}
-      >
-        {getTileUrl() && (
-          <UrlTile
-            urlTemplate={getTileUrl()}
-            maximumZ={10}
-            flipY={false}
-            shouldReplaceMapContent={false}
-            opacity={0.7}
-          />
-        )}
-      </MapView>
+    <ScreenLayout title="Weather" scrollable={false} contentPadding={false}>
+      <View style={styles.container}>
+        {/* Map Background */}
+        <MapView
+          style={styles.map}
+          region={mapRegion}
+          onRegionChangeComplete={setMapRegion}
+          showsUserLocation={true}
+          showsMyLocationButton={false}
+        >
+          {getTileUrl() && (
+            <UrlTile
+              urlTemplate={getTileUrl()}
+              maximumZ={10}
+              flipY={false}
+              shouldReplaceMapContent={false}
+              opacity={0.7}
+            />
+          )}
+        </MapView>
 
-      <View style={styles.overlay}>
-        <View style={styles.header}>
-          <Text style={globalStyles.heading}>Weather</Text>
-        </View>
-
+        {/* Weather Card Overlay */}
         {renderWeatherCard()}
-        {renderFilters()}
+
+        {/* Map Controls */}
         {renderMapControls()}
+
+        {/* Filters at Bottom */}
+        {renderFilters()}
       </View>
-    </View>
+    </ScreenLayout>
   );
 };
 
-const styles = {
-  map: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-
-  overlay: {
+const styles = StyleSheet.create({
+  container: {
     flex: 1,
-    backgroundColor: "transparent",
+    position: "relative",
   },
 
-  header: {
-    backgroundColor: colors.surface,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+  map: {
+    ...StyleSheet.absoluteFillObject,
   },
 
   weatherCard: {
+    position: "absolute",
+    top: spacing.lg,
+    left: spacing.lg,
+    right: spacing.lg,
     backgroundColor: "rgba(255, 255, 255, 0.95)",
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.lg,
-    padding: spacing.xl,
-    borderRadius: 12,
+    padding: spacing.lg,
+    borderRadius: 16,
     ...globalStyles.card,
   },
 
+  locationText: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: colors.text.primary,
+    textAlign: "center",
+    marginBottom: spacing.sm,
+  },
+
+  tempRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.sm,
+  },
+
+  temperatureText: {
+    fontSize: 48,
+    fontWeight: "700",
+    color: colors.text.primary,
+  },
+
+  weatherIconContainer: {
+    alignItems: "center",
+  },
+
+  conditionsText: {
+    fontSize: 16,
+    color: colors.text.secondary,
+    textAlign: "center",
+    textTransform: "capitalize",
+  },
+
   filtersContainer: {
-    marginTop: spacing.lg,
-    marginBottom: spacing.lg,
+    position: "absolute",
+    bottom: spacing.xxxxl + 80, // Above tab navigation
+    left: 0,
+    right: 0,
+    backgroundColor: "transparent",
   },
 
   filtersContent: {
@@ -409,6 +448,7 @@ const styles = {
     borderColor: colors.border,
     marginRight: spacing.sm,
     gap: spacing.xs,
+    ...globalStyles.card,
   },
 
   filterText: {
@@ -419,7 +459,7 @@ const styles = {
 
   mapControls: {
     position: "absolute",
-    bottom: spacing.xxxxl,
+    bottom: spacing.xxxxl + 140, // Above filters
     right: spacing.lg,
   },
 
@@ -429,6 +469,6 @@ const styles = {
     padding: spacing.md,
     ...globalStyles.card,
   },
-};
+});
 
 export default WeatherScreen;

@@ -35,7 +35,7 @@ import {
   spacing,
   createButtonStyle,
 } from "@styles/designSystem";
-import StandardHeader from "@components/layout/StandardHeader";
+import ScreenLayout from "@components/layout/ScreenLayout";
 
 const CreatePostScreen = ({ user, onCreatePost, onClose }) => {
   const [postContent, setPostContent] = useState("");
@@ -206,18 +206,6 @@ const CreatePostScreen = ({ user, onCreatePost, onClose }) => {
       }, 100);
     }
   };
-
-  const renderHeader = () => (
-    <StandardHeader
-      title="Create Post"
-      actions={[
-        {
-          icon: <X size={24} color={colors.text.primary} />,
-          onPress: handleClose,
-        },
-      ]}
-    />
-  );
 
   const renderSettingsRow = () => (
     <View style={styles.settingsRow}>
@@ -399,17 +387,33 @@ const CreatePostScreen = ({ user, onCreatePost, onClose }) => {
       </TouchableWithoutFeedback>
     );
 
+  // Header actions for the close button
+  const headerActions = [
+    {
+      icon: <X size={24} color={colors.text.primary} />,
+      onPress: handleClose,
+    },
+  ];
+
   return (
     <KeyboardAvoidingView
       style={globalStyles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      {renderHeader()}
-      {renderSettingsRow()}
-      {renderPostInput()}
-      {renderMediaRow()}
-      {showQuickActions && renderQuickActions()}
-      {renderPublicOptionsModal()}
+      <ScreenLayout
+        title="Create Post"
+        showHeader={true}
+        headerActions={headerActions}
+        scrollable={false}
+        contentPadding={false}
+        showDefaultActions={false}
+      >
+        {renderSettingsRow()}
+        {renderPostInput()}
+        {renderMediaRow()}
+        {showQuickActions && renderQuickActions()}
+        {renderPublicOptionsModal()}
+      </ScreenLayout>
     </KeyboardAvoidingView>
   );
 };

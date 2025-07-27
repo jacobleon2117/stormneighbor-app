@@ -14,7 +14,8 @@ const WelcomeScreen = ({ onGetStarted, onSignIn }) => {
     <ScreenLayout
       showHeader={false}
       scrollable={false}
-      backgroundColor={colors.surface}
+      backgroundColor={colors.background}
+      safeAreaBackground={colors.background}
     >
       <View
         style={[
@@ -23,6 +24,23 @@ const WelcomeScreen = ({ onGetStarted, onSignIn }) => {
           { paddingHorizontal: spacing.lg },
         ]}
       >
+        {/* Logo and Title */}
+        <View style={[globalStyles.center, { marginBottom: spacing.xxxxl }]}>
+          <Text style={[globalStyles.title, styles.appTitle]}>
+            Storm<Text style={{ color: colors.primary }}>Neighbor</Text>
+          </Text>
+
+          <Text
+            style={[
+              globalStyles.bodySecondary,
+              { textAlign: "center", marginTop: spacing.lg },
+            ]}
+          >
+            Connect with your community during weather emergencies and stay
+            informed about local events
+          </Text>
+        </View>
+
         {/* Illustration */}
         <View style={[globalStyles.center, { marginBottom: spacing.xxxxl }]}>
           <Image
@@ -30,23 +48,6 @@ const WelcomeScreen = ({ onGetStarted, onSignIn }) => {
             style={styles.illustration}
             resizeMode="contain"
           />
-        </View>
-
-        {/* Logo and Title */}
-        <View style={[globalStyles.center, { marginBottom: spacing.xxxxl }]}>
-          <Text style={[globalStyles.title, { fontSize: 36 }]}>
-            Storm<Text style={{ color: colors.primary }}>Neighbor</Text>
-          </Text>
-
-          <Text
-            style={[
-              globalStyles.bodySecondary,
-              { textAlign: "center", marginTop: spacing.md },
-            ]}
-          >
-            Connect with your community during weather emergencies and stay
-            informed about local events
-          </Text>
         </View>
 
         {/* Action Buttons */}
@@ -76,10 +77,16 @@ const WelcomeScreen = ({ onGetStarted, onSignIn }) => {
 };
 
 const styles = {
+  appTitle: {
+    fontSize: 36,
+    textAlign: "center",
+    lineHeight: 44, // Ensure proper line height
+  },
+
   illustration: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
+    width: 180,
+    height: 180,
+    borderRadius: 90,
   },
 
   buttonContainer: {
@@ -88,3 +95,4 @@ const styles = {
 };
 
 export default WelcomeScreen;
+ 

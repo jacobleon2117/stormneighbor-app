@@ -79,10 +79,10 @@ const styles = {
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.lg,
     backgroundColor: colors.surface,
     marginHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md, // Reduced margin since it's now positioned by layout
     borderRadius: 16,
     ...globalStyles.card,
   },

@@ -1,7 +1,12 @@
 // File: frontend/src/components/layout/StandardHeader.js
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { ArrowLeft } from "lucide-react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import {
+  ArrowLeft,
+  Search,
+  MessageCircle,
+  MoreHorizontal,
+} from "lucide-react-native";
 import {
   globalStyles,
   colors,
@@ -15,7 +20,42 @@ const StandardHeader = ({
   onBack,
   actions = [],
   style,
+  showDefaultActions = true, // New prop to control default icons
 }) => {
+  // Default action handlers
+  const handleSearch = () => {
+    Alert.alert("Search", "Search functionality coming soon!");
+  };
+
+  const handleMessages = () => {
+    Alert.alert("Messages", "Messages functionality coming soon!");
+  };
+
+  const handleMoreOptions = () => {
+    Alert.alert("More Options", "More options coming soon!");
+  };
+
+  // Default actions (search, messages, more)
+  const defaultActions = [
+    {
+      icon: <Search size={24} color={colors.text.primary} />,
+      onPress: handleSearch,
+    },
+    {
+      icon: <MessageCircle size={24} color={colors.text.primary} />,
+      onPress: handleMessages,
+    },
+    {
+      icon: <MoreHorizontal size={24} color={colors.text.primary} />,
+      onPress: handleMoreOptions,
+    },
+  ];
+
+  // Combine custom actions with default actions
+  const allActions = showDefaultActions
+    ? [...actions, ...defaultActions]
+    : actions;
+
   return (
     <View style={[styles.container, style]}>
       <View style={styles.left}>
@@ -28,16 +68,17 @@ const StandardHeader = ({
             <ArrowLeft size={24} color={colors.text.primary} />
           </TouchableOpacity>
         )}
-      </View>
 
-      <View style={styles.center}>
-        <Text style={[globalStyles.heading, styles.title]} numberOfLines={1}>
+        <Text
+          style={[showBack ? styles.title : styles.titleNoBack]}
+          numberOfLines={1}
+        >
           {title}
         </Text>
       </View>
 
       <View style={styles.right}>
-        {actions.map((action, index) => (
+        {allActions.map((action, index) => (
           <TouchableOpacity
             key={index}
             style={styles.actionButton}
@@ -68,21 +109,17 @@ const styles = StyleSheet.create({
   left: {
     flexDirection: "row",
     alignItems: "center",
-    minWidth: 40,
+    flex: 1,
     justifyContent: "flex-start",
   },
 
   center: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: spacing.md,
+    // Removed - no longer using center section
   },
 
   right: {
     flexDirection: "row",
     alignItems: "center",
-    minWidth: 40,
     justifyContent: "flex-end",
   },
 
@@ -90,11 +127,18 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.xl,
     fontWeight: typography.weights.semibold,
     color: colors.text.primary,
-    textAlign: "center",
+    marginLeft: spacing.md,
+  },
+
+  titleNoBack: {
+    fontSize: typography.sizes.xl,
+    fontWeight: typography.weights.semibold,
+    color: colors.text.primary,
   },
 
   backButton: {
     padding: spacing.xs,
+    marginRight: spacing.sm,
   },
 
   actionButton: {

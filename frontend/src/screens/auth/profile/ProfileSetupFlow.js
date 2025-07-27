@@ -52,14 +52,22 @@ const ProfileSetupFlow = ({ onSetupComplete, onBack }) => {
       const result = await updateProfile(finalSetupData);
 
       if (result.success) {
-        Alert.alert("Success!", "Your profile has been set up successfully!", [
-          { text: "Continue", onPress: onSetupComplete },
+        Alert.alert("Welcome!", "Your profile has been set up successfully!", [
+          { text: "Get Started", onPress: onSetupComplete },
         ]);
       } else {
-        Alert.alert("Error", result.error || "Failed to update profile");
+        Alert.alert(
+          "Setup Error",
+          result.error || "Failed to complete profile setup",
+          [{ text: "Try Again" }, { text: "Skip", onPress: onSetupComplete }]
+        );
       }
     } catch (error) {
-      Alert.alert("Error", "Something went wrong. Please try again.");
+      console.error("Profile setup error:", error);
+      Alert.alert("Setup Error", "Something went wrong during setup.", [
+        { text: "Try Again" },
+        { text: "Skip", onPress: onSetupComplete },
+      ]);
     }
   };
 

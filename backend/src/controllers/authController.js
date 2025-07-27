@@ -4,14 +4,21 @@ const crypto = require("crypto");
 const { pool } = require("../config/database");
 const { validationResult } = require("express-validator");
 
-const generateToken = (userId) => {
-  return jwt.sign({ userId }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || "7d",
-  });
+// Helper function to generate verification code
+const generateVerificationCode = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-const generateVerificationCode = () => {
-  return crypto.randomInt(100000, 999999).toString();
+// Helper function to generate JWT token
+const generateToken = (userId) => {
+  return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: "7d" });
+};
+
+// Helper function to send email (mock implementation - replace with actual email service)
+const sendEmail = async (to, subject, text) => {
+  // TODO: Implement actual email sending (using SendGrid, AWS SES, etc.)
+  console.log(`Email to ${to}: ${subject} - ${text}`);
+  return true;
 };
 
 const register = async (req, res) => {
@@ -27,18 +34,21 @@ const register = async (req, res) => {
       firstName,
       lastName,
       phone,
-      address,
       latitude,
       longitude,
-      neighborhoodId,
+      address,
+      city,
+      state,
+      zipCode,
     } = req.body;
 
     const client = await pool.connect();
 
     try {
+      // Check if user already exists
       const existingUser = await client.query(
         "SELECT id FROM users WHERE email = $1",
-        [email.toLowerCase()]
+        [email]
       );
 
       if (existingUser.rows.length > 0) {
@@ -47,63 +57,78 @@ const register = async (req, res) => {
           .json({ message: "User already exists with this email" });
       }
 
+      // Hash password
       const saltRounds = 12;
       const hashedPassword = await bcrypt.hash(password, saltRounds);
 
+      // Generate verification code
+      const verificationCode = generateVerificationCode();
+      const codeExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+      // Create location point if coordinates provided
       let locationQuery = "";
-      let locationParams = [];
-      if (latitude && longitude) {
-        locationQuery = ", location";
-        locationParams.push(
-          `ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)`
-        );
-      }
-
-      const insertQuery = `
-        INSERT INTO users (
-          email, password_hash, first_name, last_name, phone, 
-          address_street, neighborhood_id${locationQuery}
-        ) 
-        VALUES ($1, $2, $3, $4, $5, $6, $7${
-          locationParams.length > 0 ? ", " + locationParams[0] : ""
-        })
-        RETURNING id, email, first_name, last_name, phone, address_street, neighborhood_id, created_at
-      `;
-
+      let locationValue = "";
       const values = [
-        email.toLowerCase(),
+        email,
         hashedPassword,
         firstName,
         lastName,
         phone || null,
+        city || null,
+        state || null,
+        zipCode || null,
         address || null,
-        neighborhoodId || null,
+        verificationCode,
+        codeExpiry,
       ];
+
+      if (latitude && longitude) {
+        locationQuery = ", location";
+        locationValue = `, ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)`;
+      }
+
+      const insertQuery = `
+        INSERT INTO users (
+          email, password_hash, first_name, last_name, phone,
+          location_city, address_state, zip_code, address,
+          email_verification_code, email_verification_expires
+          ${locationQuery}
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+          ${locationValue}
+        ) RETURNING id, email, first_name, last_name, created_at
+      `;
 
       const result = await client.query(insertQuery, values);
       const newUser = result.rows[0];
 
+      // Send verification email
+      await sendEmail(
+        email,
+        "Verify your email address",
+        `Your verification code is: ${verificationCode}`
+      );
+
+      // Generate token
       const token = generateToken(newUser.id);
 
       res.status(201).json({
-        message: "User created successfully",
+        message:
+          "User registered successfully. Please check your email for verification code.",
         token,
         user: {
           id: newUser.id,
           email: newUser.email,
           firstName: newUser.first_name,
           lastName: newUser.last_name,
-          phone: newUser.phone,
-          address: newUser.address_street,
-          neighborhoodId: newUser.neighborhood_id,
-          createdAt: newUser.created_at,
+          emailVerified: false,
         },
       });
     } finally {
       client.release();
     }
   } catch (error) {
-    console.error("Registration error:", error);
+    console.error("Register error:", error);
     res.status(500).json({ message: "Server error during registration" });
   }
 };
@@ -116,37 +141,39 @@ const login = async (req, res) => {
     }
 
     const { email, password } = req.body;
-
     const client = await pool.connect();
 
     try {
-      const userResult = await client.query(
-        `
+      const query = `
         SELECT 
-          u.id, u.email, u.password_hash, u.first_name, u.last_name, 
-          u.phone, u.address_street, u.neighborhood_id, u.is_verified,
-          n.name as neighborhood_name
-        FROM users u
-        LEFT JOIN neighborhoods n ON u.neighborhood_id = n.id
-        WHERE u.email = $1
-      `,
-        [email.toLowerCase()]
-      );
+          id, email, password_hash, first_name, last_name,
+          email_verified, is_active, created_at
+        FROM users 
+        WHERE email = $1
+      `;
 
-      if (userResult.rows.length === 0) {
+      const result = await client.query(query, [email]);
+
+      if (result.rows.length === 0) {
         return res.status(401).json({ message: "Invalid email or password" });
       }
 
-      const user = userResult.rows[0];
+      const user = result.rows[0];
 
-      const isPasswordValid = await bcrypt.compare(
+      if (!user.is_active) {
+        return res.status(401).json({ message: "Account is deactivated" });
+      }
+
+      // Check password
+      const isValidPassword = await bcrypt.compare(
         password,
         user.password_hash
       );
-      if (!isPasswordValid) {
+      if (!isValidPassword) {
         return res.status(401).json({ message: "Invalid email or password" });
       }
 
+      // Generate token
       const token = generateToken(user.id);
 
       res.json({
@@ -157,11 +184,7 @@ const login = async (req, res) => {
           email: user.email,
           firstName: user.first_name,
           lastName: user.last_name,
-          phone: user.phone,
-          address: user.address_street,
-          neighborhoodId: user.neighborhood_id,
-          neighborhoodName: user.neighborhood_name,
-          isVerified: user.is_verified,
+          emailVerified: user.email_verified,
         },
       });
     } finally {
@@ -173,65 +196,266 @@ const login = async (req, res) => {
   }
 };
 
+const forgotPassword = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { email } = req.body;
+    const client = await pool.connect();
+
+    try {
+      const user = await client.query("SELECT id FROM users WHERE email = $1", [
+        email,
+      ]);
+
+      if (user.rows.length === 0) {
+        // Don't reveal if email exists or not
+        return res.json({
+          message:
+            "If an account with that email exists, a reset code has been sent.",
+        });
+      }
+
+      const resetCode = generateVerificationCode();
+      const codeExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+      await client.query(
+        "UPDATE users SET password_reset_code = $1, password_reset_expires = $2 WHERE email = $3",
+        [resetCode, codeExpiry, email]
+      );
+
+      await sendEmail(
+        email,
+        "Password Reset Code",
+        `Your password reset code is: ${resetCode}. This code expires in 1 hour.`
+      );
+
+      res.json({
+        message:
+          "If an account with that email exists, a reset code has been sent.",
+      });
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error("Forgot password error:", error);
+    res.status(500).json({ message: "Server error processing request" });
+  }
+};
+
+const verifyCode = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { email, code } = req.body;
+    const client = await pool.connect();
+
+    try {
+      const result = await client.query(
+        `SELECT id, email_verification_code, email_verification_expires 
+         FROM users WHERE email = $1`,
+        [email]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(400).json({ message: "Invalid verification code" });
+      }
+
+      const user = result.rows[0];
+
+      if (user.email_verification_code !== code) {
+        return res.status(400).json({ message: "Invalid verification code" });
+      }
+
+      if (new Date() > user.email_verification_expires) {
+        return res
+          .status(400)
+          .json({ message: "Verification code has expired" });
+      }
+
+      // Mark email as verified
+      await client.query(
+        `UPDATE users SET 
+         email_verified = true, 
+         email_verification_code = NULL, 
+         email_verification_expires = NULL 
+         WHERE email = $1`,
+        [email]
+      );
+
+      res.json({ message: "Email verified successfully" });
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error("Verify code error:", error);
+    res.status(500).json({ message: "Server error verifying code" });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { email, code, newPassword } = req.body;
+    const client = await pool.connect();
+
+    try {
+      const result = await client.query(
+        `SELECT id, password_reset_code, password_reset_expires 
+         FROM users WHERE email = $1`,
+        [email]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(400).json({ message: "Invalid reset code" });
+      }
+
+      const user = result.rows[0];
+
+      if (user.password_reset_code !== code) {
+        return res.status(400).json({ message: "Invalid reset code" });
+      }
+
+      if (new Date() > user.password_reset_expires) {
+        return res.status(400).json({ message: "Reset code has expired" });
+      }
+
+      // Hash new password
+      const saltRounds = 12;
+      const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+      // Update password and clear reset code
+      await client.query(
+        `UPDATE users SET 
+         password_hash = $1, 
+         password_reset_code = NULL, 
+         password_reset_expires = NULL 
+         WHERE email = $2`,
+        [hashedPassword, email]
+      );
+
+      res.json({ message: "Password reset successfully" });
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error("Reset password error:", error);
+    res.status(500).json({ message: "Server error resetting password" });
+  }
+};
+
+const resendVerificationCode = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { email } = req.body;
+    const client = await pool.connect();
+
+    try {
+      const user = await client.query(
+        "SELECT id, email_verified FROM users WHERE email = $1",
+        [email]
+      );
+
+      if (user.rows.length === 0) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      if (user.rows[0].email_verified) {
+        return res.status(400).json({ message: "Email is already verified" });
+      }
+
+      const verificationCode = generateVerificationCode();
+      const codeExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+      await client.query(
+        "UPDATE users SET email_verification_code = $1, email_verification_expires = $2 WHERE email = $3",
+        [verificationCode, codeExpiry, email]
+      );
+
+      await sendEmail(
+        email,
+        "Verify your email address",
+        `Your new verification code is: ${verificationCode}`
+      );
+
+      res.json({ message: "Verification code sent successfully" });
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error("Resend verification code error:", error);
+    res
+      .status(500)
+      .json({ message: "Server error resending verification code" });
+  }
+};
+
 const getProfile = async (req, res) => {
   try {
     const userId = req.user.userId;
     const client = await pool.connect();
 
     try {
-      const userResult = await client.query(
-        `
+      const query = `
         SELECT 
-          u.id, u.email, u.first_name, u.last_name, u.phone, 
-          u.address_street, u.address_city, u.address_state, u.address_zip,
-          u.neighborhood_id, u.profile_image_url, u.is_verified,
-          u.emergency_contact_name, u.emergency_contact_phone, u.skills,
-          u.preferences,
-          n.name as neighborhood_name,
-          ST_X(u.location::geometry) as longitude,
-          ST_Y(u.location::geometry) as latitude
-        FROM users u
-        LEFT JOIN neighborhoods n ON u.neighborhood_id = n.id
-        WHERE u.id = $1
-      `,
-        [userId]
-      );
+          id, email, first_name, last_name, phone, profile_image_url,
+          location_city, address_state, zip_code, address,
+          location_radius_miles, show_city_only, email_verified,
+          notification_preferences, created_at,
+          ST_X(location::geometry) as longitude,
+          ST_Y(location::geometry) as latitude
+        FROM users WHERE id = $1
+      `;
 
-      if (userResult.rows.length === 0) {
+      const result = await client.query(query, [userId]);
+
+      if (result.rows.length === 0) {
         return res.status(404).json({ message: "User not found" });
       }
 
-      const user = userResult.rows[0];
-      res.json({
+      const user = result.rows[0];
+      const profile = {
         id: user.id,
         email: user.email,
         firstName: user.first_name,
         lastName: user.last_name,
         phone: user.phone,
-        address: {
-          street: user.address_street,
-          city: user.address_city,
-          state: user.address_state,
-          zip: user.address_zip,
-        },
-        location:
-          user.longitude && user.latitude
-            ? {
-                longitude: user.longitude,
-                latitude: user.latitude,
-              }
-            : null,
-        neighborhoodId: user.neighborhood_id,
-        neighborhoodName: user.neighborhood_name,
         profileImageUrl: user.profile_image_url,
-        isVerified: user.is_verified,
-        emergencyContact: {
-          name: user.emergency_contact_name,
-          phone: user.emergency_contact_phone,
+        location: {
+          city: user.location_city,
+          state: user.address_state,
+          zipCode: user.zip_code,
+          address: user.address,
+          coordinates:
+            user.longitude && user.latitude
+              ? {
+                  longitude: user.longitude,
+                  latitude: user.latitude,
+                }
+              : null,
+          radiusMiles: user.location_radius_miles,
+          showCityOnly: user.show_city_only,
         },
-        skills: user.skills || [],
-        preferences: user.preferences || {},
-      });
+        emailVerified: user.email_verified,
+        notificationPreferences: user.notification_preferences || {},
+        createdAt: user.created_at,
+      };
+
+      res.json(profile);
     } finally {
       client.release();
     }
@@ -245,69 +469,113 @@ const updateProfile = async (req, res) => {
   try {
     const userId = req.user.userId;
     const {
-      address,
+      firstName,
+      lastName,
+      phone,
+      profileImageUrl,
       city,
       state,
       zipCode,
+      address,
       latitude,
       longitude,
-      neighborhoodId,
-      bio,
-      profileImage,
-      emergencyContactName,
-      emergencyContactPhone,
-      skills,
-      notificationPreferences,
+      radiusMiles,
+      showCityOnly,
     } = req.body;
 
     const client = await pool.connect();
 
     try {
-      let updateQuery = `
-        UPDATE users SET 
-          address_street = COALESCE($2, address_street),
-          address_city = COALESCE($3, address_city),
-          address_state = COALESCE($4, address_state),
-          address_zip = COALESCE($5, address_zip),
-          neighborhood_id = COALESCE($6, neighborhood_id),
-          profile_image_url = COALESCE($7, profile_image_url),
-          emergency_contact_name = COALESCE($8, emergency_contact_name),
-          emergency_contact_phone = COALESCE($9, emergency_contact_phone),
-          skills = COALESCE($10, skills),
-          preferences = COALESCE($11, preferences),
-          updated_at = NOW()
-      `;
+      const updates = [];
+      const values = [];
+      let paramCount = 0;
 
-      const values = [
-        userId,
-        address,
-        city,
-        state,
-        zipCode,
-        neighborhoodId,
-        profileImage,
-        emergencyContactName,
-        emergencyContactPhone,
-        skills,
-        notificationPreferences,
-      ];
-
-      if (latitude && longitude) {
-        updateQuery += `, location = ST_SetSRID(ST_MakePoint($12, $13), 4326)`;
-        values.push(longitude, latitude);
+      if (firstName !== undefined) {
+        paramCount++;
+        updates.push(`first_name = $${paramCount}`);
+        values.push(firstName);
       }
 
-      updateQuery += ` WHERE id = $1 RETURNING id`;
+      if (lastName !== undefined) {
+        paramCount++;
+        updates.push(`last_name = $${paramCount}`);
+        values.push(lastName);
+      }
+
+      if (phone !== undefined) {
+        paramCount++;
+        updates.push(`phone = $${paramCount}`);
+        values.push(phone);
+      }
+
+      if (profileImageUrl !== undefined) {
+        paramCount++;
+        updates.push(`profile_image_url = $${paramCount}`);
+        values.push(profileImageUrl);
+      }
+
+      if (city !== undefined) {
+        paramCount++;
+        updates.push(`location_city = $${paramCount}`);
+        values.push(city);
+      }
+
+      if (state !== undefined) {
+        paramCount++;
+        updates.push(`address_state = $${paramCount}`);
+        values.push(state);
+      }
+
+      if (zipCode !== undefined) {
+        paramCount++;
+        updates.push(`zip_code = $${paramCount}`);
+        values.push(zipCode);
+      }
+
+      if (address !== undefined) {
+        paramCount++;
+        updates.push(`address = $${paramCount}`);
+        values.push(address);
+      }
+
+      if (radiusMiles !== undefined) {
+        paramCount++;
+        updates.push(`location_radius_miles = $${paramCount}`);
+        values.push(radiusMiles);
+      }
+
+      if (showCityOnly !== undefined) {
+        paramCount++;
+        updates.push(`show_city_only = $${paramCount}`);
+        values.push(showCityOnly);
+      }
+
+      if (latitude && longitude) {
+        updates.push(
+          `location = ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)`
+        );
+      }
+
+      if (updates.length === 0) {
+        return res.status(400).json({ message: "No valid fields to update" });
+      }
+
+      updates.push("updated_at = NOW()");
+      paramCount++;
+      values.push(userId);
+
+      const updateQuery = `
+        UPDATE users 
+        SET ${updates.join(", ")}
+        WHERE id = $${paramCount}
+        RETURNING updated_at
+      `;
 
       const result = await client.query(updateQuery, values);
 
-      if (result.rows.length === 0) {
-        return res.status(404).json({ message: "User not found" });
-      }
-
       res.json({
         message: "Profile updated successfully",
-        success: true,
+        updatedAt: result.rows[0].updated_at,
       });
     } finally {
       client.release();
@@ -318,209 +586,52 @@ const updateProfile = async (req, res) => {
   }
 };
 
-const forgotPassword = async (req, res) => {
-  try {
-    const { email } = req.body;
-
-    if (!email) {
-      return res.status(400).json({ message: "Email is required" });
-    }
-
-    const client = await pool.connect();
-
-    try {
-      const userResult = await client.query(
-        "SELECT id, email, first_name FROM users WHERE email = $1",
-        [email.toLowerCase()]
-      );
-
-      if (userResult.rows.length === 0) {
-        return res.json({
-          message: "If that email exists, we've sent reset instructions",
-        });
-      }
-
-      const user = userResult.rows[0];
-      const resetCode = generateVerificationCode();
-      const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
-
-      await client.query(
-        `UPDATE users SET 
-         preferences = preferences || $2
-         WHERE id = $1`,
-        [
-          user.id,
-          JSON.stringify({
-            resetCode: resetCode,
-            resetCodeExpires: expiresAt.toISOString(),
-          }),
-        ]
-      );
-
-      console.log(`Reset code for ${email}: ${resetCode}`);
-
-      res.json({
-        message: "If that email exists, we've sent reset instructions",
-      });
-    } finally {
-      client.release();
-    }
-  } catch (error) {
-    console.error("Forgot password error:", error);
-    res.status(500).json({ message: "Server error processing request" });
-  }
-};
-
-const verifyCode = async (req, res) => {
-  try {
-    const { email, code } = req.body;
-
-    if (!email || !code) {
-      return res.status(400).json({ message: "Email and code are required" });
-    }
-
-    const client = await pool.connect();
-
-    try {
-      const userResult = await client.query(
-        "SELECT id, preferences FROM users WHERE email = $1",
-        [email.toLowerCase()]
-      );
-
-      if (userResult.rows.length === 0) {
-        return res.status(400).json({ message: "Invalid code" });
-      }
-
-      const user = userResult.rows[0];
-      const preferences = user.preferences || {};
-
-      if (
-        !preferences.resetCode ||
-        preferences.resetCode !== code ||
-        new Date() > new Date(preferences.resetCodeExpires)
-      ) {
-        return res.status(400).json({ message: "Invalid or expired code" });
-      }
-
-      res.json({
-        message: "Code verified successfully",
-        success: true,
-      });
-    } finally {
-      client.release();
-    }
-  } catch (error) {
-    console.error("Verify code error:", error);
-    res.status(500).json({ message: "Server error verifying code" });
-  }
-};
-
-const resetPassword = async (req, res) => {
-  try {
-    const { email, code, newPassword } = req.body;
-
-    if (!email || !code || !newPassword) {
-      return res
-        .status(400)
-        .json({ message: "Email, code, and new password are required" });
-    }
-
-    const client = await pool.connect();
-
-    try {
-      const userResult = await client.query(
-        "SELECT id, preferences FROM users WHERE email = $1",
-        [email.toLowerCase()]
-      );
-
-      if (userResult.rows.length === 0) {
-        return res.status(400).json({ message: "Invalid request" });
-      }
-
-      const user = userResult.rows[0];
-      const preferences = user.preferences || {};
-
-      if (
-        !preferences.resetCode ||
-        preferences.resetCode !== code ||
-        new Date() > new Date(preferences.resetCodeExpires)
-      ) {
-        return res.status(400).json({ message: "Invalid or expired code" });
-      }
-
-      const saltRounds = 12;
-      const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
-
-      await client.query(
-        `UPDATE users SET 
-         password_hash = $2,
-         preferences = preferences - 'resetCode' - 'resetCodeExpires',
-         updated_at = NOW()
-         WHERE id = $1`,
-        [user.id, hashedPassword]
-      );
-
-      res.json({
-        message: "Password reset successfully",
-        success: true,
-      });
-    } finally {
-      client.release();
-    }
-  } catch (error) {
-    console.error("Reset password error:", error);
-    res.status(500).json({ message: "Server error resetting password" });
-  }
-};
-
 const changePassword = async (req, res) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
     const userId = req.user.userId;
     const { currentPassword, newPassword } = req.body;
 
-    if (!currentPassword || !newPassword) {
-      return res
-        .status(400)
-        .json({ message: "Current and new password are required" });
-    }
-
     const client = await pool.connect();
 
     try {
-      const userResult = await client.query(
-        "SELECT id, password_hash FROM users WHERE id = $1",
+      const result = await client.query(
+        "SELECT password_hash FROM users WHERE id = $1",
         [userId]
       );
 
-      if (userResult.rows.length === 0) {
+      if (result.rows.length === 0) {
         return res.status(404).json({ message: "User not found" });
       }
 
-      const user = userResult.rows[0];
+      const user = result.rows[0];
 
-      const isCurrentPasswordValid = await bcrypt.compare(
+      // Verify current password
+      const isValidPassword = await bcrypt.compare(
         currentPassword,
         user.password_hash
       );
-
-      if (!isCurrentPasswordValid) {
+      if (!isValidPassword) {
         return res
           .status(400)
           .json({ message: "Current password is incorrect" });
       }
 
+      // Hash new password
       const saltRounds = 12;
       const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
 
+      // Update password
       await client.query(
-        "UPDATE users SET password_hash = $2, updated_at = NOW() WHERE id = $1",
-        [userId, hashedPassword]
+        "UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2",
+        [hashedPassword, userId]
       );
 
-      res.json({
-        message: "Password changed successfully",
-        success: true,
-      });
+      res.json({ message: "Password changed successfully" });
     } finally {
       client.release();
     }
@@ -536,24 +647,24 @@ const checkEmailVerification = async (req, res) => {
     const client = await pool.connect();
 
     try {
-      const userResult = await client.query(
-        "SELECT is_verified FROM users WHERE id = $1",
+      const result = await client.query(
+        "SELECT email_verified FROM users WHERE id = $1",
         [userId]
       );
 
-      if (userResult.rows.length === 0) {
+      if (result.rows.length === 0) {
         return res.status(404).json({ message: "User not found" });
       }
 
-      res.json({
-        verified: userResult.rows[0].is_verified,
-      });
+      res.json({ emailVerified: result.rows[0].email_verified });
     } finally {
       client.release();
     }
   } catch (error) {
-    console.error("Check verification error:", error);
-    res.status(500).json({ message: "Server error checking verification" });
+    console.error("Check email verification error:", error);
+    res
+      .status(500)
+      .json({ message: "Server error checking verification status" });
   }
 };
 
@@ -563,133 +674,83 @@ const resendVerificationEmail = async (req, res) => {
     const client = await pool.connect();
 
     try {
-      const userResult = await client.query(
-        "SELECT email, first_name, is_verified FROM users WHERE id = $1",
+      const result = await client.query(
+        "SELECT email, email_verified FROM users WHERE id = $1",
         [userId]
       );
 
-      if (userResult.rows.length === 0) {
+      if (result.rows.length === 0) {
         return res.status(404).json({ message: "User not found" });
       }
 
-      const user = userResult.rows[0];
+      const user = result.rows[0];
 
-      if (user.is_verified) {
-        return res.status(400).json({ message: "Email already verified" });
-      }
-
-      console.log(`Verification email sent to ${user.email}`);
-
-      res.json({
-        message: "Verification email sent successfully",
-        success: true,
-      });
-    } finally {
-      client.release();
-    }
-  } catch (error) {
-    console.error("Resend verification error:", error);
-    res
-      .status(500)
-      .json({ message: "Server error sending verification email" });
-  }
-};
-
-const resendVerificationCode = async (req, res) => {
-  try {
-    const { email } = req.body;
-
-    if (!email) {
-      return res.status(400).json({ message: "Email is required" });
-    }
-
-    const client = await pool.connect();
-
-    try {
-      const userResult = await client.query(
-        "SELECT id, email FROM users WHERE email = $1",
-        [email.toLowerCase()]
-      );
-
-      if (userResult.rows.length === 0) {
-        return res.status(400).json({ message: "Email not found" });
+      if (user.email_verified) {
+        return res.status(400).json({ message: "Email is already verified" });
       }
 
       const verificationCode = generateVerificationCode();
-      const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+      const codeExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
       await client.query(
-        `UPDATE users SET 
-         preferences = preferences || $2
-         WHERE id = $1`,
-        [
-          userResult.rows[0].id,
-          JSON.stringify({
-            verificationCode: verificationCode,
-            verificationCodeExpires: expiresAt.toISOString(),
-          }),
-        ]
+        "UPDATE users SET email_verification_code = $1, email_verification_expires = $2 WHERE id = $3",
+        [verificationCode, codeExpiry, userId]
       );
 
-      console.log(`Verification code for ${email}: ${verificationCode}`);
+      await sendEmail(
+        user.email,
+        "Verify your email address",
+        `Your verification code is: ${verificationCode}`
+      );
 
-      res.json({
-        message: "Verification code sent successfully",
-        success: true,
-      });
+      res.json({ message: "Verification email sent successfully" });
     } finally {
       client.release();
     }
   } catch (error) {
-    console.error("Resend verification code error:", error);
-    res.status(500).json({ message: "Server error sending verification code" });
+    console.error("Resend verification email error:", error);
+    res
+      .status(500)
+      .json({ message: "Server error resending verification email" });
   }
 };
 
 const updateNotificationPreferences = async (req, res) => {
   try {
     const userId = req.user.userId;
-    const { preferences } = req.body;
-
-    if (!preferences) {
-      return res.status(400).json({ message: "Preferences are required" });
-    }
+    const { notificationPreferences } = req.body;
 
     const client = await pool.connect();
 
     try {
       await client.query(
-        `UPDATE users SET 
-         preferences = preferences || $2,
-         updated_at = NOW()
-         WHERE id = $1`,
-        [userId, JSON.stringify({ notifications: preferences })]
+        "UPDATE users SET notification_preferences = $1, updated_at = NOW() WHERE id = $2",
+        [JSON.stringify(notificationPreferences), userId]
       );
 
-      res.json({
-        message: "Notification preferences updated successfully",
-        success: true,
-      });
+      res.json({ message: "Notification preferences updated successfully" });
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Update notification preferences error:", error);
-    res.status(500).json({ message: "Server error updating preferences" });
+    res
+      .status(500)
+      .json({ message: "Server error updating notification preferences" });
   }
 };
 
 module.exports = {
   register,
   login,
-  getProfile,
-  updateProfile,
   forgotPassword,
   verifyCode,
   resetPassword,
+  resendVerificationCode,
+  getProfile,
+  updateProfile,
   changePassword,
   checkEmailVerification,
   resendVerificationEmail,
-  resendVerificationCode,
   updateNotificationPreferences,
 };

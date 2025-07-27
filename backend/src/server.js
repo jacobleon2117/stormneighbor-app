@@ -63,11 +63,30 @@ app.get("/health", (req, res) => {
 });
 
 try {
-  app.use("/api/auth", require("./routes/auth"));
-  app.use("/api/neighborhoods", require("./routes/neighborhoods"));
-  app.use("/api/posts", require("./routes/posts"));
-  app.use("/api/alerts", require("./routes/alerts"));
-  app.use("/api/weather", require("./routes/weather"));
+  console.log("Loading auth routes...");
+  const authRoutes = require("./routes/auth");
+  console.log("Auth routes type:", typeof authRoutes);
+  app.use("/api/auth", authRoutes);
+
+  console.log("Loading neighborhoods routes...");
+  const neighborhoodsRoutes = require("./routes/neighborhoods");
+  console.log("Neighborhoods routes type:", typeof neighborhoodsRoutes);
+  app.use("/api/neighborhoods", neighborhoodsRoutes);
+
+  console.log("Loading posts routes...");
+  const postsRoutes = require("./routes/posts");
+  console.log("Posts routes type:", typeof postsRoutes);
+  app.use("/api/posts", postsRoutes);
+
+  console.log("Loading alerts routes...");
+  const alertsRoutes = require("./routes/alerts");
+  console.log("Alerts routes type:", typeof alertsRoutes);
+  app.use("/api/alerts", alertsRoutes);
+
+  console.log("Loading weather routes...");
+  const weatherRoutes = require("./routes/weather");
+  console.log("Weather routes type:", typeof weatherRoutes);
+  app.use("/api/weather", weatherRoutes);
 } catch (routeError) {
   console.error("Error loading routes:", routeError);
   process.exit(1);

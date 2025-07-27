@@ -7,7 +7,7 @@ import NotificationsSetupScreen from "./NotificationsSetupScreen";
 import { useAuth } from "@contexts/AuthContext";
 
 const ProfileSetupFlow = ({ onSetupComplete, onBack }) => {
-  const { updateProfile } = useAuth();
+  const { updateProfile, completeProfileSetup } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [setupData, setSetupData] = useState({
     location: {},
@@ -49,24 +49,53 @@ const ProfileSetupFlow = ({ onSetupComplete, onBack }) => {
     };
 
     try {
+      console.log("Completing profile setup with data:", finalSetupData);
+
       const result = await updateProfile(finalSetupData);
 
       if (result.success) {
-        Alert.alert("Welcome!", "Your profile has been set up successfully!", [
-          { text: "Get Started", onPress: onSetupComplete },
-        ]);
+        console.log("Profile update successful, completing setup...");
+
+        // Mark setup as completed and update auth state
+        await completeProfileSetup();
+
+        // Seamlessly transition to main app
+        console.log("Setup completed, calling onSetupComplete");
+        if (onSetupComplete) {
+          onSetupComplete();
+        }
       } else {
+        console.error("Profile setup failed:", result.error);
         Alert.alert(
           "Setup Error",
           result.error || "Failed to complete profile setup",
-          [{ text: "Try Again" }, { text: "Skip", onPress: onSetupComplete }]
+          [
+            { text: "Try Again" },
+            {
+              text: "Skip",
+              onPress: async () => {
+                await completeProfileSetup();
+                if (onSetupComplete) {
+                  onSetupComplete();
+                }
+              },
+            },
+          ]
         );
       }
     } catch (error) {
       console.error("Profile setup error:", error);
       Alert.alert("Setup Error", "Something went wrong during setup.", [
         { text: "Try Again" },
-        { text: "Skip", onPress: onSetupComplete },
+        {
+          text: "Skip",
+          onPress: async () => {
+            await completeProfileSetup();
+            if (onSetupComplete) {
+              onSetupComplete();
+            }
+          },
+        },
       ]);
     }
   };

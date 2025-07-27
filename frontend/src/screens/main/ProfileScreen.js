@@ -133,28 +133,6 @@ const ProfileScreen = ({ user, onLogout }) => {
     </View>
   );
 
-  const renderStatsCard = () => (
-    <View style={styles.statsCard}>
-      <Text style={styles.cardTitle}>Activity</Text>
-      <View style={styles.statsRow}>
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>0</Text>
-          <Text style={styles.statLabel}>Posts</Text>
-        </View>
-        <View style={styles.statDivider} />
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>0</Text>
-          <Text style={styles.statLabel}>Likes</Text>
-        </View>
-        <View style={styles.statDivider} />
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>0</Text>
-          <Text style={styles.statLabel}>Comments</Text>
-        </View>
-      </View>
-    </View>
-  );
-
   const renderSettingsSection = () => {
     const settingsItems = [
       {
@@ -217,7 +195,6 @@ const ProfileScreen = ({ user, onLogout }) => {
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
           {renderProfileHeader()}
-          {renderStatsCard()}
           {renderSettingsSection()}
           {renderLogoutButton()}
         </View>
@@ -330,8 +307,8 @@ const styles = StyleSheet.create({
     fontFamily: "Inter",
   },
 
-  // Stats Card
-  statsCard: {
+  // Settings Card
+  settingsCard: {
     backgroundColor: colors.surface,
     borderRadius: 12,
     padding: spacing.xl,
@@ -345,46 +322,6 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     marginBottom: spacing.lg,
     fontFamily: "Inter",
-  },
-
-  statsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  statItem: {
-    flex: 1,
-    alignItems: "center",
-  },
-
-  statNumber: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: colors.text.primary,
-    marginBottom: spacing.xs,
-    fontFamily: "Inter",
-  },
-
-  statLabel: {
-    fontSize: 14,
-    color: colors.text.muted,
-    fontFamily: "Inter",
-  },
-
-  statDivider: {
-    width: 1,
-    height: 40,
-    backgroundColor: colors.border,
-    marginHorizontal: spacing.lg,
-  },
-
-  // Settings Card
-  settingsCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: spacing.xl,
-    marginBottom: spacing.lg,
-    ...globalStyles.card,
   },
 
   settingsItem: {

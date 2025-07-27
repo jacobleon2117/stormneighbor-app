@@ -4,7 +4,6 @@ const { validationResult } = require("express-validator");
 const getPosts = async (req, res) => {
   try {
     const {
-      neighborhoodId,
       postType,
       priority,
       isEmergency,
@@ -13,74 +12,94 @@ const getPosts = async (req, res) => {
       offset = 0,
     } = req.query;
 
-    if (!neighborhoodId) {
-      return res.status(400).json({ message: "Neighborhood ID is required" });
-    }
-
+    const userId = req.user.userId;
     const client = await pool.connect();
 
     try {
-      let whereClause = "WHERE p.neighborhood_id = $1";
-      let queryParams = [neighborhoodId];
-      let paramCount = 1;
+      // Get user's location preferences
+      const userResult = await client.query(
+        `SELECT 
+          ST_X(location::geometry) as longitude,
+          ST_Y(location::geometry) as latitude,
+          location_city,
+          address_state as location_state,
+          location_radius_miles,
+          show_city_only
+        FROM users WHERE id = $1`,
+        [userId]
+      );
+
+      if (userResult.rows.length === 0) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const user = userResult.rows[0];
+
+      if (!user.latitude || !user.longitude) {
+        return res.status(400).json({
+          message: "Location not set. Please complete your profile setup.",
+        });
+      }
+
+      // Build the query using our geographic function
+      let functionCall = `
+        SELECT * FROM get_nearby_posts(
+          ${user.latitude},
+          ${user.longitude},
+          ${user.location_city ? `'${user.location_city}'` : "NULL"},
+          ${user.location_state ? `'${user.location_state}'` : "NULL"},
+          ${user.location_radius_miles || 10.0},
+          ${user.show_city_only || false},
+          ${parseInt(limit)},
+          ${parseInt(offset)}
+        )
+      `;
+
+      // Add filters if specified
+      let whereClause = "";
+      let queryParams = [];
+      let paramCount = 0;
 
       if (postType) {
         paramCount++;
-        whereClause += ` AND p.post_type = $${paramCount}`;
+        whereClause += `${
+          whereClause ? " AND" : " WHERE"
+        } post_type = $${paramCount}`;
         queryParams.push(postType);
       }
 
       if (priority) {
         paramCount++;
-        whereClause += ` AND p.priority = $${paramCount}`;
+        whereClause += `${
+          whereClause ? " AND" : " WHERE"
+        } priority = $${paramCount}`;
         queryParams.push(priority);
       }
 
       if (isEmergency !== undefined) {
         paramCount++;
-        whereClause += ` AND p.is_emergency = $${paramCount}`;
+        whereClause += `${
+          whereClause ? " AND" : " WHERE"
+        } is_emergency = $${paramCount}`;
         queryParams.push(isEmergency === "true");
       }
 
       if (isResolved !== undefined) {
         paramCount++;
-        whereClause += ` AND p.is_resolved = $${paramCount}`;
+        whereClause += `${
+          whereClause ? " AND" : " WHERE"
+        } is_resolved = $${paramCount}`;
         queryParams.push(isResolved === "true");
       }
 
-      paramCount++;
-      const limitParam = paramCount;
-      paramCount++;
-      const offsetParam = paramCount;
-      queryParams.push(parseInt(limit), parseInt(offset));
+      let finalQuery;
+      if (whereClause) {
+        finalQuery = `SELECT * FROM (${functionCall}) AS posts ${whereClause}`;
+      } else {
+        finalQuery = functionCall;
+      }
 
-      const query = `
-        SELECT 
-          p.id, p.title, p.content, p.post_type, p.priority,
-          p.is_emergency, p.is_resolved, p.images, p.tags,
-          p.expires_at, p.created_at, p.updated_at,
-          u.id as user_id, u.first_name, u.last_name, u.profile_image_url,
-          ST_X(p.location::geometry) as longitude,
-          ST_Y(p.location::geometry) as latitude,
-          (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comment_count,
-          (SELECT COUNT(*) FROM reactions r WHERE r.post_id = p.id) as reaction_count
-        FROM posts p
-        JOIN users u ON p.user_id = u.id
-        ${whereClause}
-        AND (p.expires_at IS NULL OR p.expires_at > NOW())
-        ORDER BY 
-          CASE WHEN p.is_emergency = true THEN 1 ELSE 2 END,
-          CASE p.priority 
-            WHEN 'urgent' THEN 1 
-            WHEN 'high' THEN 2 
-            WHEN 'normal' THEN 3 
-            WHEN 'low' THEN 4 
-          END,
-          p.created_at DESC
-        LIMIT $${limitParam} OFFSET $${offsetParam}
-      `;
-
-      const result = await client.query(query, queryParams);
+      const result = await client.query(finalQuery, queryParams);
 
       const posts = result.rows.map((row) => ({
         id: row.id,
@@ -93,23 +112,20 @@ const getPosts = async (req, res) => {
         images: row.images || [],
         tags: row.tags || [],
         location:
-          row.longitude && row.latitude
-            ? {
-                longitude: row.longitude,
-                latitude: row.latitude,
-              }
+          row.location_city && row.location_state
+            ? `${row.location_city}, ${row.location_state}`
             : null,
-        expiresAt: row.expires_at,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
+        distanceMiles: parseFloat(row.distance_miles || 0),
         user: {
           id: row.user_id,
-          firstName: row.first_name,
-          lastName: row.last_name,
-          profileImageUrl: row.profile_image_url,
+          firstName: row.author_first_name,
+          lastName: row.author_last_name,
+          profileImageUrl: row.author_profile_image,
         },
-        commentCount: parseInt(row.comment_count),
-        reactionCount: parseInt(row.reaction_count),
+        commentCount: 0, // TODO: Add comment count
+        reactionCount: 0, // TODO: Add reaction count
       }));
 
       res.json({
@@ -118,6 +134,12 @@ const getPosts = async (req, res) => {
           limit: parseInt(limit),
           offset: parseInt(offset),
           total: posts.length,
+        },
+        location: {
+          city: user.location_city,
+          state: user.location_state,
+          radiusMiles: user.location_radius_miles,
+          cityOnly: user.show_city_only,
         },
       });
     } finally {
@@ -139,14 +161,13 @@ const getPost = async (req, res) => {
         SELECT 
           p.id, p.title, p.content, p.post_type, p.priority,
           p.is_emergency, p.is_resolved, p.images, p.tags,
-          p.expires_at, p.created_at, p.updated_at, p.metadata,
+          p.location_city, p.location_state, p.expires_at, 
+          p.created_at, p.updated_at, p.metadata,
           u.id as user_id, u.first_name, u.last_name, u.profile_image_url,
-          n.name as neighborhood_name,
           ST_X(p.location::geometry) as longitude,
           ST_Y(p.location::geometry) as latitude
         FROM posts p
         JOIN users u ON p.user_id = u.id
-        JOIN neighborhoods n ON p.neighborhood_id = n.id
         WHERE p.id = $1
       `;
 
@@ -168,11 +189,12 @@ const getPost = async (req, res) => {
         images: row.images || [],
         tags: row.tags || [],
         location:
+          row.location_city && row.location_state
+            ? `${row.location_city}, ${row.location_state}`
+            : null,
+        coordinates:
           row.longitude && row.latitude
-            ? {
-                longitude: row.longitude,
-                latitude: row.latitude,
-              }
+            ? { longitude: row.longitude, latitude: row.latitude }
             : null,
         expiresAt: row.expires_at,
         createdAt: row.created_at,
@@ -184,7 +206,6 @@ const getPost = async (req, res) => {
           lastName: row.last_name,
           profileImageUrl: row.profile_image_url,
         },
-        neighborhoodName: row.neighborhood_name,
       };
 
       res.json(post);
@@ -206,8 +227,7 @@ const createPost = async (req, res) => {
 
     const userId = req.user.userId;
     const {
-      neighborhoodId,
-      title,
+      title: rawTitle,
       content,
       postType,
       priority = "normal",
@@ -220,46 +240,74 @@ const createPost = async (req, res) => {
       metadata = {},
     } = req.body;
 
+    const title =
+      rawTitle || content.substring(0, 50) + (content.length > 50 ? "..." : "");
+
     const client = await pool.connect();
 
     try {
-      const neighborhoodCheck = await client.query(
-        "SELECT id FROM neighborhoods WHERE id = $1",
-        [neighborhoodId]
+      // Get user's location info
+      const userResult = await client.query(
+        `SELECT 
+          location_city,
+          address_state as location_state,
+          location_county,
+          ST_X(location::geometry) as user_longitude,
+          ST_Y(location::geometry) as user_latitude
+        FROM users WHERE id = $1`,
+        [userId]
       );
 
-      if (neighborhoodCheck.rows.length === 0) {
-        return res.status(400).json({ message: "Invalid neighborhood" });
+      if (userResult.rows.length === 0) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const user = userResult.rows[0];
+
+      // Use provided coordinates or fall back to user's location
+      const postLat = latitude || user.user_latitude;
+      const postLng = longitude || user.user_longitude;
+      const postCity = user.location_city;
+      const postState = user.location_state;
+      const postCounty = user.location_county;
+
+      if (!postLat || !postLng) {
+        return res.status(400).json({
+          message: "Location required. Please complete your profile setup.",
+        });
       }
 
       let locationQuery = "";
       let locationValue = null;
       const values = [
         userId,
-        neighborhoodId,
-        title,
+        title, // Now using the processed title
         content,
         postType,
         priority,
         isEmergency,
+        postCity,
+        postState,
+        postCounty,
         images,
         tags,
         expiresAt,
         metadata,
       ];
 
-      if (latitude && longitude) {
+      if (postLat && postLng) {
         locationQuery = ", location";
-        locationValue = `ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)`;
+        locationValue = `ST_SetSRID(ST_MakePoint(${postLng}, ${postLat}), 4326)`;
       }
 
       const insertQuery = `
         INSERT INTO posts (
-          user_id, neighborhood_id, title, content, post_type, 
-          priority, is_emergency, images, tags, expires_at, metadata
+          user_id, title, content, post_type, priority, is_emergency,
+          location_city, location_state, location_county,
+          images, tags, expires_at, metadata
           ${locationQuery}
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
           ${locationValue ? `, ${locationValue}` : ""}
         ) RETURNING id, created_at
       `;
@@ -267,10 +315,12 @@ const createPost = async (req, res) => {
       const result = await client.query(insertQuery, values);
       const newPost = result.rows[0];
 
+      // TODO: Send real-time notification to nearby users
       if (req.io) {
-        req.io.to(`neighborhood-${neighborhoodId}`).emit("new-post", {
+        req.io.emit("new-post", {
           postId: newPost.id,
-          neighborhoodId,
+          city: postCity,
+          state: postState,
           postType,
           isEmergency,
           userId,
@@ -319,7 +369,7 @@ const updatePost = async (req, res) => {
 
     try {
       const postCheck = await client.query(
-        "SELECT user_id, neighborhood_id FROM posts WHERE id = $1",
+        "SELECT user_id FROM posts WHERE id = $1",
         [id]
       );
 
@@ -584,20 +634,45 @@ const addReaction = async (req, res) => {
       );
 
       if (existingReaction.rows.length > 0) {
-        await client.query(
-          "UPDATE reactions SET reaction_type = $1 WHERE user_id = $2 AND post_id = $3",
-          [reactionType, userId, postId]
-        );
+        // If same reaction type, remove it (toggle off)
+        if (existingReaction.rows[0].reaction_type === reactionType) {
+          await client.query(
+            "DELETE FROM reactions WHERE user_id = $1 AND post_id = $2",
+            [userId, postId]
+          );
+          console.log(
+            `User ${userId} removed ${reactionType} from post ${postId}`
+          );
+          return res.json({
+            message: "Reaction removed successfully",
+            action: "removed",
+          });
+        } else {
+          // Different reaction type, update it
+          await client.query(
+            "UPDATE reactions SET reaction_type = $1 WHERE user_id = $2 AND post_id = $3",
+            [reactionType, userId, postId]
+          );
+          console.log(
+            `User ${userId} changed reaction to ${reactionType} on post ${postId}`
+          );
+          return res.json({
+            message: "Reaction updated successfully",
+            action: "updated",
+          });
+        }
       } else {
+        // No existing reaction, add new one
         await client.query(
           "INSERT INTO reactions (user_id, post_id, reaction_type) VALUES ($1, $2, $3)",
           [userId, postId, reactionType]
         );
+        console.log(`User ${userId} added ${reactionType} to post ${postId}`);
+        return res.json({
+          message: "Reaction added successfully",
+          action: "added",
+        });
       }
-
-      res.json({
-        message: "Reaction added successfully",
-      });
     } finally {
       client.release();
     }

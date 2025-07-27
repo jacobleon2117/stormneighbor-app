@@ -78,52 +78,58 @@ const CreatePostScreen = ({ user, onCreatePost, onClose }) => {
 
   const quickActions = [
     {
-      id: "announcement",
+      id: "announcement", // Keep unique ID but map to general
       title: "Announcement",
       icon: Megaphone,
       color: colors.text.link,
       bgColor: colors.primaryLight,
       badgeText: "Announcement",
+      postType: "general", // Add this field
     },
     {
-      id: "event",
+      id: "event", // Keep unique ID but map to general
       title: "Create Event",
       icon: Calendar,
       color: colors.primary,
       bgColor: colors.primaryLight,
       badgeText: "Event",
+      postType: "general", // Add this field
     },
     {
-      id: "safety",
+      id: "safety_alert",
       title: "Safety Alert",
       icon: AlertTriangle,
       color: colors.error,
       bgColor: colors.errorLight,
       badgeText: "Safety Alert",
+      postType: "safety_alert", // Add this field
     },
     {
-      id: "weather",
+      id: "weather", // Keep unique ID but map to general
       title: "Weather Alert",
       icon: Cloud,
       color: colors.warning,
       bgColor: colors.warningLight,
       badgeText: "Weather Alert",
+      postType: "general", // Add this field
     },
     {
-      id: "question",
+      id: "question", // Keep unique ID but map to general
       title: "Ask Question",
       icon: HelpCircle,
       color: colors.success,
       bgColor: colors.successLight,
       badgeText: "Question",
+      postType: "general", // Add this field
     },
     {
-      id: "help",
+      id: "help_offer",
       title: "Offer Help",
       icon: Gift,
       color: "#F97316",
       bgColor: "#FED7AA",
       badgeText: "Offer Help",
+      postType: "help_offer", // Add this field
     },
   ];
 
@@ -154,21 +160,17 @@ const CreatePostScreen = ({ user, onCreatePost, onClose }) => {
     try {
       const postData = {
         content: postContent.trim(),
-        isPublic: publicScope === "public",
-        badge: selectedBadge?.id || null,
-        neighborhoodId: user?.neighborhoodId,
-        postType: selectedBadge?.id || "general",
+        title: selectedBadge?.title || null,
+        postType: selectedBadge?.postType || "general",
+        priority: "normal",
+        isEmergency: selectedBadge?.postType === "safety_alert",
       };
 
       await onCreatePost(postData);
       Keyboard.dismiss();
-
-      Alert.alert(
-        "Success!",
-        "Your post has been shared with the neighborhood",
-        [{ text: "OK", onPress: onClose }]
-      );
+      onClose();
     } catch (error) {
+      console.error("Post creation error:", error);
       Alert.alert("Error", "Failed to create post. Please try again.");
     } finally {
       setIsSubmitting(false);

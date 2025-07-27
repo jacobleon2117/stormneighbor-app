@@ -22,10 +22,16 @@ const HomeScreen = ({ onNavigateToPost, onNavigateToProfile }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (user?.neighborhoodId) {
+    console.log("HomeScreen user data:", {
+      location_city: user?.location?.city,
+      address_city: user?.address?.city,
+      full_user: user,
+    });
+
+    if (user?.location?.city || user?.address?.city) {
       loadInitialData();
     }
-  }, [user?.neighborhoodId]);
+  }, [user?.location?.city, user?.address?.city]);
 
   const loadInitialData = useCallback(async () => {
     try {
@@ -39,22 +45,33 @@ const HomeScreen = ({ onNavigateToPost, onNavigateToProfile }) => {
     } finally {
       setLoading(false);
     }
-  }, [user?.neighborhoodId]);
+  }, [user?.locationCity, user?.address?.city]);
 
   const loadHomeFeed = async () => {
-    if (!user?.neighborhoodId) {
+    // Check for location data instead of neighborhoodId
+    if (!user?.location?.city && !user?.address?.city) {
       setPosts([]);
       return;
     }
 
     try {
-      const result = await apiService.getPosts(user.neighborhoodId, {
+      console.log(
+        "Loading home feed for user with location:",
+        user?.location?.city || user?.address?.city
+      );
+
+      // Call getPosts without neighborhoodId parameter since it's location-based now
+      const result = await apiService.getPosts(null, {
         limit: 20,
         sortBy: "createdAt",
         order: "desc",
       });
 
       if (result.success) {
+        console.log(
+          "Posts loaded successfully:",
+          result.data.posts?.length || 0
+        );
         setPosts(result.data.posts || []);
       } else {
         console.error("Failed to load posts:", result.error);
@@ -67,12 +84,18 @@ const HomeScreen = ({ onNavigateToPost, onNavigateToProfile }) => {
   };
 
   const loadAlertCounts = async () => {
-    if (!user?.neighborhoodId) {
+    // Use user coordinates for alerts instead of neighborhoodId
+    if (!user?.location?.latitude || !user?.location?.longitude) {
       return;
     }
 
     try {
-      const result = await apiService.getAlerts(user.neighborhoodId);
+      const result = await apiService.getAlerts(null, {
+        latitude: user.location.latitude,
+        longitude: user.location.longitude,
+        radius: user.radiusMiles || 25,
+      });
+
       if (result.success) {
         const alerts = result.data.alerts || [];
         const counts = {
@@ -111,15 +134,30 @@ const HomeScreen = ({ onNavigateToPost, onNavigateToProfile }) => {
   const handleLike = useCallback(async (post) => {
     try {
       const result = await apiService.addReaction(post.id, "like");
+
       if (result.success) {
-        // Update the post in the local state
+        // Update based on the action returned from backend
         setPosts((prevPosts) =>
           prevPosts.map((p) =>
             p.id === post.id
-              ? { ...p, reactionCount: (p.reactionCount || 0) + 1 }
+              ? {
+                  ...p,
+                  userHasLiked:
+                    result.data.action === "added" ||
+                    result.data.action === "updated",
+                  reactionCount:
+                    result.data.action === "added"
+                      ? (p.reactionCount || 0) + 1
+                      : result.data.action === "removed"
+                      ? Math.max((p.reactionCount || 0) - 1, 0)
+                      : p.reactionCount,
+                }
               : p
           )
         );
+        console.log(`Like ${result.data.action} for post ${post.id}`);
+      } else {
+        console.error("Failed to update reaction:", result.error);
       }
     } catch (error) {
       console.error("Error liking post:", error);
@@ -164,7 +202,8 @@ const HomeScreen = ({ onNavigateToPost, onNavigateToProfile }) => {
       );
     }
 
-    if (!user?.neighborhoodId) {
+    // Check for location data instead of neighborhoodId
+    if (!user?.location?.city && !user?.address?.city) {
       return (
         <View style={globalStyles.emptyContainer}>
           <Text style={globalStyles.emptyTitle}>Welcome to StormNeighbor!</Text>

@@ -1,82 +1,179 @@
-# To-Do List
+# Storm Neighbor Backend - Production Ready TODO List
 
----
+## ✅ Recently Fixed
 
-### 07/22/2025
+### Post Creation & Display Issues:
+- [✅] **Post creation validation** - Fixed title optional validation
+- [✅] **Network connectivity** - Fixed API base URL from localhost to IP
+- [✅] **User location detection** - Fixed property path mapping
+- [✅] **Geographic post filtering** - Fixed PostgreSQL function data types
+- [✅] **Quick action templates** - Fixed post type validation and React keys
+- [✅] **Implement like/unlike system** - Users can only like posts once, toggle working properly
+- [✅] **Add reaction state management** - Backend properly handles toggle, frontend responds correctly
+- [✅] **Add optimistic UI updates** - Immediate feedback on like/unlike actions
+- [✅] **Fix PostCard design** - Redesigned with proper layout, profile images, and consistent styling
+- [✅] **Fix PostCard component** - Redesigned with proper width matching, profile images, MapPin icons, and clean layout
+- [✅] **Enable Row Level Security (RLS)** - Main app tables now secured with RLS
+- [✅] **Fix function search paths** - Added explicit search_path to database functions
+- [✅] **Database security warnings resolved** - Remaining warnings are safe to ignore (PostGIS system table)
+- [✅] **Add comment count to posts** - Fixed in PostCard component, displays actual counts
+- [✅] **Add reaction count to posts** - Fixed in PostCard component, displays actual counts  
 
-- [✅] Create a `ProfileSetupScreen.js` for setting up the user account after signing up. This will include location, profile image, customization, and address to help find their neighborhood/groups.
-- [❌] Create an `AccountRecovery.js` screen to enable users to recover their accounts.
-- [✅] Replace Apple emoji (`✅`) with a Lucide icon in the UI.
-- [❌] Create an `AccountDeletion.js` screen to allow users to delete their account and data. This screen is part of settings (main screens), not the auth flow, and will only be available after account creation.
-- [❌] Add loading visuals/skeletons after auth checks, e.g., after email verification redirect back to signup screen.
-- [❌] Create a `ContactSupport.js` screen to support the flow from `ChangePasswordScreen.js` to finish the auth screens.
-- [✅] Move timer/countdown text from `EmailVerificationScreen.js` into the "Resend Email" button (e.g., "Resend Email 60s").
-- [❌] Fix `RegisterScreen.js` layout—header/title "Create Account" is too close to the dynamic island.
-- [🔄] Set up "Forgot Password" functionality to send users a reset email.
-- [❌] Implement Google and Apple sign-in.
-- [❌] Once all auth pages and flows are done, remove `ScreenNavigator.js` and update `App.js` to handle login, signup, and auth state accordingly.
+## 🔴 Critical - Must Fix Before UI/UX Focus
 
----
+### Post System Issues
+- [❌] **Update getPosts API to include user reactions** - Modify backend to return whether current user has liked each post
+- [❌] **Add proper reaction counts from database** - Currently returning 0, need to count actual reactions
 
-### 07/23/2025
+### UI/UX Improvements - Essential Screens
+- [❌] **Create Post Comments Screen** - CRITICAL: Full-screen comments view with slide-in navigation from post comment button
+- [❌] **Redesign User Onboarding Flow** - CRITICAL: Improve location setup, notification preferences, and profile completion screens
+- [❌] **Create Settings Screen** - Essential account management, logout, privacy settings, notification preferences
+- [❌] **Create Edit Profile Screen** - Allow users to update profile info, location, and profile picture after initial setup
+- [❌] **Remove loading spinner from ProfileScreen** - Clean up unnecessary loading states
+- [❌] **Fix AlertsScreen integration** - Connect with backend for user location-based alerts
+- [❌] **Add weather service integration** - Connect with national weather services for real alerts
+- [❌] **Enable alert creation from home feed** - Allow users to create community alerts
 
-- [✅] Remove all emojis used in the codebase (both backend and frontend).
-- [✅] Sync backend and frontend updates.
-- [✅] Update screens in `src/screens/auth/profile` to use the new `AuthLayout.js` and `authStyles.js`.
-- [❌] Remove success Alert popups from LoginScreen and RegisterScreen
-- [❌] Replace success alerts with automatic navigation flow
-- [❌] Add inline error messages instead of Alert popups for form errors
-- [❌] Add loading states to all form submission buttons (already partially done)
-- [❌] Create smooth transitions between auth screens
-- [❌] Set up automatic navigation after successful login/register
-- [❌] Implement proper auth state management in App.js
-- [❌] Create navigation logic: New users → Profile Setup, Existing users → Main App
-- [❌] Replace all Alert.alert error messages with inline form errors
-- [❌] Add form validation with real-time feedback
-- [❌] Create consistent error message styling
+### Authentication & Security
+- [❌] **Implement real email service** - Replace mock `sendEmail` function in authController with actual service (SendGrid, AWS SES, or Mailgun)
+- [❌] **Add JWT refresh tokens** - Currently only access tokens, need refresh token flow
+- [❌] **Add password complexity validation** - Ensure secure passwords in production
+- [❌] **Add account lockout** - After failed login attempts
+- [❌] **Implement CSRF protection** - Add CSRF tokens for state-changing operations
+- [❌] **Add input sanitization** - Prevent XSS attacks in user content
 
-### This are current bugs/issues/erros that need to be fixed
+### Database & Data Integrity
+- [❌] **Add database connection pooling configuration** - Optimize connection management
+- [❌] **Implement database migrations system** - Currently using raw SQL updates
+- [❌] **Add data validation at database level** - Constraints, triggers, etc.
+- [❌] **Add backup strategy** - Automated database backups
+- [❌] **Implement soft deletes** - Instead of hard deletes for posts/comments
 
-- [❌] Issue (Needs Fixed) - Extension postgis is installed in the public schema. Move it to another schema.
+### Core Functionality (From TODO comments in code)
+- [❌] **Implement real-time notifications** - Currently just emits events (line 354 in posts controller)
+- [❌] **Add post expiration handling** - Cleanup expired posts automatically
+- [❌] **Implement user blocking/reporting** - Safety feature for community
 
-- [❌] rls_disabled_in_public | RLS Disabled in Public | ERROR | EXTERNAL | ["SECURITY"] | Detects cases where row level security (RLS) has not been enabled on tables in schemas exposed to PostgREST | Table \`public.spatial_ref_sys\` is public, but RLS has not been enabled.     | https://supabase.com/docs/guides/database/database-linter?lint=0013_rls_disabled_in_public | {"name":"spatial_ref_sys","type":"table","schema":"public"}     | rls_disabled_in_public_public_spatial_ref_sys
-- [❌] rls_disabled_in_public | RLS Disabled in Public | ERROR | EXTERNAL | ["SECURITY"] | Detects cases where row level security (RLS) has not been enabled on tables in schemas exposed to PostgREST | Table \`public.neighborhoods\` is public, but RLS has not been enabled.       | https://supabase.com/docs/guides/database/database-linter?lint=0013_rls_disabled_in_public | {"name":"neighborhoods","type":"table","schema":"public"}       | rls_disabled_in_public_public_neighborhoods
-- [❌] rls_disabled_in_public | RLS Disabled in Public | ERROR | EXTERNAL | ["SECURITY"] | Detects cases where row level security (RLS) has not been enabled on tables in schemas exposed to PostgREST | Table \`public.users\` is public, but RLS has not been enabled.               | https://supabase.com/docs/guides/database/database-linter?lint=0013_rls_disabled_in_public | {"name":"users","type":"table","schema":"public"}               | rls_disabled_in_public_public_users
-- [❌] rls_disabled_in_public | RLS Disabled in Public | ERROR | EXTERNAL | ["SECURITY"] | Detects cases where row level security (RLS) has not been enabled on tables in schemas exposed to PostgREST | Table \`public.weather_alerts\` is public, but RLS has not been enabled.      | https://supabase.com/docs/guides/database/database-linter?lint=0013_rls_disabled_in_public | {"name":"weather_alerts","type":"table","schema":"public"}      | rls_disabled_in_public_public_weather_alerts
-- [❌] rls_disabled_in_public | RLS Disabled in Public | ERROR | EXTERNAL | ["SECURITY"] | Detects cases where row level security (RLS) has not been enabled on tables in schemas exposed to PostgREST | Table \`public.posts\` is public, but RLS has not been enabled.               | https://supabase.com/docs/guides/database/database-linter?lint=0013_rls_disabled_in_public | {"name":"posts","type":"table","schema":"public"}               | rls_disabled_in_public_public_posts
-- [❌] rls_disabled_in_public | RLS Disabled in Public | ERROR | EXTERNAL | ["SECURITY"] | Detects cases where row level security (RLS) has not been enabled on tables in schemas exposed to PostgREST | Table \`public.comments\` is public, but RLS has not been enabled.            | https://supabase.com/docs/guides/database/database-linter?lint=0013_rls_disabled_in_public | {"name":"comments","type":"table","schema":"public"}            | rls_disabled_in_public_public_comments
-- [❌] rls_disabled_in_public | RLS Disabled in Public | ERROR | EXTERNAL | ["SECURITY"] | Detects cases where row level security (RLS) has not been enabled on tables in schemas exposed to PostgREST | Table \`public.reactions\` is public, but RLS has not been enabled.           | https://supabase.com/docs/guides/database/database-linter?lint=0013_rls_disabled_in_public | {"name":"reactions","type":"table","schema":"public"}           | rls_disabled_in_public_public_reactions
-- [❌] rls_disabled_in_public | RLS Disabled in Public | ERROR | EXTERNAL | ["SECURITY"] | Detects cases where row level security (RLS) has not been enabled on tables in schemas exposed to PostgREST | Table \`public.emergency_resources\` is public, but RLS has not been enabled. | https://supabase.com/docs/guides/database/database-linter?lint=0013_rls_disabled_in_public | {"name":"emergency_resources","type":"table","schema":"public"} | rls_disabled_in_public_public_emergency_resources
-- [❌] rls_disabled_in_public | RLS Disabled in Public | ERROR | EXTERNAL | ["SECURITY"] | Detects cases where row level security (RLS) has not been enabled on tables in schemas exposed to PostgREST | Table \`public.notifications\` is public, but RLS has not been enabled.       | https://supabase.com/docs/guides/database/database-linter?lint=0013_rls_disabled_in_public | {"name":"notifications","type":"table","schema":"public"}       | rls_disabled_in_public_public_notifications
+## 🟠 High Priority - Core Features Missing
 
-### These "ERRORS" are simple fixes
+### Search & Discovery
+- [❌] **Implement full-text search** - Search posts by content, tags, etc.
+- [❌] **Add post filtering system** - By type, priority, distance, etc.
+- [❌] **Add trending/popular posts** - Algorithm for post ranking
+- [❌] **Implement post recommendations** - Based on user activity/location
 
-- [❌] ERROR: 'setLoading' is declared but its value is never read | CODE: [loading, setLoading] = useState(false); | FILE(S): ProfileSetupScreenIndividual.js & LocationSetupScreen.js & EmailVerificationScreen.js
+### File Management
+- [❌] **Image upload system** - Currently posts can have images but no upload endpoint
+- [❌] **Image resizing/optimization** - Compress images for performance
+- [❌] **File storage strategy** - AWS S3, Cloudinary, etc.
+- [❌] **Profile image upload** - Users can't currently upload profile pictures
 
+### Missing Route Implementations
+- [❌] **Complete neighborhoods routes** - Currently loading but need implementation
+- [❌] **Complete alerts routes** - Weather alerts system
+- [❌] **Complete weather routes** - Weather integration
+- [❌] **Add admin routes** - Content moderation, user management
 
-- [❌] ERROR: 'AuthFooter' is declared but its value is never read | CODE: import AuthLayout, {AuthHeader, AuthButtons, AuthFooter} | FILE: ContactSupportScreen.js
+### User Management
+- [❌] **User verification system** - Email verification flow
+- [❌] **User roles/permissions** - Admin, moderator, regular user
+- [❌] **User profile completion tracking** - Ensure required fields
+- [❌] **User activity tracking** - Last seen, post count, etc.
 
-- [❌] ERROR: 'Phone' is declared but its value is never read | CODE: import { Mail, MessageCircle, Phone, ArrowRight } from "lucide-react-native"; FILE: ContactSupportScreen.js
+## 🟡 Medium Priority - Performance & Scalability
 
-- [❌] ERROR: is declared but its value is never read | CODE: import { Shield, ArrowLeft, RotateCcw } from "lucide-react-native";'ArrowLeft'| FILE: VerifyCodeScreen
+### Performance Optimization
+- [❌] **Add Redis caching** - Cache frequent queries (nearby posts, user profiles)
+- [❌] **Implement pagination** - Large result sets need proper pagination
+- [❌] **Add database query optimization** - Analyze and optimize slow queries
+- [❌] **Add CDN for static files** - Images, profile pictures
+- [❌] **Implement data compression** - Gzip responses
 
-- [❌] ERROR: 'res' is declared but its value is never read | CODE:app.use((req, res, next) => {req.io = io;next();}); | FILE: server.js
+### API Improvements
+- [❌] **Add API versioning** - /api/v1/posts, etc.
+- [❌] **Implement GraphQL** - Alternative to REST for flexible queries
+- [❌] **Add API documentation** - Swagger/OpenAPI docs
+- [❌] **Add request/response logging** - Structured logging with request IDs
+- [❌] **Add API analytics** - Track usage, popular endpoints
 
-- [❌] ERROR: 'req' is declared but its value is never read. | CODE: app.get("/health", (req, res) => { | FILE: server.js
+### Real-time Features
+- [❌] **Implement WebSocket authentication** - Secure real-time connections
+- [❌] **Add typing indicators** - For comments
+- [❌] **Add online user presence** - Show who's online
+- [❌] **Implement push notifications** - Mobile push notifications
 
-- [❌] ERROR: 'req' is declared but its value is never read | CODE: app.use((err, req, res, next) => { | FILE: server.js
+## 🟢 Low Priority - Nice to Have
 
-- [❌] ERROR: 'next' is declared but its value is never read | CODE: app.use((err, req, res, next) => { | FILE: server.js
+### Advanced Features
+- [❌] **Add post drafts** - Save posts without publishing
+- [❌] **Implement post scheduling** - Schedule posts for later
+- [❌] **Add post analytics** - View counts, engagement metrics
+- [❌] **Implement post sharing** - Share posts outside app
+- [❌] **Add post bookmarking** - Save posts for later
 
-- [❌] ERROR: 'req' is declared but its value is never read | CODE: app.use((req, res) => { | FILE: server.js
+### Social Features
+- [❌] **User following system** - Follow other users
+- [❌] **Private messaging** - DMs between users
+- [❌] **User reputation system** - Karma/points based on helpful posts
+- [❌] **Community guidelines** - Terms of service, community rules
 
-- [❌] ERROR: 'query' is declared but its value is never read | CODE: const { body, query } = require("express-validator"); | FILE: neighborhoods.js
+### Integration & External Services
+- [❌] **Weather API integration** - Real weather data
+- [❌] **Maps integration** - Better location services
+- [❌] **Social media login** - Google, Facebook, Apple Sign-In
+- [❌] **Analytics integration** - Google Analytics, Mixpanel
+- [❌] **Error tracking** - Sentry, Bugsnag for production error monitoring
 
-- [❌] ERROR: 'bio' is declared but its value is never read | CODE: bio, LINE: 255 | FILE: authController.js
+## Infrastructure & Deployment
 
----
+### Production Setup
+- [❌] **Environment configuration** - Separate dev/staging/prod configs
+- [❌] **Docker containerization** - Container deployment
+- [❌] **CI/CD pipeline** - Automated testing and deployment
+- [❌] **Load balancing** - Multiple server instances
+- [❌] **SSL/TLS configuration** - HTTPS enforcement
 
-### 07/25/2025
+### Monitoring & Logging
+- [❌] **Health check endpoints** - Detailed health monitoring
+- [❌] **Performance monitoring** - APM tools (New Relic, DataDog)
+- [❌] **Log aggregation** - Centralized logging (ELK stack)
+- [❌] **Alerting system** - Notifications for errors/downtime
+- [❌] **Database monitoring** - Query performance, connection pool health
 
-remove all placeholder data/text/numbers/etc from every screen.
-the home screen grettings card needs to only show notifcations from the user
+### Security Hardening
+- [❌] **Security headers** - Enhance existing helmet configuration
+- [❌] **Rate limiting per user** - Currently global rate limiting
+- [❌] **IP whitelisting** - For admin endpoints
+- [❌] **Audit logging** - Track admin actions
+- [❌] **Penetration testing** - Security assessment
+
+## Immediate Action Items (This Week)
+
+1. [❌] **POST COMMENTS SCREEN (CRITICAL)** - Create full-screen comments view with proper navigation (4-6 hours)
+2. [❌] **REDESIGN ONBOARDING FLOW (CRITICAL)** - Improve location, notifications, and profile setup screens (6-8 hours)
+3. [❌] **CREATE SETTINGS SCREEN** - Essential account management and preferences (3-4 hours)
+4. [❌] **ADD REAL REACTION COUNTS** - Update getPosts API to include user reaction state and actual counts (2-3 hours)
+5. [❌] **ALERTS SYSTEM** - Connect AlertsScreen with backend and weather services (4-6 hours)
+6. [❌] **Implement email service** - Replace mock email function
+7. [❌] **Set up file upload** - For images and profile pictures
+
+## Milestone: Ready for UI/UX Focus
+
+Once the **CRITICAL** and **HIGH PRIORITY** items are complete, the backend will be solid enough to focus purely on frontend improvements.
+
+- [❌] Secure authentication system
+- [❌] Complete CRUD operations for all features
+- [❌] File upload capabilities
+- [❌] Real-time functionality
+- [❌] Basic performance optimizations
+- [❌] Production-ready infrastructure
+
+## Estimated Timeline
+
+- **Critical items**: 1-2 weeks
+- **High priority**: 2-3 weeks  
+- **Medium priority**: 3-4 weeks (can be done while working on UI/UX)
+- **Low priority**: Ongoing improvements
+
+**Total time to UI/UX focus**: ~3-5 weeks for a production-ready backend.

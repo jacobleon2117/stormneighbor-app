@@ -3,10 +3,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const getBaseURL = () => {
   if (__DEV__) {
-    // For development
+    // Use your actual IP address instead of localhost
     return "http://192.168.1.89:3000";
   } else {
-    // Production URL
     return "https://your-production-backend.com";
   }
 };
@@ -21,27 +20,58 @@ class ApiService {
       },
     });
 
+    // REQUEST INTERCEPTOR WITH DEBUGGING
     this.api.interceptors.request.use(
       async (config) => {
+        console.log(
+          "🚀 API Request:",
+          config.method?.toUpperCase(),
+          config.url
+        );
+        console.log("🚀 Base URL:", config.baseURL);
         try {
           const token = await AsyncStorage.getItem("authToken");
           if (token) {
             config.headers.Authorization = `Bearer ${token}`;
+            console.log("🔑 Token added to request");
+          } else {
+            console.log("⚠️ No token found");
           }
         } catch (error) {
-          console.error("Error getting auth token:", error);
+          console.error("❌ Error getting auth token:", error);
         }
         return config;
       },
       (error) => {
+        console.error("❌ Request interceptor error:", error);
         return Promise.reject(error);
       }
     );
 
+    // RESPONSE INTERCEPTOR WITH DEBUGGING
     this.api.interceptors.response.use(
-      (response) => response,
+      (response) => {
+        console.log(
+          "✅ API Success:",
+          response.config.method?.toUpperCase(),
+          response.config.url,
+          response.status
+        );
+        return response;
+      },
       async (error) => {
+        console.error("❌ API Error Details:", {
+          message: error.message,
+          url: error.config?.url,
+          method: error.config?.method,
+          status: error.response?.status,
+          data: error.response?.data,
+          code: error.code,
+          baseURL: error.config?.baseURL,
+        });
+
         if (error.response?.status === 401) {
+          console.log("🔒 Removing auth token due to 401");
           await AsyncStorage.removeItem("authToken");
         }
         return Promise.reject(error);
@@ -49,6 +79,28 @@ class ApiService {
     );
   }
 
+  // ADD THIS NEW TEST METHOD
+  async testNetwork() {
+    try {
+      console.log(
+        "🧪 Testing network connection to:",
+        this.api.defaults.baseURL
+      );
+      const response = await this.api.get("/health");
+      console.log("✅ Network test successful:", response.data);
+      return { success: true, data: response.data };
+    } catch (error) {
+      console.error("❌ Network test failed:", {
+        message: error.message,
+        code: error.code,
+        response: error.response?.data,
+        baseURL: this.api.defaults.baseURL,
+      });
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Keep all your existing methods below this...
   async testConnection() {
     try {
       const response = await this.api.get("/health");
@@ -64,6 +116,7 @@ class ApiService {
 
   async login(email, password) {
     try {
+      console.log("🔐 Attempting login for:", email);
       const response = await this.api.post("/api/auth/login", {
         email,
         password,
@@ -71,10 +124,12 @@ class ApiService {
 
       if (response.data.token) {
         await AsyncStorage.setItem("authToken", response.data.token);
+        console.log("✅ Login successful, token saved");
       }
 
       return { success: true, data: response.data };
     } catch (error) {
+      console.error("❌ Login failed:", error.response?.data || error.message);
       return {
         success: false,
         error: error.response?.data?.message || error.message,
@@ -262,7 +317,7 @@ class ApiService {
 
   async getPosts(neighborhoodId, filters = {}) {
     try {
-      const params = { neighborhoodId, ...filters };
+      const params = { ...filters };
       const response = await this.api.get("/api/posts", { params });
       return { success: true, data: response.data };
     } catch (error) {
@@ -275,9 +330,11 @@ class ApiService {
 
   async createPost(postData) {
     try {
+      console.log("API: Sending post data:", postData);
       const response = await this.api.post("/api/posts", postData);
       return { success: true, data: response.data };
     } catch (error) {
+      console.log("API: Post creation error:", error.response?.data);
       return {
         success: false,
         error: error.response?.data?.message || error.message,

@@ -67,17 +67,19 @@ const MainApp = ({ user }) => {
 
   const handleCreatePost = async (postData) => {
     try {
+      console.log("Creating post with data:", postData); // Add this line
+
       const result = await apiService.createPost({
         ...postData,
-        neighborhoodId: user.neighborhoodId,
+        // Remove this line since we don't use neighborhoodId anymore:
+        // neighborhoodId: user.neighborhoodId,
       });
 
       if (result.success) {
         console.log("Post created successfully:", result.data);
         setShowCreatePost(false);
-
-        if (activeTab === "home") {
-        }
+      } else {
+        console.log("Post creation failed:", result.error); // Add this line
       }
     } catch (error) {
       console.error("Error creating post:", error);

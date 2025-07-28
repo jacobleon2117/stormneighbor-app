@@ -25,13 +25,21 @@ const LocationSetupScreen = ({ onNext, onBack, initialData = {} }) => {
   const [hasLocationPermission, setHasLocationPermission] = useState(false);
   const [formData, setFormData] = useState({
     address: initialData.address || "",
-    city: initialData.city || "",
-    state: initialData.state || "",
-    zipCode: initialData.zipCode || "",
-    latitude: initialData.latitude || null,
-    longitude: initialData.longitude || null,
-    radiusMiles: initialData.radiusMiles || 10,
-    showCityOnly: initialData.showCityOnly || false,
+    city: initialData.city || initialData.location_city || "",
+    state: initialData.state || initialData.address_state || "",
+    zipCode: initialData.zipCode || initialData.zip_code || "",
+    latitude:
+      initialData.latitude ||
+      initialData.location?.coordinates?.latitude ||
+      null,
+    longitude:
+      initialData.longitude ||
+      initialData.location?.coordinates?.longitude ||
+      null,
+    radiusMiles:
+      initialData.radiusMiles || initialData.location_radius_miles || 10,
+    showCityOnly:
+      initialData.showCityOnly || initialData.show_city_only || false,
   });
   const [errors, setErrors] = useState({});
 
@@ -161,7 +169,20 @@ const LocationSetupScreen = ({ onNext, onBack, initialData = {} }) => {
     }
 
     if (onNext) {
-      onNext(formData);
+      const locationData = {
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        zipCode: formData.zipCode,
+
+        latitude: formData.latitude,
+        longitude: formData.longitude,
+
+        radiusMiles: formData.radiusMiles,
+        showCityOnly: formData.showCityOnly,
+      };
+
+      onNext(locationData);
     }
   };
 

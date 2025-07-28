@@ -25,40 +25,15 @@ const HomeScreen = ({
   });
   const [error, setError] = useState(null);
 
-  const getUserCity = () => {
-    return user?.location?.city || user?.location_city || null;
-  };
-
-  const getUserState = () => {
-    return user?.location?.state || user?.address_state || null;
-  };
-
-  const getUserCoordinates = () => {
-    if (user?.location?.coordinates) {
-      return user.location.coordinates;
-    }
-    if (user?.latitude && user?.longitude) {
-      return {
-        latitude: user.latitude,
-        longitude: user.longitude,
-      };
-    }
-    return null;
-  };
-
   const hasUserLocation = () => {
-    const city = getUserCity();
-    const state = getUserState();
-    return !!(city && state);
+    const locationParams = apiService.getUserLocationParams(user);
+    return !!locationParams;
   };
 
   useEffect(() => {
     console.log("HomeScreen user data:", {
       hasLocation: hasUserLocation(),
-      city: getUserCity(),
-      state: getUserState(),
-      coordinates: getUserCoordinates(),
-      full_user: user,
+      user: user,
     });
 
     if (hasUserLocation()) {
@@ -87,12 +62,9 @@ const HomeScreen = ({
     }
 
     try {
-      console.log(
-        "Loading home feed for user with location:",
-        `${getUserCity()}, ${getUserState()}`
-      );
+      console.log("Loading home feed for user location");
 
-      const result = await apiService.getPosts(null, {
+      const result = await apiService.getPosts(user, {
         limit: 20,
         sortBy: "createdAt",
         order: "desc",
@@ -112,16 +84,6 @@ const HomeScreen = ({
             userHasLiked: post.userHasLiked || false,
           })) || [];
 
-        console.log(
-          "Mapped posts with like counts:",
-          mappedPosts.map((p) => ({
-            id: p.id,
-            likeCount: p.likeCount,
-            reactionCount: p.reactionCount,
-            userHasLiked: p.userHasLiked,
-          }))
-        );
-
         setPosts(mappedPosts);
       } else {
         console.error("Failed to load posts:", result.error);
@@ -134,18 +96,14 @@ const HomeScreen = ({
   };
 
   const loadAlertCounts = async () => {
-    const coordinates = getUserCoordinates();
-    if (!coordinates) {
+    if (!hasUserLocation()) {
       return;
     }
 
     try {
-      const result = await apiService.getAlerts(null, {
-        latitude: coordinates.latitude,
-        longitude: coordinates.longitude,
-        radius:
-          user?.location?.radiusMiles || user?.location_radius_miles || 25,
-      });
+      console.log("Loading alerts for user location");
+
+      const result = await apiService.getAlerts(user);
 
       if (result.success) {
         const alerts = result.data.alerts || [];
@@ -155,7 +113,11 @@ const HomeScreen = ({
           community: alerts.filter((a) => a.source === "USER").length,
         };
         counts.total = counts.critical + counts.weather + counts.community;
+
+        console.log("Alert counts loaded:", counts);
         setAlertCounts(counts);
+      } else {
+        console.error("Failed to load alerts:", result.error);
       }
     } catch (error) {
       console.error("Error loading alert counts:", error);

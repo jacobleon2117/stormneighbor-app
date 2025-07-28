@@ -26,21 +26,32 @@ const MainApp = ({ user }) => {
   });
 
   useEffect(() => {
-    if (user?.neighborhoodId) {
+    const hasLocation = !!apiService.getUserLocationParams(user);
+
+    if (hasLocation) {
+      console.log("📍 MainApp: User has location, loading alerts");
       loadAlertCounts();
 
       const interval = setInterval(loadAlertCounts, 30000);
       return () => clearInterval(interval);
+    } else {
+      console.log("MainApp: User has no location data");
     }
-  }, [user?.neighborhoodId]);
+  }, [user?.location]);
 
   const loadAlertCounts = async () => {
-    if (!user?.neighborhoodId) {
+    const locationParams = apiService.getUserLocationParams(user);
+
+    if (!locationParams) {
+      console.log("MainApp: No location params available for alerts");
       return;
     }
 
     try {
-      const result = await apiService.getAlerts(user.neighborhoodId);
+      console.log("MainApp: Loading alert counts...");
+
+      const result = await apiService.getAlerts(user);
+
       if (result.success) {
         const alerts = result.data.alerts || [];
         const counts = {
@@ -49,10 +60,14 @@ const MainApp = ({ user }) => {
           community: alerts.filter((a) => a.source === "USER").length,
         };
         counts.total = counts.critical + counts.weather + counts.community;
+
+        console.log("MainApp: Alert counts updated:", counts);
         setAlertCounts(counts);
+      } else {
+        console.error("MainApp: Failed to load alerts:", result.error);
       }
     } catch (error) {
-      console.error("Error loading alert counts:", error);
+      console.error("MainApp: Error loading alert counts:", error);
     }
   };
 
@@ -148,6 +163,7 @@ const MainApp = ({ user }) => {
       onCreatePost: handleCreatePost,
       onLogout: logout,
       alertCounts,
+      // Note: No neighborhoodId needed anymore
     };
 
     switch (activeTab) {

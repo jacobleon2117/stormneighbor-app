@@ -21,36 +21,32 @@ class ApiService {
     });
 
     console.log(
-      "🔧 API Service initialized with base URL:",
+      "API Service initialized with base URL:",
       this.api.defaults.baseURL
     );
 
     this.api.interceptors.request.use(
       async (config) => {
         if (__DEV__) {
-          console.log(
-            "🚀 API Request:",
-            config.method?.toUpperCase(),
-            config.url
-          );
-          console.log("🚀 Base URL:", config.baseURL);
+          console.log("API Request:", config.method?.toUpperCase(), config.url);
+          console.log("Base URL:", config.baseURL);
         }
 
         try {
           const token = await AsyncStorage.getItem("authToken");
           if (token) {
             config.headers.Authorization = `Bearer ${token}`;
-            if (__DEV__) console.log("🔑 Token added to request");
+            if (__DEV__) console.log("Token added to request");
           } else {
-            if (__DEV__) console.log("⚠️ No token found");
+            if (__DEV__) console.log("No token found");
           }
         } catch (error) {
-          console.error("❌ Error getting auth token:", error);
+          console.error("Error getting auth token:", error);
         }
         return config;
       },
       (error) => {
-        console.error("❌ Request interceptor error:", error);
+        console.error("Request interceptor error:", error);
         return Promise.reject(error);
       }
     );
@@ -59,7 +55,7 @@ class ApiService {
       (response) => {
         if (__DEV__) {
           console.log(
-            "✅ API Success:",
+            "API Success:",
             response.config.method?.toUpperCase(),
             response.config.url,
             response.status
@@ -68,7 +64,7 @@ class ApiService {
         return response;
       },
       async (error) => {
-        console.error("❌ API Error Details:", {
+        console.error("API Error Details:", {
           message: error.message,
           url: error.config?.url,
           method: error.config?.method,
@@ -79,7 +75,7 @@ class ApiService {
         });
 
         if (error.response?.status === 401) {
-          console.log("🔒 Removing auth token due to 401");
+          console.log("Removing auth token due to 401");
           await AsyncStorage.removeItem("authToken");
         }
         return Promise.reject(error);
@@ -87,22 +83,38 @@ class ApiService {
     );
   }
 
+  // UTILITY METHODS
+
   updateBaseURL(newBaseURL) {
     this.api.defaults.baseURL = newBaseURL;
-    console.log("🔧 API Base URL updated to:", newBaseURL);
+    console.log("API Base URL updated to:", newBaseURL);
   }
+
+  getUserLocationParams(user) {
+    const coordinates = user?.location?.coordinates;
+    const radiusMiles = user?.location?.radiusMiles || 25;
+
+    if (coordinates?.latitude && coordinates?.longitude) {
+      return {
+        latitude: coordinates.latitude,
+        longitude: coordinates.longitude,
+        radius: radiusMiles,
+      };
+    }
+
+    return null;
+  }
+
+  // NETWORK TESTING
 
   async testNetwork() {
     try {
-      console.log(
-        "🧪 Testing network connection to:",
-        this.api.defaults.baseURL
-      );
+      console.log("Testing network connection to:", this.api.defaults.baseURL);
       const response = await this.api.get("/health");
-      console.log("✅ Network test successful:", response.data);
+      console.log("Network test successful:", response.data);
       return { success: true, data: response.data };
     } catch (error) {
-      console.error("❌ Network test failed:", {
+      console.error("Network test failed:", {
         message: error.message,
         code: error.code,
         response: error.response?.data,
@@ -125,11 +137,11 @@ class ApiService {
     }
   }
 
-  // ===== AUTHENTICATION METHODS =====
+  // AUTHENTICATION
 
   async login(email, password) {
     try {
-      console.log("🔐 Attempting login for:", email);
+      console.log("Attempting login for:", email);
       const response = await this.api.post("/api/auth/login", {
         email,
         password,
@@ -137,12 +149,12 @@ class ApiService {
 
       if (response.data.token) {
         await AsyncStorage.setItem("authToken", response.data.token);
-        console.log("✅ Login successful, token saved");
+        console.log("Login successful, token saved");
       }
 
       return { success: true, data: response.data };
     } catch (error) {
-      console.error("❌ Login failed:", error.response?.data || error.message);
+      console.error("Login failed:", error.response?.data || error.message);
       return {
         success: false,
         error: error.response?.data?.message || error.message,
@@ -287,9 +299,24 @@ class ApiService {
     }
   }
 
-  // ===== NEIGHBORHOOD METHODS =====
+  async updateNotificationPreferences(preferences) {
+    try {
+      const response = await this.api.put(
+        "/api/auth/notification-preferences",
+        preferences
+      );
+      return { success: true, data: response.data };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+      };
+    }
+  }
 
-  async getNearbyNeighborhoods(latitude, longitude, radius = 5) {
+  // LOCATION & NEIGHBORHOODS
+
+  async getNearbyAreas(latitude, longitude, radius = 5) {
     try {
       const response = await this.api.get("/api/neighborhoods/nearby", {
         params: { latitude, longitude, radius },
@@ -303,38 +330,24 @@ class ApiService {
     }
   }
 
-  async getNeighborhood(id) {
+  // POSTS (UPDATED WITH USER LOCATION)
+
+  async getPosts(user, filters = {}) {
     try {
-      const response = await this.api.get(`/api/neighborhoods/${id}`);
-      return { success: true, data: response.data };
-    } catch (error) {
-      return {
-        success: false,
-        error: error.response?.data?.message || error.message,
+      const locationParams = this.getUserLocationParams(user);
+
+      if (!locationParams) {
+        console.log("No location params available for getPosts");
+        return { success: true, data: { posts: [] } };
+      }
+
+      const params = {
+        ...locationParams,
+        ...filters,
       };
-    }
-  }
 
-  async createNeighborhood(neighborhoodData) {
-    try {
-      const response = await this.api.post(
-        "/api/neighborhoods",
-        neighborhoodData
-      );
-      return { success: true, data: response.data };
-    } catch (error) {
-      return {
-        success: false,
-        error: error.response?.data?.message || error.message,
-      };
-    }
-  }
+      console.log("API: Getting posts with params:", params);
 
-  // ===== POST METHODS =====
-
-  async getPosts(neighborhoodId, filters = {}) {
-    try {
-      const params = { ...filters };
       const response = await this.api.get("/api/posts", { params });
       return { success: true, data: response.data };
     } catch (error) {
@@ -395,7 +408,7 @@ class ApiService {
     }
   }
 
-  // ===== POST REACTION METHODS =====
+  // POST REACTIONS
 
   async addReaction(postId, reactionType) {
     try {
@@ -423,7 +436,7 @@ class ApiService {
     }
   }
 
-  // ===== COMMENT METHODS =====
+  // COMMENTS
 
   async getComments(postId) {
     try {
@@ -481,7 +494,7 @@ class ApiService {
     }
   }
 
-  // ===== COMMENT REACTION METHODS =====
+  // COMMENT REACTIONS
 
   async addCommentReaction(commentId, reactionType) {
     try {
@@ -514,8 +527,6 @@ class ApiService {
     }
   }
 
-  // ===== COMMENT MODERATION METHODS =====
-
   async reportComment(commentId, reason) {
     try {
       const response = await this.api.post(
@@ -533,12 +544,24 @@ class ApiService {
     }
   }
 
-  // ===== WEATHER METHODS =====
+  // WEATHER
 
-  async getCurrentWeather(latitude, longitude) {
+  async getCurrentWeather(user) {
     try {
+      const locationParams = this.getUserLocationParams(user);
+
+      if (!locationParams) {
+        return {
+          success: false,
+          error: "User location required for weather data",
+        };
+      }
+
       const response = await this.api.get("/api/weather/current", {
-        params: { lat: latitude, lng: longitude },
+        params: {
+          lat: locationParams.latitude,
+          lng: locationParams.longitude,
+        },
       });
       return { success: true, data: response.data };
     } catch (error) {
@@ -549,12 +572,22 @@ class ApiService {
     }
   }
 
-  // ===== ALERT METHODS =====
+  // ALERTS
 
-  async getAlerts(neighborhoodId, locationParams = {}) {
+  async getAlerts(user) {
     try {
-      const params = locationParams.latitude ? locationParams : {};
-      const response = await this.api.get("/api/alerts", { params });
+      const locationParams = this.getUserLocationParams(user);
+
+      if (!locationParams) {
+        console.log("No location params available for getAlerts");
+        return { success: true, data: { alerts: [] } };
+      }
+
+      console.log("API: Getting alerts with location params:", locationParams);
+
+      const response = await this.api.get("/api/alerts", {
+        params: locationParams,
+      });
       return { success: true, data: response.data };
     } catch (error) {
       return {
@@ -566,6 +599,7 @@ class ApiService {
 
   async createAlert(alertData) {
     try {
+      console.log("API: Creating alert with data:", alertData);
       const response = await this.api.post("/api/alerts", alertData);
       return { success: true, data: response.data };
     } catch (error) {
@@ -576,7 +610,7 @@ class ApiService {
     }
   }
 
-  // ===== NOTIFICATION METHODS =====
+  // NOTIFICATIONS
 
   async getNotifications() {
     try {
@@ -604,26 +638,283 @@ class ApiService {
     }
   }
 
-  async updateNotificationPreferences(preferences) {
+  // FILE UPLOADS
+
+  async uploadProfileImage(imageUri) {
     try {
-      const response = await this.api.put(
-        "/api/auth/notification-preferences",
-        preferences
-      );
-      return { success: true, data: response.data };
+      console.log("API: Starting profile image upload...");
+      console.log("API: Image URI:", imageUri);
+
+      if (!imageUri) {
+        throw new Error("No image URI provided");
+      }
+
+      const formData = new FormData();
+      const uriParts = imageUri.split("/");
+      const fileName =
+        uriParts[uriParts.length - 1] || `profile_${Date.now()}.jpg`;
+
+      formData.append("image", {
+        uri: imageUri,
+        type: "image/jpeg",
+        name: fileName,
+      });
+
+      console.log("API: FormData created with filename:", fileName);
+
+      const response = await this.api.post("/api/upload/profile", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        timeout: 30000,
+      });
+
+      console.log("API: Upload response:", response.data);
+
+      if (response.data.success) {
+        return {
+          success: true,
+          data: response.data.data,
+        };
+      } else {
+        return {
+          success: false,
+          error: response.data.message || "Upload failed",
+        };
+      }
     } catch (error) {
+      console.error("API: Profile image upload error:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
+
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to upload image";
+
       return {
         success: false,
-        error: error.response?.data?.message || error.message,
+        error: errorMessage,
       };
     }
   }
 
-  // ===== TEST METHODS =====
+  async uploadPostImage(postId, imageUri) {
+    try {
+      console.log("API: Starting post image upload for post:", postId);
+      console.log("API: Image URI:", imageUri);
+
+      if (!postId || !imageUri) {
+        throw new Error("Post ID and image URI are required");
+      }
+
+      const formData = new FormData();
+      const uriParts = imageUri.split("/");
+      const fileName =
+        uriParts[uriParts.length - 1] || `post_${postId}_${Date.now()}.jpg`;
+
+      formData.append("image", {
+        uri: imageUri,
+        type: "image/jpeg",
+        name: fileName,
+      });
+
+      console.log("API: FormData created for post image upload");
+
+      const response = await this.api.post(
+        `/api/upload/post/${postId}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          timeout: 30000,
+        }
+      );
+
+      console.log("API: Post image upload response:", response.data);
+
+      if (response.data.success) {
+        return {
+          success: true,
+          data: response.data.data,
+        };
+      } else {
+        return {
+          success: false,
+          error: response.data.message || "Upload failed",
+        };
+      }
+    } catch (error) {
+      console.error("API: Post image upload error:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
+
+      return {
+        success: false,
+        error:
+          error.response?.data?.message ||
+          error.message ||
+          "Failed to upload post image",
+      };
+    }
+  }
+
+  async uploadCommentImage(commentId, imageUri) {
+    try {
+      console.log("API: Starting comment image upload for comment:", commentId);
+
+      if (!commentId || !imageUri) {
+        throw new Error("Comment ID and image URI are required");
+      }
+
+      const formData = new FormData();
+      const uriParts = imageUri.split("/");
+      const fileName =
+        uriParts[uriParts.length - 1] ||
+        `comment_${commentId}_${Date.now()}.jpg`;
+
+      formData.append("image", {
+        uri: imageUri,
+        type: "image/jpeg",
+        name: fileName,
+      });
+
+      const response = await this.api.post(
+        `/api/upload/comment/${commentId}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          timeout: 30000,
+        }
+      );
+
+      console.log("API: Comment image upload response:", response.data);
+
+      if (response.data.success) {
+        return {
+          success: true,
+          data: response.data.data,
+        };
+      } else {
+        return {
+          success: false,
+          error: response.data.message || "Upload failed",
+        };
+      }
+    } catch (error) {
+      console.error("API: Comment image upload error:", error.response?.data);
+      return {
+        success: false,
+        error:
+          error.response?.data?.message ||
+          error.message ||
+          "Failed to upload comment image",
+      };
+    }
+  }
+
+  async deleteImage(publicId) {
+    try {
+      console.log("API: Deleting image with publicId:", publicId);
+
+      const response = await this.api.delete(`/api/upload/image/${publicId}`);
+
+      if (response.data.success) {
+        return { success: true, data: response.data.data };
+      } else {
+        return { success: false, error: response.data.message };
+      }
+    } catch (error) {
+      console.error("API: Delete image error:", error.response?.data);
+      return {
+        success: false,
+        error:
+          error.response?.data?.message ||
+          error.message ||
+          "Failed to delete image",
+      };
+    }
+  }
+
+  async getProfileImage() {
+    try {
+      const response = await this.api.get("/api/upload/profile");
+
+      if (response.data.success) {
+        return { success: true, data: response.data.data };
+      } else {
+        return { success: false, error: response.data.message };
+      }
+    } catch (error) {
+      console.error("API: Get profile image error:", error.response?.data);
+      return {
+        success: false,
+        error:
+          error.response?.data?.message ||
+          error.message ||
+          "Failed to get profile image",
+      };
+    }
+  }
+
+  async getUploadStats() {
+    try {
+      const response = await this.api.get("/api/upload/stats");
+
+      if (response.data.success) {
+        return { success: true, data: response.data.data };
+      } else {
+        return { success: false, error: response.data.message };
+      }
+    } catch (error) {
+      console.error("API: Get upload stats error:", error.response?.data);
+      return {
+        success: false,
+        error:
+          error.response?.data?.message ||
+          error.message ||
+          "Failed to get upload stats",
+      };
+    }
+  }
+
+  async testUploadSystem() {
+    try {
+      console.log("API: Testing upload system...");
+
+      const response = await this.api.get("/api/upload/test");
+
+      console.log("API: Upload system test result:", response.data);
+
+      if (response.data.success) {
+        return { success: true, data: response.data.data };
+      } else {
+        return { success: false, error: response.data.message };
+      }
+    } catch (error) {
+      console.error("API: Upload system test error:", error.response?.data);
+      return {
+        success: false,
+        error:
+          error.response?.data?.message ||
+          error.message ||
+          "Upload system test failed",
+      };
+    }
+  }
+
+  // TESTING ENDPOINTS
 
   async testCommentEndpoints() {
     try {
-      console.log("🧪 Testing comment API endpoints...");
+      console.log("Testing comment API endpoints...");
 
       const testResults = {
         endpoints: [
@@ -649,185 +940,6 @@ class ApiService {
       return { success: true, data: testResults };
     } catch (error) {
       return { success: false, error: error.message };
-    }
-  }
-  // File: frontend/src/services/api.js - Add these methods to your existing ApiService class
-
-  // ===== IMAGE UPLOAD METHODS =====
-
-  async uploadProfileImage(imageUri) {
-    try {
-      const formData = new FormData();
-      formData.append("image", {
-        uri: imageUri,
-        type: "image/jpeg",
-        name: "profile.jpg",
-      });
-
-      console.log("API: Uploading profile image...");
-      const response = await this.api.post("/api/upload/profile", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      return { success: true, data: response.data };
-    } catch (error) {
-      console.error("API: Profile image upload error:", error.response?.data);
-      return {
-        success: false,
-        error: error.response?.data?.message || error.message,
-      };
-    }
-  }
-
-  async uploadPostImage(postId, imageUri) {
-    try {
-      const formData = new FormData();
-      formData.append("image", {
-        uri: imageUri,
-        type: "image/jpeg",
-        name: "post.jpg",
-      });
-
-      console.log("API: Uploading post image for post:", postId);
-      const response = await this.api.post(
-        `/api/upload/post/${postId}`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-
-      return { success: true, data: response.data };
-    } catch (error) {
-      console.error("API: Post image upload error:", error.response?.data);
-      return {
-        success: false,
-        error: error.response?.data?.message || error.message,
-      };
-    }
-  }
-
-  async uploadCommentImage(commentId, imageUri) {
-    try {
-      const formData = new FormData();
-      formData.append("image", {
-        uri: imageUri,
-        type: "image/jpeg",
-        name: "comment.jpg",
-      });
-
-      console.log("API: Uploading comment image for comment:", commentId);
-      const response = await this.api.post(
-        `/api/upload/comment/${commentId}`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-
-      return { success: true, data: response.data };
-    } catch (error) {
-      console.error("API: Comment image upload error:", error.response?.data);
-      return {
-        success: false,
-        error: error.response?.data?.message || error.message,
-      };
-    }
-  }
-
-  async deleteImage(publicId) {
-    try {
-      const response = await this.api.delete(`/api/upload/image/${publicId}`);
-      return { success: true, data: response.data };
-    } catch (error) {
-      return {
-        success: false,
-        error: error.response?.data?.message || error.message,
-      };
-    }
-  }
-
-  async getUploadStats() {
-    try {
-      const response = await this.api.get("/api/upload/stats");
-      return { success: true, data: response.data };
-    } catch (error) {
-      return {
-        success: false,
-        error: error.response?.data?.message || error.message,
-      };
-    }
-  }
-
-  async testUploadSystem() {
-    try {
-      const response = await this.api.get("/api/upload/test");
-      return { success: true, data: response.data };
-    } catch (error) {
-      return {
-        success: false,
-        error: error.response?.data?.message || error.message,
-      };
-    }
-  }
-  // Add these methods to your frontend/src/services/api.js ApiService class
-
-  // ===== IMAGE UPLOAD METHODS =====
-
-  async uploadProfileImage(imageUri) {
-    try {
-      const formData = new FormData();
-      formData.append("image", {
-        uri: imageUri,
-        type: "image/jpeg",
-        name: "profile.jpg",
-      });
-
-      console.log("API: Uploading profile image...");
-      const response = await this.api.post("/api/upload/profile", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      console.log("API: Profile image upload successful:", response.data);
-      return { success: true, data: response.data };
-    } catch (error) {
-      console.error("API: Profile image upload error:", error.response?.data);
-      return {
-        success: false,
-        error: error.response?.data?.message || error.message,
-      };
-    }
-  }
-
-  async getProfileImage() {
-    try {
-      const response = await this.api.get("/api/upload/profile");
-      return { success: true, data: response.data };
-    } catch (error) {
-      return {
-        success: false,
-        error: error.response?.data?.message || error.message,
-      };
-    }
-  }
-
-  async testUploadSystem() {
-    try {
-      const response = await this.api.get("/api/upload/test");
-      return { success: true, data: response.data };
-    } catch (error) {
-      return {
-        success: false,
-        error: error.response?.data?.message || error.message,
-      };
     }
   }
 }

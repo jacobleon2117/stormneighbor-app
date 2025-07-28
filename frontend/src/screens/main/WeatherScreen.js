@@ -1,5 +1,5 @@
 // File: frontend/src/screens/main/WeatherScreen.js
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -8,13 +8,13 @@ import {
   ActivityIndicator,
   ScrollView,
   StyleSheet,
+  RefreshControl,
+  Dimensions,
 } from "react-native";
 import MapView, { UrlTile } from "react-native-maps";
 import * as Location from "expo-location";
 import {
   MapPin,
-  Play,
-  Pause,
   AlertTriangle,
   Droplets,
   Thermometer,
@@ -26,17 +26,22 @@ import {
   CloudRain,
   CloudSnow,
   CloudDrizzle,
+  RefreshCw,
+  Maximize2,
+  Minimize2,
 } from "lucide-react-native";
 import { globalStyles, colors, spacing } from "@styles/designSystem";
 import ScreenLayout from "@components/layout/ScreenLayout";
+import apiService from "@services/api";
 
-const OPENWEATHER_API_KEY = "2a8fe08c288abdad20a5f3fa9a21d8bd";
+const { width, height } = Dimensions.get("window");
 
 const WeatherScreen = ({ user }) => {
-  const [currentWeather, setCurrentWeather] = useState(null);
-  const [location, setLocation] = useState(null);
+  const [weatherData, setWeatherData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [isCardMinimized, setIsCardMinimized] = useState(false);
   const [mapRegion, setMapRegion] = useState({
     latitude: 36.1539,
     longitude: -95.9928,
@@ -44,17 +49,43 @@ const WeatherScreen = ({ user }) => {
     longitudeDelta: 1.0,
   });
   const [selectedLayer, setSelectedLayer] = useState("precipitation");
-  const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
     initializeWeather();
-  }, []);
+  }, [user]);
 
   const initializeWeather = async () => {
     try {
       setLoading(true);
       setError(null);
 
+      const userLocationParams = apiService.getUserLocationParams(user);
+
+      if (userLocationParams) {
+        console.log("Using user profile location:", userLocationParams);
+        setMapRegion({
+          latitude: userLocationParams.latitude,
+          longitude: userLocationParams.longitude,
+          latitudeDelta: 1.0,
+          longitudeDelta: 1.0,
+        });
+        await fetchWeatherData(
+          userLocationParams.latitude,
+          userLocationParams.longitude
+        );
+      } else {
+        console.log("Getting device location...");
+        await getCurrentLocationAndWeather();
+      }
+    } catch (error) {
+      console.error("Error initializing weather:", error);
+      setError("Failed to get location. Please check your settings.");
+      setLoading(false);
+    }
+  };
+
+  const getCurrentLocationAndWeather = async () => {
+    try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
         setError("Location permission is required for weather data");
@@ -68,7 +99,6 @@ const WeatherScreen = ({ user }) => {
       });
 
       const { latitude, longitude } = currentLocation.coords;
-      setLocation({ latitude, longitude });
       setMapRegion({
         latitude,
         longitude,
@@ -78,60 +108,67 @@ const WeatherScreen = ({ user }) => {
 
       await fetchWeatherData(latitude, longitude);
     } catch (error) {
-      console.error("Error initializing weather:", error);
-      setError("Failed to get location. Please check your settings.");
+      console.error("Error getting current location:", error);
+      setError("Failed to get current location");
       setLoading(false);
     }
   };
 
   const fetchWeatherData = async (lat, lon) => {
     try {
-      if (!OPENWEATHER_API_KEY) {
-        // Mock data for testing - need to update this
-        setCurrentWeather({
-          name: "Owasso",
-          main: { temp: 72 },
-          weather: [{ description: "Partly cloudy", icon: "02d" }],
-        });
-        setLoading(false);
-        return;
+      console.log(`Fetching weather for ${lat}, ${lon}`);
+
+      const tempUser = {
+        location: {
+          coordinates: { latitude: lat, longitude: lon },
+        },
+      };
+
+      const result = await apiService.getCurrentWeather(tempUser);
+
+      if (result.success) {
+        console.log("Weather data loaded successfully");
+        setWeatherData(result.data);
+        setError(null);
+      } else {
+        console.error("Weather API error:", result.error);
+        setError(result.error || "Failed to load weather data");
       }
-
-      const response = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${OPENWEATHER_API_KEY}&units=imperial`
-      );
-
-      if (!response.ok) {
-        throw new Error(`Weather API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      setCurrentWeather(data);
-      setLoading(false);
     } catch (error) {
-      console.error("Error fetching weather data:", error);
+      console.error("Weather fetch error:", error);
       setError("Failed to load weather data");
+    } finally {
       setLoading(false);
     }
   };
 
-  const getWeatherIcon = (iconCode, size = 32) => {
-    if (!iconCode) return <Cloud size={size} color={colors.text.primary} />;
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    if (mapRegion) {
+      await fetchWeatherData(mapRegion.latitude, mapRegion.longitude);
+    } else {
+      await initializeWeather();
+    }
+    setRefreshing(false);
+  }, [mapRegion]);
 
-    const iconMap = {
-      "01": Sun,
-      "02": Cloud,
-      "03": Cloud,
-      "04": Cloud,
-      "09": CloudDrizzle,
-      10: CloudRain,
-      11: Zap,
-      13: CloudSnow,
-      50: Eye,
-    };
+  const getWeatherIcon = (iconUrl, description, size = 32) => {
+    if (!description) return <Cloud size={size} color={colors.text.primary} />;
 
-    const IconComponent = iconMap[iconCode.substring(0, 2)] || Cloud;
-    return <IconComponent size={size} color={colors.text.primary} />;
+    const desc = description.toLowerCase();
+
+    if (desc.includes("sun") || desc.includes("clear"))
+      return <Sun size={size} color={colors.warning} />;
+    if (desc.includes("rain"))
+      return <CloudRain size={size} color={colors.primary} />;
+    if (desc.includes("snow"))
+      return <CloudSnow size={size} color={colors.text.muted} />;
+    if (desc.includes("drizzle"))
+      return <CloudDrizzle size={size} color={colors.primary} />;
+    if (desc.includes("thunder") || desc.includes("storm"))
+      return <Zap size={size} color={colors.warning} />;
+
+    return <Cloud size={size} color={colors.text.primary} />;
   };
 
   const formatTemperature = (temp) => {
@@ -141,31 +178,12 @@ const WeatherScreen = ({ user }) => {
     return `${Math.round(temp)}°F`;
   };
 
-  const getTileUrl = () => {
-    if (!OPENWEATHER_API_KEY) {
-      return null;
-    }
-
-    const layerMap = {
-      precipitation: "precipitation_new",
-      temperature: "temp_new",
-      wind: "wind_new",
-      clouds: "clouds_new",
-    };
-
-    return `https://tile.openweathermap.org/map/${layerMap[selectedLayer]}/{z}/{x}/{y}.png?appid=${OPENWEATHER_API_KEY}`;
-  };
-
   const handleLocationPress = async () => {
-    if (location) {
-      setMapRegion({
-        latitude: location.latitude,
-        longitude: location.longitude,
-        latitudeDelta: 1.0,
-        longitudeDelta: 1.0,
-      });
-    } else {
+    try {
+      setLoading(true);
       await initializeWeather();
+    } catch (error) {
+      Alert.alert("Error", "Failed to get current location");
     }
   };
 
@@ -173,66 +191,128 @@ const WeatherScreen = ({ user }) => {
     setSelectedLayer(filterId);
   };
 
+  const toggleCardSize = () => {
+    setIsCardMinimized(!isCardMinimized);
+  };
+
   const renderWeatherCard = () => (
-    <View style={styles.weatherCard}>
+    <View
+      style={[
+        styles.weatherCard,
+        isCardMinimized && styles.weatherCardMinimized,
+      ]}
+    >
       {loading ? (
-        <View style={globalStyles.center}>
+        <View style={styles.centerContent}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text
-            style={[
-              globalStyles.caption,
-              { marginTop: spacing.sm, color: colors.text.primary },
-            ]}
-          >
-            Loading weather...
-          </Text>
+          <Text style={styles.loadingText}>Loading weather...</Text>
         </View>
       ) : error ? (
-        <View style={globalStyles.center}>
+        <View style={styles.centerContent}>
           <AlertTriangle size={32} color={colors.error} />
-          <Text
-            style={[
-              globalStyles.body,
-              {
-                textAlign: "center",
-                marginTop: spacing.sm,
-                color: colors.text.primary,
-              },
-            ]}
-          >
-            {error}
-          </Text>
+          <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity
-            style={[globalStyles.buttonPrimary, { marginTop: spacing.md }]}
+            style={styles.retryButton}
             onPress={initializeWeather}
           >
-            <Text style={globalStyles.buttonPrimaryText}>Retry</Text>
+            <Text style={styles.retryButtonText}>Retry</Text>
           </TouchableOpacity>
         </View>
-      ) : currentWeather ? (
+      ) : weatherData ? (
         <View>
-          <Text style={styles.locationText}>
-            {currentWeather.name || "Current Location"}
-          </Text>
-
-          <View style={styles.tempRow}>
-            <Text style={styles.temperatureText}>
-              {formatTemperature(currentWeather.main.temp)}
+          <View style={styles.locationHeader}>
+            <Text style={styles.locationText}>
+              {weatherData.location.name || "Current Location"}
             </Text>
-            <View style={styles.weatherIconContainer}>
-              {getWeatherIcon(currentWeather.weather?.[0]?.icon, 48)}
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                onPress={onRefresh}
+                disabled={refreshing}
+                style={styles.actionButton}
+              >
+                <RefreshCw
+                  size={16}
+                  color={colors.text.muted}
+                  style={refreshing ? styles.spinning : {}}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={toggleCardSize}
+                style={styles.actionButton}
+              >
+                {isCardMinimized ? (
+                  <Maximize2 size={16} color={colors.text.muted} />
+                ) : (
+                  <Minimize2 size={16} color={colors.text.muted} />
+                )}
+              </TouchableOpacity>
             </View>
           </View>
 
-          <Text style={styles.conditionsText}>
-            {currentWeather.weather?.[0]?.description || "Clear"}
-          </Text>
+          {!isCardMinimized && (
+            <>
+              <View style={styles.tempRow}>
+                <Text style={styles.temperatureText}>
+                  {formatTemperature(weatherData.current.temperature)}
+                </Text>
+                <View style={styles.weatherIconContainer}>
+                  {getWeatherIcon(
+                    weatherData.current.icon,
+                    weatherData.current.shortForecast,
+                    48
+                  )}
+                </View>
+              </View>
+
+              <Text style={styles.conditionsText}>
+                {weatherData.current.shortForecast || "Clear"}
+              </Text>
+
+              <View style={styles.detailsRow}>
+                <View style={styles.detailItem}>
+                  <Thermometer size={12} color={colors.text.muted} />
+                  <Text style={styles.detailLabel}>Feels like</Text>
+                  <Text style={styles.detailValue}>
+                    {formatTemperature(weatherData.current.feelsLike)}
+                  </Text>
+                </View>
+                <View style={styles.detailItem}>
+                  <Droplets size={12} color={colors.text.muted} />
+                  <Text style={styles.detailLabel}>Humidity</Text>
+                  <Text style={styles.detailValue}>
+                    {weatherData.current.humidity || 0}%
+                  </Text>
+                </View>
+                <View style={styles.detailItem}>
+                  <Wind size={12} color={colors.text.muted} />
+                  <Text style={styles.detailLabel}>Wind</Text>
+                  <Text style={styles.detailValue}>
+                    {weatherData.current.windSpeed || "0 mph"}
+                  </Text>
+                </View>
+              </View>
+
+              <Text style={styles.sourceText}>
+                Source: {weatherData.source} • Updated:{" "}
+                {new Date(weatherData.lastUpdated).toLocaleTimeString()}
+              </Text>
+            </>
+          )}
+
+          {isCardMinimized && (
+            <View style={styles.minimizedContent}>
+              <Text style={styles.minimizedTemp}>
+                {formatTemperature(weatherData.current.temperature)}
+              </Text>
+              <Text style={styles.minimizedCondition}>
+                {weatherData.current.shortForecast || "Clear"}
+              </Text>
+            </View>
+          )}
         </View>
       ) : (
-        <View style={globalStyles.center}>
-          <Text style={[globalStyles.body, { color: colors.text.primary }]}>
-            No weather data available
-          </Text>
+        <View style={styles.centerContent}>
+          <Text style={styles.noDataText}>No weather data available</Text>
         </View>
       )}
     </View>
@@ -286,10 +366,7 @@ const WeatherScreen = ({ user }) => {
                 <Text
                   style={[
                     styles.filterText,
-                    isActive && {
-                      color: colors.text.inverse,
-                      fontWeight: "600",
-                    },
+                    isActive && styles.filterTextActive,
                   ]}
                 >
                   {filter.name}
@@ -307,31 +384,21 @@ const WeatherScreen = ({ user }) => {
       <TouchableOpacity
         style={styles.controlButton}
         onPress={handleLocationPress}
+        disabled={loading}
       >
         <MapPin size={20} color={colors.text.primary} />
       </TouchableOpacity>
     </View>
   );
 
-  if (!OPENWEATHER_API_KEY) {
-    return (
-      <ScreenLayout title="Weather">
-        <View style={globalStyles.emptyContainer}>
-          <Cloud size={64} color={colors.text.muted} />
-          <Text style={globalStyles.emptyTitle}>
-            Weather API Setup Required
-          </Text>
-          <Text style={globalStyles.emptyText}>
-            Add your OpenWeatherMap API key to view weather data. Get a free API
-            key at openweathermap.org
-          </Text>
-        </View>
-      </ScreenLayout>
-    );
-  }
-
   return (
-    <ScreenLayout title="Weather" scrollable={false} contentPadding={false}>
+    <ScreenLayout
+      title="Weather"
+      scrollable={false}
+      contentPadding={false}
+      refreshing={refreshing}
+      onRefresh={onRefresh}
+    >
       <View style={styles.container}>
         <MapView
           style={styles.map}
@@ -339,17 +406,7 @@ const WeatherScreen = ({ user }) => {
           onRegionChangeComplete={setMapRegion}
           showsUserLocation={true}
           showsMyLocationButton={false}
-        >
-          {getTileUrl() && (
-            <UrlTile
-              urlTemplate={getTileUrl()}
-              maximumZ={10}
-              flipY={false}
-              shouldReplaceMapContent={false}
-              opacity={0.7}
-            />
-          )}
-        </MapView>
+        />
 
         {renderWeatherCard()}
         {renderMapControls()}
@@ -375,17 +432,46 @@ const styles = StyleSheet.create({
     left: spacing.lg,
     right: spacing.lg,
     backgroundColor: "rgba(255, 255, 255, 0.95)",
+    backdropFilter: "blur(10px)",
     padding: spacing.lg,
     borderRadius: 16,
-    ...globalStyles.card,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.2)",
+  },
+
+  weatherCardMinimized: {
+    paddingVertical: spacing.md,
+  },
+
+  locationHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: spacing.sm,
   },
 
   locationText: {
     fontSize: 16,
-    fontWeight: "500",
+    fontWeight: "600",
     color: colors.text.primary,
-    textAlign: "center",
-    marginBottom: spacing.sm,
+    flex: 1,
+  },
+
+  headerActions: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+
+  actionButton: {
+    padding: spacing.xs,
   },
 
   tempRow: {
@@ -399,10 +485,13 @@ const styles = StyleSheet.create({
     fontSize: 48,
     fontWeight: "700",
     color: colors.text.primary,
+    letterSpacing: -2,
   },
 
   weatherIconContainer: {
     alignItems: "center",
+    justifyContent: "center",
+    padding: spacing.sm,
   },
 
   conditionsText: {
@@ -410,14 +499,134 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     textAlign: "center",
     textTransform: "capitalize",
+    marginBottom: spacing.md,
+    fontWeight: "500",
+  },
+
+  detailsRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginBottom: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(0, 0, 0, 0.05)",
+  },
+
+  detailItem: {
+    alignItems: "center",
+    gap: 2,
+  },
+
+  detailLabel: {
+    fontSize: 12,
+    color: colors.text.muted,
+    fontWeight: "500",
+  },
+
+  detailValue: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.text.primary,
+  },
+
+  sourceText: {
+    fontSize: 10,
+    color: colors.text.muted,
+    textAlign: "center",
+    marginTop: spacing.xs,
+    fontStyle: "italic",
+  },
+
+  minimizedContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+
+  minimizedTemp: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: colors.text.primary,
+  },
+
+  minimizedCondition: {
+    fontSize: 14,
+    color: colors.text.secondary,
+    textTransform: "capitalize",
+    fontWeight: "500",
+  },
+
+  centerContent: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: spacing.lg,
+  },
+
+  loadingText: {
+    marginTop: spacing.sm,
+    color: colors.text.primary,
+    fontSize: 14,
+    fontWeight: "500",
+  },
+
+  errorText: {
+    textAlign: "center",
+    marginTop: spacing.sm,
+    color: colors.text.primary,
+    fontSize: 14,
+    fontWeight: "500",
+  },
+
+  retryButton: {
+    marginTop: spacing.md,
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: 8,
+  },
+
+  retryButtonText: {
+    color: colors.text.inverse,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+
+  noDataText: {
+    color: colors.text.primary,
+    fontSize: 14,
+    fontWeight: "500",
+  },
+
+  mapControls: {
+    position: "absolute",
+    bottom: spacing.xl * 4,
+    right: spacing.lg,
+  },
+
+  controlButton: {
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    borderRadius: 25,
+    width: 50,
+    height: 50,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: "rgba(0, 0, 0, 0.05)",
   },
 
   filtersContainer: {
     position: "absolute",
-    bottom: spacing.xxxxl + 80,
+    bottom: spacing.xl,
     left: 0,
     right: 0,
-    backgroundColor: "transparent",
   },
 
   filtersContent: {
@@ -428,34 +637,36 @@ const styles = StyleSheet.create({
   filterChip: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
-    borderRadius: 20,
-    paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
     borderWidth: 1,
-    borderColor: colors.border,
-    marginRight: spacing.sm,
+    borderColor: "rgba(0, 0, 0, 0.1)",
     gap: spacing.xs,
-    ...globalStyles.card,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
   },
 
   filterText: {
-    fontSize: 14,
-    color: colors.text.primary,
+    fontSize: 12,
     fontWeight: "500",
+    color: colors.text.primary,
   },
 
-  mapControls: {
-    position: "absolute",
-    bottom: spacing.xxxxl + 140,
-    right: spacing.lg,
+  filterTextActive: {
+    color: colors.text.inverse,
+    fontWeight: "600",
   },
 
-  controlButton: {
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
-    borderRadius: 12,
-    padding: spacing.md,
-    ...globalStyles.card,
+  spinning: {
+    transform: [{ rotate: "360deg" }],
   },
 });
 

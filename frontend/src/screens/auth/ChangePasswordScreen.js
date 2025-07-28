@@ -156,6 +156,7 @@ const ChangePasswordScreen = ({ onBack, onPasswordChanged }) => {
         showBack={!!onBack}
         onBack={onBack}
         title="Change Password"
+        showDefaultActions={false}
       />
 
       <View style={{ paddingHorizontal: spacing.lg, flex: 1 }}>

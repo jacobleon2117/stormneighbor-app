@@ -113,6 +113,7 @@ const NotificationsSetupScreen = ({
         showBack={!!onBack}
         onBack={onBack}
         title="Notifications"
+        showDefaultActions={false}
       />
 
       <View style={styles.container}>

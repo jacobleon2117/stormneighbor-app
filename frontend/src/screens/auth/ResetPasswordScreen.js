@@ -145,6 +145,7 @@ const ResetPasswordScreen = ({
         showBack={!!onBack}
         onBack={onBack}
         title="Reset Password"
+        showDefaultActions={false}
       />
 
       <View style={{ paddingHorizontal: spacing.lg, flex: 1 }}>

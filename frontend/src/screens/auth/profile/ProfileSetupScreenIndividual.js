@@ -54,6 +54,7 @@ const ProfileSetupScreenIndividual = ({ onNext, onBack, initialData = {} }) => {
         showBack={!!onBack}
         onBack={onBack}
         title="Profile Setup"
+        showDefaultActions={false}
       />
 
       <View style={{ paddingHorizontal: spacing.lg, flex: 1 }}>

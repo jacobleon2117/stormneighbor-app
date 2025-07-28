@@ -113,8 +113,12 @@ const VerifyCodeScreen = ({ email, onCodeVerified, onBack, onResendCode }) => {
       scrollable={false}
       backgroundColor={colors.background}
     >
-      <StandardHeader showBack={!!onBack} onBack={onBack} title="" />
-
+      <StandardHeader
+        showBack={!!onBack}
+        onBack={onBack}
+        title=""
+        showDefaultActions={false}
+      />
       <View
         style={[
           globalStyles.flex1,

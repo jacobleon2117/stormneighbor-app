@@ -376,6 +376,7 @@ const LocationSetupScreen = ({ onNext, onBack, initialData = {} }) => {
         showBack={!!onBack}
         onBack={onBack}
         title="Location Setup"
+        showDefaultActions={false}
       />
 
       <View style={{ paddingHorizontal: spacing.lg, flex: 1 }}>

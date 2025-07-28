@@ -108,6 +108,7 @@ const ContactSupportScreen = ({ onBack, userEmail }) => {
         showBack={!!onBack}
         onBack={onBack}
         title="Contact Support"
+        showDefaultActions={false}
       />
 
       <View style={{ paddingHorizontal: spacing.lg, flex: 1 }}>

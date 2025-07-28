@@ -118,7 +118,12 @@ const ForgotPasswordScreen = ({ onBackToLogin }) => {
       scrollable={false}
       backgroundColor={colors.background}
     >
-      <StandardHeader showBack={true} onBack={onBackToLogin} title="" />
+      <StandardHeader
+        showBack={true}
+        onBack={onBackToLogin}
+        title=""
+        showDefaultActions={false}
+      />
 
       <View
         style={[

@@ -82,6 +82,45 @@ export const AuthProvider = ({ children }) => {
     checkAuthStatus();
   }, []);
 
+  const normalizeUserData = (user) => {
+    if (!user) return null;
+
+    const location = {
+      city: user.location?.city || user.location_city || null,
+      state: user.location?.state || user.address_state || null,
+      zipCode: user.location?.zipCode || user.zip_code || null,
+      address: user.location?.address || user.address || null,
+      coordinates:
+        user.location?.coordinates ||
+        (user.latitude && user.longitude
+          ? {
+              latitude: user.latitude,
+              longitude: user.longitude,
+            }
+          : null),
+      radiusMiles:
+        user.location?.radiusMiles || user.location_radius_miles || 10.0,
+      showCityOnly: user.location?.showCityOnly || user.show_city_only || false,
+    };
+
+    return {
+      ...user,
+      location,
+      // Keep legacy properties for backward compatibility during transition
+      location_city: location.city,
+      address_state: location.state,
+    };
+  };
+
+  const isProfileComplete = (user) => {
+    if (!user) return false;
+
+    const hasBasicProfile = user.firstName && user.lastName && user.email;
+    const hasLocationInfo = user.location?.city && user.location?.state;
+
+    return hasBasicProfile && hasLocationInfo;
+  };
+
   const checkAuthStatus = async () => {
     try {
       dispatch({ type: "SET_LOADING", payload: true });
@@ -94,27 +133,21 @@ export const AuthProvider = ({ children }) => {
 
       const result = await apiService.getProfile();
       if (result.success) {
-        const user = result.data;
+        const normalizedUser = normalizeUserData(result.data);
 
         const profileSetupCompleted = await AsyncStorage.getItem(
           "profileSetupCompleted"
         );
 
-        const hasBasicProfile = user.firstName && user.lastName && user.email;
-        const hasLocationInfo =
-          (user.location?.city && user.location?.state) ||
-          (user.address?.city && user.address?.state) ||
-          (user.location_city && user.address_state);
+        const profileComplete = isProfileComplete(normalizedUser);
 
-        const isProfileComplete = hasBasicProfile && hasLocationInfo;
-
-        if (!isProfileComplete && !profileSetupCompleted) {
+        if (!profileComplete && !profileSetupCompleted) {
           dispatch({
             type: "SET_USER_NEEDS_SETUP",
-            payload: { user, needsSetup: true },
+            payload: { user: normalizedUser, needsSetup: true },
           });
         } else {
-          dispatch({ type: "SET_USER", payload: user });
+          dispatch({ type: "SET_USER", payload: normalizedUser });
           if (!profileSetupCompleted) {
             await AsyncStorage.setItem("profileSetupCompleted", "true");
           }
@@ -142,26 +175,21 @@ export const AuthProvider = ({ children }) => {
       if (result.success) {
         await AsyncStorage.setItem("authToken", result.data.token);
 
-        const user = result.data.user;
+        const normalizedUser = normalizeUserData(result.data.user);
 
         const profileSetupCompleted = await AsyncStorage.getItem(
           "profileSetupCompleted"
         );
-        const hasBasicProfile = user.firstName && user.lastName && user.email;
-        const hasLocationInfo =
-          (user.location?.city && user.location?.state) ||
-          (user.address?.city && user.address?.state) ||
-          (user.location_city && user.address_state);
 
-        const isProfileComplete = hasBasicProfile && hasLocationInfo;
+        const profileComplete = isProfileComplete(normalizedUser);
 
-        if (!isProfileComplete && !profileSetupCompleted) {
+        if (!profileComplete && !profileSetupCompleted) {
           dispatch({
             type: "SET_USER_NEEDS_SETUP",
-            payload: { user, needsSetup: true },
+            payload: { user: normalizedUser, needsSetup: true },
           });
         } else {
-          dispatch({ type: "SET_USER", payload: user });
+          dispatch({ type: "SET_USER", payload: normalizedUser });
           if (!profileSetupCompleted) {
             await AsyncStorage.setItem("profileSetupCompleted", "true");
           }
@@ -190,9 +218,11 @@ export const AuthProvider = ({ children }) => {
         await AsyncStorage.setItem("authToken", result.data.token);
         await AsyncStorage.removeItem("profileSetupCompleted");
 
+        const normalizedUser = normalizeUserData(result.data.user);
+
         dispatch({
           type: "SET_USER_NEEDS_SETUP",
-          payload: { user: result.data.user, needsSetup: true },
+          payload: { user: normalizedUser, needsSetup: true },
         });
 
         return { success: true };
@@ -254,7 +284,8 @@ export const AuthProvider = ({ children }) => {
 
         const profileResult = await apiService.getProfile();
         if (profileResult.success) {
-          dispatch({ type: "SET_USER", payload: profileResult.data });
+          const normalizedUser = normalizeUserData(profileResult.data);
+          dispatch({ type: "SET_USER", payload: normalizedUser });
         }
 
         return { success: true };
@@ -278,7 +309,8 @@ export const AuthProvider = ({ children }) => {
     try {
       const profileResult = await apiService.getProfile();
       if (profileResult.success) {
-        dispatch({ type: "SET_USER", payload: profileResult.data });
+        const normalizedUser = normalizeUserData(profileResult.data);
+        dispatch({ type: "SET_USER", payload: normalizedUser });
       }
     } catch (error) {
       console.error("Error refreshing profile after setup:", error);
@@ -286,7 +318,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   const updateUser = (userData) => {
-    dispatch({ type: "SET_USER", payload: { ...state.user, ...userData } });
+    const normalizedUser = normalizeUserData({ ...state.user, ...userData });
+    dispatch({ type: "SET_USER", payload: normalizedUser });
   };
 
   const clearError = () => {
@@ -313,5 +346,3 @@ export const AuthProvider = ({ children }) => {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
-
-export default AuthContext;

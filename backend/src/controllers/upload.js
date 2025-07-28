@@ -4,22 +4,33 @@ const { deleteImage, getPublicIdFromUrl } = require("../config/cloudinary");
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl:
-    process.env.NODE_ENV === "production"
-      ? { rejectUnauthorized: false }
-      : false,
+  ssl: process.env.DATABASE_URL?.includes("supabase")
+    ? { rejectUnauthorized: false, ca: null }
+    : false,
 });
 
 const uploadProfileImage = async (req, res) => {
   try {
     const userId = req.user.userId;
 
+    console.log("Profile image upload request for user:", userId);
+
     if (!req.file) {
-      return res.status(400).json({ message: "No image file provided" });
+      console.error("No image file provided");
+      return res.status(400).json({
+        message: "No image file provided",
+        success: false,
+      });
     }
 
     const imageUrl = req.file.path;
-    console.log("Uploaded profile image:", imageUrl);
+    const publicId = req.file.filename;
+
+    console.log("Uploaded to Cloudinary:", {
+      url: imageUrl,
+      publicId: publicId,
+      size: req.file.size,
+    });
 
     const client = await pool.connect();
 
@@ -30,11 +41,22 @@ const uploadProfileImage = async (req, res) => {
       );
 
       const result = await client.query(
-        "UPDATE users SET profile_image_url = $1, updated_at = NOW() WHERE id = $2 RETURNING profile_image_url",
+        "UPDATE users SET profile_image_url = $1, updated_at = NOW() WHERE id = $2 RETURNING profile_image_url, first_name, last_name",
         [imageUrl, userId]
       );
 
-      if (currentUser.rows[0]?.profile_image_url) {
+      if (result.rows.length === 0) {
+        console.error("User not found for ID:", userId);
+        return res.status(404).json({
+          message: "User not found",
+          success: false,
+        });
+      }
+
+      if (
+        currentUser.rows[0]?.profile_image_url &&
+        currentUser.rows[0].profile_image_url !== imageUrl
+      ) {
         const oldPublicId = getPublicIdFromUrl(
           currentUser.rows[0].profile_image_url
         );
@@ -43,21 +65,52 @@ const uploadProfileImage = async (req, res) => {
             await deleteImage(oldPublicId);
             console.log("Deleted old profile image:", oldPublicId);
           } catch (error) {
-            console.error("Failed to delete old profile image:", error);
+            console.error("Failed to delete old profile image:", error.message);
           }
         }
       }
 
+      const updatedUser = result.rows[0];
+
+      console.log(
+        "Profile image updated successfully for user:",
+        updatedUser.first_name,
+        updatedUser.last_name
+      );
+
       res.json({
+        success: true,
         message: "Profile image uploaded successfully",
-        imageUrl: result.rows[0].profile_image_url,
+        data: {
+          imageUrl: updatedUser.profile_image_url,
+          publicId: publicId,
+          user: {
+            firstName: updatedUser.first_name,
+            lastName: updatedUser.last_name,
+            profileImageUrl: updatedUser.profile_image_url,
+          },
+        },
       });
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Upload profile image error:", error);
-    res.status(500).json({ message: "Server error uploading profile image" });
+
+    if (req.file?.filename) {
+      try {
+        await deleteImage(req.file.filename);
+        console.log("Cleaned up failed upload:", req.file.filename);
+      } catch (cleanupError) {
+        console.error("Failed to cleanup failed upload:", cleanupError.message);
+      }
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Server error uploading profile image",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -66,12 +119,28 @@ const uploadPostImage = async (req, res) => {
     const { postId } = req.params;
     const userId = req.user.userId;
 
+    console.log(
+      "Post image upload request for post:",
+      postId,
+      "by user:",
+      userId
+    );
+
     if (!req.file) {
-      return res.status(400).json({ message: "No image file provided" });
+      return res.status(400).json({
+        message: "No image file provided",
+        success: false,
+      });
     }
 
     const imageUrl = req.file.path;
-    console.log("Uploaded post image:", imageUrl);
+    const publicId = req.file.filename;
+
+    console.log("Post image uploaded to Cloudinary:", {
+      url: imageUrl,
+      publicId: publicId,
+      size: req.file.size,
+    });
 
     const client = await pool.connect();
 
@@ -82,13 +151,19 @@ const uploadPostImage = async (req, res) => {
       );
 
       if (postCheck.rows.length === 0) {
-        return res.status(404).json({ message: "Post not found" });
+        await deleteImage(publicId);
+        return res.status(404).json({
+          message: "Post not found",
+          success: false,
+        });
       }
 
       if (postCheck.rows[0].user_id !== userId) {
-        return res
-          .status(403)
-          .json({ message: "Not authorized to add images to this post" });
+        await deleteImage(publicId);
+        return res.status(403).json({
+          message: "Not authorized to add images to this post",
+          success: false,
+        });
       }
 
       const currentImages = postCheck.rows[0].images || [];
@@ -99,17 +174,37 @@ const uploadPostImage = async (req, res) => {
         [updatedImages, postId]
       );
 
+      console.log("Post image added successfully to post:", postId);
+
       res.json({
+        success: true,
         message: "Post image uploaded successfully",
-        imageUrl: imageUrl,
-        images: result.rows[0].images,
+        data: {
+          imageUrl: imageUrl,
+          publicId: publicId,
+          images: result.rows[0].images,
+          postId: postId,
+        },
       });
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Upload post image error:", error);
-    res.status(500).json({ message: "Server error uploading post image" });
+
+    if (req.file?.filename) {
+      try {
+        await deleteImage(req.file.filename);
+      } catch (cleanupError) {
+        console.error("Failed to cleanup failed upload:", cleanupError.message);
+      }
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Server error uploading post image",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -118,12 +213,22 @@ const uploadCommentImage = async (req, res) => {
     const { commentId } = req.params;
     const userId = req.user.userId;
 
+    console.log(
+      "Comment image upload request for comment:",
+      commentId,
+      "by user:",
+      userId
+    );
+
     if (!req.file) {
-      return res.status(400).json({ message: "No image file provided" });
+      return res.status(400).json({
+        message: "No image file provided",
+        success: false,
+      });
     }
 
     const imageUrl = req.file.path;
-    console.log("Uploaded comment image:", imageUrl);
+    const publicId = req.file.filename;
 
     const client = await pool.connect();
 
@@ -134,13 +239,19 @@ const uploadCommentImage = async (req, res) => {
       );
 
       if (commentCheck.rows.length === 0) {
-        return res.status(404).json({ message: "Comment not found" });
+        await deleteImage(publicId);
+        return res.status(404).json({
+          message: "Comment not found",
+          success: false,
+        });
       }
 
       if (commentCheck.rows[0].user_id !== userId) {
-        return res
-          .status(403)
-          .json({ message: "Not authorized to add images to this comment" });
+        await deleteImage(publicId);
+        return res.status(403).json({
+          message: "Not authorized to add images to this comment",
+          success: false,
+        });
       }
 
       const currentImages = commentCheck.rows[0].images || [];
@@ -151,17 +262,37 @@ const uploadCommentImage = async (req, res) => {
         [updatedImages, commentId]
       );
 
+      console.log("Comment image added successfully to comment:", commentId);
+
       res.json({
+        success: true,
         message: "Comment image uploaded successfully",
-        imageUrl: imageUrl,
-        images: result.rows[0].images,
+        data: {
+          imageUrl: imageUrl,
+          publicId: publicId,
+          images: result.rows[0].images,
+          commentId: commentId,
+        },
       });
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Upload comment image error:", error);
-    res.status(500).json({ message: "Server error uploading comment image" });
+
+    if (req.file?.filename) {
+      try {
+        await deleteImage(req.file.filename);
+      } catch (cleanupError) {
+        console.error("Failed to cleanup failed upload:", cleanupError.message);
+      }
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Server error uploading comment image",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -170,21 +301,44 @@ const deleteImageById = async (req, res) => {
     const { publicId } = req.params;
     const userId = req.user.userId;
 
+    console.log(
+      "Delete image request for publicId:",
+      publicId,
+      "by user:",
+      userId
+    );
+
+    if (!publicId) {
+      return res.status(400).json({
+        success: false,
+        message: "Public ID is required",
+      });
+    }
+
     const result = await deleteImage(publicId);
 
     if (result.result === "ok") {
+      console.log("Image deleted successfully:", publicId);
       res.json({
+        success: true,
         message: "Image deleted successfully",
+        data: { publicId, result },
       });
     } else {
+      console.log("Image deletion failed:", result);
       res.status(400).json({
+        success: false,
         message: "Failed to delete image",
-        result: result,
+        data: { result },
       });
     }
   } catch (error) {
     console.error("Delete image error:", error);
-    res.status(500).json({ message: "Server error deleting image" });
+    res.status(500).json({
+      success: false,
+      message: "Server error deleting image",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -220,6 +374,7 @@ const getUploadStats = async (req, res) => {
           0
         ),
         hasProfileImage: profileImage.rows.length > 0,
+        profileImageUrl: profileImage.rows[0]?.profile_image_url || null,
         totalImages: 0,
       };
 
@@ -229,15 +384,20 @@ const getUploadStats = async (req, res) => {
         (stats.hasProfileImage ? 1 : 0);
 
       res.json({
+        success: true,
         message: "Upload stats retrieved successfully",
-        stats: stats,
+        data: { stats },
       });
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Get upload stats error:", error);
-    res.status(500).json({ message: "Server error getting upload stats" });
+    res.status(500).json({
+      success: false,
+      message: "Server error getting upload stats",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 

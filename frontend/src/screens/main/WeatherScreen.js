@@ -30,7 +30,12 @@ import {
   Maximize2,
   Minimize2,
 } from "lucide-react-native";
-import { globalStyles, colors, spacing } from "@styles/designSystem";
+import {
+  globalStyles,
+  colors,
+  spacing,
+  createButtonStyle,
+} from "@styles/designSystem";
 import ScreenLayout from "@components/layout/ScreenLayout";
 import apiService from "@services/api";
 
@@ -203,19 +208,17 @@ const WeatherScreen = ({ user }) => {
       ]}
     >
       {loading ? (
-        <View style={styles.centerContent}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Loading weather...</Text>
-        </View>
-      ) : error ? (
-        <View style={styles.centerContent}>
+        <View style={globalStyles.emptyContainer}>
           <AlertTriangle size={32} color={colors.error} />
-          <Text style={styles.errorText}>{error}</Text>
+          <Text style={globalStyles.emptyText}>{error}</Text>
           <TouchableOpacity
-            style={styles.retryButton}
+            style={[
+              createButtonStyle("primary", "medium"),
+              { marginTop: spacing.lg },
+            ]}
             onPress={initializeWeather}
           >
-            <Text style={styles.retryButtonText}>Retry</Text>
+            <Text style={globalStyles.buttonPrimaryText}>Retry</Text>
           </TouchableOpacity>
         </View>
       ) : weatherData ? (
@@ -311,8 +314,8 @@ const WeatherScreen = ({ user }) => {
           )}
         </View>
       ) : (
-        <View style={styles.centerContent}>
-          <Text style={styles.noDataText}>No weather data available</Text>
+        <View style={globalStyles.emptyContainer}>
+          <Text style={globalStyles.emptyText}>No weather data available</Text>
         </View>
       )}
     </View>
@@ -553,47 +556,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.text.secondary,
     textTransform: "capitalize",
-    fontWeight: "500",
-  },
-
-  centerContent: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: spacing.lg,
-  },
-
-  loadingText: {
-    marginTop: spacing.sm,
-    color: colors.text.primary,
-    fontSize: 14,
-    fontWeight: "500",
-  },
-
-  errorText: {
-    textAlign: "center",
-    marginTop: spacing.sm,
-    color: colors.text.primary,
-    fontSize: 14,
-    fontWeight: "500",
-  },
-
-  retryButton: {
-    marginTop: spacing.md,
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: 8,
-  },
-
-  retryButtonText: {
-    color: colors.text.inverse,
-    fontSize: 14,
-    fontWeight: "600",
-  },
-
-  noDataText: {
-    color: colors.text.primary,
-    fontSize: 14,
     fontWeight: "500",
   },
 

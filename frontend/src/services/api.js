@@ -125,6 +125,8 @@ class ApiService {
     }
   }
 
+  // ===== AUTHENTICATION METHODS =====
+
   async login(email, password) {
     try {
       console.log("🔐 Attempting login for:", email);
@@ -285,6 +287,8 @@ class ApiService {
     }
   }
 
+  // ===== NEIGHBORHOOD METHODS =====
+
   async getNearbyNeighborhoods(latitude, longitude, radius = 5) {
     try {
       const response = await this.api.get("/api/neighborhoods/nearby", {
@@ -325,6 +329,8 @@ class ApiService {
       };
     }
   }
+
+  // ===== POST METHODS =====
 
   async getPosts(neighborhoodId, filters = {}) {
     try {
@@ -389,32 +395,7 @@ class ApiService {
     }
   }
 
-  async getComments(postId) {
-    try {
-      const response = await this.api.get(`/api/posts/${postId}/comments`);
-      return { success: true, data: response.data };
-    } catch (error) {
-      return {
-        success: false,
-        error: error.response?.data?.message || error.message,
-      };
-    }
-  }
-
-  async createComment(postId, commentData) {
-    try {
-      const response = await this.api.post(
-        `/api/posts/${postId}/comments`,
-        commentData
-      );
-      return { success: true, data: response.data };
-    } catch (error) {
-      return {
-        success: false,
-        error: error.response?.data?.message || error.message,
-      };
-    }
-  }
+  // ===== POST REACTION METHODS =====
 
   async addReaction(postId, reactionType) {
     try {
@@ -442,6 +423,118 @@ class ApiService {
     }
   }
 
+  // ===== COMMENT METHODS =====
+
+  async getComments(postId) {
+    try {
+      const response = await this.api.get(`/api/posts/${postId}/comments`);
+      return { success: true, data: response.data };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+      };
+    }
+  }
+
+  async createComment(postId, commentData) {
+    try {
+      const response = await this.api.post(
+        `/api/posts/${postId}/comments`,
+        commentData
+      );
+      return { success: true, data: response.data };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+      };
+    }
+  }
+
+  async updateComment(postId, commentId, commentData) {
+    try {
+      const response = await this.api.put(
+        `/api/posts/${postId}/comments/${commentId}`,
+        commentData
+      );
+      return { success: true, data: response.data };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+      };
+    }
+  }
+
+  async deleteComment(postId, commentId) {
+    try {
+      const response = await this.api.delete(
+        `/api/posts/${postId}/comments/${commentId}`
+      );
+      return { success: true, data: response.data };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+      };
+    }
+  }
+
+  // ===== COMMENT REACTION METHODS =====
+
+  async addCommentReaction(commentId, reactionType) {
+    try {
+      const response = await this.api.post(
+        `/api/posts/comments/${commentId}/reactions`,
+        {
+          reactionType,
+        }
+      );
+      return { success: true, data: response.data };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+      };
+    }
+  }
+
+  async removeCommentReaction(commentId) {
+    try {
+      const response = await this.api.delete(
+        `/api/posts/comments/${commentId}/reactions`
+      );
+      return { success: true, data: response.data };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+      };
+    }
+  }
+
+  // ===== COMMENT MODERATION METHODS =====
+
+  async reportComment(commentId, reason) {
+    try {
+      const response = await this.api.post(
+        `/api/posts/comments/${commentId}/report`,
+        {
+          reason,
+        }
+      );
+      return { success: true, data: response.data };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+      };
+    }
+  }
+
+  // ===== WEATHER METHODS =====
+
   async getCurrentWeather(latitude, longitude) {
     try {
       const response = await this.api.get("/api/weather/current", {
@@ -455,6 +548,8 @@ class ApiService {
       };
     }
   }
+
+  // ===== ALERT METHODS =====
 
   async getAlerts(neighborhoodId, locationParams = {}) {
     try {
@@ -480,6 +575,8 @@ class ApiService {
       };
     }
   }
+
+  // ===== NOTIFICATION METHODS =====
 
   async getNotifications() {
     try {
@@ -513,6 +610,218 @@ class ApiService {
         "/api/auth/notification-preferences",
         preferences
       );
+      return { success: true, data: response.data };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+      };
+    }
+  }
+
+  // ===== TEST METHODS =====
+
+  async testCommentEndpoints() {
+    try {
+      console.log("🧪 Testing comment API endpoints...");
+
+      const testResults = {
+        endpoints: [
+          "GET /api/posts/:postId/comments",
+          "POST /api/posts/:postId/comments",
+          "PUT /api/posts/:postId/comments/:commentId",
+          "DELETE /api/posts/:postId/comments/:commentId",
+          "POST /api/posts/comments/:commentId/reactions",
+          "DELETE /api/posts/comments/:commentId/reactions",
+          "POST /api/posts/comments/:commentId/report",
+        ],
+        status: "Available",
+        features: [
+          "Comment CRUD operations",
+          "Comment reactions (like, love, helpful, etc.)",
+          "Comment reporting system",
+          "Optimistic updates support",
+          "Reply threading",
+          "Edit tracking",
+        ],
+      };
+
+      return { success: true, data: testResults };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
+  // File: frontend/src/services/api.js - Add these methods to your existing ApiService class
+
+  // ===== IMAGE UPLOAD METHODS =====
+
+  async uploadProfileImage(imageUri) {
+    try {
+      const formData = new FormData();
+      formData.append("image", {
+        uri: imageUri,
+        type: "image/jpeg",
+        name: "profile.jpg",
+      });
+
+      console.log("API: Uploading profile image...");
+      const response = await this.api.post("/api/upload/profile", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      return { success: true, data: response.data };
+    } catch (error) {
+      console.error("API: Profile image upload error:", error.response?.data);
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+      };
+    }
+  }
+
+  async uploadPostImage(postId, imageUri) {
+    try {
+      const formData = new FormData();
+      formData.append("image", {
+        uri: imageUri,
+        type: "image/jpeg",
+        name: "post.jpg",
+      });
+
+      console.log("API: Uploading post image for post:", postId);
+      const response = await this.api.post(
+        `/api/upload/post/${postId}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      return { success: true, data: response.data };
+    } catch (error) {
+      console.error("API: Post image upload error:", error.response?.data);
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+      };
+    }
+  }
+
+  async uploadCommentImage(commentId, imageUri) {
+    try {
+      const formData = new FormData();
+      formData.append("image", {
+        uri: imageUri,
+        type: "image/jpeg",
+        name: "comment.jpg",
+      });
+
+      console.log("API: Uploading comment image for comment:", commentId);
+      const response = await this.api.post(
+        `/api/upload/comment/${commentId}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      return { success: true, data: response.data };
+    } catch (error) {
+      console.error("API: Comment image upload error:", error.response?.data);
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+      };
+    }
+  }
+
+  async deleteImage(publicId) {
+    try {
+      const response = await this.api.delete(`/api/upload/image/${publicId}`);
+      return { success: true, data: response.data };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+      };
+    }
+  }
+
+  async getUploadStats() {
+    try {
+      const response = await this.api.get("/api/upload/stats");
+      return { success: true, data: response.data };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+      };
+    }
+  }
+
+  async testUploadSystem() {
+    try {
+      const response = await this.api.get("/api/upload/test");
+      return { success: true, data: response.data };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+      };
+    }
+  }
+  // Add these methods to your frontend/src/services/api.js ApiService class
+
+  // ===== IMAGE UPLOAD METHODS =====
+
+  async uploadProfileImage(imageUri) {
+    try {
+      const formData = new FormData();
+      formData.append("image", {
+        uri: imageUri,
+        type: "image/jpeg",
+        name: "profile.jpg",
+      });
+
+      console.log("API: Uploading profile image...");
+      const response = await this.api.post("/api/upload/profile", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      console.log("API: Profile image upload successful:", response.data);
+      return { success: true, data: response.data };
+    } catch (error) {
+      console.error("API: Profile image upload error:", error.response?.data);
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+      };
+    }
+  }
+
+  async getProfileImage() {
+    try {
+      const response = await this.api.get("/api/upload/profile");
+      return { success: true, data: response.data };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+      };
+    }
+  }
+
+  async testUploadSystem() {
+    try {
+      const response = await this.api.get("/api/upload/test");
       return { success: true, data: response.data };
     } catch (error) {
       return {

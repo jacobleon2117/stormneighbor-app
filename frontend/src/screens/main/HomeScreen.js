@@ -74,7 +74,26 @@ const HomeScreen = ({
           "Posts loaded successfully:",
           result.data.posts?.length || 0
         );
-        setPosts(result.data.posts || []);
+
+        const mappedPosts =
+          result.data.posts?.map((post) => ({
+            ...post,
+            likeCount: post.likeCount || 0,
+            reactionCount: post.totalReactions || 0,
+            userHasLiked: post.userHasLiked || false,
+          })) || [];
+
+        console.log(
+          "Mapped posts with like counts:",
+          mappedPosts.map((p) => ({
+            id: p.id,
+            likeCount: p.likeCount,
+            reactionCount: p.reactionCount,
+            userHasLiked: p.userHasLiked,
+          }))
+        );
+
+        setPosts(mappedPosts);
       } else {
         console.error("Failed to load posts:", result.error);
         setError(result.error || "Failed to load posts");
@@ -125,6 +144,7 @@ const HomeScreen = ({
 
   const handlePostPress = useCallback(
     (post) => {
+      console.log("Navigate to post:", post.id);
       if (onNavigateToPost) {
         onNavigateToPost(post.id);
       }
@@ -134,27 +154,49 @@ const HomeScreen = ({
 
   const handleLike = useCallback(async (post) => {
     try {
+      console.log("Liking post:", post.id, "Current state:", {
+        likeCount: post.likeCount,
+        userHasLiked: post.userHasLiked,
+      });
+
       const result = await apiService.addReaction(post.id, "like");
 
       if (result.success) {
         setPosts((prevPosts) =>
-          prevPosts.map((p) =>
-            p.id === post.id
-              ? {
-                  ...p,
-                  userHasLiked:
-                    result.data.action === "added" ||
-                    result.data.action === "updated",
-                  reactionCount:
-                    result.data.action === "added"
-                      ? (p.reactionCount || 0) + 1
-                      : result.data.action === "removed"
-                      ? Math.max((p.reactionCount || 0) - 1, 0)
-                      : p.reactionCount,
-                }
-              : p
-          )
+          prevPosts.map((p) => {
+            if (p.id === post.id) {
+              const wasLiked = p.userHasLiked;
+              const isNowLiked =
+                result.data.action === "added" ||
+                result.data.action === "updated";
+
+              let newLikeCount = p.likeCount || 0;
+              if (result.data.action === "added") {
+                newLikeCount = newLikeCount + 1;
+              } else if (result.data.action === "removed") {
+                newLikeCount = Math.max(newLikeCount - 1, 0);
+              }
+
+              const updatedPost = {
+                ...p,
+                userHasLiked: isNowLiked,
+                likeCount: newLikeCount,
+                reactionCount: newLikeCount,
+              };
+
+              console.log("Updated post state:", {
+                id: updatedPost.id,
+                action: result.data.action,
+                likeCount: updatedPost.likeCount,
+                userHasLiked: updatedPost.userHasLiked,
+              });
+
+              return updatedPost;
+            }
+            return p;
+          })
         );
+
         console.log(`Like ${result.data.action} for post ${post.id}`);
       } else {
         console.error("Failed to update reaction:", result.error);

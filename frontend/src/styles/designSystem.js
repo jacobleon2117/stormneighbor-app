@@ -14,12 +14,10 @@ export const spacing = {
 };
 
 export const colors = {
-  // Primary colors
   primary: "#3B82F6",
   primaryDark: "#2563EB",
   primaryLight: "#DBEAFE",
 
-  // Status colors
   success: "#10B981",
   successLight: "#D1FAE5",
   warning: "#F59E0B",
@@ -29,17 +27,14 @@ export const colors = {
   critical: "#DC2626",
   criticalLight: "#FEE2E2",
 
-  // Background colors
   background: "#F8FAFF",
   surface: "#FFFFFF",
   overlay: "rgba(0, 0, 0, 0.3)",
 
-  // Border colors
   border: "#E5E7EB",
   borderLight: "#F3F4F6",
   borderFocus: "#3B82F6",
 
-  // Text colors
   text: {
     primary: "#1F2937",
     secondary: "#374151",
@@ -49,7 +44,6 @@ export const colors = {
     link: "#3B82F6",
   },
 
-  // Alert specific colors
   alert: {
     critical: {
       bg: "#FEE2E2",
@@ -144,9 +138,7 @@ export const shadows = {
   },
 };
 
-// Global Styles
 export const globalStyles = StyleSheet.create({
-  // Container styles
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -170,7 +162,6 @@ export const globalStyles = StyleSheet.create({
     paddingBottom: spacing.xxxxl,
   },
 
-  // Layout helpers
   row: {
     flexDirection: "row",
   },
@@ -200,7 +191,6 @@ export const globalStyles = StyleSheet.create({
     flex: 1,
   },
 
-  // Typography styles
   title: {
     fontSize: typography.sizes.xxxl,
     fontWeight: typography.weights.semibold,
@@ -256,7 +246,6 @@ export const globalStyles = StyleSheet.create({
     fontFamily: typography.fontFamily,
   },
 
-  // Card styles
   card: {
     backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
@@ -274,7 +263,6 @@ export const globalStyles = StyleSheet.create({
     marginBottom: spacing.md,
   },
 
-  // Button styles
   buttonPrimary: {
     backgroundColor: colors.primary,
     paddingVertical: spacing.md,
@@ -322,7 +310,6 @@ export const globalStyles = StyleSheet.create({
     gap: spacing.sm,
   },
 
-  // Input styles
   input: {
     backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
@@ -352,7 +339,6 @@ export const globalStyles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
 
-  // Badge styles
   badge: {
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
@@ -366,7 +352,6 @@ export const globalStyles = StyleSheet.create({
     fontFamily: typography.fontFamily,
   },
 
-  // Loading states
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
@@ -382,7 +367,6 @@ export const globalStyles = StyleSheet.create({
     marginTop: spacing.lg,
   },
 
-  // Empty states
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
@@ -408,7 +392,6 @@ export const globalStyles = StyleSheet.create({
     lineHeight: typography.sizes.md * typography.lineHeights.relaxed,
   },
 
-  // Spacing utilities
   mb8: { marginBottom: spacing.sm },
   mb12: { marginBottom: spacing.md },
   mb16: { marginBottom: spacing.lg },
@@ -428,7 +411,6 @@ export const globalStyles = StyleSheet.create({
   pv16: { paddingVertical: spacing.lg },
 });
 
-// Helper functions
 export const createButtonStyle = (variant = "primary", size = "medium") => {
   const baseStyle = {
     alignItems: "center",

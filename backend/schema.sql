@@ -1,28 +1,21 @@
--- Fixed schema.sql - Proper ALTER statements instead of DROP/CREATE
 
--- Enable PostGIS if not already enabled
 CREATE EXTENSION IF NOT EXISTS postgis;
 CREATE EXTENSION IF NOT EXISTS postgis_topology;
 
--- Update users table with proper ALTER statements (no data loss)
 ALTER TABLE users ADD COLUMN IF NOT EXISTS location_city VARCHAR(100);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS location_county VARCHAR(100);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS location_radius_miles DECIMAL(4,1) DEFAULT 10.0;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS show_city_only BOOLEAN DEFAULT FALSE;
 
--- Update existing users to use their address_city as location_city
 UPDATE users 
 SET location_city = address_city 
 WHERE address_city IS NOT NULL AND location_city IS NULL;
 
--- Update posts table with proper ALTER statements
 ALTER TABLE posts ADD COLUMN IF NOT EXISTS location_city VARCHAR(100);
 ALTER TABLE posts ADD COLUMN IF NOT EXISTS location_state VARCHAR(50);
 ALTER TABLE posts ADD COLUMN IF NOT EXISTS location_county VARCHAR(100);
 
--- Create missing tables for future features
 
--- Comments table (for future commenting feature)
 CREATE TABLE IF NOT EXISTS comments (
     id SERIAL PRIMARY KEY,
     post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
@@ -35,13 +28,12 @@ CREATE TABLE IF NOT EXISTS comments (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Reactions table (for future like/reaction feature)
 CREATE TABLE IF NOT EXISTS reactions (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     post_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
     comment_id INTEGER REFERENCES comments(id) ON DELETE CASCADE,
-    reaction_type VARCHAR(20) NOT NULL, -- 'like', 'love', 'helpful', 'concerned', 'angry'
+    reaction_type VARCHAR(20) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     CONSTRAINT reactions_target_check CHECK (
         (post_id IS NOT NULL AND comment_id IS NULL) OR 
@@ -51,15 +43,14 @@ CREATE TABLE IF NOT EXISTS reactions (
     UNIQUE(user_id, comment_id, reaction_type)
 );
 
--- Weather alerts table (for future weather integration)
 CREATE TABLE IF NOT EXISTS weather_alerts (
     id SERIAL PRIMARY KEY,
     alert_id VARCHAR(255) UNIQUE,
     title VARCHAR(255) NOT NULL,
     description TEXT,
-    severity VARCHAR(20) NOT NULL, -- 'CRITICAL', 'HIGH', 'MODERATE', 'LOW'
+    severity VARCHAR(20) NOT NULL,
     alert_type VARCHAR(50) NOT NULL,
-    source VARCHAR(50) DEFAULT 'USER', -- 'NOAA', 'USER', 'SYSTEM'
+    source VARCHAR(50) DEFAULT 'USER',
     affected_areas GEOGRAPHY(POLYGON, 4326),
     location_city VARCHAR(100),
     location_state VARCHAR(50),
@@ -73,11 +64,10 @@ CREATE TABLE IF NOT EXISTS weather_alerts (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Emergency resources table (for future emergency features)
 CREATE TABLE IF NOT EXISTS emergency_resources (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    resource_type VARCHAR(50) NOT NULL, -- 'SHELTER', 'HOSPITAL', 'FIRE_STATION', 'POLICE'
+    resource_type VARCHAR(50) NOT NULL,
     address VARCHAR(255),
     location GEOGRAPHY(POINT, 4326),
     location_city VARCHAR(100),
@@ -94,13 +84,12 @@ CREATE TABLE IF NOT EXISTS emergency_resources (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Notifications table (for future notification features)
 CREATE TABLE IF NOT EXISTS notifications (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     title VARCHAR(255) NOT NULL,
     message TEXT,
-    notification_type VARCHAR(50) NOT NULL, -- 'POST', 'COMMENT', 'REACTION', 'WEATHER', 'EMERGENCY'
+    notification_type VARCHAR(50) NOT NULL,
     related_post_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
     related_comment_id INTEGER REFERENCES comments(id) ON DELETE CASCADE,
     related_alert_id INTEGER REFERENCES weather_alerts(id) ON DELETE CASCADE,
@@ -109,7 +98,6 @@ CREATE TABLE IF NOT EXISTS notifications (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_users_location ON users USING GIST (location);
 CREATE INDEX IF NOT EXISTS idx_users_city ON users(location_city, address_state);
 CREATE INDEX IF NOT EXISTS idx_posts_location ON posts USING GIST (location);
@@ -125,7 +113,6 @@ CREATE INDEX IF NOT EXISTS idx_emergency_resources_location ON emergency_resourc
 CREATE INDEX IF NOT EXISTS idx_emergency_resources_city ON emergency_resources(location_city, location_state);
 CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications(user_id) WHERE is_read = FALSE;
 
--- Function to get nearby posts based on user location and preferences
 CREATE OR REPLACE FUNCTION get_nearby_posts(
     user_latitude DECIMAL,
     user_longitude DECIMAL,
@@ -158,7 +145,6 @@ RETURNS TABLE (
 ) AS $$
 BEGIN
     IF city_only AND user_city IS NOT NULL THEN
-        -- Return only posts from the same city
         RETURN QUERY
         SELECT 
             p.id, p.user_id, p.title, p.content, p.post_type, p.priority,
@@ -186,7 +172,6 @@ BEGIN
             p.created_at DESC
         LIMIT post_limit OFFSET post_offset;
     ELSE
-        -- Return posts within radius
         RETURN QUERY
         SELECT 
             p.id, p.user_id, p.title, p.content, p.post_type, p.priority,
@@ -218,7 +203,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Function to get weather alerts for a location
 CREATE OR REPLACE FUNCTION get_weather_alerts_for_location(
     user_latitude DECIMAL,
     user_longitude DECIMAL,
@@ -272,7 +256,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Create updated_at trigger function if it doesn't exist
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -281,7 +264,6 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
--- Add updated_at triggers to all tables
 DROP TRIGGER IF EXISTS update_users_updated_at ON users;
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

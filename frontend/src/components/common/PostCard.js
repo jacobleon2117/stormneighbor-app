@@ -146,7 +146,7 @@ const PostCard = ({
             color={post.userHasLiked ? colors.error : colors.text.muted}
             fill={post.userHasLiked ? colors.error : "none"}
           />
-          <Text style={styles.actionText}>{post.reactionCount || 0}</Text>
+          <Text style={styles.actionText}>{post.likeCount || 0}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity

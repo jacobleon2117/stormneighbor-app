@@ -1,132 +1,93 @@
-const { pool } = require("../config/database");
-const { validationResult } = require("express-validator");
+// File: backend/src/controllers/posts.js
+const { Pool } = require("pg");
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl:
+    process.env.NODE_ENV === "production"
+      ? { rejectUnauthorized: false }
+      : false,
+});
 
 const getPosts = async (req, res) => {
   try {
     const {
-      postType,
-      priority,
-      isEmergency,
-      isResolved,
       limit = 20,
       offset = 0,
+      postType,
+      priority,
+      latitude,
+      longitude,
+      radius = 10,
     } = req.query;
 
-    const userId = req.user.userId;
     const client = await pool.connect();
 
     try {
-      const userResult = await client.query(
-        `SELECT 
-          ST_X(location::geometry) as longitude,
-          ST_Y(location::geometry) as latitude,
-          location_city,
-          address_state as location_state,
-          location_radius_miles,
-          show_city_only
-        FROM users WHERE id = $1`,
-        [userId]
-      );
-
-      if (userResult.rows.length === 0) {
-        return res.status(404).json({ message: "User not found" });
-      }
-
-      const user = userResult.rows[0];
-
-      if (!user.latitude || !user.longitude) {
-        console.log("User has no coordinates, trying city-based query");
-
-        const simpleQuery = `
+      let query = `
+        SELECT 
+          p.id, p.title, p.content, p.post_type, p.priority, p.is_emergency,
+          p.latitude, p.longitude, p.images, p.tags, p.is_resolved,
+          p.created_at, p.updated_at,
+          u.id as user_id, u.first_name, u.last_name, u.profile_image_url,
+          COALESCE(comment_counts.comment_count, 0) as comment_count,
+          COALESCE(reaction_counts.like_count, 0) as like_count,
+          COALESCE(reaction_counts.total_count, 0) as total_reactions,
+          CASE WHEN user_reactions.reaction_type IS NOT NULL THEN true ELSE false END as user_has_liked,
+          user_reactions.reaction_type as user_reaction_type
+        FROM posts p
+        JOIN users u ON p.user_id = u.id
+        LEFT JOIN (
+          SELECT post_id, COUNT(*) as comment_count
+          FROM comments 
+          GROUP BY post_id
+        ) comment_counts ON p.id = comment_counts.post_id
+        LEFT JOIN (
           SELECT 
-            p.id, p.title, p.content, p.post_type, p.priority,
-            p.is_emergency, p.is_resolved, p.images, p.tags,
-            p.location_city, p.location_state, p.created_at, p.updated_at,
-            0 as distance_miles,
-            u.first_name as author_first_name, 
-            u.last_name as author_last_name, 
-            u.profile_image_url as author_profile_image,
-            p.user_id
-          FROM posts p
-          JOIN users u ON p.user_id = u.id
-          WHERE (p.expires_at IS NULL OR p.expires_at > NOW())
-          ORDER BY 
-            CASE WHEN p.is_emergency = true THEN 1 ELSE 2 END,
-            CASE p.priority 
-              WHEN 'urgent' THEN 1 
-              WHEN 'high' THEN 2 
-              WHEN 'normal' THEN 3 
-              WHEN 'low' THEN 4 
-            END,
-            p.created_at DESC
-          LIMIT $1 OFFSET $2
-        `;
-
-        const result = await client.query(simpleQuery, [
-          parseInt(limit),
-          parseInt(offset),
-        ]);
-
-        const posts = result.rows.map((row) => ({
-          id: row.id,
-          title: row.title,
-          content: row.content,
-          postType: row.post_type,
-          priority: row.priority,
-          isEmergency: row.is_emergency,
-          isResolved: row.is_resolved,
-          images: row.images || [],
-          tags: row.tags || [],
-          location:
-            row.location_city && row.location_state
-              ? `${row.location_city}, ${row.location_state}`
-              : null,
-          createdAt: row.created_at,
-          updatedAt: row.updated_at,
-          distanceMiles: 0,
-          user: {
-            id: row.user_id,
-            firstName: row.author_first_name,
-            lastName: row.author_last_name,
-            profileImageUrl: row.author_profile_image,
-          },
-          commentCount: 0,
-          reactionCount: 0,
-          userHasLiked: false, // TODO: Add actual reaction status
-        }));
-
-        return res.json({
-          posts,
-          pagination: {
-            limit: parseInt(limit),
-            offset: parseInt(offset),
-            total: posts.length,
-          },
-          location: {
-            city: user.location_city,
-            state: user.location_state,
-            radiusMiles: user.location_radius_miles,
-            cityOnly: user.show_city_only,
-          },
-        });
-      }
-
-      let functionCall = `
-        SELECT * FROM get_nearby_posts(
-          ${user.latitude},
-          ${user.longitude},
-          ${user.location_city ? `'${user.location_city}'` : "NULL"},
-          ${user.location_state ? `'${user.location_state}'` : "NULL"},
-          ${user.location_radius_miles || 10.0},
-          ${user.show_city_only || false},
-          ${parseInt(limit)},
-          ${parseInt(offset)}
-        )
+            post_id,
+            COUNT(*) FILTER (WHERE reaction_type = 'like') as like_count,
+            COUNT(*) as total_count
+          FROM reactions 
+          WHERE post_id IS NOT NULL
+          GROUP BY post_id
+        ) reaction_counts ON p.id = reaction_counts.post_id
+        LEFT JOIN reactions user_reactions ON p.id = user_reactions.post_id AND user_reactions.user_id = $1
+        WHERE 1=1
       `;
 
-      console.log("Trying geographic function query");
+      const params = [req.user.userId];
+      let paramIndex = 2;
 
-      const result = await client.query(functionCall);
+      if (postType) {
+        query += ` AND p.post_type = $${paramIndex}`;
+        params.push(postType);
+        paramIndex++;
+      }
+
+      if (priority) {
+        query += ` AND p.priority = $${paramIndex}`;
+        params.push(priority);
+        paramIndex++;
+      }
+
+      if (latitude && longitude) {
+        query += ` AND (
+          6371 * acos(
+            cos(radians($${paramIndex})) * cos(radians(p.latitude)) *
+            cos(radians(p.longitude) - radians($${paramIndex + 1})) +
+            sin(radians($${paramIndex})) * sin(radians(p.latitude))
+          )
+        ) <= $${paramIndex + 2}`;
+        params.push(latitude, longitude, radius);
+        paramIndex += 3;
+      }
+
+      query += ` ORDER BY p.created_at DESC LIMIT $${paramIndex} OFFSET $${
+        paramIndex + 1
+      }`;
+      params.push(limit, offset);
+
+      const result = await client.query(query, params);
 
       const posts = result.rows.map((row) => ({
         id: row.id,
@@ -135,74 +96,76 @@ const getPosts = async (req, res) => {
         postType: row.post_type,
         priority: row.priority,
         isEmergency: row.is_emergency,
-        isResolved: row.is_resolved,
+        latitude: row.latitude,
+        longitude: row.longitude,
         images: row.images || [],
         tags: row.tags || [],
-        location:
-          row.location_city && row.location_state
-            ? `${row.location_city}, ${row.location_state}`
-            : null,
+        isResolved: row.is_resolved,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
-        distanceMiles: parseFloat(row.distance_miles || 0),
+        commentCount: parseInt(row.comment_count),
+        likeCount: parseInt(row.like_count),
+        totalReactions: parseInt(row.total_count),
+        userHasLiked: row.user_has_liked,
+        userReactionType: row.user_reaction_type,
         user: {
           id: row.user_id,
-          firstName: row.author_first_name,
-          lastName: row.author_last_name,
-          profileImageUrl: row.author_profile_image,
+          firstName: row.first_name,
+          lastName: row.last_name,
+          profileImageUrl: row.profile_image_url,
         },
-        commentCount: 0,
-        reactionCount: 0,
-        userHasLiked: false, // TODO: Add actual reaction status
       }));
 
-      res.json({
-        posts,
-        pagination: {
-          limit: parseInt(limit),
-          offset: parseInt(offset),
-          total: posts.length,
-        },
-        location: {
-          city: user.location_city,
-          state: user.location_state,
-          radiusMiles: user.location_radius_miles,
-          cityOnly: user.show_city_only,
-        },
-      });
+      res.json({ posts });
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Get posts error:", error);
-    res.status(500).json({
-      message: "Server error fetching posts",
-      error: process.env.NODE_ENV === "development" ? error.message : undefined,
-    });
+    res.status(500).json({ message: "Server error fetching posts" });
   }
 };
 
 const getPost = async (req, res) => {
   try {
     const { id } = req.params;
+    const userId = req.user.userId;
+
     const client = await pool.connect();
 
     try {
       const query = `
         SELECT 
-          p.id, p.title, p.content, p.post_type, p.priority,
-          p.is_emergency, p.is_resolved, p.images, p.tags,
-          p.location_city, p.location_state, p.expires_at, 
-          p.created_at, p.updated_at, p.metadata,
+          p.id, p.title, p.content, p.post_type, p.priority, p.is_emergency,
+          p.latitude, p.longitude, p.images, p.tags, p.is_resolved,
+          p.created_at, p.updated_at,
           u.id as user_id, u.first_name, u.last_name, u.profile_image_url,
-          ST_X(p.location::geometry) as longitude,
-          ST_Y(p.location::geometry) as latitude
+          COALESCE(comment_counts.comment_count, 0) as comment_count,
+          COALESCE(reaction_counts.like_count, 0) as like_count,
+          COALESCE(reaction_counts.total_count, 0) as total_reactions,
+          CASE WHEN user_reactions.reaction_type IS NOT NULL THEN true ELSE false END as user_has_liked,
+          user_reactions.reaction_type as user_reaction_type
         FROM posts p
         JOIN users u ON p.user_id = u.id
+        LEFT JOIN (
+          SELECT post_id, COUNT(*) as comment_count
+          FROM comments 
+          GROUP BY post_id
+        ) comment_counts ON p.id = comment_counts.post_id
+        LEFT JOIN (
+          SELECT 
+            post_id,
+            COUNT(*) FILTER (WHERE reaction_type = 'like') as like_count,
+            COUNT(*) as total_count
+          FROM reactions 
+          WHERE post_id IS NOT NULL
+          GROUP BY post_id
+        ) reaction_counts ON p.id = reaction_counts.post_id
+        LEFT JOIN reactions user_reactions ON p.id = user_reactions.post_id AND user_reactions.user_id = $2
         WHERE p.id = $1
       `;
 
-      const result = await client.query(query, [id]);
+      const result = await client.query(query, [id, userId]);
 
       if (result.rows.length === 0) {
         return res.status(404).json({ message: "Post not found" });
@@ -216,21 +179,18 @@ const getPost = async (req, res) => {
         postType: row.post_type,
         priority: row.priority,
         isEmergency: row.is_emergency,
-        isResolved: row.is_resolved,
+        latitude: row.latitude,
+        longitude: row.longitude,
         images: row.images || [],
         tags: row.tags || [],
-        location:
-          row.location_city && row.location_state
-            ? `${row.location_city}, ${row.location_state}`
-            : null,
-        coordinates:
-          row.longitude && row.latitude
-            ? { longitude: row.longitude, latitude: row.latitude }
-            : null,
-        expiresAt: row.expires_at,
+        isResolved: row.is_resolved,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
-        metadata: row.metadata || {},
+        commentCount: parseInt(row.comment_count),
+        likeCount: parseInt(row.like_count),
+        totalReactions: parseInt(row.total_count),
+        userHasLiked: row.user_has_liked,
+        userReactionType: row.user_reaction_type,
         user: {
           id: row.user_id,
           firstName: row.first_name,
@@ -239,7 +199,7 @@ const getPost = async (req, res) => {
         },
       };
 
-      res.json(post);
+      res.json({ post });
     } finally {
       client.release();
     }
@@ -251,14 +211,9 @@ const getPost = async (req, res) => {
 
 const createPost = async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
     const userId = req.user.userId;
     const {
-      title: rawTitle,
+      title,
       content,
       postType,
       priority = "normal",
@@ -267,47 +222,22 @@ const createPost = async (req, res) => {
       longitude,
       images = [],
       tags = [],
-      expiresAt,
-      metadata = {},
     } = req.body;
-
-    const title =
-      rawTitle || content.substring(0, 50) + (content.length > 50 ? "..." : "");
 
     const client = await pool.connect();
 
     try {
-      const userResult = await client.query(
-        `SELECT 
-          location_city,
-          address_state as location_state,
-          location_county,
-          ST_X(location::geometry) as user_longitude,
-          ST_Y(location::geometry) as user_latitude
-        FROM users WHERE id = $1`,
-        [userId]
-      );
+      const query = `
+        INSERT INTO posts (
+          user_id, title, content, post_type, priority, is_emergency,
+          latitude, longitude, images, tags
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        RETURNING *
+      `;
 
-      if (userResult.rows.length === 0) {
-        return res.status(404).json({ message: "User not found" });
-      }
+      const imagesArray = Array.isArray(images) ? images : [];
+      const tagsArray = Array.isArray(tags) ? tags : [];
 
-      const user = userResult.rows[0];
-
-      const postLat = latitude || user.user_latitude;
-      const postLng = longitude || user.user_longitude;
-      const postCity = user.location_city;
-      const postState = user.location_state;
-      const postCounty = user.location_county;
-
-      if (!postLat || !postLng) {
-        return res.status(400).json({
-          message: "Location required. Please complete your profile setup.",
-        });
-      }
-
-      let locationQuery = "";
-      let locationValue = null;
       const values = [
         userId,
         title,
@@ -315,52 +245,32 @@ const createPost = async (req, res) => {
         postType,
         priority,
         isEmergency,
-        postCity,
-        postState,
-        postCounty,
-        images,
-        tags,
-        expiresAt,
-        metadata,
+        latitude,
+        longitude,
+        imagesArray.length > 0 ? imagesArray : null,
+        tagsArray.length > 0 ? tagsArray : null,
       ];
 
-      if (postLat && postLng) {
-        locationQuery = ", location";
-        locationValue = `ST_SetSRID(ST_MakePoint(${postLng}, ${postLat}), 4326)`;
-      }
-
-      const insertQuery = `
-        INSERT INTO posts (
-          user_id, title, content, post_type, priority, is_emergency,
-          location_city, location_state, location_county,
-          images, tags, expires_at, metadata
-          ${locationQuery}
-        ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
-          ${locationValue ? `, ${locationValue}` : ""}
-        ) RETURNING id, created_at
-      `;
-
-      const result = await client.query(insertQuery, values);
+      const result = await client.query(query, values);
       const newPost = result.rows[0];
-
-      // TODO: Send real-time notification to nearby users
-      if (req.io) {
-        req.io.emit("new-post", {
-          postId: newPost.id,
-          city: postCity,
-          state: postState,
-          postType,
-          isEmergency,
-          userId,
-        });
-      }
 
       res.status(201).json({
         message: "Post created successfully",
         post: {
           id: newPost.id,
+          title: newPost.title,
+          content: newPost.content,
+          postType: newPost.post_type,
+          priority: newPost.priority,
+          isEmergency: newPost.is_emergency,
+          latitude: newPost.latitude,
+          longitude: newPost.longitude,
+          images: newPost.images || [],
+          tags: newPost.tags || [],
           createdAt: newPost.created_at,
+          commentCount: 0,
+          likeCount: 0,
+          userHasLiked: false,
         },
       });
     } finally {
@@ -374,25 +284,9 @@ const createPost = async (req, res) => {
 
 const updatePost = async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
     const { id } = req.params;
     const userId = req.user.userId;
-    const {
-      title,
-      content,
-      priority,
-      isResolved,
-      latitude,
-      longitude,
-      images,
-      tags,
-      expiresAt,
-      metadata,
-    } = req.body;
+    const updates = req.body;
 
     const client = await pool.connect();
 
@@ -412,85 +306,38 @@ const updatePost = async (req, res) => {
           .json({ message: "Not authorized to update this post" });
       }
 
-      const updates = [];
+      const updateFields = [];
       const values = [];
-      let paramCount = 0;
+      let paramIndex = 1;
 
-      if (title !== undefined) {
-        paramCount++;
-        updates.push(`title = $${paramCount}`);
-        values.push(title);
-      }
+      Object.keys(updates).forEach((key) => {
+        if (updates[key] !== undefined) {
+          updateFields.push(`${key} = $${paramIndex}`);
+          values.push(updates[key]);
+          paramIndex++;
+        }
+      });
 
-      if (content !== undefined) {
-        paramCount++;
-        updates.push(`content = $${paramCount}`);
-        values.push(content);
-      }
-
-      if (priority !== undefined) {
-        paramCount++;
-        updates.push(`priority = $${paramCount}`);
-        values.push(priority);
-      }
-
-      if (isResolved !== undefined) {
-        paramCount++;
-        updates.push(`is_resolved = $${paramCount}`);
-        values.push(isResolved);
-      }
-
-      if (images !== undefined) {
-        paramCount++;
-        updates.push(`images = $${paramCount}`);
-        values.push(images);
-      }
-
-      if (tags !== undefined) {
-        paramCount++;
-        updates.push(`tags = $${paramCount}`);
-        values.push(tags);
-      }
-
-      if (expiresAt !== undefined) {
-        paramCount++;
-        updates.push(`expires_at = $${paramCount}`);
-        values.push(expiresAt);
-      }
-
-      if (metadata !== undefined) {
-        paramCount++;
-        updates.push(`metadata = $${paramCount}`);
-        values.push(metadata);
-      }
-
-      if (latitude && longitude) {
-        updates.push(
-          `location = ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)`
-        );
-      }
-
-      if (updates.length === 0) {
+      if (updateFields.length === 0) {
         return res.status(400).json({ message: "No valid fields to update" });
       }
 
-      updates.push("updated_at = NOW()");
-
-      paramCount++;
+      updateFields.push(`updated_at = NOW()`);
       values.push(id);
 
-      const updateQuery = `
+      const query = `
         UPDATE posts 
-        SET ${updates.join(", ")}
-        WHERE id = $${paramCount}
-        RETURNING updated_at
+        SET ${updateFields.join(", ")}
+        WHERE id = $${paramIndex}
+        RETURNING *
       `;
 
-      const result = await client.query(updateQuery, values);
+      const result = await client.query(query, values);
+      const updatedPost = result.rows[0];
 
       res.json({
         message: "Post updated successfully",
-        updatedAt: result.rows[0].updated_at,
+        post: updatedPost,
       });
     } finally {
       client.release();
@@ -526,9 +373,7 @@ const deletePost = async (req, res) => {
 
       await client.query("DELETE FROM posts WHERE id = $1", [id]);
 
-      res.json({
-        message: "Post deleted successfully",
-      });
+      res.json({ message: "Post deleted successfully" });
     } finally {
       client.release();
     }
@@ -542,31 +387,51 @@ const getComments = async (req, res) => {
   try {
     const { postId } = req.params;
     const { limit = 50, offset = 0 } = req.query;
+    const userId = req.user.userId;
 
     const client = await pool.connect();
 
     try {
       const query = `
         SELECT 
-          c.id, c.content, c.parent_comment_id, c.images,
+          c.id, c.content, c.parent_comment_id, c.images, c.is_edited,
           c.created_at, c.updated_at,
-          u.id as user_id, u.first_name, u.last_name, u.profile_image_url
+          u.id as user_id, u.first_name, u.last_name, u.profile_image_url,
+          COALESCE(reaction_counts.like_count, 0) as like_count,
+          COALESCE(reaction_counts.total_count, 0) as total_reactions,
+          CASE WHEN user_reactions.reaction_type IS NOT NULL THEN true ELSE false END as user_has_liked,
+          user_reactions.reaction_type as user_reaction_type
         FROM comments c
         JOIN users u ON c.user_id = u.id
+        LEFT JOIN (
+          SELECT 
+            comment_id,
+            COUNT(*) FILTER (WHERE reaction_type = 'like') as like_count,
+            COUNT(*) as total_count
+          FROM reactions 
+          WHERE comment_id IS NOT NULL
+          GROUP BY comment_id
+        ) reaction_counts ON c.id = reaction_counts.comment_id
+        LEFT JOIN reactions user_reactions ON c.id = user_reactions.comment_id AND user_reactions.user_id = $2
         WHERE c.post_id = $1
         ORDER BY c.created_at ASC
-        LIMIT $2 OFFSET $3
+        LIMIT $3 OFFSET $4
       `;
 
-      const result = await client.query(query, [postId, limit, offset]);
+      const result = await client.query(query, [postId, userId, limit, offset]);
 
       const comments = result.rows.map((row) => ({
         id: row.id,
         content: row.content,
         parentCommentId: row.parent_comment_id,
         images: row.images || [],
+        isEdited: row.is_edited,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
+        likeCount: parseInt(row.like_count),
+        totalReactions: parseInt(row.total_count),
+        userHasLiked: row.user_has_liked,
+        userReactionType: row.user_reaction_type,
         user: {
           id: row.user_id,
           firstName: row.first_name,
@@ -589,43 +454,45 @@ const createComment = async (req, res) => {
   try {
     const { postId } = req.params;
     const userId = req.user.userId;
-    const { content, parentCommentId, images = [] } = req.body;
+    const { content, parentCommentId } = req.body;
 
-    if (!content || !content.trim()) {
-      return res.status(400).json({ message: "Comment content is required" });
-    }
+    console.log("Creating comment:", {
+      postId,
+      userId,
+      content,
+      parentCommentId,
+    });
 
     const client = await pool.connect();
 
     try {
-      const postCheck = await client.query(
-        "SELECT id FROM posts WHERE id = $1",
-        [postId]
-      );
-
-      if (postCheck.rows.length === 0) {
-        return res.status(404).json({ message: "Post not found" });
-      }
-
-      const insertQuery = `
-        INSERT INTO comments (post_id, user_id, content, parent_comment_id, images)
-        VALUES ($1, $2, $3, $4, $5)
-        RETURNING id, created_at
+      const query = `
+        INSERT INTO comments (post_id, user_id, content, parent_comment_id)
+        VALUES ($1, $2, $3, $4)
+        RETURNING *
       `;
 
-      const result = await client.query(insertQuery, [
-        postId,
+      const result = await client.query(query, [
+        parseInt(postId),
         userId,
-        content.trim(),
-        parentCommentId || null,
-        images,
+        content?.trim() || "",
+        parentCommentId ? parseInt(parentCommentId) : null,
       ]);
+
+      const newComment = result.rows[0];
+
+      console.log("Comment created successfully:", newComment.id);
 
       res.status(201).json({
         message: "Comment created successfully",
         comment: {
-          id: result.rows[0].id,
-          createdAt: result.rows[0].created_at,
+          id: newComment.id,
+          content: newComment.content,
+          parentCommentId: newComment.parent_comment_id,
+          images: [],
+          createdAt: newComment.created_at,
+          likeCount: 0,
+          userHasLiked: false,
         },
       });
     } finally {
@@ -634,6 +501,95 @@ const createComment = async (req, res) => {
   } catch (error) {
     console.error("Create comment error:", error);
     res.status(500).json({ message: "Server error creating comment" });
+  }
+};
+
+const updateComment = async (req, res) => {
+  try {
+    const { postId, commentId } = req.params;
+    const userId = req.user.userId;
+    const { content } = req.body;
+
+    if (!content || !content.trim()) {
+      return res.status(400).json({ message: "Comment content is required" });
+    }
+
+    const client = await pool.connect();
+
+    try {
+      const commentCheck = await client.query(
+        "SELECT user_id FROM comments WHERE id = $1 AND post_id = $2",
+        [commentId, postId]
+      );
+
+      if (commentCheck.rows.length === 0) {
+        return res.status(404).json({ message: "Comment not found" });
+      }
+
+      if (commentCheck.rows[0].user_id !== userId) {
+        return res
+          .status(403)
+          .json({ message: "Not authorized to update this comment" });
+      }
+
+      const updateQuery = `
+        UPDATE comments 
+        SET content = $1, is_edited = TRUE, updated_at = NOW()
+        WHERE id = $2 AND post_id = $3
+        RETURNING updated_at
+      `;
+
+      const result = await client.query(updateQuery, [
+        content.trim(),
+        commentId,
+        postId,
+      ]);
+
+      res.json({
+        message: "Comment updated successfully",
+        updatedAt: result.rows[0].updated_at,
+      });
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error("Update comment error:", error);
+    res.status(500).json({ message: "Server error updating comment" });
+  }
+};
+
+const deleteComment = async (req, res) => {
+  try {
+    const { postId, commentId } = req.params;
+    const userId = req.user.userId;
+
+    const client = await pool.connect();
+
+    try {
+      const commentCheck = await client.query(
+        "SELECT user_id FROM comments WHERE id = $1 AND post_id = $2",
+        [commentId, postId]
+      );
+
+      if (commentCheck.rows.length === 0) {
+        return res.status(404).json({ message: "Comment not found" });
+      }
+
+      if (commentCheck.rows[0].user_id !== userId) {
+        return res
+          .status(403)
+          .json({ message: "Not authorized to delete this comment" });
+      }
+
+      await client.query("DELETE FROM comments WHERE id = $1", [commentId]);
+
+      res.json({ message: "Comment deleted successfully" });
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error("Delete comment error:", error);
+    res.status(500).json({ message: "Server error deleting comment" });
   }
 };
 
@@ -668,9 +624,6 @@ const addReaction = async (req, res) => {
             "DELETE FROM reactions WHERE user_id = $1 AND post_id = $2",
             [userId, postId]
           );
-          console.log(
-            `User ${userId} removed ${reactionType} from post ${postId}`
-          );
           return res.json({
             message: "Reaction removed successfully",
             action: "removed",
@@ -679,9 +632,6 @@ const addReaction = async (req, res) => {
           await client.query(
             "UPDATE reactions SET reaction_type = $1 WHERE user_id = $2 AND post_id = $3",
             [reactionType, userId, postId]
-          );
-          console.log(
-            `User ${userId} changed reaction to ${reactionType} on post ${postId}`
           );
           return res.json({
             message: "Reaction updated successfully",
@@ -693,7 +643,6 @@ const addReaction = async (req, res) => {
           "INSERT INTO reactions (user_id, post_id, reaction_type) VALUES ($1, $2, $3)",
           [userId, postId, reactionType]
         );
-        console.log(`User ${userId} added ${reactionType} to post ${postId}`);
         return res.json({
           message: "Reaction added successfully",
           action: "added",
@@ -721,15 +670,149 @@ const removeReaction = async (req, res) => {
         [userId, postId]
       );
 
-      res.json({
-        message: "Reaction removed successfully",
-      });
+      res.json({ message: "Reaction removed successfully" });
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Remove reaction error:", error);
     res.status(500).json({ message: "Server error removing reaction" });
+  }
+};
+
+const addCommentReaction = async (req, res) => {
+  try {
+    const { commentId } = req.params;
+    const userId = req.user.userId;
+    const { reactionType } = req.body;
+
+    const validReactionTypes = [
+      "like",
+      "love",
+      "helpful",
+      "concerned",
+      "angry",
+    ];
+    if (!validReactionTypes.includes(reactionType)) {
+      return res.status(400).json({ message: "Invalid reaction type" });
+    }
+
+    const client = await pool.connect();
+
+    try {
+      const commentCheck = await client.query(
+        "SELECT id FROM comments WHERE id = $1",
+        [commentId]
+      );
+
+      if (commentCheck.rows.length === 0) {
+        return res.status(404).json({ message: "Comment not found" });
+      }
+
+      const existingReaction = await client.query(
+        "SELECT id, reaction_type FROM reactions WHERE user_id = $1 AND comment_id = $2",
+        [userId, commentId]
+      );
+
+      if (existingReaction.rows.length > 0) {
+        if (existingReaction.rows[0].reaction_type === reactionType) {
+          await client.query(
+            "DELETE FROM reactions WHERE user_id = $1 AND comment_id = $2",
+            [userId, commentId]
+          );
+          return res.json({
+            message: "Reaction removed successfully",
+            action: "removed",
+          });
+        } else {
+          await client.query(
+            "UPDATE reactions SET reaction_type = $1 WHERE user_id = $2 AND comment_id = $3",
+            [reactionType, userId, commentId]
+          );
+          return res.json({
+            message: "Reaction updated successfully",
+            action: "updated",
+          });
+        }
+      } else {
+        await client.query(
+          "INSERT INTO reactions (user_id, comment_id, reaction_type) VALUES ($1, $2, $3)",
+          [userId, commentId, reactionType]
+        );
+        return res.json({
+          message: "Reaction added successfully",
+          action: "added",
+        });
+      }
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error("Add comment reaction error:", error);
+    res.status(500).json({ message: "Server error adding reaction" });
+  }
+};
+
+const removeCommentReaction = async (req, res) => {
+  try {
+    const { commentId } = req.params;
+    const userId = req.user.userId;
+
+    const client = await pool.connect();
+
+    try {
+      await client.query(
+        "DELETE FROM reactions WHERE user_id = $1 AND comment_id = $2",
+        [userId, commentId]
+      );
+
+      res.json({ message: "Reaction removed successfully" });
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error("Remove comment reaction error:", error);
+    res.status(500).json({ message: "Server error removing reaction" });
+  }
+};
+
+const reportComment = async (req, res) => {
+  try {
+    const { commentId } = req.params;
+    const userId = req.user.userId;
+    const { reason } = req.body;
+
+    const validReasons = ["inappropriate", "spam", "harassment", "other"];
+    if (!validReasons.includes(reason)) {
+      return res.status(400).json({ message: "Invalid report reason" });
+    }
+
+    const client = await pool.connect();
+
+    try {
+      const commentCheck = await client.query(
+        "SELECT id FROM comments WHERE id = $1",
+        [commentId]
+      );
+
+      if (commentCheck.rows.length === 0) {
+        return res.status(404).json({ message: "Comment not found" });
+      }
+
+      await client.query(
+        `INSERT INTO comment_reports (comment_id, reporter_id, reason) 
+         VALUES ($1, $2, $3) 
+         ON CONFLICT (comment_id, reporter_id) DO NOTHING`,
+        [commentId, userId, reason]
+      );
+
+      res.json({ message: "Report submitted successfully" });
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error("Report comment error:", error);
+    res.status(500).json({ message: "Server error submitting report" });
   }
 };
 
@@ -741,6 +824,11 @@ module.exports = {
   deletePost,
   getComments,
   createComment,
+  updateComment,
+  deleteComment,
   addReaction,
   removeReaction,
+  addCommentReaction,
+  removeCommentReaction,
+  reportComment,
 };

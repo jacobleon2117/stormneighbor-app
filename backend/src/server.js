@@ -87,13 +87,19 @@ try {
   const weatherRoutes = require("./routes/weather");
   console.log("Weather routes type:", typeof weatherRoutes);
   app.use("/api/weather", weatherRoutes);
+
+  console.log("Loading upload routes...");
+  const uploadRoutes = require("./routes/upload");
+  console.log("Upload routes type:", typeof uploadRoutes);
+  app.use("/api/upload", uploadRoutes);
+  console.log("Upload routes loaded");
 } catch (routeError) {
   console.error("Error loading routes:", routeError);
   process.exit(1);
 }
 
 io.on("connection", (socket) => {
-  console.log(`📱 User connected: ${socket.id}`);
+  console.log(`User connected: ${socket.id}`);
 
   socket.on("join-neighborhood", (neighborhoodId) => {
     socket.join(`neighborhood-${neighborhoodId}`);
@@ -136,7 +142,7 @@ app.use((req, res) => {
 const PORT = process.env.PORT || 3000;
 
 server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`🔧 Environment: ${process.env.NODE_ENV}`);
-  console.log(`🌐 Health check: http://localhost:${PORT}/health`);
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV}`);
+  console.log(`Health check: http://localhost:${PORT}/health`);
 });

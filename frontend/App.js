@@ -1,5 +1,7 @@
 // File: frontend/App.js
+import { useState } from "react";
 import { StatusBar } from "expo-status-bar";
+import { View, TouchableOpacity, Text } from "react-native";
 import { AuthProvider, useAuth } from "./src/contexts/AuthContext";
 import { colors } from "./src/styles/designSystem";
 import AuthFlow from "./src/screens/auth/AuthFlow";
@@ -16,6 +18,8 @@ const AppContent = () => {
     completeProfileSetup,
   } = useAuth();
 
+  const [showTestUpload, setShowTestUpload] = useState(false);
+
   if (loading) {
     return <LoadingScreen />;
   }
@@ -24,20 +28,26 @@ const AppContent = () => {
     return <AuthFlow />;
   }
 
-  // If user is authenticated but needs profile setup
   if (needsProfileSetup) {
     return (
       <ProfileSetupFlow
         onSetupComplete={completeProfileSetup}
         onBack={() => {
-          // Don't allow going back after successful registration
           console.log("Profile setup back pressed - staying in setup");
         }}
       />
     );
   }
 
-  return <MainApp user={user} />;
+  if (showTestUpload) {
+    return <TestUploadScreen onBack={() => setShowTestUpload(false)} />;
+  }
+
+  return (
+    <View style={{ flex: 1 }}>
+      <MainApp user={user} />
+    </View>
+  );
 };
 
 export default function App() {

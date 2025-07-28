@@ -1,4 +1,4 @@
-// File: AuthContext.js
+// File: frontend/contexts/AuthContext.js
 import { createContext, useContext, useReducer, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiService from "@services/api";

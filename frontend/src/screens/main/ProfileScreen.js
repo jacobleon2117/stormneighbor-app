@@ -1,5 +1,5 @@
 // File: frontend/src/screens/main/ProfileScreen.js
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,10 +7,8 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
-  Image,
 } from "react-native";
 import {
-  User,
   Settings,
   Bell,
   Shield,
@@ -19,16 +17,33 @@ import {
   Edit3,
   MapPin,
   Calendar,
-  Camera,
   ChevronRight,
 } from "lucide-react-native";
 import { useAuth } from "@contexts/AuthContext";
 import ScreenLayout from "@components/layout/ScreenLayout";
+import ImagePicker from "@components/common/ImagePicker";
 import { globalStyles, colors, spacing } from "@styles/designSystem";
+import apiService from "@services/api";
 
 const ProfileScreen = ({ user, onLogout }) => {
   const { logout } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
+  const [currentProfileImage, setCurrentProfileImage] = useState(null);
+
+  useEffect(() => {
+    loadProfileImage();
+  }, []);
+
+  const loadProfileImage = async () => {
+    try {
+      const result = await apiService.getProfileImage();
+      if (result.success) {
+        setCurrentProfileImage(result.data.user.profileImageUrl);
+      }
+    } catch (error) {
+      console.error("Error loading profile image:", error);
+    }
+  };
 
   const handleLogout = () => {
     Alert.alert("Sign Out", "Are you sure you want to sign out?", [
@@ -52,11 +67,10 @@ const ProfileScreen = ({ user, onLogout }) => {
     Alert.alert("Coming Soon", "Profile editing will be available soon!");
   };
 
-  const handleChangeProfilePicture = () => {
-    Alert.alert(
-      "Coming Soon",
-      "Profile picture upload will be available soon!"
-    );
+  const handleImageUploaded = (imageUrl, uploadData) => {
+    console.log("Profile image updated:", imageUrl);
+    setCurrentProfileImage(imageUrl);
+    Alert.alert("Success", "Profile picture updated successfully!");
   };
 
   const handleNotificationSettings = () => {
@@ -73,29 +87,19 @@ const ProfileScreen = ({ user, onLogout }) => {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    // TODO: Refresh user data
-    setTimeout(() => setRefreshing(false), 1000);
+    await loadProfileImage();
+    setRefreshing(false);
   };
 
   const renderProfileHeader = () => (
     <View style={styles.profileHeader}>
       <View style={styles.profileImageContainer}>
-        <View style={styles.profileImage}>
-          {user?.profileImage ? (
-            <Image
-              source={{ uri: user.profileImage }}
-              style={styles.profileImageImg}
-            />
-          ) : (
-            <User size={40} color={colors.text.muted} />
-          )}
-        </View>
-        <TouchableOpacity
-          style={styles.cameraButton}
-          onPress={handleChangeProfilePicture}
-        >
-          <Camera size={16} color={colors.text.inverse} />
-        </TouchableOpacity>
+        <ImagePicker
+          currentImageUrl={currentProfileImage}
+          onImageUploaded={handleImageUploaded}
+          size={80}
+          showUploadButton={false}
+        />
       </View>
 
       <View style={styles.profileInfo}>
@@ -224,38 +228,6 @@ const styles = StyleSheet.create({
   profileImageContainer: {
     alignItems: "center",
     marginBottom: spacing.lg,
-    position: "relative",
-  },
-
-  profileImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.borderLight,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 3,
-    borderColor: colors.surface,
-  },
-
-  profileImageImg: {
-    width: 74,
-    height: 74,
-    borderRadius: 37,
-  },
-
-  cameraButton: {
-    position: "absolute",
-    bottom: 0,
-    right: -4,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: colors.primary,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: colors.surface,
   },
 
   profileInfo: {

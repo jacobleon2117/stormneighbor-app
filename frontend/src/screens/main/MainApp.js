@@ -103,8 +103,6 @@ const MainApp = ({ user }) => {
   };
 
   const handleUpdateCommentCount = (postId, newCount) => {
-    // Update comment count in the current screen if needed
-    // This could be passed down to child components to update their state
     console.log(`Post ${postId} now has ${newCount} comments`);
   };
 
@@ -113,7 +111,6 @@ const MainApp = ({ user }) => {
       const result = await apiService.addReaction(post.id, "like");
 
       if (result.success) {
-        // Update the selected post if it's the same one being liked
         if (selectedPost && selectedPost.id === post.id) {
           setSelectedPost((prev) => ({
             ...prev,
@@ -183,7 +180,6 @@ const MainApp = ({ user }) => {
         />
       )}
 
-      {/* Create Post Modal */}
       <Modal
         visible={showCreatePost}
         animationType="slide"
@@ -196,7 +192,6 @@ const MainApp = ({ user }) => {
         />
       </Modal>
 
-      {/* Comments Modal */}
       <Modal
         visible={showComments}
         animationType="slide"

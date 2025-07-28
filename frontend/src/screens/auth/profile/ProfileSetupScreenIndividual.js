@@ -1,4 +1,4 @@
-// File: frontend/src/screens/auth/profile/ProfileSetupScreenIndividual.js
+// File: frontend/screens/auth/profile/ProfileSetupScreenIndividual.js
 import { useState } from "react";
 import {
   View,
@@ -7,9 +7,8 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
-  Image,
 } from "react-native";
-import { User, Camera, ArrowRight } from "lucide-react-native";
+import { User, ArrowRight } from "lucide-react-native";
 import {
   globalStyles,
   colors,
@@ -18,6 +17,7 @@ import {
 } from "@styles/designSystem";
 import ScreenLayout from "@components/layout/ScreenLayout";
 import StandardHeader from "@components/layout/StandardHeader";
+import ImagePicker from "@components/common/ImagePicker";
 
 const ProfileSetupScreenIndividual = ({ onNext, onBack, initialData = {} }) => {
   const [loading, setLoading] = useState(false);
@@ -30,8 +30,10 @@ const ProfileSetupScreenIndividual = ({ onNext, onBack, initialData = {} }) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleImagePicker = () => {
-    Alert.alert("Coming Soon", "Profile image upload will be available soon!");
+  const handleImageUploaded = (imageUrl, uploadData) => {
+    console.log("Profile image uploaded during setup:", imageUrl);
+    updateField("profileImage", imageUrl);
+    Alert.alert("Success", "Profile image uploaded successfully!");
   };
 
   const handleContinue = () => {
@@ -77,21 +79,21 @@ const ProfileSetupScreenIndividual = ({ onNext, onBack, initialData = {} }) => {
         </View>
 
         <View style={[globalStyles.center, { marginBottom: spacing.xl }]}>
-          <TouchableOpacity onPress={handleImagePicker}>
-            {formData.profileImage ? (
-              <Image
-                source={{ uri: formData.profileImage }}
-                style={styles.profileImage}
-              />
-            ) : (
-              <View style={styles.profileImagePlaceholder}>
-                <Camera size={24} color={colors.text.muted} />
-                <Text style={[globalStyles.caption, { marginTop: spacing.sm }]}>
-                  Add Photo
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
+          <ImagePicker
+            currentImageUrl={formData.profileImage}
+            onImageUploaded={handleImageUploaded}
+            size={120}
+            placeholder="Add Profile Photo"
+            showUploadButton={false}
+          />
+          <Text
+            style={[
+              globalStyles.caption,
+              { marginTop: spacing.sm, textAlign: "center" },
+            ]}
+          >
+            Tap to add a profile photo
+          </Text>
         </View>
 
         <View style={{ marginBottom: spacing.xl }}>
@@ -156,24 +158,6 @@ const ProfileSetupScreenIndividual = ({ onNext, onBack, initialData = {} }) => {
 };
 
 const styles = {
-  profileImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-  },
-
-  profileImagePlaceholder: {
-    width: 120,
-    height: 120,
-    backgroundColor: colors.background,
-    borderWidth: 2,
-    borderColor: colors.border,
-    borderStyle: "dashed",
-    borderRadius: 60,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
   characterCount: {
     position: "absolute",
     bottom: spacing.sm,

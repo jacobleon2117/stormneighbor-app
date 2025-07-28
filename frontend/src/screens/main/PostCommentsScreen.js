@@ -1,5 +1,5 @@
 // File: frontend/src/screens/main/PostCommentsScreen.js
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import {
   Image,
   SafeAreaView,
   StatusBar,
+  RefreshControl,
 } from "react-native";
 import {
   ArrowLeft,
@@ -22,6 +23,9 @@ import {
   User,
   MessageSquare,
   MapPin,
+  Edit3,
+  Trash2,
+  Flag,
 } from "lucide-react-native";
 import {
   globalStyles,
@@ -41,9 +45,11 @@ const PostCommentsScreen = ({
 }) => {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [replyingTo, setReplyingTo] = useState(null);
+  const [editingComment, setEditingComment] = useState(null);
   const [error, setError] = useState(null);
   const flatListRef = useRef(null);
   const textInputRef = useRef(null);
@@ -72,6 +78,12 @@ const PostCommentsScreen = ({
     }
   };
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadComments();
+    setRefreshing(false);
+  }, []);
+
   const formatTimeAgo = (timestamp) => {
     if (!timestamp) return "Unknown";
 
@@ -96,63 +108,254 @@ const PostCommentsScreen = ({
       return;
     }
 
-    setSubmitting(true);
-    try {
-      const commentData = {
-        content: newComment.trim(),
-        parentCommentId: replyingTo?.id || null,
-      };
+    const tempId = `temp-${Date.now()}`;
+    const commentText = newComment.trim();
+    const optimisticComment = {
+      id: tempId,
+      content: commentText,
+      parentCommentId: replyingTo?.id || null,
+      createdAt: new Date().toISOString(),
+      user: {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        profileImageUrl: user.profileImageUrl,
+      },
+      isOptimistic: true,
+      likeCount: 0,
+      userHasLiked: false,
+    };
 
-      const result = await apiService.createComment(post.id, commentData);
+    setComments((prev) => [...prev, optimisticComment]);
+    setNewComment("");
+    const currentReplyingTo = replyingTo;
+    setReplyingTo(null);
+
+    setTimeout(() => {
+      flatListRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+
+    try {
+      const result = await apiService.createComment(post.id, {
+        content: commentText,
+        parentCommentId: currentReplyingTo?.id || null,
+      });
 
       if (result.success) {
-        const newCommentObj = {
-          id: result.data.comment.id,
-          content: newComment.trim(),
-          parentCommentId: replyingTo?.id || null,
-          createdAt: result.data.comment.createdAt,
-          user: {
-            id: user.id,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            profileImageUrl: user.profileImageUrl,
-          },
-        };
+        setComments((prev) =>
+          prev.map((c) =>
+            c.id === tempId
+              ? {
+                  ...result.data.comment,
+                  user: optimisticComment.user,
+                  likeCount: 0,
+                  userHasLiked: false,
+                }
+              : c
+          )
+        );
 
-        setComments((prev) => {
-          const updatedComments = [...prev, newCommentObj];
-
-          if (onUpdateCommentCount) {
-            onUpdateCommentCount(post.id, updatedComments.length);
-          }
-
-          return updatedComments;
-        });
-
-        setNewComment("");
-        setReplyingTo(null);
-
-        setTimeout(() => {
-          flatListRef.current?.scrollToEnd({ animated: true });
-        }, 100);
+        if (onUpdateCommentCount) {
+          onUpdateCommentCount(post.id, comments.length + 1);
+        }
       } else {
+        setComments((prev) => prev.filter((c) => c.id !== tempId));
         Alert.alert("Error", result.error || "Failed to post comment");
       }
     } catch (error) {
-      console.error("Error submitting comment:", error);
+      setComments((prev) => prev.filter((c) => c.id !== tempId));
       Alert.alert("Error", "Failed to post comment");
-    } finally {
-      setSubmitting(false);
+    }
+  };
+
+  const handleCommentLike = async (comment) => {
+    try {
+      setComments((prev) =>
+        prev.map((c) =>
+          c.id === comment.id
+            ? {
+                ...c,
+                userHasLiked: !c.userHasLiked,
+                likeCount: (c.likeCount || 0) + (c.userHasLiked ? -1 : 1),
+              }
+            : c
+        )
+      );
+
+      const result = await apiService.addCommentReaction(comment.id, "like");
+
+      if (!result.success) {
+        setComments((prev) =>
+          prev.map((c) =>
+            c.id === comment.id
+              ? {
+                  ...c,
+                  userHasLiked: !c.userHasLiked,
+                  likeCount: (c.likeCount || 0) + (c.userHasLiked ? 1 : -1),
+                }
+              : c
+          )
+        );
+        console.error("Failed to update comment reaction:", result.error);
+      }
+    } catch (error) {
+      console.error("Error liking comment:", error);
+      setComments((prev) =>
+        prev.map((c) =>
+          c.id === comment.id
+            ? {
+                ...c,
+                userHasLiked: !c.userHasLiked,
+                likeCount: (c.likeCount || 0) + (c.userHasLiked ? 1 : -1),
+              }
+            : c
+        )
+      );
+    }
+  };
+
+  const handleCommentMore = (comment) => {
+    const isOwnComment = comment.user?.id === user.id;
+    const options = [];
+
+    if (isOwnComment) {
+      options.push(
+        {
+          text: "Edit",
+          onPress: () => handleEditComment(comment),
+          icon: Edit3,
+        },
+        {
+          text: "Delete",
+          onPress: () => handleDeleteComment(comment.id),
+          style: "destructive",
+          icon: Trash2,
+        }
+      );
+    }
+
+    options.push({
+      text: "Report",
+      onPress: () => handleReportComment(comment.id),
+      icon: Flag,
+    });
+
+    options.push({ text: "Cancel", style: "cancel" });
+
+    Alert.alert("Comment Options", "", options);
+  };
+
+  const handleEditComment = (comment) => {
+    setEditingComment(comment);
+    setNewComment(comment.content);
+    textInputRef.current?.focus();
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    Alert.alert(
+      "Delete Comment",
+      "Are you sure you want to delete this comment?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const result = await apiService.deleteComment(post.id, commentId);
+              if (result.success) {
+                setComments((prev) => prev.filter((c) => c.id !== commentId));
+                if (onUpdateCommentCount) {
+                  onUpdateCommentCount(post.id, comments.length - 1);
+                }
+              } else {
+                Alert.alert(
+                  "Error",
+                  result.error || "Failed to delete comment"
+                );
+              }
+            } catch (error) {
+              Alert.alert("Error", "Failed to delete comment");
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleReportComment = async (commentId) => {
+    Alert.alert("Report Comment", "Why are you reporting this comment?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Inappropriate content",
+        onPress: () => submitReport(commentId, "inappropriate"),
+      },
+      { text: "Spam", onPress: () => submitReport(commentId, "spam") },
+      {
+        text: "Harassment",
+        onPress: () => submitReport(commentId, "harassment"),
+      },
+    ]);
+  };
+
+  const submitReport = async (commentId, reason) => {
+    try {
+      const result = await apiService.reportComment(commentId, reason);
+      if (result.success) {
+        Alert.alert(
+          "Report Submitted",
+          "Thank you for your report. We'll review it shortly."
+        );
+      } else {
+        Alert.alert("Error", "Failed to submit report");
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to submit report");
+    }
+  };
+
+  const handleUpdateComment = async () => {
+    if (!newComment.trim() || !editingComment) {
+      Alert.alert("Error", "Please enter a comment");
+      return;
+    }
+
+    try {
+      const result = await apiService.updateComment(
+        post.id,
+        editingComment.id,
+        {
+          content: newComment.trim(),
+        }
+      );
+
+      if (result.success) {
+        setComments((prev) =>
+          prev.map((c) =>
+            c.id === editingComment.id
+              ? { ...c, content: newComment.trim(), isEdited: true }
+              : c
+          )
+        );
+        setNewComment("");
+        setEditingComment(null);
+      } else {
+        Alert.alert("Error", result.error || "Failed to update comment");
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to update comment");
     }
   };
 
   const handleReply = (comment) => {
     setReplyingTo(comment);
+    setEditingComment(null);
     textInputRef.current?.focus();
   };
 
   const handleCancelReply = () => {
     setReplyingTo(null);
+    setEditingComment(null);
     setNewComment("");
   };
 
@@ -301,11 +504,16 @@ const PostCommentsScreen = ({
 
     const isAuthor = comment.user?.id === post.user?.id;
     const isReply = !!comment.parentCommentId;
+    const isOptimistic = comment.isOptimistic;
 
     return (
       <View>
         <View
-          style={[styles.commentContainer, isReply && styles.replyContainer]}
+          style={[
+            styles.commentContainer,
+            isReply && styles.replyContainer,
+            isOptimistic && styles.optimisticComment,
+          ]}
         >
           <View style={styles.commentAvatar}>
             {comment.user?.profileImageUrl ? (
@@ -329,19 +537,42 @@ const PostCommentsScreen = ({
                   <Text style={styles.authorBadgeText}>Author</Text>
                 </View>
               )}
+              {comment.isEdited && (
+                <Text style={styles.editedBadge}>edited</Text>
+              )}
             </View>
 
-            <Text style={styles.commentText}>{comment.content}</Text>
+            <Text
+              style={[
+                styles.commentText,
+                isOptimistic && styles.optimisticText,
+              ]}
+            >
+              {comment.content}
+            </Text>
 
             <View style={styles.commentActions}>
-              <TouchableOpacity style={styles.commentAction}>
-                <Heart size={16} color={colors.text.muted} />
-                <Text style={styles.commentActionText}>0</Text>
+              <TouchableOpacity
+                style={styles.commentAction}
+                onPress={() => handleCommentLike(comment)}
+                disabled={isOptimistic}
+              >
+                <Heart
+                  size={16}
+                  color={
+                    comment.userHasLiked ? colors.error : colors.text.muted
+                  }
+                  fill={comment.userHasLiked ? colors.error : "none"}
+                />
+                <Text style={styles.commentActionText}>
+                  {comment.likeCount || 0}
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.commentAction}
                 onPress={() => handleReply(comment)}
+                disabled={isOptimistic}
               >
                 <Text style={styles.commentActionText}>Reply</Text>
               </TouchableOpacity>
@@ -352,9 +583,14 @@ const PostCommentsScreen = ({
             </View>
           </View>
 
-          <TouchableOpacity style={styles.commentMore}>
-            <MoreHorizontal size={16} color={colors.text.muted} />
-          </TouchableOpacity>
+          {!isOptimistic && (
+            <TouchableOpacity
+              style={styles.commentMore}
+              onPress={() => handleCommentMore(comment)}
+            >
+              <MoreHorizontal size={16} color={colors.text.muted} />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     );
@@ -379,10 +615,12 @@ const PostCommentsScreen = ({
 
   const renderCommentInput = () => (
     <View style={styles.inputContainer}>
-      {replyingTo && (
+      {(replyingTo || editingComment) && (
         <View style={styles.replyingContainer}>
           <Text style={styles.replyingText}>
-            Replying to {replyingTo.user?.firstName || "Unknown"}
+            {editingComment
+              ? "Editing comment"
+              : `Replying to ${replyingTo.user?.firstName || "Unknown"}`}
           </Text>
           <TouchableOpacity onPress={handleCancelReply}>
             <Text style={styles.cancelText}>Cancel</Text>
@@ -407,20 +645,26 @@ const PostCommentsScreen = ({
           style={styles.textInput}
           value={newComment}
           onChangeText={setNewComment}
-          placeholder="Add a comment..."
+          placeholder={
+            editingComment ? "Edit your comment..." : "Add a comment..."
+          }
           placeholderTextColor={colors.text.muted}
           maxLength={500}
           editable={!submitting}
           returnKeyType="send"
-          onSubmitEditing={handleSubmitComment}
+          onSubmitEditing={
+            editingComment ? handleUpdateComment : handleSubmitComment
+          }
         />
+
+        <Text style={styles.characterCount}>{newComment.length}/500</Text>
 
         <TouchableOpacity
           style={[
             styles.sendButton,
             (!newComment.trim() || submitting) && styles.sendButtonDisabled,
           ]}
-          onPress={handleSubmitComment}
+          onPress={editingComment ? handleUpdateComment : handleSubmitComment}
           disabled={!newComment.trim() || submitting}
         >
           {submitting ? (
@@ -464,6 +708,13 @@ const PostCommentsScreen = ({
               }
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  tintColor={colors.primary}
+                />
+              }
             />
           )}
         </View>
@@ -680,6 +931,10 @@ const styles = {
     alignItems: "flex-start",
   },
 
+  optimisticComment: {
+    opacity: 0.7,
+  },
+
   commentAvatar: {
     width: 40,
     height: 40,
@@ -719,6 +974,7 @@ const styles = {
     paddingHorizontal: spacing.xs,
     paddingVertical: 2,
     borderRadius: borderRadius.sm,
+    marginRight: spacing.xs,
   },
 
   authorBadgeText: {
@@ -728,9 +984,20 @@ const styles = {
     fontFamily: "Inter",
   },
 
+  editedBadge: {
+    fontSize: 11,
+    color: colors.text.muted,
+    fontStyle: "italic",
+    fontFamily: "Inter",
+  },
+
   commentText: {
     ...globalStyles.body,
     marginBottom: spacing.sm,
+  },
+
+  optimisticText: {
+    fontStyle: "italic",
   },
 
   commentActions: {
@@ -829,6 +1096,13 @@ const styles = {
     color: colors.text.primary,
     fontFamily: "Inter",
     height: 36,
+  },
+
+  characterCount: {
+    fontSize: 12,
+    color: colors.text.muted,
+    fontFamily: "Inter",
+    marginRight: spacing.sm,
   },
 
   sendButton: {

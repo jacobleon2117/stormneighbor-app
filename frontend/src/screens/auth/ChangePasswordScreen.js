@@ -220,7 +220,6 @@ const ChangePasswordScreen = ({ onBack, onPasswordChanged }) => {
           )}
         </View>
 
-        {/* New Password Field */}
         <View style={{ marginBottom: spacing.lg }}>
           <Text style={globalStyles.label}>New Password</Text>
           <View style={{ position: "relative" }}>

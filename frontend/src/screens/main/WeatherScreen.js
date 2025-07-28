@@ -87,7 +87,7 @@ const WeatherScreen = ({ user }) => {
   const fetchWeatherData = async (lat, lon) => {
     try {
       if (!OPENWEATHER_API_KEY) {
-        // Mock data for testing
+        // Mock data for testing - need to update this
         setCurrentWeather({
           name: "Owasso",
           main: { temp: 72 },

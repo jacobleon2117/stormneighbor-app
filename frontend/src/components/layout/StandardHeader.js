@@ -109,9 +109,9 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
   },
 
-  center: {
-    // Removed - no longer using center section
-  },
+  // center: {
+  // Removed - no longer using center section
+  // },
 
   right: {
     flexDirection: "row",

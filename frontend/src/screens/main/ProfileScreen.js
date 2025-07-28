@@ -1,13 +1,6 @@
 // File: frontend/src/screens/main/ProfileScreen.js
 import { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  Alert,
-} from "react-native";
+import { View, Text, TouchableOpacity, ScrollView, Alert } from "react-native";
 import {
   Settings,
   Bell,
@@ -22,7 +15,12 @@ import {
 import { useAuth } from "@contexts/AuthContext";
 import ScreenLayout from "@components/layout/ScreenLayout";
 import ImagePicker from "@components/common/ImagePicker";
-import { globalStyles, colors, spacing } from "@styles/designSystem";
+import {
+  globalStyles,
+  colors,
+  spacing,
+  createButtonStyle,
+} from "@styles/designSystem";
 import apiService from "@services/api";
 
 const ProfileScreen = ({ user, onLogout }) => {
@@ -104,7 +102,7 @@ const ProfileScreen = ({ user, onLogout }) => {
 
       <View style={styles.profileInfo}>
         <View style={styles.nameRow}>
-          <Text style={styles.userName}>
+          <Text style={globalStyles.title}>
             {user?.firstName} {user?.lastName}
           </Text>
           <TouchableOpacity
@@ -115,19 +113,28 @@ const ProfileScreen = ({ user, onLogout }) => {
           </TouchableOpacity>
         </View>
 
-        {user?.bio && <Text style={styles.userBio}>{user.bio}</Text>}
+        {user?.bio && (
+          <Text
+            style={[
+              globalStyles.bodySecondary,
+              { textAlign: "center", lineHeight: 22, marginBottom: spacing.md },
+            ]}
+          >
+            {user.bio}
+          </Text>
+        )}
 
         <View style={styles.userDetails}>
           {user?.neighborhoodName && (
             <View style={styles.detailRow}>
               <MapPin size={14} color={colors.text.muted} />
-              <Text style={styles.detailText}>{user.neighborhoodName}</Text>
+              <Text style={globalStyles.caption}>{user.neighborhoodName}</Text>
             </View>
           )}
 
           <View style={styles.detailRow}>
             <Calendar size={14} color={colors.text.muted} />
-            <Text style={styles.detailText}>
+            <Text style={globalStyles.caption}>
               Member since{" "}
               {new Date(user?.createdAt || Date.now()).getFullYear()}
             </Text>
@@ -161,7 +168,7 @@ const ProfileScreen = ({ user, onLogout }) => {
 
     return (
       <View style={styles.settingsCard}>
-        <Text style={styles.cardTitle}>Settings</Text>
+        <Text style={globalStyles.heading}>Settings</Text>
         {settingsItems.map((item, index) => (
           <TouchableOpacity
             key={index}
@@ -176,8 +183,15 @@ const ProfileScreen = ({ user, onLogout }) => {
                 <item.icon size={20} color={colors.primary} />
               </View>
               <View style={styles.settingsText}>
-                <Text style={styles.settingsTitle}>{item.title}</Text>
-                <Text style={styles.settingsSubtitle}>{item.subtitle}</Text>
+                <Text
+                  style={[
+                    globalStyles.body,
+                    { fontWeight: "500", marginBottom: spacing.xs / 2 },
+                  ]}
+                >
+                  {item.title}
+                </Text>
+                <Text style={globalStyles.caption}>{item.subtitle}</Text>
               </View>
             </View>
             <ChevronRight size={20} color={colors.text.muted} />
@@ -190,7 +204,14 @@ const ProfileScreen = ({ user, onLogout }) => {
   const renderLogoutButton = () => (
     <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
       <LogOut size={20} color={colors.error} />
-      <Text style={styles.logoutText}>Sign Out</Text>
+      <Text
+        style={[
+          globalStyles.buttonSecondaryText,
+          { color: colors.error, marginLeft: spacing.sm, fontWeight: "600" },
+        ]}
+      >
+        Sign Out
+      </Text>
     </TouchableOpacity>
   );
 
@@ -207,7 +228,7 @@ const ProfileScreen = ({ user, onLogout }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const styles = {
   container: {
     flex: 1,
   },
@@ -218,11 +239,9 @@ const styles = StyleSheet.create({
   },
 
   profileHeader: {
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: spacing.xl,
-    marginBottom: spacing.lg,
     ...globalStyles.card,
+    alignItems: "center",
+    marginBottom: spacing.lg,
   },
 
   profileImageContainer: {
@@ -240,25 +259,9 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
 
-  userName: {
-    fontSize: 24,
-    fontWeight: "600",
-    color: colors.text.primary,
-    fontFamily: "Inter",
-  },
-
   editButton: {
     marginLeft: spacing.sm,
     padding: spacing.xs,
-  },
-
-  userBio: {
-    fontSize: 16,
-    color: colors.text.secondary,
-    textAlign: "center",
-    lineHeight: 22,
-    marginBottom: spacing.md,
-    fontFamily: "Inter",
   },
 
   userDetails: {
@@ -272,26 +275,9 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
 
-  detailText: {
-    fontSize: 14,
-    color: colors.text.muted,
-    fontFamily: "Inter",
-  },
-
   settingsCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: spacing.xl,
-    marginBottom: spacing.lg,
     ...globalStyles.card,
-  },
-
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: colors.text.primary,
     marginBottom: spacing.lg,
-    fontFamily: "Inter",
   },
 
   settingsItem: {
@@ -327,39 +313,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  settingsTitle: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: colors.text.primary,
-    marginBottom: spacing.xs / 2,
-    fontFamily: "Inter",
-  },
-
-  settingsSubtitle: {
-    fontSize: 14,
-    color: colors.text.muted,
-    fontFamily: "Inter",
-  },
-
   logoutButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: spacing.lg,
-    borderWidth: 1,
+    ...createButtonStyle("secondary", "large"),
     borderColor: colors.errorLight,
-    ...globalStyles.card,
+    marginBottom: spacing.lg,
   },
-
-  logoutText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: colors.error,
-    marginLeft: spacing.sm,
-    fontFamily: "Inter",
-  },
-});
+};
 
 export default ProfileScreen;

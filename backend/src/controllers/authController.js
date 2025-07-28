@@ -472,6 +472,7 @@ const updateProfile = async (req, res) => {
       longitude,
       radiusMiles,
       showCityOnly,
+      notificationPreferences,
     } = req.body;
 
     const client = await pool.connect();
@@ -541,10 +542,21 @@ const updateProfile = async (req, res) => {
         values.push(showCityOnly);
       }
 
-      if (latitude && longitude) {
+      if (
+        latitude !== undefined &&
+        longitude !== undefined &&
+        latitude &&
+        longitude
+      ) {
         updates.push(
           `location = ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)`
         );
+      }
+
+      if (notificationPreferences !== undefined) {
+        paramCount++;
+        updates.push(`notification_preferences = ${paramCount}`);
+        values.push(JSON.stringify(notificationPreferences));
       }
 
       if (updates.length === 0) {
@@ -558,14 +570,62 @@ const updateProfile = async (req, res) => {
       const updateQuery = `
         UPDATE users 
         SET ${updates.join(", ")}
-        WHERE id = $${paramCount}
-        RETURNING updated_at
+        WHERE id = ${paramCount}
+        RETURNING 
+          id, email, first_name, last_name, phone, profile_image_url,
+          location_city, address_state, zip_code, address,
+          location_radius_miles, show_city_only, email_verified,
+          notification_preferences, updated_at,
+          ST_X(location::geometry) as longitude,
+          ST_Y(location::geometry) as latitude
       `;
+
+      console.log("Executing update query:", updateQuery);
+      console.log("With values:", values);
 
       const result = await client.query(updateQuery, values);
 
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const updatedUser = result.rows[0];
+
+      const profile = {
+        id: updatedUser.id,
+        email: updatedUser.email,
+        firstName: updatedUser.first_name,
+        lastName: updatedUser.last_name,
+        phone: updatedUser.phone,
+        profileImageUrl: updatedUser.profile_image_url,
+
+        location: {
+          city: updatedUser.location_city,
+          state: updatedUser.address_state,
+          zipCode: updatedUser.zip_code,
+          address: updatedUser.address,
+          coordinates:
+            updatedUser.longitude && updatedUser.latitude
+              ? {
+                  longitude: parseFloat(updatedUser.longitude),
+                  latitude: parseFloat(updatedUser.latitude),
+                }
+              : null,
+          radiusMiles: updatedUser.location_radius_miles || 10.0,
+          showCityOnly: updatedUser.show_city_only || false,
+        },
+
+        location_city: updatedUser.location_city,
+        address_state: updatedUser.address_state,
+
+        emailVerified: updatedUser.email_verified,
+        notificationPreferences: updatedUser.notification_preferences || {},
+        updatedAt: updatedUser.updated_at,
+      };
+
       res.json({
         message: "Profile updated successfully",
+        user: profile,
         updatedAt: result.rows[0].updated_at,
       });
     } finally {

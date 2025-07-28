@@ -221,7 +221,7 @@ const HomeScreen = ({
   const renderContent = () => {
     if (loading) {
       return (
-        <View style={globalStyles.loadingContainer}>
+        <View style={globalStyles.emptyContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={globalStyles.loadingText}>Loading your feed...</Text>
         </View>

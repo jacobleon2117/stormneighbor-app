@@ -11,7 +11,6 @@ import {
   Alert,
   ActivityIndicator,
   Image,
-  SafeAreaView,
   StatusBar,
   RefreshControl,
 } from "react-native";
@@ -678,7 +677,7 @@ const PostCommentsScreen = ({
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <ScreenLayout title="Comments" showHeader={false} keyboardAvoiding={true}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
 
       <KeyboardAvoidingView
@@ -721,7 +720,7 @@ const PostCommentsScreen = ({
 
         {renderCommentInput()}
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </ScreenLayout>
   );
 };
 
@@ -1130,7 +1129,7 @@ const styles = {
   },
 
   loadingContainer: {
-    ...globalStyles.loadingContainer,
+    ...globalStyles.emptyContainer,
   },
 
   loadingText: {

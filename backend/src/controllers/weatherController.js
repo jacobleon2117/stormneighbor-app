@@ -1,3 +1,4 @@
+// Still need to removing mock data
 const axios = require("axios");
 const { pool } = require("../config/database");
 const { validationResult } = require("express-validator");
@@ -67,7 +68,6 @@ const getCurrentWeather = async (req, res) => {
       res.json(weatherData);
     } catch (apiError) {
       console.error("NOAA API Error:", apiError.message);
-
       const mockWeatherData = {
         location: {
           latitude: parseFloat(lat),
@@ -119,16 +119,6 @@ const getAlerts = async (req, res) => {
     if ((!userLat || !userLng) && userId) {
       const client = await pool.connect();
       try {
-        const userResult = await client.query(
-          `SELECT 
-            ST_X(location::geometry) as longitude,
-            ST_Y(location::geometry) as latitude,
-            location_city,
-            address_state as location_state
-          FROM users WHERE id = $1`,
-          [userId]
-        );
-
         if (userResult.rows.length > 0) {
           const user = userResult.rows[0];
           userLat = user.latitude;

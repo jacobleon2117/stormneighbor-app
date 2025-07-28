@@ -68,11 +68,6 @@ try {
   console.log("Auth routes type:", typeof authRoutes);
   app.use("/api/auth", authRoutes);
 
-  console.log("Loading neighborhoods routes...");
-  const neighborhoodsRoutes = require("./routes/neighborhoods");
-  console.log("Neighborhoods routes type:", typeof neighborhoodsRoutes);
-  app.use("/api/neighborhoods", neighborhoodsRoutes);
-
   console.log("Loading posts routes...");
   const postsRoutes = require("./routes/posts");
   console.log("Posts routes type:", typeof postsRoutes);

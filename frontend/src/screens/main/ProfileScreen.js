@@ -124,21 +124,11 @@ const ProfileScreen = ({ user, onLogout }) => {
           </Text>
         )}
 
-        <View style={styles.userDetails}>
-          {user?.neighborhoodName && (
-            <View style={styles.detailRow}>
-              <MapPin size={14} color={colors.text.muted} />
-              <Text style={globalStyles.caption}>{user.neighborhoodName}</Text>
-            </View>
-          )}
-
-          <View style={styles.detailRow}>
-            <Calendar size={14} color={colors.text.muted} />
-            <Text style={globalStyles.caption}>
-              Member since{" "}
-              {new Date(user?.createdAt || Date.now()).getFullYear()}
-            </Text>
-          </View>
+        <View style={styles.detailRow}>
+          <Calendar size={14} color={colors.text.muted} />
+          <Text style={globalStyles.caption}>
+            Member since {new Date(user?.createdAt || Date.now()).getFullYear()}
+          </Text>
         </View>
       </View>
     </View>

@@ -32,15 +32,14 @@ const AlertsScreen = ({ user, alertCounts }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (user?.neighborhoodId) {
-      loadAlerts();
-    } else {
-      setLoading(false);
-    }
-  }, [user?.neighborhoodId]);
+    loadAlerts();
+  }, [loadAlerts]);
 
   const loadAlerts = useCallback(async () => {
-    if (!user?.neighborhoodId) {
+    setLoading(true);
+
+    const locationParams = apiService.getUserLocationParams(user);
+    if (!locationParams) {
       setAlerts([]);
       setLoading(false);
       return;
@@ -48,7 +47,7 @@ const AlertsScreen = ({ user, alertCounts }) => {
 
     try {
       setError(null);
-      const result = await apiService.getAlerts(user.neighborhoodId);
+      const result = await apiService.getAlerts(locationParams);
 
       if (result.success) {
         const alertsData = result.data.alerts || [];
@@ -78,7 +77,7 @@ const AlertsScreen = ({ user, alertCounts }) => {
     } finally {
       setLoading(false);
     }
-  }, [user?.neighborhoodId]);
+  }, [user]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -294,7 +293,7 @@ const AlertsScreen = ({ user, alertCounts }) => {
   const renderContent = () => {
     if (loading) {
       return (
-        <View style={globalStyles.emptyContainer}>
+        <View style={globalStyles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={globalStyles.loadingText}>Loading alerts...</Text>
         </View>
@@ -317,11 +316,12 @@ const AlertsScreen = ({ user, alertCounts }) => {
       );
     }
 
-    if (!user?.neighborhoodId) {
+    const locationParams = apiService.getUserLocationParams(user);
+    if (!locationParams) {
       return (
         <View style={globalStyles.emptyContainer}>
           <AlertTriangle size={64} color={colors.text.muted} />
-          <Text style={globalStyles.emptyTitle}>No Neighborhood Set</Text>
+          <Text style={globalStyles.emptyTitle}>No Location Set</Text>
           <Text style={globalStyles.emptyText}>
             Complete your profile setup to receive local alerts
           </Text>

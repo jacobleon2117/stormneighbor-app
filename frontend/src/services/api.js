@@ -314,23 +314,7 @@ class ApiService {
     }
   }
 
-  // LOCATION & NEIGHBORHOODS
-
-  async getNearbyAreas(latitude, longitude, radius = 5) {
-    try {
-      const response = await this.api.get("/api/neighborhoods/nearby", {
-        params: { latitude, longitude, radius },
-      });
-      return { success: true, data: response.data };
-    } catch (error) {
-      return {
-        success: false,
-        error: error.response?.data?.message || error.message,
-      };
-    }
-  }
-
-  // POSTS (UPDATED WITH USER LOCATION)
+  // POSTS
 
   async getPosts(user, filters = {}) {
     try {

@@ -1,7 +1,7 @@
 const logger = {
   info: (message, data = null) => {
     const timestamp = new Date().toISOString();
-    console.log(`[${timestamp}] ℹ️  ${message}`);
+    console.log(`[${timestamp}] INFO  ${message}`);
     if (data && process.env.NODE_ENV === "development") {
       console.log("   Data:", data);
     }
@@ -9,7 +9,7 @@ const logger = {
 
   error: (message, error = null) => {
     const timestamp = new Date().toISOString();
-    console.error(`[${timestamp}] ❌ ${message}`);
+    console.error(`[${timestamp}] ERROR ${message}`);
     if (error) {
       if (process.env.NODE_ENV === "development") {
         console.error("   Error:", error);
@@ -21,7 +21,7 @@ const logger = {
 
   warn: (message, data = null) => {
     const timestamp = new Date().toISOString();
-    console.warn(`[${timestamp}] ⚠️  ${message}`);
+    console.warn(`[${timestamp}] WARN  ${message}`);
     if (data && process.env.NODE_ENV === "development") {
       console.warn("   Data:", data);
     }
@@ -29,7 +29,7 @@ const logger = {
 
   success: (message, data = null) => {
     const timestamp = new Date().toISOString();
-    console.log(`[${timestamp}] ✅ ${message}`);
+    console.log(`[${timestamp}] SUCCESS ${message}`);
     if (data && process.env.NODE_ENV === "development") {
       console.log("   Data:", data);
     }
@@ -37,7 +37,8 @@ const logger = {
 
   api: (method, path, statusCode, responseTime) => {
     const timestamp = new Date().toISOString();
-    const status = statusCode >= 400 ? "❌" : statusCode >= 300 ? "⚠️" : "✅";
+    const status =
+      statusCode >= 400 ? "ERROR" : statusCode >= 300 ? "WARN" : "SUCCESS";
     console.log(
       `[${timestamp}] ${status} ${method} ${path} - ${statusCode} (${responseTime}ms)`
     );

@@ -27,7 +27,6 @@ const MainApp = ({ user }) => {
 
   useEffect(() => {
     const hasLocation = !!apiService.getUserLocationParams(user);
-
     if (hasLocation) {
       console.log("📍 MainApp: User has location, loading alerts");
       loadAlertCounts();
@@ -163,7 +162,6 @@ const MainApp = ({ user }) => {
       onCreatePost: handleCreatePost,
       onLogout: logout,
       alertCounts,
-      // Note: No neighborhoodId needed anymore
     };
 
     switch (activeTab) {

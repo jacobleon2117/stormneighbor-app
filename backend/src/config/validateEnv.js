@@ -13,7 +13,7 @@ const optionalEnvVars = [
 ];
 
 function validateEnvironment() {
-  console.log("🔍 Validating environment variables...");
+  console.log("Validating environment variables...");
 
   const missing = [];
   const present = [];
@@ -33,21 +33,17 @@ function validateEnvironment() {
   });
 
   if (missing.length > 0) {
-    console.error("❌ Missing required environment variables:");
+    console.error("Missing required environment variables:");
     missing.forEach((envVar) => console.error(`   - ${envVar}`));
     process.exit(1);
   }
 
-  console.log(
-    `✅ Environment validated (${present.length} variables configured)`
-  );
+  console.log(`Environment validated (${present.length} variables configured)`);
 
   if (process.env.NODE_ENV === "development") {
-    console.log("⚠️  Running in development mode");
+    console.log("Running in development mode");
     if (!process.env.CLIENT_URL) {
-      console.log(
-        "💡 CLIENT_URL not set, using default: http://localhost:19006"
-      );
+      console.log("CLIENT_URL not set, using default: http://localhost:19006");
     }
   }
 }

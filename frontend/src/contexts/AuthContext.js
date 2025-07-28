@@ -106,7 +106,6 @@ export const AuthProvider = ({ children }) => {
     return {
       ...user,
       location,
-      // Keep legacy properties for backward compatibility during transition
       location_city: location.city,
       address_state: location.state,
     };

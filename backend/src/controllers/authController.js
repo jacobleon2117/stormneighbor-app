@@ -413,6 +413,7 @@ const getProfile = async (req, res) => {
       }
 
       const user = result.rows[0];
+
       const profile = {
         id: user.id,
         email: user.email,
@@ -420,6 +421,7 @@ const getProfile = async (req, res) => {
         lastName: user.last_name,
         phone: user.phone,
         profileImageUrl: user.profile_image_url,
+
         location: {
           city: user.location_city,
           state: user.address_state,
@@ -428,13 +430,17 @@ const getProfile = async (req, res) => {
           coordinates:
             user.longitude && user.latitude
               ? {
-                  longitude: user.longitude,
-                  latitude: user.latitude,
+                  longitude: parseFloat(user.longitude),
+                  latitude: parseFloat(user.latitude),
                 }
               : null,
-          radiusMiles: user.location_radius_miles,
-          showCityOnly: user.show_city_only,
+          radiusMiles: user.location_radius_miles || 10.0,
+          showCityOnly: user.show_city_only || false,
         },
+
+        location_city: user.location_city,
+        address_state: user.address_state,
+
         emailVerified: user.email_verified,
         notificationPreferences: user.notification_preferences || {},
         createdAt: user.created_at,

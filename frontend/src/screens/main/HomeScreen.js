@@ -25,17 +25,46 @@ const HomeScreen = ({
   });
   const [error, setError] = useState(null);
 
+  const getUserCity = () => {
+    return user?.location?.city || user?.location_city || null;
+  };
+
+  const getUserState = () => {
+    return user?.location?.state || user?.address_state || null;
+  };
+
+  const getUserCoordinates = () => {
+    if (user?.location?.coordinates) {
+      return user.location.coordinates;
+    }
+    if (user?.latitude && user?.longitude) {
+      return {
+        latitude: user.latitude,
+        longitude: user.longitude,
+      };
+    }
+    return null;
+  };
+
+  const hasUserLocation = () => {
+    const city = getUserCity();
+    const state = getUserState();
+    return !!(city && state);
+  };
+
   useEffect(() => {
     console.log("HomeScreen user data:", {
-      location_city: user?.location?.city,
-      address_city: user?.address?.city,
+      hasLocation: hasUserLocation(),
+      city: getUserCity(),
+      state: getUserState(),
+      coordinates: getUserCoordinates(),
       full_user: user,
     });
 
-    if (user?.location?.city || user?.address?.city) {
+    if (hasUserLocation()) {
       loadInitialData();
     }
-  }, [user?.location?.city, user?.address?.city]);
+  }, [user]);
 
   const loadInitialData = useCallback(async () => {
     try {
@@ -49,10 +78,10 @@ const HomeScreen = ({
     } finally {
       setLoading(false);
     }
-  }, [user?.locationCity, user?.address?.city]);
+  }, [user]);
 
   const loadHomeFeed = async () => {
-    if (!user?.location?.city && !user?.address?.city) {
+    if (!hasUserLocation()) {
       setPosts([]);
       return;
     }
@@ -60,7 +89,7 @@ const HomeScreen = ({
     try {
       console.log(
         "Loading home feed for user with location:",
-        user?.location?.city || user?.address?.city
+        `${getUserCity()}, ${getUserState()}`
       );
 
       const result = await apiService.getPosts(null, {
@@ -105,15 +134,17 @@ const HomeScreen = ({
   };
 
   const loadAlertCounts = async () => {
-    if (!user?.location?.latitude || !user?.location?.longitude) {
+    const coordinates = getUserCoordinates();
+    if (!coordinates) {
       return;
     }
 
     try {
       const result = await apiService.getAlerts(null, {
-        latitude: user.location.latitude,
-        longitude: user.location.longitude,
-        radius: user.radiusMiles || 25,
+        latitude: coordinates.latitude,
+        longitude: coordinates.longitude,
+        radius:
+          user?.location?.radiusMiles || user?.location_radius_miles || 25,
       });
 
       if (result.success) {
@@ -244,7 +275,7 @@ const HomeScreen = ({
       );
     }
 
-    if (!user?.location?.city && !user?.address?.city) {
+    if (!hasUserLocation()) {
       return (
         <View style={globalStyles.emptyContainer}>
           <Text style={globalStyles.emptyTitle}>Welcome to StormNeighbor!</Text>

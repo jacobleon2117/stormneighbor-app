@@ -455,7 +455,7 @@ const getProfile = async (req, res) => {
     res.status(500).json({ message: "Server error fetching profile" });
   }
 };
-
+// Need to fix profile setup, location isn't saving to the profile that i'm creating, so therefor im getting an error - "Server error updating profile"
 const updateProfile = async (req, res) => {
   try {
     const userId = req.user.userId;

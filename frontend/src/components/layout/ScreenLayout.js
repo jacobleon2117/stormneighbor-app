@@ -61,18 +61,32 @@ const ScreenLayout = ({
         translucent={false}
       />
 
-      <SafeAreaView style={styles.safeAreaTop} />
+      <SafeAreaView
+        style={[styles.safeAreaTop, { backgroundColor: safeAreaBackground }]}
+      />
 
       {showHeader && (
-        <StandardHeader
-          title={title}
-          actions={headerActions}
-          showDefaultActions={showDefaultActions}
-        />
+        <View
+          style={[
+            styles.headerContainer,
+            { backgroundColor: safeAreaBackground },
+          ]}
+        >
+          <StandardHeader
+            title={title}
+            actions={headerActions}
+            showDefaultActions={showDefaultActions}
+          />
+        </View>
       )}
 
       {customHeaderComponent && (
-        <View style={styles.customHeaderContainer}>
+        <View
+          style={[
+            styles.customHeaderContainer,
+            { backgroundColor: safeAreaBackground },
+          ]}
+        >
           {customHeaderComponent}
         </View>
       )}
@@ -91,6 +105,12 @@ const styles = StyleSheet.create({
 
   safeAreaTop: {
     flex: 0,
+  },
+
+  headerContainer: {
+    position: "relative",
+    zIndex: 10,
+    elevation: 3,
   },
 
   contentContainer: {
@@ -113,7 +133,8 @@ const styles = StyleSheet.create({
   },
 
   customHeaderContainer: {
-    backgroundColor: colors.background,
+    position: "relative",
+    zIndex: 9,
     paddingTop: spacing.md,
   },
 });

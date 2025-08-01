@@ -4,7 +4,6 @@ import { View, Text, ActivityIndicator } from "react-native";
 import { globalStyles, colors, spacing } from "@styles/designSystem";
 import { useAuth } from "@contexts/AuthContext";
 import ScreenLayout from "@components/layout/ScreenLayout";
-import GreetingHeader from "@components/common/GreetingHeader";
 import PostCard from "@components/common/PostCard";
 import apiService from "@services/api";
 
@@ -277,19 +276,8 @@ const HomeScreen = ({
     );
   };
 
-  const customHeaderComponent = (
-    <View>
-      <GreetingHeader user={user} alertCounts={alertCounts} />
-    </View>
-  );
-
   return (
-    <ScreenLayout
-      title="Home"
-      refreshing={refreshing}
-      onRefresh={onRefresh}
-      customHeaderComponent={customHeaderComponent}
-    >
+    <ScreenLayout title="Home" refreshing={refreshing} onRefresh={onRefresh}>
       {renderContent()}
     </ScreenLayout>
   );

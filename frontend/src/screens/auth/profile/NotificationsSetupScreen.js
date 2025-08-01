@@ -16,7 +16,6 @@ import {
   createButtonStyle,
 } from "@styles/designSystem";
 import ScreenLayout from "@components/layout/ScreenLayout";
-import StandardHeader from "@components/layout/StandardHeader";
 
 const NotificationsSetupScreen = ({
   onNext,
@@ -79,6 +78,12 @@ const NotificationsSetupScreen = ({
     }
   };
 
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    }
+  };
+
   const renderToggleItem = (key, title, subtitle, value) => (
     <TouchableOpacity
       key={key}
@@ -108,19 +113,19 @@ const NotificationsSetupScreen = ({
   );
 
   return (
-    <ScreenLayout showHeader={false} backgroundColor={colors.background}>
-      <StandardHeader
-        showBack={!!onBack}
-        onBack={onBack}
-        title="Notifications"
-        showDefaultActions={false}
-      />
-
+    <ScreenLayout
+      title="Notifications"
+      showHeader={true}
+      headerActions={[]}
+      showDefaultActions={false}
+      scrollable={true}
+      backgroundColor={colors.background}
+    >
       <View style={styles.container}>
-        <View style={[globalStyles.center, styles.headerSection]}>
+        <View style={styles.headerSection}>
           <Bell size={32} color={colors.primary} />
-          <Text style={[globalStyles.title, styles.title]}>Notifications</Text>
-          <Text style={[globalStyles.bodySecondary, styles.subtitle]}>
+          <Text style={styles.title}>Notifications</Text>
+          <Text style={styles.subtitle}>
             Choose what updates you'd like to receive. You can change these
             anytime in settings
           </Text>
@@ -178,6 +183,18 @@ const NotificationsSetupScreen = ({
             <Text style={globalStyles.buttonSecondaryText}>Skip for now</Text>
           </TouchableOpacity>
         </View>
+
+        {onBack && (
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={handleBack}
+            disabled={loading}
+          >
+            <Text style={[globalStyles.link, { textAlign: "center" }]}>
+              Go Back
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
     </ScreenLayout>
   );
@@ -185,21 +202,23 @@ const NotificationsSetupScreen = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: spacing.lg,
     flex: 1,
+    paddingTop: spacing.xl,
   },
 
   headerSection: {
+    alignItems: "center",
     marginBottom: spacing.xl,
-    marginTop: spacing.xl,
   },
 
   title: {
+    ...globalStyles.title,
     marginTop: spacing.lg,
     marginBottom: spacing.md,
   },
 
   subtitle: {
+    ...globalStyles.bodySecondary,
     textAlign: "center",
   },
 
@@ -217,6 +236,11 @@ const styles = StyleSheet.create({
 
   skipButton: {
     marginTop: spacing.md,
+  },
+
+  backButton: {
+    marginTop: spacing.md,
+    paddingVertical: spacing.md,
   },
 
   toggleContainer: {

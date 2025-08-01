@@ -17,7 +17,6 @@ import {
   createButtonStyle,
 } from "@styles/designSystem";
 import ScreenLayout from "@components/layout/ScreenLayout";
-import StandardHeader from "@components/layout/StandardHeader";
 
 const LocationSetupScreen = ({ onNext, onBack, initialData = {} }) => {
   const [loading, setLoading] = useState(false);
@@ -143,10 +142,10 @@ const LocationSetupScreen = ({ onNext, onBack, initialData = {} }) => {
     }
 
     const locationData = {
-      address: formData.address,
+      address: formData.address || null,
       city: formData.city,
       state: formData.state,
-      zipCode: formData.zipCode,
+      zipCode: formData.zipCode || null,
       latitude: formData.usePreciseLocation ? formData.latitude : null,
       longitude: formData.usePreciseLocation ? formData.longitude : null,
       radiusMiles: formData.radiusMiles,
@@ -164,15 +163,21 @@ const LocationSetupScreen = ({ onNext, onBack, initialData = {} }) => {
     }
   };
 
-  return (
-    <ScreenLayout showHeader={false} backgroundColor={colors.background}>
-      <StandardHeader
-        showBack={!!onBack}
-        onBack={onBack}
-        title="Your Location"
-        showDefaultActions={false}
-      />
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    }
+  };
 
+  return (
+    <ScreenLayout
+      title="Your Location"
+      showHeader={true}
+      headerActions={[]}
+      showDefaultActions={false}
+      scrollable={true}
+      backgroundColor={colors.background}
+    >
       <View style={styles.container}>
         <View style={styles.header}>
           <MapPin size={32} color={colors.primary} />
@@ -322,7 +327,7 @@ const LocationSetupScreen = ({ onNext, onBack, initialData = {} }) => {
           {!formData.usePreciseLocation && (
             <View style={styles.cityOnlyNote}>
               <Text style={globalStyles.caption}>
-                📍 You'll see posts from your entire city
+                You'll see posts from your entire city
               </Text>
             </View>
           )}
@@ -358,6 +363,18 @@ const LocationSetupScreen = ({ onNext, onBack, initialData = {} }) => {
             <Text style={globalStyles.buttonSecondaryText}>Skip for now</Text>
           </TouchableOpacity>
         </View>
+
+        {onBack && (
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={handleBack}
+            disabled={loading}
+          >
+            <Text style={[globalStyles.link, { textAlign: "center" }]}>
+              Go Back
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
     </ScreenLayout>
   );
@@ -365,14 +382,13 @@ const LocationSetupScreen = ({ onNext, onBack, initialData = {} }) => {
 
 const styles = {
   container: {
-    paddingHorizontal: spacing.lg,
     flex: 1,
+    paddingTop: spacing.xl,
   },
 
   header: {
     alignItems: "center",
     marginBottom: spacing.xl,
-    marginTop: spacing.xl,
   },
 
   locationCard: {
@@ -470,7 +486,12 @@ const styles = {
   },
 
   buttonGroup: {
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
+  },
+
+  backButton: {
+    marginTop: spacing.md,
+    paddingVertical: spacing.md,
   },
 };
 

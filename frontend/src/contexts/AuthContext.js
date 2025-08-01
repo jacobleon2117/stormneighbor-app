@@ -1,4 +1,4 @@
-// File: frontend/contexts/AuthContext.js
+// File: frontend/src/contexts/AuthContext.js
 import { createContext, useContext, useReducer, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiService from "@services/api";
@@ -141,13 +141,15 @@ export const AuthProvider = ({ children }) => {
         const profileComplete = isProfileComplete(normalizedUser);
 
         if (!profileComplete && !profileSetupCompleted) {
+          console.log("Profile incomplete, showing setup");
           dispatch({
             type: "SET_USER_NEEDS_SETUP",
             payload: { user: normalizedUser, needsSetup: true },
           });
         } else {
+          console.log("Profile complete or setup already done");
           dispatch({ type: "SET_USER", payload: normalizedUser });
-          if (!profileSetupCompleted) {
+          if (profileComplete && !profileSetupCompleted) {
             await AsyncStorage.setItem("profileSetupCompleted", "true");
           }
         }
@@ -183,13 +185,15 @@ export const AuthProvider = ({ children }) => {
         const profileComplete = isProfileComplete(normalizedUser);
 
         if (!profileComplete && !profileSetupCompleted) {
+          console.log("New user with incomplete profile, showing setup");
           dispatch({
             type: "SET_USER_NEEDS_SETUP",
             payload: { user: normalizedUser, needsSetup: true },
           });
         } else {
+          console.log("Returning user or complete profile, skipping setup");
           dispatch({ type: "SET_USER", payload: normalizedUser });
-          if (!profileSetupCompleted) {
+          if (profileComplete && !profileSetupCompleted) {
             await AsyncStorage.setItem("profileSetupCompleted", "true");
           }
         }
@@ -239,7 +243,6 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       await AsyncStorage.removeItem("authToken");
-      await AsyncStorage.removeItem("profileSetupCompleted");
       dispatch({ type: "LOGOUT" });
     } catch (error) {
       console.error("Logout failed:", error);
@@ -274,11 +277,28 @@ export const AuthProvider = ({ children }) => {
       dispatch({ type: "SET_LOADING", payload: true });
       dispatch({ type: "CLEAR_ERROR" });
 
-      const result = await apiService.updateProfile(profileData);
+      const cleanedData = {};
+
+      Object.keys(profileData).forEach((key) => {
+        const value = profileData[key];
+        if (value !== null && value !== undefined && value !== "") {
+          cleanedData[key] = value;
+        }
+      });
+
+      if (Object.keys(cleanedData).length === 0) {
+        console.log("No profile data to update, just completing setup");
+        await AsyncStorage.setItem("profileSetupCompleted", "true");
+        dispatch({ type: "COMPLETE_PROFILE_SETUP" });
+        return { success: true };
+      }
+
+      console.log("Updating profile with data:", cleanedData);
+
+      const result = await apiService.updateProfile(cleanedData);
 
       if (result.success) {
         await AsyncStorage.setItem("profileSetupCompleted", "true");
-
         dispatch({ type: "COMPLETE_PROFILE_SETUP" });
 
         const profileResult = await apiService.getProfile();

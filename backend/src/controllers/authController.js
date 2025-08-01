@@ -473,7 +473,10 @@ const updateProfile = async (req, res) => {
       radiusMiles,
       showCityOnly,
       notificationPreferences,
+      bio,
     } = req.body;
+
+    console.log("updateProfile called with data:", req.body);
 
     const client = await pool.connect();
 
@@ -482,98 +485,118 @@ const updateProfile = async (req, res) => {
       const values = [];
       let paramCount = 0;
 
-      if (firstName !== undefined) {
+      if (
+        firstName !== undefined &&
+        firstName !== null &&
+        firstName.trim() !== ""
+      ) {
         paramCount++;
         updates.push(`first_name = $${paramCount}`);
-        values.push(firstName);
+        values.push(firstName.trim());
       }
 
-      if (lastName !== undefined) {
+      if (
+        lastName !== undefined &&
+        lastName !== null &&
+        lastName.trim() !== ""
+      ) {
         paramCount++;
         updates.push(`last_name = $${paramCount}`);
-        values.push(lastName);
+        values.push(lastName.trim());
       }
 
-      if (phone !== undefined) {
+      if (phone !== undefined && phone !== null) {
         paramCount++;
         updates.push(`phone = $${paramCount}`);
         values.push(phone);
       }
 
-      if (profileImageUrl !== undefined) {
+      if (profileImageUrl !== undefined && profileImageUrl !== null) {
         paramCount++;
         updates.push(`profile_image_url = $${paramCount}`);
         values.push(profileImageUrl);
       }
 
-      if (city !== undefined) {
+      if (city !== undefined && city !== null && city.trim() !== "") {
         paramCount++;
         updates.push(`location_city = $${paramCount}`);
-        values.push(city);
+        values.push(city.trim());
       }
 
-      if (state !== undefined) {
+      if (state !== undefined && state !== null && state.trim() !== "") {
         paramCount++;
         updates.push(`address_state = $${paramCount}`);
-        values.push(state);
+        values.push(state.trim());
       }
 
-      if (zipCode !== undefined) {
+      if (zipCode !== undefined && zipCode !== null && zipCode.trim() !== "") {
         paramCount++;
         updates.push(`zip_code = $${paramCount}`);
-        values.push(zipCode);
+        values.push(zipCode.trim());
       }
 
-      if (address !== undefined) {
+      if (address !== undefined && address !== null) {
         paramCount++;
         updates.push(`address = $${paramCount}`);
         values.push(address);
       }
 
-      if (radiusMiles !== undefined) {
+      if (radiusMiles !== undefined && radiusMiles !== null) {
         paramCount++;
         updates.push(`location_radius_miles = $${paramCount}`);
         values.push(radiusMiles);
       }
 
-      if (showCityOnly !== undefined) {
+      if (showCityOnly !== undefined && showCityOnly !== null) {
         paramCount++;
         updates.push(`show_city_only = $${paramCount}`);
         values.push(showCityOnly);
       }
 
+      if (bio !== undefined && bio !== null) {
+        paramCount++;
+        updates.push(`bio = $${paramCount}`);
+        values.push(bio);
+      }
+
       if (
         latitude !== undefined &&
+        latitude !== null &&
         longitude !== undefined &&
-        latitude &&
-        longitude
+        longitude !== null &&
+        !isNaN(latitude) &&
+        !isNaN(longitude)
       ) {
         updates.push(
           `location = ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)`
         );
       }
 
-      if (notificationPreferences !== undefined) {
+      if (
+        notificationPreferences !== undefined &&
+        notificationPreferences !== null
+      ) {
         paramCount++;
-        updates.push(`notification_preferences = ${paramCount}`);
+        updates.push(`notification_preferences = $${paramCount}`);
         values.push(JSON.stringify(notificationPreferences));
       }
 
-      if (updates.length === 0) {
-        return res.status(400).json({ message: "No valid fields to update" });
+      updates.push("updated_at = NOW()");
+
+      if (updates.length === 1) {
+        console.log("No profile fields to update, just updating timestamp");
       }
 
-      updates.push("updated_at = NOW()");
       paramCount++;
       values.push(userId);
 
       const updateQuery = `
         UPDATE users 
         SET ${updates.join(", ")}
-        WHERE id = ${paramCount}
+        WHERE id = $${paramCount}
         RETURNING 
           id, email, first_name, last_name, phone, profile_image_url,
-          location_city, address_state, zip_code, address,
+          location_city, address_state, zip_code, address, bio,
           location_radius_miles, show_city_only, email_verified,
           notification_preferences, updated_at,
           ST_X(location::geometry) as longitude,
@@ -598,6 +621,7 @@ const updateProfile = async (req, res) => {
         lastName: updatedUser.last_name,
         phone: updatedUser.phone,
         profileImageUrl: updatedUser.profile_image_url,
+        bio: updatedUser.bio,
 
         location: {
           city: updatedUser.location_city,

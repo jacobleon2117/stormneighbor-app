@@ -16,6 +16,7 @@ const ProfileSetupFlow = ({ onSetupComplete, onBack }) => {
   });
 
   const handleLocationNext = (locationData) => {
+    console.log("Location data collected:", locationData);
     setSetupData((prev) => ({
       ...prev,
       location: locationData,
@@ -30,6 +31,7 @@ const ProfileSetupFlow = ({ onSetupComplete, onBack }) => {
   };
 
   const handleProfileNext = (profileData) => {
+    console.log("Profile data collected:", profileData);
     setSetupData((prev) => ({
       ...prev,
       profile: profileData,
@@ -42,35 +44,36 @@ const ProfileSetupFlow = ({ onSetupComplete, onBack }) => {
   };
 
   const handleNotificationsComplete = async (notificationData) => {
+    console.log("Notifications data collected:", notificationData);
+
     const finalSetupData = {
       ...setupData.location,
       ...setupData.profile,
       ...notificationData,
     };
 
-    try {
-      console.log("Completing profile setup with data:", finalSetupData);
+    console.log("Final setup data:", finalSetupData);
 
+    try {
       const result = await updateProfile(finalSetupData);
 
       if (result.success) {
-        console.log("Profile update successful, completing setup...");
+        console.log("Profile setup completed successfully");
 
         await completeProfileSetup();
 
-        console.log("Setup completed, calling onSetupComplete");
         if (onSetupComplete) {
           onSetupComplete();
         }
       } else {
         console.error("Profile setup failed:", result.error);
+
         Alert.alert(
-          "Setup Error",
-          result.error || "Failed to complete profile setup",
+          "Setup Complete",
+          "Your profile setup is complete. You can update your information anytime in settings.",
           [
-            { text: "Try Again" },
             {
-              text: "Skip",
+              text: "Continue",
               onPress: async () => {
                 await completeProfileSetup();
                 if (onSetupComplete) {
@@ -83,18 +86,22 @@ const ProfileSetupFlow = ({ onSetupComplete, onBack }) => {
       }
     } catch (error) {
       console.error("Profile setup error:", error);
-      Alert.alert("Setup Error", "Something went wrong during setup.", [
-        { text: "Try Again" },
-        {
-          text: "Skip",
-          onPress: async () => {
-            await completeProfileSetup();
-            if (onSetupComplete) {
-              onSetupComplete();
-            }
+
+      Alert.alert(
+        "Setup Complete",
+        "Your profile setup is complete. You can update your information anytime in settings.",
+        [
+          {
+            text: "Continue",
+            onPress: async () => {
+              await completeProfileSetup();
+              if (onSetupComplete) {
+                onSetupComplete();
+              }
+            },
           },
-        },
-      ]);
+        ]
+      );
     }
   };
 

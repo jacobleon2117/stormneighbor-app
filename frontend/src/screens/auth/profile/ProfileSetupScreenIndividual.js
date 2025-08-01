@@ -1,4 +1,4 @@
-// File: frontend/screens/auth/profile/ProfileSetupScreenIndividual.js
+// File: frontend/src/screens/auth/profile/ProfileSetupScreenIndividual.js
 import { useState } from "react";
 import {
   View,
@@ -16,7 +16,6 @@ import {
   createButtonStyle,
 } from "@styles/designSystem";
 import ScreenLayout from "@components/layout/ScreenLayout";
-import StandardHeader from "@components/layout/StandardHeader";
 import ImagePicker from "@components/common/ImagePicker";
 
 const ProfileSetupScreenIndividual = ({ onNext, onBack, initialData = {} }) => {
@@ -48,38 +47,32 @@ const ProfileSetupScreenIndividual = ({ onNext, onBack, initialData = {} }) => {
     }
   };
 
-  return (
-    <ScreenLayout showHeader={false} backgroundColor={colors.background}>
-      <StandardHeader
-        showBack={!!onBack}
-        onBack={onBack}
-        title="Profile Setup"
-        showDefaultActions={false}
-      />
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    }
+  };
 
-      <View style={{ paddingHorizontal: spacing.lg, flex: 1 }}>
-        <View
-          style={[
-            globalStyles.center,
-            { marginBottom: spacing.xl, marginTop: spacing.xl },
-          ]}
-        >
+  return (
+    <ScreenLayout
+      title="Profile Setup"
+      showHeader={true}
+      headerActions={[]}
+      showDefaultActions={false}
+      scrollable={true}
+      backgroundColor={colors.background}
+    >
+      <View style={styles.container}>
+        <View style={styles.header}>
           <User size={32} color={colors.primary} />
-          <Text
-            style={[
-              globalStyles.title,
-              { marginTop: spacing.lg, marginBottom: spacing.md },
-            ]}
-          >
-            Your Profile
-          </Text>
-          <Text style={[globalStyles.bodySecondary, { textAlign: "center" }]}>
+          <Text style={globalStyles.title}>Your Profile</Text>
+          <Text style={globalStyles.bodySecondary}>
             This information helps neighbors know who you are and builds trust
             within your community
           </Text>
         </View>
 
-        <View style={[globalStyles.center, { marginBottom: spacing.xl }]}>
+        <View style={styles.imageSection}>
           <ImagePicker
             currentImageUrl={formData.profileImage}
             onImageUploaded={handleImageUploaded}
@@ -87,17 +80,10 @@ const ProfileSetupScreenIndividual = ({ onNext, onBack, initialData = {} }) => {
             placeholder="Add Profile Photo"
             showUploadButton={false}
           />
-          <Text
-            style={[
-              globalStyles.caption,
-              { marginTop: spacing.sm, textAlign: "center" },
-            ]}
-          >
-            Tap to add a profile photo
-          </Text>
+          <Text style={styles.imageHint}>Tap to add a profile photo</Text>
         </View>
 
-        <View style={{ marginBottom: spacing.xl }}>
+        <View style={styles.formCard}>
           <Text style={globalStyles.label}>About You (Optional)</Text>
           <View style={{ position: "relative" }}>
             <TextInput
@@ -123,7 +109,7 @@ const ProfileSetupScreenIndividual = ({ onNext, onBack, initialData = {} }) => {
           </View>
         </View>
 
-        <View style={{ marginBottom: spacing.xl }}>
+        <View style={styles.buttonGroup}>
           <TouchableOpacity
             style={[
               createButtonStyle("primary", "large"),
@@ -153,12 +139,50 @@ const ProfileSetupScreenIndividual = ({ onNext, onBack, initialData = {} }) => {
             <Text style={globalStyles.buttonSecondaryText}>Skip for now</Text>
           </TouchableOpacity>
         </View>
+
+        {onBack && (
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={handleBack}
+            disabled={loading}
+          >
+            <Text style={[globalStyles.link, { textAlign: "center" }]}>
+              Go Back
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
     </ScreenLayout>
   );
 };
 
 const styles = {
+  container: {
+    flex: 1,
+    paddingTop: spacing.xl,
+  },
+
+  header: {
+    alignItems: "center",
+    marginBottom: spacing.xl,
+  },
+
+  imageSection: {
+    alignItems: "center",
+    marginBottom: spacing.xl,
+  },
+
+  imageHint: {
+    ...globalStyles.caption,
+    marginTop: spacing.sm,
+    textAlign: "center",
+  },
+
+  formCard: {
+    ...globalStyles.card,
+    marginBottom: spacing.xl,
+  },
+
   characterCount: {
     position: "absolute",
     bottom: spacing.sm,
@@ -170,6 +194,15 @@ const styles = {
     paddingVertical: spacing.xs / 2,
     borderRadius: 4,
     fontFamily: "Inter",
+  },
+
+  buttonGroup: {
+    marginBottom: spacing.lg,
+  },
+
+  backButton: {
+    marginTop: spacing.md,
+    paddingVertical: spacing.md,
   },
 };
 

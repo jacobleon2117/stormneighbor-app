@@ -83,13 +83,10 @@ class ApiService {
     );
   }
 
-  // UTILITY METHODS
-
   updateBaseURL(newBaseURL) {
     this.api.defaults.baseURL = newBaseURL;
     console.log("API Base URL updated to:", newBaseURL);
   }
-
   getUserLocationParams(user) {
     const coordinates = user?.location?.coordinates;
     const radiusMiles = user?.location?.radiusMiles || 25;
@@ -104,9 +101,6 @@ class ApiService {
 
     return null;
   }
-
-  // NETWORK TESTING
-
   async testNetwork() {
     try {
       console.log("Testing network connection to:", this.api.defaults.baseURL);
@@ -123,7 +117,6 @@ class ApiService {
       return { success: false, error: error.message };
     }
   }
-
   async testConnection() {
     try {
       const response = await this.api.get("/health");
@@ -136,9 +129,6 @@ class ApiService {
       };
     }
   }
-
-  // AUTHENTICATION
-
   async login(email, password) {
     try {
       console.log("Attempting login for:", email);
@@ -161,7 +151,6 @@ class ApiService {
       };
     }
   }
-
   async register(userData) {
     try {
       const response = await this.api.post("/api/auth/register", userData);
@@ -178,7 +167,6 @@ class ApiService {
       };
     }
   }
-
   async getProfile() {
     try {
       const response = await this.api.get("/api/auth/profile");
@@ -190,7 +178,6 @@ class ApiService {
       };
     }
   }
-
   async updateProfile(profileData) {
     try {
       const response = await this.api.put("/api/auth/profile", profileData);
@@ -202,7 +189,6 @@ class ApiService {
       };
     }
   }
-
   async forgotPassword(email) {
     try {
       const response = await this.api.post("/api/auth/forgot-password", {
@@ -216,7 +202,6 @@ class ApiService {
       };
     }
   }
-
   async verifyCode(email, code) {
     try {
       const response = await this.api.post("/api/auth/verify-code", {
@@ -231,7 +216,6 @@ class ApiService {
       };
     }
   }
-
   async resetPassword(email, code, newPassword) {
     try {
       const response = await this.api.post("/api/auth/reset-password", {
@@ -247,7 +231,6 @@ class ApiService {
       };
     }
   }
-
   async changePassword(currentPassword, newPassword) {
     try {
       const response = await this.api.post("/api/auth/change-password", {
@@ -262,7 +245,6 @@ class ApiService {
       };
     }
   }
-
   async checkEmailVerification() {
     try {
       const response = await this.api.get("/api/auth/verify-status");
@@ -274,7 +256,6 @@ class ApiService {
       };
     }
   }
-
   async resendVerificationEmail() {
     try {
       const response = await this.api.post("/api/auth/resend-verification");
@@ -286,7 +267,6 @@ class ApiService {
       };
     }
   }
-
   async resendVerificationCode(email) {
     try {
       const response = await this.api.post("/api/auth/resend-code", { email });
@@ -298,7 +278,6 @@ class ApiService {
       };
     }
   }
-
   async updateNotificationPreferences(preferences) {
     try {
       const response = await this.api.put(
@@ -313,9 +292,6 @@ class ApiService {
       };
     }
   }
-
-  // POSTS
-
   async getPosts(user, filters = {}) {
     try {
       const locationParams = this.getUserLocationParams(user);
@@ -341,7 +317,6 @@ class ApiService {
       };
     }
   }
-
   async createPost(postData) {
     try {
       console.log("API: Sending post data:", postData);
@@ -355,7 +330,6 @@ class ApiService {
       };
     }
   }
-
   async getPost(postId) {
     try {
       const response = await this.api.get(`/api/posts/${postId}`);
@@ -367,7 +341,6 @@ class ApiService {
       };
     }
   }
-
   async updatePost(postId, postData) {
     try {
       const response = await this.api.put(`/api/posts/${postId}`, postData);
@@ -379,7 +352,6 @@ class ApiService {
       };
     }
   }
-
   async deletePost(postId) {
     try {
       const response = await this.api.delete(`/api/posts/${postId}`);
@@ -391,9 +363,6 @@ class ApiService {
       };
     }
   }
-
-  // POST REACTIONS
-
   async addReaction(postId, reactionType) {
     try {
       const response = await this.api.post(`/api/posts/${postId}/reactions`, {
@@ -407,7 +376,6 @@ class ApiService {
       };
     }
   }
-
   async removeReaction(postId) {
     try {
       const response = await this.api.delete(`/api/posts/${postId}/reactions`);
@@ -419,9 +387,6 @@ class ApiService {
       };
     }
   }
-
-  // COMMENTS
-
   async getComments(postId) {
     try {
       const response = await this.api.get(`/api/posts/${postId}/comments`);
@@ -433,7 +398,6 @@ class ApiService {
       };
     }
   }
-
   async createComment(postId, commentData) {
     try {
       const response = await this.api.post(
@@ -448,7 +412,6 @@ class ApiService {
       };
     }
   }
-
   async updateComment(postId, commentId, commentData) {
     try {
       const response = await this.api.put(
@@ -463,7 +426,6 @@ class ApiService {
       };
     }
   }
-
   async deleteComment(postId, commentId) {
     try {
       const response = await this.api.delete(
@@ -477,9 +439,6 @@ class ApiService {
       };
     }
   }
-
-  // COMMENT REACTIONS
-
   async addCommentReaction(commentId, reactionType) {
     try {
       const response = await this.api.post(
@@ -496,7 +455,6 @@ class ApiService {
       };
     }
   }
-
   async removeCommentReaction(commentId) {
     try {
       const response = await this.api.delete(
@@ -510,7 +468,6 @@ class ApiService {
       };
     }
   }
-
   async reportComment(commentId, reason) {
     try {
       const response = await this.api.post(
@@ -527,9 +484,6 @@ class ApiService {
       };
     }
   }
-
-  // WEATHER
-
   async getCurrentWeather(user) {
     try {
       const locationParams = this.getUserLocationParams(user);
@@ -555,9 +509,6 @@ class ApiService {
       };
     }
   }
-
-  // ALERTS
-
   async getAlerts(user) {
     try {
       const locationParams = this.getUserLocationParams(user);
@@ -580,7 +531,6 @@ class ApiService {
       };
     }
   }
-
   async createAlert(alertData) {
     try {
       console.log("API: Creating alert with data:", alertData);
@@ -593,9 +543,6 @@ class ApiService {
       };
     }
   }
-
-  // NOTIFICATIONS
-
   async getNotifications() {
     try {
       const response = await this.api.get("/api/notifications");
@@ -607,7 +554,6 @@ class ApiService {
       };
     }
   }
-
   async markNotificationRead(notificationId) {
     try {
       const response = await this.api.put(
@@ -621,9 +567,6 @@ class ApiService {
       };
     }
   }
-
-  // FILE UPLOADS
-
   async uploadProfileImage(imageUri) {
     try {
       console.log("API: Starting profile image upload...");
@@ -684,7 +627,6 @@ class ApiService {
       };
     }
   }
-
   async uploadPostImage(postId, imageUri) {
     try {
       console.log("API: Starting post image upload for post:", postId);
@@ -747,7 +689,6 @@ class ApiService {
       };
     }
   }
-
   async uploadCommentImage(commentId, imageUri) {
     try {
       console.log("API: Starting comment image upload for comment:", commentId);
@@ -803,7 +744,6 @@ class ApiService {
       };
     }
   }
-
   async deleteImage(publicId) {
     try {
       console.log("API: Deleting image with publicId:", publicId);
@@ -826,7 +766,6 @@ class ApiService {
       };
     }
   }
-
   async getProfileImage() {
     try {
       const response = await this.api.get("/api/upload/profile");
@@ -847,7 +786,6 @@ class ApiService {
       };
     }
   }
-
   async getUploadStats() {
     try {
       const response = await this.api.get("/api/upload/stats");
@@ -868,7 +806,6 @@ class ApiService {
       };
     }
   }
-
   async testUploadSystem() {
     try {
       console.log("API: Testing upload system...");
@@ -893,9 +830,6 @@ class ApiService {
       };
     }
   }
-
-  // TESTING ENDPOINTS
-
   async testCommentEndpoints() {
     try {
       console.log("Testing comment API endpoints...");

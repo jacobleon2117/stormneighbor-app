@@ -1,3 +1,4 @@
+// File: backend/controllers/weatherController.js
 // Still need to removing mock data
 const axios = require("axios");
 const { pool } = require("../config/database");
@@ -5,7 +6,6 @@ const { validationResult } = require("express-validator");
 
 const NOAA_API_BASE =
   process.env.NOAA_API_BASE_URL || "https://api.weather.gov";
-
 const getCurrentWeather = async (req, res) => {
   try {
     const { lat, lng } = req.query;
@@ -106,7 +106,6 @@ const getCurrentWeather = async (req, res) => {
     res.status(500).json({ message: "Server error fetching weather data" });
   }
 };
-
 const getAlerts = async (req, res) => {
   try {
     const { latitude, longitude, radius } = req.query;
@@ -227,7 +226,6 @@ const getAlerts = async (req, res) => {
     res.status(500).json({ message: "Server error fetching alerts" });
   }
 };
-
 const createAlert = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -343,7 +341,6 @@ const createAlert = async (req, res) => {
     res.status(500).json({ message: "Server error creating alert" });
   }
 };
-
 const updateAlert = async (req, res) => {
   try {
     const { id } = req.params;
@@ -391,7 +388,6 @@ const updateAlert = async (req, res) => {
     res.status(500).json({ message: "Server error updating alert" });
   }
 };
-
 const deleteAlert = async (req, res) => {
   try {
     const { id } = req.params;

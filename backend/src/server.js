@@ -1,3 +1,4 @@
+// File: backend/src/server.js
 require("dotenv").config();
 
 const validateEnvironment = require("./config/validateEnv");

@@ -8,7 +8,6 @@ const pool = new Pool({
       ? { rejectUnauthorized: false }
       : false,
 });
-
 const getPosts = async (req, res) => {
   try {
     const {
@@ -125,7 +124,6 @@ const getPosts = async (req, res) => {
     res.status(500).json({ message: "Server error fetching posts" });
   }
 };
-
 const getPost = async (req, res) => {
   try {
     const { id } = req.params;
@@ -208,7 +206,6 @@ const getPost = async (req, res) => {
     res.status(500).json({ message: "Server error fetching post" });
   }
 };
-
 const createPost = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -281,7 +278,6 @@ const createPost = async (req, res) => {
     res.status(500).json({ message: "Server error creating post" });
   }
 };
-
 const updatePost = async (req, res) => {
   try {
     const { id } = req.params;
@@ -347,7 +343,6 @@ const updatePost = async (req, res) => {
     res.status(500).json({ message: "Server error updating post" });
   }
 };
-
 const deletePost = async (req, res) => {
   try {
     const { id } = req.params;
@@ -382,7 +377,6 @@ const deletePost = async (req, res) => {
     res.status(500).json({ message: "Server error deleting post" });
   }
 };
-
 const getComments = async (req, res) => {
   try {
     const { postId } = req.params;
@@ -449,7 +443,6 @@ const getComments = async (req, res) => {
     res.status(500).json({ message: "Server error fetching comments" });
   }
 };
-
 const createComment = async (req, res) => {
   try {
     const { postId } = req.params;
@@ -503,7 +496,6 @@ const createComment = async (req, res) => {
     res.status(500).json({ message: "Server error creating comment" });
   }
 };
-
 const updateComment = async (req, res) => {
   try {
     const { postId, commentId } = req.params;
@@ -557,7 +549,6 @@ const updateComment = async (req, res) => {
     res.status(500).json({ message: "Server error updating comment" });
   }
 };
-
 const deleteComment = async (req, res) => {
   try {
     const { postId, commentId } = req.params;
@@ -592,7 +583,6 @@ const deleteComment = async (req, res) => {
     res.status(500).json({ message: "Server error deleting comment" });
   }
 };
-
 const addReaction = async (req, res) => {
   try {
     const { postId } = req.params;
@@ -656,7 +646,6 @@ const addReaction = async (req, res) => {
     res.status(500).json({ message: "Server error adding reaction" });
   }
 };
-
 const removeReaction = async (req, res) => {
   try {
     const { postId } = req.params;
@@ -679,7 +668,6 @@ const removeReaction = async (req, res) => {
     res.status(500).json({ message: "Server error removing reaction" });
   }
 };
-
 const addCommentReaction = async (req, res) => {
   try {
     const { commentId } = req.params;
@@ -752,7 +740,6 @@ const addCommentReaction = async (req, res) => {
     res.status(500).json({ message: "Server error adding reaction" });
   }
 };
-
 const removeCommentReaction = async (req, res) => {
   try {
     const { commentId } = req.params;
@@ -775,7 +762,6 @@ const removeCommentReaction = async (req, res) => {
     res.status(500).json({ message: "Server error removing reaction" });
   }
 };
-
 const reportComment = async (req, res) => {
   try {
     const { commentId } = req.params;

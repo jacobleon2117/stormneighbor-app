@@ -8,7 +8,6 @@ const pool = new Pool({
     ? { rejectUnauthorized: false, ca: null }
     : false,
 });
-
 const uploadProfileImage = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -113,7 +112,6 @@ const uploadProfileImage = async (req, res) => {
     });
   }
 };
-
 const uploadPostImage = async (req, res) => {
   try {
     const { postId } = req.params;
@@ -207,7 +205,6 @@ const uploadPostImage = async (req, res) => {
     });
   }
 };
-
 const uploadCommentImage = async (req, res) => {
   try {
     const { commentId } = req.params;
@@ -295,7 +292,6 @@ const uploadCommentImage = async (req, res) => {
     });
   }
 };
-
 const deleteImageById = async (req, res) => {
   try {
     const { publicId } = req.params;
@@ -341,7 +337,6 @@ const deleteImageById = async (req, res) => {
     });
   }
 };
-
 const getUploadStats = async (req, res) => {
   try {
     const userId = req.user.userId;

@@ -1,8 +1,7 @@
-# Storm Neighbor Backend - Production Ready TODO List
+# TODO - List
 
-## Recently Fixed
+### COMPLETED
 
-### Image Upload System - COMPLETION
 - [✅] **File Upload System** - Complete Cloudinary-based image upload system with working test uploads
 - [✅] **Profile image upload endpoints** - Backend routes, controllers, and database integration working perfectly
 - [✅] **Frontend ImagePicker component** - Expo-compatible image picker with camera and photo library support
@@ -75,112 +74,108 @@
 - [✅] **User profile completion tracking** - Profile setup flow ensures required fields
 - [✅] **User verification system** - Email verification flow implemented
 
-## Critical - Must Fix Before UI/UX Focus
+### NOT COMPLETED
 
-### UI/UX Improvements - Essential Screens
 - [❌] **Enable alert creation from home feed** - Allow users to create community alerts
-
-### Authentication & Security
 - [❌] **Implement real email service** - Replace mock `sendEmail` function in authController with actual service (SendGrid, AWS SES, or Mailgun)
 - [❌] **Add JWT refresh tokens** - Currently only access tokens, need refresh token flow
 - [❌] **Add password complexity validation** - Ensure secure passwords in production
 - [❌] **Add account lockout** - After failed login attempts
 - [❌] **Implement CSRF protection** - Add CSRF tokens for state-changing operations
 - [❌] **Add input sanitization** - Prevent XSS attacks in user content
-
-### Database & Data Integrity
 - [❌] **Add database connection pooling configuration** - Optimize connection management
 - [❌] **Implement database migrations system** - Currently using raw SQL updates
 - [❌] **Add data validation at database level** - More constraints, triggers, etc.
 - [❌] **Add backup strategy** - Automated database backups
 - [❌] **Implement soft deletes** - Instead of hard deletes for posts/comments
-
-### Core Functionality (From TODO comments in code)
 - [❌] **Implement real-time notifications** - Currently just emits events (line 354 in posts controller)
 - [❌] **Add post expiration handling** - Cleanup expired posts automatically
-
-## High Priority - Core Features Missing
-
-### Enhanced Image Features (Building on completed foundation)
 - [❌] **Post image upload** - Extend existing image system to support post attachments
 - [❌] **Comment image upload** - Allow image attachments in comments
 - [❌] **Image resizing/optimization** - Compress images for performance (backend already has Cloudinary config)
 - [❌] **Multiple image support** - Allow multiple images per post
 - [❌] **Image deletion/replacement** - Allow users to remove or replace uploaded images
-
-### Search & Discovery
 - [❌] **Implement full-text search** - Search posts by content, tags, etc.
 - [❌] **Add post filtering system** - By type, priority, distance, etc.
 - [❌] **Add trending/popular posts** - Algorithm for post ranking
 - [❌] **Implement post recommendations** - Based on user activity/location
-
-### Missing Route Implementations
 - [❌] **Add admin routes** - Content moderation, user management
-
-### User Management
 - [❌] **User roles/permissions** - Admin, moderator, regular user
 - [❌] **User activity tracking** - Last seen, post count, etc.
-
-## Medium Priority - Performance & Scalability
-
-### Performance Optimization
 - [❌] **Add Redis caching** - Cache frequent queries (nearby posts, user profiles)
 - [❌] **Implement pagination** - Large result sets need proper pagination
 - [❌] **Implement data compression** - Gzip responses
-
-### API Improvements
 - [❌] **Add API versioning** - /api/v1/posts, etc.
 - [❌] **Implement GraphQL** - Alternative to REST for flexible queries
 - [❌] **Add API documentation** - Swagger/OpenAPI docs
 - [❌] **Add request/response logging** - Structured logging with request IDs
 - [❌] **Add API analytics** - Track usage, popular endpoints
-
-### Real-time Features
 - [❌] **Implement WebSocket authentication** - Secure real-time connections
 - [❌] **Add typing indicators** - For comments
 - [❌] **Add online user presence** - Show who's online
 - [❌] **Implement push notifications** - Mobile push notifications
-
-## Low Priority - Nice to Have
-
-### Advanced Features
 - [❌] **Add post drafts** - Save posts without publishing
 - [❌] **Implement post scheduling** - Schedule posts for later
 - [❌] **Add post analytics** - View counts, engagement metrics
 - [❌] **Implement post sharing** - Share posts outside app
 - [❌] **Add post bookmarking** - Save posts for later
-
-### Social Features
 - [❌] **User following system** - Follow other users
 - [❌] **Private messaging** - DMs between users
 - [❌] **User reputation system** - Karma/points based on helpful posts
 - [❌] **Community guidelines** - Terms of service, community rules
-
-### Integration & External Services
 - [❌] **Maps integration** - Better location services
 - [❌] **Social media login** - Google, Facebook, Apple Sign-In
 - [❌] **Analytics integration** - Google Analytics, Mixpanel
 - [❌] **Error tracking** - Sentry, Bugsnag for production error monitoring
-
-## Infrastructure & Deployment
-
-### Production Setup
 - [❌] **Environment configuration** - Separate dev/staging/prod configs
 - [❌] **Docker containerization** - Container deployment
 - [❌] **CI/CD pipeline** - Automated testing and deployment
 - [❌] **Load balancing** - Multiple server instances
 - [❌] **SSL/TLS configuration** - HTTPS enforcement
-
-### Monitoring & Logging
 - [❌] **Health check endpoints** - Detailed health monitoring
 - [❌] **Performance monitoring** - APM tools (New Relic, DataDog)
 - [❌] **Log aggregation** - Centralized logging (ELK stack)
 - [❌] **Alerting system** - Notifications for errors/downtime
 - [❌] **Database monitoring** - Query performance, connection pool health
-
-### Security Hardening
 - [❌] **Security headers** - Enhance existing helmet configuration
 - [❌] **Rate limiting per user** - Currently global rate limiting
 - [❌] **IP whitelisting** - For admin endpoints
 - [❌] **Audit logging** - Track admin actions
 - [❌] **Penetration testing** - Security assessment
+
+### BUGS - ERRORS - FIXES
+
+- [❌] **UPDATE: Alert Pop Ups** - Need to update alert pop ups in each screen (Remove or Update)
+- [❌] **UPDATE: Alert Pop Ups** - Need to remove "Coming Soon" placeholder text and implement that feature(s)
+- [❌] **FILE: LocationSetupScreen.js** - 'setLoading' is declared but its value is never read
+- [❌] **FILE: ProfileSetupScreenIndividual.js** - 'setLoading' is declared but its value is never read
+- [❌] **FILE: EmailVerificationScreen.js** - 'setLoading' is declared but its value is never read
+- [❌] **FILE: AlertsScreen.js** - 'alertCounts' is declared but its value is never read
+- [❌] **FILE: CreatePostScreen.js** - 'user' is declared but its value is never read
+- [❌] **FILE: HomeScreen.js** - 'onNavigateToProfile' is declared but its value is never read
+- [❌] **FILE: HomeScreen.js** - 'alertCounts' is declared but its value is never read
+- [❌] **FILE: HomeScreen.js** - 'spacing' is declared but its value is never read
+- [❌] **FILE: HomeScreen.js** - 'wasLiked' is declared but its value is never read
+- [❌] **FILE: PostCommentsScreen.js** - 'onLike' is declared but its value is never read
+- [❌] **FILE: PostCommentsScreen.js** - 'setSubmitting' is declared but its value is never read
+- [❌] **FILE: ProfileScreen.js** - 'Settings' is declared but its value is never read
+- [❌] **FILE: ProfileScreen.js** - 'uploadData' is declared but its value is never read
+- [❌] **FILE: ProfileScreen.js** - 'MapPin' is declared but its value is never read
+- [❌] **FILE: WeatherScreen.js** - 'ActivityIndicator' is declared but its value is never read
+- [❌] **FILE: WeatherScreen.js** - 'RefreshControl' is declared but its value is never read
+- [❌] **FILE: WeatherScreen.js** - 'UrlTile' is declared but its value is never read
+- [❌] **FILE: WeatherScreen.js** - 'Eye' is declared but its value is never read
+- [❌] **FILE: WeatherScreen.js** - const { width, height } = Dimensions.get("window"); - All destructured elements are unused
+- [❌] **FILE: WeatherScreen.js** - 'iconUrl' is declared but its value is never read
+- [❌] **FILE: PostCard.js** - 'globalStyles' is declared but its value is never read
+- [❌] **FILE: PostCard.js** - 'index' is declared but its value is never read
+- [❌] **FILE: ScreenLayout.js** - 'globalStyles' is declared but its value is never read
+- [❌] **FILE: ScreenLayout.js** - 'keyboardAvoiding' is declared but its value is never read
+- [❌] **FILE: StandardHeader.js** - 'globalStyles' is declared but its value is never read
+- [❌] **FILE: cloudinary.js** - 'file' is declared but its value is never read
+- [❌] **FILE: cloudinary.js** - 'result' is declared but its value is never read
+- [❌] **FILE: cloudinary.js** - 'req' is declared but its value is never read - CODE: "fileFilter: (req, file, cb) => {"
+- [❌] **FILE: server.js** - 'res' is declared but its value is never read
+- [❌] **FILE: server.js** - 'next' is declared but its value is never read - CODE: "app.use((err, req, res, next) => {"
+- [❌] **FILE: server.js** - 'req' is declared but its value is never read - CODE: "app.use((err, req, res, next) => {"
+- [❌] **FILE: server.js** - 'req' is declared but its value is never read. - CODE: "app.use((req, res) => {"

@@ -7,17 +7,14 @@ const { validationResult } = require("express-validator");
 const generateVerificationCode = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
-
 const generateToken = (userId) => {
   return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: "7d" });
 };
-
 const sendEmail = async (to, subject, text) => {
   // TODO: Implement actual email sending (using SendGrid, AWS SES, etc.)
   console.log(`Email to ${to}: ${subject} - ${text}`);
   return true;
 };
-
 const register = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -123,7 +120,6 @@ const register = async (req, res) => {
     res.status(500).json({ message: "Server error during registration" });
   }
 };
-
 const login = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -184,7 +180,6 @@ const login = async (req, res) => {
     res.status(500).json({ message: "Server error during login" });
   }
 };
-
 const forgotPassword = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -233,7 +228,6 @@ const forgotPassword = async (req, res) => {
     res.status(500).json({ message: "Server error processing request" });
   }
 };
-
 const verifyCode = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -285,7 +279,6 @@ const verifyCode = async (req, res) => {
     res.status(500).json({ message: "Server error verifying code" });
   }
 };
-
 const resetPassword = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -338,7 +331,6 @@ const resetPassword = async (req, res) => {
     res.status(500).json({ message: "Server error resetting password" });
   }
 };
-
 const resendVerificationCode = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -388,7 +380,6 @@ const resendVerificationCode = async (req, res) => {
       .json({ message: "Server error resending verification code" });
   }
 };
-
 const getProfile = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -660,7 +651,6 @@ const updateProfile = async (req, res) => {
     res.status(500).json({ message: "Server error updating profile" });
   }
 };
-
 const changePassword = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -712,7 +702,6 @@ const changePassword = async (req, res) => {
     res.status(500).json({ message: "Server error changing password" });
   }
 };
-
 const checkEmailVerification = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -739,7 +728,6 @@ const checkEmailVerification = async (req, res) => {
       .json({ message: "Server error checking verification status" });
   }
 };
-
 const resendVerificationEmail = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -786,7 +774,6 @@ const resendVerificationEmail = async (req, res) => {
       .json({ message: "Server error resending verification email" });
   }
 };
-
 const updateNotificationPreferences = async (req, res) => {
   try {
     const userId = req.user.userId;

@@ -36,6 +36,24 @@ const register = async (req, res) => {
       zipCode,
     } = req.body;
 
+    if (latitude !== undefined && longitude !== undefined) {
+      const lat = parseFloat(latitude);
+      const lng = parseFloat(longitude);
+
+      if (
+        isNaN(lat) ||
+        isNaN(lng) ||
+        lat < -90 ||
+        lat > 90 ||
+        lng < -180 ||
+        lng > 180
+      ) {
+        return res.status(400).json({
+          message: "Invalid coordinates provided",
+        });
+      }
+    }
+
     const client = await pool.connect();
 
     try {
@@ -56,8 +74,18 @@ const register = async (req, res) => {
       const verificationCode = generateVerificationCode();
       const codeExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-      let locationQuery = "";
-      let locationValue = "";
+      let insertQuery = `
+        INSERT INTO users (
+          email, password_hash, first_name, last_name, phone,
+          location_city, address_state, zip_code, address,
+          email_verification_code, email_verification_expires
+      `;
+
+      let valuesClause = `
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+      `;
+
       const values = [
         email,
         hashedPassword,
@@ -72,22 +100,15 @@ const register = async (req, res) => {
         codeExpiry,
       ];
 
-      if (latitude && longitude) {
-        locationQuery = ", location";
-        locationValue = `, ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)`;
+      if (latitude !== undefined && longitude !== undefined) {
+        insertQuery += `, location`;
+        valuesClause += `, ST_SetSRID(ST_MakePoint($12, $13), 4326)`;
+        values.push(parseFloat(longitude), parseFloat(latitude));
       }
 
-      const insertQuery = `
-        INSERT INTO users (
-          email, password_hash, first_name, last_name, phone,
-          location_city, address_state, zip_code, address,
-          email_verification_code, email_verification_expires
-          ${locationQuery}
-        ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
-          ${locationValue}
-        ) RETURNING id, email, first_name, last_name, created_at
-      `;
+      insertQuery +=
+        valuesClause +
+        `) RETURNING id, email, first_name, last_name, created_at`;
 
       const result = await client.query(insertQuery, values);
       const newUser = result.rows[0];
@@ -446,7 +467,6 @@ const getProfile = async (req, res) => {
     res.status(500).json({ message: "Server error fetching profile" });
   }
 };
-// Need to fix profile setup, location isn't saving to the profile that i'm creating, so therefor im getting an error - "Server error updating profile"
 const updateProfile = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -558,9 +578,23 @@ const updateProfile = async (req, res) => {
         !isNaN(latitude) &&
         !isNaN(longitude)
       ) {
-        updates.push(
-          `location = ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)`
-        );
+        const lat = parseFloat(latitude);
+        const lng = parseFloat(longitude);
+
+        if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+          paramCount++;
+          updates.push(
+            `location = ST_SetSRID(ST_MakePoint($${paramCount}, $${
+              paramCount + 1
+            }), 4326)`
+          );
+          values.push(lng, lat);
+          paramCount++; // increment for the second parameter
+        } else {
+          return res
+            .status(400)
+            .json({ message: "Invalid coordinates provided" });
+        }
       }
 
       if (

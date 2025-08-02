@@ -2,6 +2,8 @@
 const express = require("express");
 const { query } = require("express-validator");
 const weatherController = require("../controllers/weatherController");
+const { handleValidationErrors } = require("../middleware/validation");
+const { cacheConfigs } = require("../middleware/cache");
 
 const router = express.Router();
 
@@ -14,7 +16,9 @@ router.get(
     query("lng")
       .isFloat({ min: -180, max: 180 })
       .withMessage("Valid longitude is required"),
+    handleValidationErrors,
   ],
+  cacheConfigs.weather,
   weatherController.getCurrentWeather
 );
 

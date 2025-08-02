@@ -5,6 +5,9 @@ const requiredEnvVars = [
   "NOAA_API_BASE_URL",
   "RESEND_API_KEY",
   "FROM_EMAIL",
+  "CLOUDINARY_CLOUD_NAME",
+  "CLOUDINARY_API_KEY",
+  "CLOUDINARY_API_SECRET",
 ];
 
 const optionalEnvVars = [
@@ -13,9 +16,8 @@ const optionalEnvVars = [
   "RATE_LIMIT_WINDOW_MS",
   "RATE_LIMIT_MAX_REQUESTS",
   "FROM_NAME",
-  "CLOUDINARY_CLOUD_NAME",
-  "CLOUDINARY_API_KEY",
-  "CLOUDINARY_API_SECRET",
+  "JWT_EXPIRES_IN",
+  "SOCKET_CORS_ORIGIN",
 ];
 
 function validateEnvironment() {
@@ -54,18 +56,27 @@ function validateEnvironment() {
     );
   }
 
-  const cloudinaryVars = [
-    "CLOUDINARY_CLOUD_NAME",
-    "CLOUDINARY_API_KEY",
-    "CLOUDINARY_API_SECRET",
-  ];
-  const cloudinaryPresent = cloudinaryVars.filter(
-    (envVar) => process.env[envVar]
-  );
-
-  if (cloudinaryPresent.length > 0 && cloudinaryPresent.length < 3) {
+  if (
+    process.env.CLOUDINARY_API_KEY &&
+    !/^\d+$/.test(process.env.CLOUDINARY_API_KEY)
+  ) {
     warnings.push(
-      `Incomplete Cloudinary configuration. Found: ${cloudinaryPresent.join(", ")}. Need all three: ${cloudinaryVars.join(", ")}`
+      "CLOUDINARY_API_KEY should be numeric - please verify this is correct"
+    );
+  }
+
+  if (
+    process.env.CLOUDINARY_CLOUD_NAME &&
+    process.env.CLOUDINARY_CLOUD_NAME.length < 3
+  ) {
+    warnings.push(
+      "CLOUDINARY_CLOUD_NAME seems too short - please verify this is correct"
+    );
+  }
+
+  if (process.env.JWT_SECRET && process.env.JWT_SECRET.length < 32) {
+    warnings.push(
+      "JWT_SECRET is quite short - consider using a longer secret for better security"
     );
   }
 
@@ -75,11 +86,17 @@ function validateEnvironment() {
     console.error("\nAdd these to your .env file:");
     missing.forEach((envVar) => {
       if (envVar === "RESEND_API_KEY") {
-        console.error(`   ${envVar}=re_your_resend_api_key_here`);
+        console.error(`   ${envVar}=re_resend_api_key_here`);
       } else if (envVar === "FROM_EMAIL") {
         console.error(`   ${envVar}=onboarding@resend.dev`);
+      } else if (envVar === "CLOUDINARY_CLOUD_NAME") {
+        console.error(`   ${envVar}=cloud_name_here`);
+      } else if (envVar === "CLOUDINARY_API_KEY") {
+        console.error(`   ${envVar}=numeric_api_key_here`);
+      } else if (envVar === "CLOUDINARY_API_SECRET") {
+        console.error(`   ${envVar}=api_secret_here`);
       } else {
-        console.error(`   ${envVar}=your_value_here`);
+        console.error(`   ${envVar}=value_here`);
       }
     });
     process.exit(1);
@@ -101,11 +118,6 @@ function validateEnvironment() {
         "   CLIENT_URL not set, using default: http://localhost:19006"
       );
     }
-    if (cloudinaryPresent.length === 0) {
-      console.log(
-        "   Cloudinary not configured - image uploads will be disabled"
-      );
-    }
   }
 
   console.log("\nConfigured services:");
@@ -117,8 +129,26 @@ function validateEnvironment() {
     `   Weather (NOAA): ${process.env.NOAA_API_BASE_URL ? "SUCCESS" : "ERROR"}`
   );
   console.log(
-    `   Image Storage (Cloudinary): ${cloudinaryPresent.length === 3 ? "SUCCESS" : "ERROR"}`
+    `   Image Storage (Cloudinary): ${
+      process.env.CLOUDINARY_CLOUD_NAME &&
+      process.env.CLOUDINARY_API_KEY &&
+      process.env.CLOUDINARY_API_SECRET
+        ? "SUCCESS"
+        : "ERROR"
+    }`
   );
+  console.log(
+    `   JWT Security: ${process.env.JWT_SECRET ? "SUCCESS" : "ERROR"}`
+  );
+
+  if (process.env.NODE_ENV === "development") {
+    console.log("\nService details:");
+    console.log(
+      `   Cloudinary Cloud: ${process.env.CLOUDINARY_CLOUD_NAME || "not set"}`
+    );
+    console.log(`   Email From: ${process.env.FROM_EMAIL || "not set"}`);
+    console.log(`   Client URL: ${process.env.CLIENT_URL || "default"}`);
+  }
 }
 
 module.exports = validateEnvironment;

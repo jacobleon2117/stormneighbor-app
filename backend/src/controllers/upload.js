@@ -1,13 +1,7 @@
 // File: backend/src/controllers/upload.js
-const { Pool } = require("pg");
+const { pool } = require("../config/database");
 const { deleteImage, getPublicIdFromUrl } = require("../config/cloudinary");
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL?.includes("supabase")
-    ? { rejectUnauthorized: false, ca: null }
-    : false,
-});
 const uploadProfileImage = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -112,6 +106,7 @@ const uploadProfileImage = async (req, res) => {
     });
   }
 };
+
 const uploadPostImage = async (req, res) => {
   try {
     const { postId } = req.params;
@@ -205,6 +200,7 @@ const uploadPostImage = async (req, res) => {
     });
   }
 };
+
 const uploadCommentImage = async (req, res) => {
   try {
     const { commentId } = req.params;
@@ -292,6 +288,7 @@ const uploadCommentImage = async (req, res) => {
     });
   }
 };
+
 const deleteImageById = async (req, res) => {
   try {
     const { publicId } = req.params;
@@ -337,6 +334,7 @@ const deleteImageById = async (req, res) => {
     });
   }
 };
+
 const getUploadStats = async (req, res) => {
   try {
     const userId = req.user.userId;

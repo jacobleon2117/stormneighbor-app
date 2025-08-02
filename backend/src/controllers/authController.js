@@ -3,18 +3,19 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const { pool } = require("../config/database");
 const { validationResult } = require("express-validator");
+const {
+  sendVerificationEmail,
+  sendPasswordResetEmail,
+} = require("../services/emailService");
 
 const generateVerificationCode = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
+
 const generateToken = (userId) => {
   return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: "7d" });
 };
-const sendEmail = async (to, subject, text) => {
-  // TODO: Implement actual email sending (using SendGrid, AWS SES, etc.)
-  console.log(`Email to ${to}: ${subject} - ${text}`);
-  return true;
-};
+
 const register = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -113,17 +114,18 @@ const register = async (req, res) => {
       const result = await client.query(insertQuery, values);
       const newUser = result.rows[0];
 
-      await sendEmail(
-        email,
-        "Verify your email address",
-        `Your verification code is: ${verificationCode}`
-      );
+      const emailResult = await sendVerificationEmail(email, verificationCode);
+
+      if (!emailResult.success) {
+        console.error("Failed to send verification email:", emailResult.error);
+      }
 
       const token = generateToken(newUser.id);
 
       res.status(201).json({
-        message:
-          "User registered successfully. Please check your email for verification code.",
+        message: emailResult.success
+          ? "User registered successfully. Please check your email for verification code."
+          : "User registered successfully. There was an issue sending the verification email, but you can request a new code.",
         token,
         user: {
           id: newUser.id,
@@ -132,6 +134,7 @@ const register = async (req, res) => {
           lastName: newUser.last_name,
           emailVerified: false,
         },
+        emailSent: emailResult.success,
       });
     } finally {
       client.release();
@@ -141,6 +144,7 @@ const register = async (req, res) => {
     res.status(500).json({ message: "Server error during registration" });
   }
 };
+
 const login = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -201,6 +205,7 @@ const login = async (req, res) => {
     res.status(500).json({ message: "Server error during login" });
   }
 };
+
 const forgotPassword = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -216,11 +221,11 @@ const forgotPassword = async (req, res) => {
         email,
       ]);
 
+      const standardMessage =
+        "If an account with that email exists, a reset code has been sent.";
+
       if (user.rows.length === 0) {
-        return res.json({
-          message:
-            "If an account with that email exists, a reset code has been sent.",
-        });
+        return res.json({ message: standardMessage });
       }
 
       const resetCode = generateVerificationCode();
@@ -231,16 +236,16 @@ const forgotPassword = async (req, res) => {
         [resetCode, codeExpiry, email]
       );
 
-      await sendEmail(
-        email,
-        "Password Reset Code",
-        `Your password reset code is: ${resetCode}. This code expires in 1 hour.`
-      );
+      const emailResult = await sendPasswordResetEmail(email, resetCode);
 
-      res.json({
-        message:
-          "If an account with that email exists, a reset code has been sent.",
-      });
+      if (!emailResult.success) {
+        console.error(
+          "Failed to send password reset email:",
+          emailResult.error
+        );
+      }
+
+      res.json({ message: standardMessage });
     } finally {
       client.release();
     }
@@ -249,6 +254,7 @@ const forgotPassword = async (req, res) => {
     res.status(500).json({ message: "Server error processing request" });
   }
 };
+
 const verifyCode = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -300,6 +306,7 @@ const verifyCode = async (req, res) => {
     res.status(500).json({ message: "Server error verifying code" });
   }
 };
+
 const resetPassword = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -352,6 +359,7 @@ const resetPassword = async (req, res) => {
     res.status(500).json({ message: "Server error resetting password" });
   }
 };
+
 const resendVerificationCode = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -384,11 +392,17 @@ const resendVerificationCode = async (req, res) => {
         [verificationCode, codeExpiry, email]
       );
 
-      await sendEmail(
-        email,
-        "Verify your email address",
-        `Your new verification code is: ${verificationCode}`
-      );
+      const emailResult = await sendVerificationEmail(email, verificationCode);
+
+      if (!emailResult.success) {
+        console.error(
+          "Failed to resend verification email:",
+          emailResult.error
+        );
+        return res.status(500).json({
+          message: "Failed to send verification email. Please try again later.",
+        });
+      }
 
       res.json({ message: "Verification code sent successfully" });
     } finally {
@@ -401,6 +415,7 @@ const resendVerificationCode = async (req, res) => {
       .json({ message: "Server error resending verification code" });
   }
 };
+
 const getProfile = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -467,6 +482,7 @@ const getProfile = async (req, res) => {
     res.status(500).json({ message: "Server error fetching profile" });
   }
 };
+
 const updateProfile = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -589,7 +605,7 @@ const updateProfile = async (req, res) => {
             }), 4326)`
           );
           values.push(lng, lat);
-          paramCount++; // increment for the second parameter
+          paramCount++;
         } else {
           return res
             .status(400)
@@ -685,6 +701,7 @@ const updateProfile = async (req, res) => {
     res.status(500).json({ message: "Server error updating profile" });
   }
 };
+
 const changePassword = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -736,6 +753,7 @@ const changePassword = async (req, res) => {
     res.status(500).json({ message: "Server error changing password" });
   }
 };
+
 const checkEmailVerification = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -762,6 +780,7 @@ const checkEmailVerification = async (req, res) => {
       .json({ message: "Server error checking verification status" });
   }
 };
+
 const resendVerificationEmail = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -791,11 +810,20 @@ const resendVerificationEmail = async (req, res) => {
         [verificationCode, codeExpiry, userId]
       );
 
-      await sendEmail(
+      const emailResult = await sendVerificationEmail(
         user.email,
-        "Verify your email address",
-        `Your verification code is: ${verificationCode}`
+        verificationCode
       );
+
+      if (!emailResult.success) {
+        console.error(
+          "Failed to resend verification email:",
+          emailResult.error
+        );
+        return res.status(500).json({
+          message: "Failed to send verification email. Please try again later.",
+        });
+      }
 
       res.json({ message: "Verification email sent successfully" });
     } finally {
@@ -808,6 +836,7 @@ const resendVerificationEmail = async (req, res) => {
       .json({ message: "Server error resending verification email" });
   }
 };
+
 const updateNotificationPreferences = async (req, res) => {
   try {
     const userId = req.user.userId;

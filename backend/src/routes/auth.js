@@ -3,6 +3,7 @@ const express = require("express");
 const { body } = require("express-validator");
 const authController = require("../controllers/authController");
 const auth = require("../middleware/auth");
+const { testEmailService, sendEmail } = require("../services/emailService");
 
 const router = express.Router();
 
@@ -127,5 +128,76 @@ router.put(
   auth,
   authController.updateNotificationPreferences
 );
+
+router.get("/test-email", async (req, res) => {
+  try {
+    const testResult = await testEmailService();
+
+    res.json({
+      success: true,
+      message: "Email service test completed",
+      data: {
+        configValid: testResult.success,
+        error: testResult.error || null,
+        environment: {
+          resendConfigured: !!process.env.RESEND_API_KEY,
+          fromEmailConfigured: !!process.env.FROM_EMAIL,
+          fromNameConfigured: !!process.env.FROM_NAME,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Email test error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Email service test failed",
+      error: error.message,
+    });
+  }
+});
+
+router.post("/send-test-email", async (req, res) => {
+  if (process.env.NODE_ENV !== "development") {
+    return res.status(403).json({
+      success: false,
+      message: "Test email endpoint only available in development",
+    });
+  }
+
+  try {
+    const { to } = req.body;
+
+    if (!to) {
+      return res.status(400).json({
+        success: false,
+        message: "Recipient email address required",
+      });
+    }
+
+    const result = await sendEmail(
+      to,
+      "StormNeighbor Email Service Test",
+      "This is a test email from your StormNeighbor backend. If you received this, your email service is working correctly!"
+    );
+
+    res.json({
+      success: result.success,
+      message: result.success
+        ? "Test email sent successfully"
+        : "Failed to send test email",
+      data: {
+        messageId: result.messageId || null,
+        error: result.error || null,
+      },
+    });
+  } catch (error) {
+    console.error("Send test email error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error sending test email",
+      error: error.message,
+    });
+  }
+});
 
 module.exports = router;

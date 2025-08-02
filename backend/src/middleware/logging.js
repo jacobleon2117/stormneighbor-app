@@ -195,28 +195,53 @@ const analyticsTracker = (() => {
   };
 })();
 
-const healthCheck = (req, res) => {
+const healthCheck = async (req, res) => {
   const memory = process.memoryUsage();
   const uptime = process.uptime();
 
-  const health = {
-    status: "healthy",
-    timestamp: new Date().toISOString(),
-    uptime: `${Math.floor(uptime / 60)} minutes`,
-    memory: {
-      heapUsed: `${(memory.heapUsed / 1024 / 1024).toFixed(2)}MB`,
-      heapTotal: `${(memory.heapTotal / 1024 / 1024).toFixed(2)}MB`,
-      rss: `${(memory.rss / 1024 / 1024).toFixed(2)}MB`,
-      external: `${(memory.external / 1024 / 1024).toFixed(2)}MB`,
-    },
-    environment: process.env.NODE_ENV,
-    nodeVersion: process.version,
-    platform: process.platform,
-    architecture: process.arch,
-    analytics: analyticsTracker.getStats(),
-  };
+  const { checkDatabaseHealth, getDatabaseStats } = require("./database");
 
-  res.json(health);
+  try {
+    const dbHealth = await checkDatabaseHealth();
+    const dbStats = getDatabaseStats();
+
+    const health = {
+      status: dbHealth.status === "healthy" ? "healthy" : "degraded",
+      timestamp: new Date().toISOString(),
+      uptime: `${Math.floor(uptime / 60)} minutes`,
+      memory: {
+        heapUsed: `${(memory.heapUsed / 1024 / 1024).toFixed(2)}MB`,
+        heapTotal: `${(memory.heapTotal / 1024 / 1024).toFixed(2)}MB`,
+        rss: `${(memory.rss / 1024 / 1024).toFixed(2)}MB`,
+        external: `${(memory.external / 1024 / 1024).toFixed(2)}MB`,
+      },
+      environment: process.env.NODE_ENV,
+      nodeVersion: process.version,
+      platform: process.platform,
+      architecture: process.arch,
+      database: dbHealth,
+      analytics: analyticsTracker.getStats(),
+      performance: {
+        database: {
+          totalQueries: dbStats.totalQueries,
+          averageQueryTime: dbStats.averageQueryTime,
+          errorRate: dbStats.errorRate,
+          slowQueryRate: dbStats.slowQueryRate,
+          queriesPerMinute: dbStats.queriesPerMinute,
+        },
+      },
+    };
+
+    res.json(health);
+  } catch (error) {
+    console.error("Health check error:", error);
+    res.status(503).json({
+      status: "unhealthy",
+      timestamp: new Date().toISOString(),
+      error: "Health check failed",
+      message: error.message,
+    });
+  }
 };
 
 module.exports = {

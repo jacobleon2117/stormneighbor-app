@@ -177,10 +177,10 @@ const getPublicIdFromUrl = (url) => {
         const folder = url.includes("/profiles/")
           ? "stormneighbor/profiles/"
           : url.includes("/posts/")
-          ? "stormneighbor/posts/"
-          : url.includes("/comments/")
-          ? "stormneighbor/comments/"
-          : "";
+            ? "stormneighbor/posts/"
+            : url.includes("/comments/")
+              ? "stormneighbor/comments/"
+              : "";
         return folder + matches[1];
       }
       return matches[1];

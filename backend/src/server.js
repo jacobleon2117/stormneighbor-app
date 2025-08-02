@@ -14,6 +14,13 @@ const { createServer } = require("http");
 const { Server } = require("socket.io");
 
 const { sanitizeInput, sanitizeSensitive } = require("./middleware/sanitize");
+const {
+  requestLogger,
+  errorLogger,
+  performanceMonitor,
+  analyticsTracker,
+  healthCheck,
+} = require("./middleware/logging");
 
 const app = express();
 const server = createServer(app);
@@ -118,6 +125,10 @@ app.use(
 
 app.use(compression());
 
+app.use(requestLogger);
+app.use(performanceMonitor);
+app.use(analyticsTracker.middleware);
+
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 } else {
@@ -146,17 +157,18 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get("/health", (req, res) => {
+app.get("/health", healthCheck);
+
+app.get("/analytics", (req, res) => {
+  if (process.env.NODE_ENV !== "development") {
+    return res
+      .status(403)
+      .json({ message: "Analytics endpoint only available in development" });
+  }
+
   res.json({
-    status: "OK",
-    timestamp: new Date().toISOString(),
-    version: "1.0.0",
-    environment: process.env.NODE_ENV,
-    services: {
-      database: "connected",
-      email: "configured",
-      cloudinary: "configured",
-    },
+    message: "API Analytics",
+    data: analyticsTracker.getStats(),
   });
 });
 
@@ -264,6 +276,7 @@ io.on("connection", (socket) => {
   });
 });
 
+app.use(errorLogger);
 app.use((err, req, res, next) => {
   console.error("Global error handler:", err);
 
@@ -281,6 +294,7 @@ app.use((err, req, res, next) => {
     res.status(500).json({
       message: err.message,
       stack: err.stack,
+      requestId: req.requestId,
     });
   }
 });
@@ -307,7 +321,9 @@ server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV}`);
   console.log(`Health check: http://localhost:${PORT}/health`);
+  console.log(`Analytics: http://localhost:${PORT}/analytics`);
   console.log(`Security: Enhanced headers and input sanitization enabled`);
+  console.log(`Logging: Request tracking and performance monitoring enabled`);
 });
 
 const createDOMPurify = require("isomorphic-dompurify");

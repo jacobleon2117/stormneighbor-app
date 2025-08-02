@@ -1,3 +1,4 @@
+// File: backend/src/config/validateEnv.js
 const requiredEnvVars = [
   "DATABASE_URL",
   "JWT_SECRET",

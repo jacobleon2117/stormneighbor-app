@@ -88,6 +88,7 @@ class ApiService {
     console.log("API Base URL updated to:", newBaseURL);
   }
   getUserLocationParams(user) {
+    console.log("User location:", user?.location);
     const coordinates = user?.location?.coordinates;
     const radiusMiles = user?.location?.radiusMiles || 25;
 
@@ -317,7 +318,12 @@ class ApiService {
       };
     }
   }
-  async createPost(postData) {
+  async createPost(postData, user) {
+    if (user?.location?.coordinates) {
+      postData.latitude = user.location.coordinates.latitude;
+      postData.longitude = user.location.coordinates.longitude;
+    }
+
     try {
       console.log("API: Sending post data:", postData);
       const response = await this.api.post("/api/posts", postData);
@@ -330,6 +336,7 @@ class ApiService {
       };
     }
   }
+
   async getPost(postId) {
     try {
       const response = await this.api.get(`/api/posts/${postId}`);

@@ -3,6 +3,7 @@ const express = require("express");
 const router = express.Router();
 const { body, param } = require("express-validator");
 const auth = require("../middleware/auth");
+const { handleValidationErrors } = require("../middleware/validation");
 
 const {
   getPosts,
@@ -99,13 +100,49 @@ const reportValidation = [
 ];
 
 router.get("/", auth, getPosts);
-router.get("/:id", auth, getPost);
-router.post("/", auth, createPostValidation, createPost);
-router.put("/:id", auth, updatePostValidation, updatePost);
-router.delete("/:id", auth, deletePost);
 
-router.get("/:postId/comments", auth, getComments);
-router.post("/:postId/comments", auth, createCommentValidation, createComment);
+router.get(
+  "/:id",
+  auth,
+  [param("id").isInt().withMessage("Valid post ID is required")],
+  handleValidationErrors,
+  getPost
+);
+
+router.post("/", auth, createPostValidation, handleValidationErrors, createPost);
+
+router.put(
+  "/:id",
+  auth,
+  [param("id").isInt().withMessage("Valid post ID is required")],
+  updatePostValidation,
+  handleValidationErrors,
+  updatePost
+);
+
+router.delete(
+  "/:id",
+  auth,
+  [param("id").isInt().withMessage("Valid post ID is required")],
+  handleValidationErrors,
+  deletePost
+);
+
+router.get(
+  "/:postId/comments",
+  auth,
+  [param("postId").isInt().withMessage("Valid post ID is required")],
+  handleValidationErrors,
+  getComments
+);
+
+router.post(
+  "/:postId/comments",
+  auth,
+  [param("postId").isInt().withMessage("Valid post ID is required"), ...createCommentValidation],
+  handleValidationErrors,
+  createComment
+);
 
 router.put(
   "/:postId/comments/:commentId",
@@ -115,6 +152,7 @@ router.put(
     param("commentId").isInt().withMessage("Valid comment ID is required"),
     ...updateCommentValidation,
   ],
+  handleValidationErrors,
   updateComment
 );
 
@@ -125,16 +163,31 @@ router.delete(
     param("postId").isInt().withMessage("Valid post ID is required"),
     param("commentId").isInt().withMessage("Valid comment ID is required"),
   ],
+  handleValidationErrors,
   deleteComment
 );
 
-router.post("/:postId/reactions", auth, reactionValidation, addReaction);
-router.delete("/:postId/reactions", auth, removeReaction);
+router.post(
+  "/:postId/reactions",
+  auth,
+  [param("postId").isInt().withMessage("Valid post ID is required"), ...reactionValidation],
+  handleValidationErrors,
+  addReaction
+);
+
+router.delete(
+  "/:postId/reactions",
+  auth,
+  [param("postId").isInt().withMessage("Valid post ID is required")],
+  handleValidationErrors,
+  removeReaction
+);
 
 router.post(
   "/comments/:commentId/reactions",
   auth,
   [param("commentId").isInt().withMessage("Valid comment ID is required"), ...reactionValidation],
+  handleValidationErrors,
   addCommentReaction
 );
 
@@ -142,6 +195,7 @@ router.delete(
   "/comments/:commentId/reactions",
   auth,
   [param("commentId").isInt().withMessage("Valid comment ID is required")],
+  handleValidationErrors,
   removeCommentReaction
 );
 
@@ -149,6 +203,7 @@ router.post(
   "/comments/:commentId/report",
   auth,
   [param("commentId").isInt().withMessage("Valid comment ID is required"), ...reportValidation],
+  handleValidationErrors,
   reportComment
 );
 

@@ -12,7 +12,14 @@ class InMemoryCache {
       startTime: Date.now(),
     };
 
-    setInterval(() => this.cleanup(), 5 * 60 * 1000);
+    this.cleanupInterval = setInterval(() => this.cleanup(), 5 * 60 * 1000);
+  }
+
+  clearCleanupInterval() {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+    }
   }
 
   generateKey(req) {

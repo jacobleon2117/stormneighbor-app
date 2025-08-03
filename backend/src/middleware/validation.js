@@ -133,7 +133,8 @@ const validateFileUpload = (options = {}) => {
         });
       }
 
-      if (!allowedTypes.includes(req.file.mimetype)) {
+      const allowedTypesSet = new Set(allowedTypes);
+      if (!allowedTypesSet.has(req.file.mimetype)) {
         return res.status(400).json({
           success: false,
           message: "Invalid file type",

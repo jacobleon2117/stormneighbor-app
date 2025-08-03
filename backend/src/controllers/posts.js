@@ -217,51 +217,58 @@ const createPost = async (req, res) => {
     const client = await pool.connect();
 
     try {
+      let finalLat = latitude;
+      let finalLng = longitude;
+
+      if (!finalLat || !finalLng) {
+        const userQuery = await client.query(
+          `SELECT 
+              (location->'coordinates'->>'latitude')::float as latitude,
+              (location->'coordinates'->>'longitude')::float as longitude
+           FROM users WHERE id = $1`,
+          [userId]
+        );
+
+        if (userQuery.rows[0]) {
+          finalLat = userQuery.rows[0].latitude;
+          finalLng = userQuery.rows[0].longitude;
+        }
+      }
+
+      if (!finalLat || !finalLng) {
+        return res.status(400).json({ message: "Latitude and longitude are required" });
+      }
+
       const query = `
         INSERT INTO posts (
           user_id, title, content, post_type, priority, is_emergency,
-          latitude, longitude, images, tags
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+          location, images, tags
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6,
+          ST_SetSRID(ST_MakePoint($8, $7), 4326)::geography,
+          $9, $10
+        )
         RETURNING *
       `;
 
-      const imagesArray = Array.isArray(images) ? images : [];
-      const tagsArray = Array.isArray(tags) ? tags : [];
-
-      const values = [
+      const result = await client.query(query, [
         userId,
         title,
         content,
         postType,
         priority,
         isEmergency,
-        latitude,
-        longitude,
-        imagesArray.length > 0 ? imagesArray : null,
-        tagsArray.length > 0 ? tagsArray : null,
-      ];
+        finalLat,
+        finalLng,
+        Array.isArray(images) && images.length > 0 ? images : null,
+        Array.isArray(tags) && tags.length > 0 ? tags : null,
+      ]);
 
-      const result = await client.query(query, values);
       const newPost = result.rows[0];
 
       res.status(201).json({
         message: "Post created successfully",
-        post: {
-          id: newPost.id,
-          title: newPost.title,
-          content: newPost.content,
-          postType: newPost.post_type,
-          priority: newPost.priority,
-          isEmergency: newPost.is_emergency,
-          latitude: newPost.latitude,
-          longitude: newPost.longitude,
-          images: newPost.images || [],
-          tags: newPost.tags || [],
-          createdAt: newPost.created_at,
-          commentCount: 0,
-          likeCount: 0,
-          userHasLiked: false,
-        },
+        post: { ...newPost, images: newPost.images || [], tags: newPost.tags || [] },
       });
     } finally {
       client.release();

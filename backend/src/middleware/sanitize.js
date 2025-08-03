@@ -1,23 +1,23 @@
 // File: backend/src/middleware/sanitize.js
+/* eslint-disable no-control-regex */
 const createDOMPurify = require("isomorphic-dompurify");
+const { JSDOM } = require("jsdom");
 const path = require("path");
 
-const DOMPurify = createDOMPurify();
+const window = new JSDOM("").window;
+const DOMPurify = createDOMPurify(window);
 
 const sanitizeInput = (req, res, next) => {
   try {
     if (req.body && typeof req.body === "object") {
       req.body = sanitizeObject(req.body);
     }
-
     if (req.query && typeof req.query === "object") {
       req.query = sanitizeObject(req.query);
     }
-
     if (req.params && typeof req.params === "object") {
       req.params = sanitizeObject(req.params);
     }
-
     next();
   } catch (error) {
     console.error("Input sanitization error:", error);
@@ -26,14 +26,8 @@ const sanitizeInput = (req, res, next) => {
 };
 
 const sanitizeObject = (obj) => {
-  if (obj === null || obj === undefined) {
-    return obj;
-  }
-
-  if (Array.isArray(obj)) {
-    return obj.map((item) => sanitizeObject(item));
-  }
-
+  if (obj === null || obj === undefined) return obj;
+  if (Array.isArray(obj)) return obj.map((item) => sanitizeObject(item));
   if (typeof obj === "object") {
     const sanitized = {};
     for (const [key, value] of Object.entries(obj)) {
@@ -41,35 +35,27 @@ const sanitizeObject = (obj) => {
     }
     return sanitized;
   }
-
   if (typeof obj === "string") {
-    return (
-      DOMPurify.sanitize(obj, {
-        ALLOWED_TAGS: [],
-        ALLOWED_ATTR: [],
-      })
-        // eslint-disable-next-line no-control-regex
-        .replace(/[\x00-\x1F\x7F]/g, "")
-        .trim()
-    );
+    return DOMPurify.sanitize(obj, {
+      ALLOWED_TAGS: [],
+      ALLOWED_ATTR: [],
+    })
+      .replace(/[\x00-\x1F\x7F]/g, "")
+      .trim();
   }
-
   return obj;
 };
 
 const sanitizeSensitive = (req, res, next) => {
   try {
     const sensitiveFields = ["password", "currentPassword", "newPassword"];
-
     if (req.body && typeof req.body === "object") {
       sensitiveFields.forEach((field) => {
         if (req.body[field] && typeof req.body[field] === "string") {
-          // eslint-disable-next-line no-control-regex
           req.body[field] = req.body[field].replace(/[\x00-\x1F\x7F<>"'&]/g, "").trim();
         }
       });
     }
-
     next();
   } catch (error) {
     console.error("Sensitive field sanitization error:", error);
@@ -98,7 +84,6 @@ const sanitizeFileMetadata = (req, res, next) => {
     if (req.file?.originalname) {
       req.file.originalname = cleanFilename(req.file.originalname);
     }
-
     if (Array.isArray(req.files)) {
       req.files.forEach((file) => {
         if (file.originalname) {

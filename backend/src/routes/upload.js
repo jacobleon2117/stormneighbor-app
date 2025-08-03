@@ -17,34 +17,43 @@ const {
 } = require("../controllers/upload");
 
 router.get("/test", async (req, res) => {
-  const cloudinaryWorking = await testCloudinaryConnection();
+  try {
+    const cloudinaryWorking = await testCloudinaryConnection();
 
-  res.json({
-    success: true,
-    message: "Upload system is working!",
-    data: {
-      cloudinary: {
-        connected: cloudinaryWorking,
-        cloudName: process.env.CLOUDINARY_CLOUD_NAME ? "configured" : "missing",
-        apiKey: process.env.CLOUDINARY_API_KEY ? "configured" : "missing",
-        apiSecret: process.env.CLOUDINARY_API_SECRET ? "configured" : "missing",
+    res.json({
+      success: true,
+      message: "Upload system is working!",
+      data: {
+        cloudinary: {
+          connected: cloudinaryWorking,
+          cloudName: process.env.CLOUDINARY_CLOUD_NAME ? "configured" : "missing",
+          apiKey: process.env.CLOUDINARY_API_KEY ? "configured" : "missing",
+          apiSecret: process.env.CLOUDINARY_API_SECRET ? "configured" : "missing",
+        },
+        endpoints: {
+          profile: "POST /api/upload/profile",
+          post: "POST /api/upload/post/:postId",
+          comment: "POST /api/upload/comment/:commentId",
+          delete: "DELETE /api/upload/image/:publicId",
+          stats: "GET /api/upload/stats",
+        },
+        timestamp: new Date().toISOString(),
+        supportedFormats: ["jpg", "jpeg", "png", "gif", "webp"],
+        limits: {
+          profile: "5MB",
+          post: "10MB",
+          comment: "5MB",
+        },
       },
-      endpoints: {
-        profile: "POST /api/upload/profile",
-        post: "POST /api/upload/post/:postId",
-        comment: "POST /api/upload/comment/:commentId",
-        delete: "DELETE /api/upload/image/:publicId",
-        stats: "GET /api/upload/stats",
-      },
-      timestamp: new Date().toISOString(),
-      supportedFormats: ["jpg", "jpeg", "png", "gif", "webp"],
-      limits: {
-        profile: "5MB",
-        post: "10MB",
-        comment: "5MB",
-      },
-    },
-  });
+    });
+  } catch (error) {
+    console.error("Upload test error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to test upload system",
+      error: error.message,
+    });
+  }
 });
 
 router.post("/test-upload", profileImageUpload.single("image"), async (req, res) => {
@@ -56,17 +65,12 @@ router.post("/test-upload", profileImageUpload.single("image"), async (req, res)
       });
     }
 
-    const imageUrl = req.file.path;
-    const publicId = req.file.filename;
-
-    console.log("Test image uploaded:", imageUrl);
-
     res.json({
       success: true,
       message: "Test image uploaded successfully!",
       data: {
-        imageUrl: imageUrl,
-        publicId: publicId,
+        imageUrl: req.file.path,
+        publicId: req.file.filename,
         size: req.file.size,
         format: req.file.format,
       },
@@ -76,6 +80,7 @@ router.post("/test-upload", profileImageUpload.single("image"), async (req, res)
     res.status(500).json({
       success: false,
       message: "Server error uploading image",
+      error: error.message,
     });
   }
 });
@@ -121,6 +126,7 @@ router.get("/profile", auth, async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Server error getting profile image",
+      error: error.message,
     });
   }
 });

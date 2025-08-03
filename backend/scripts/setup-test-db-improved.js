@@ -123,14 +123,14 @@ async function setupTestDatabase() {
         }
 
         if ((i + 1) % 10 === 0) {
-          console.log(`   Executed ${i + 1}/${statements.length} statements`);
+          console.log(`Executed ${i + 1}/${statements.length} statements`);
         }
       } catch (statementError) {
         if (
           statementError.message.includes("already exists") ||
           statementError.message.includes("does not exist")
         ) {
-          console.log(`   Statement ${i + 1}: ${statementError.message} (continuing...)`);
+          console.log(`Statement ${i + 1}: ${statementError.message} (continuing...)`);
           continue;
         }
 
@@ -199,7 +199,7 @@ async function createTestData(client) {
       [hashedPassword]
     );
 
-    console.log("   Test user created");
+    console.log("Test user created");
 
     await client.query(`
       INSERT INTO posts (
@@ -214,16 +214,16 @@ async function createTestData(client) {
       ON CONFLICT DO NOTHING
     `);
 
-    console.log("   Test post created");
+    console.log("Test post created");
 
     const userCount = await client.query("SELECT COUNT(*) FROM users");
     const postCount = await client.query("SELECT COUNT(*) FROM posts");
 
     console.log(
-      `   Test data created: ${userCount.rows[0].count} users, ${postCount.rows[0].count} posts`
+      `Test data created: ${userCount.rows[0].count} users, ${postCount.rows[0].count} posts`
     );
   } catch (error) {
-    console.log("   Test data creation warning:", error.message);
+    console.log("Test data creation warning:", error.message);
   }
 }
 
@@ -246,18 +246,18 @@ async function verifyDatabaseSetup(client) {
     const missingTables = expectedTables.filter((table) => !tableNames.includes(table));
 
     if (missingTables.length > 0) {
-      console.warn("   Missing expected tables:", missingTables.join(", "));
+      console.warn("Missing expected tables:", missingTables.join(", "));
     } else {
-      console.log("   All expected tables present");
+      console.log("All expected tables present");
     }
 
     try {
       await client.query(
         "SELECT get_nearby_posts(30.2672, -97.7431, 'Austin', 'Texas', 10.0, false, 10, 0)"
       );
-      console.log("   PostGIS functions working");
+      console.log("PostGIS functions working");
     } catch (funcError) {
-      console.log("   PostGIS functions not available (this is OK for basic testing)");
+      console.log("PostGIS functions not available (this is OK for basic testing)");
     }
 
     console.log("Database verification complete");

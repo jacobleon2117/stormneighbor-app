@@ -1,11 +1,41 @@
+DO $$
+BEGIN
+    BEGIN
+        CREATE EXTENSION IF NOT EXISTS postgis;
+        RAISE NOTICE 'PostGIS extension created successfully';
+    EXCEPTION WHEN OTHERS THEN
+        RAISE WARNING 'PostGIS extension not available: %', SQLERRM;
+    END;
 
-CREATE EXTENSION IF NOT EXISTS postgis;
-CREATE EXTENSION IF NOT EXISTS postgis_topology;
+    BEGIN
+        CREATE EXTENSION IF NOT EXISTS postgis_topology;
+        RAISE NOTICE 'PostGIS topology extension created successfully';
+    EXCEPTION WHEN OTHERS THEN
+        RAISE WARNING 'PostGIS topology extension not available: %', SQLERRM;
+    END;
+END
+$$;
 
 ALTER TABLE users ADD COLUMN IF NOT EXISTS location_city VARCHAR(100);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS location_county VARCHAR(100);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS location_radius_miles DECIMAL(4,1) DEFAULT 10.0;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS show_city_only BOOLEAN DEFAULT FALSE;
+
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'postgis') THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM information_schema.columns 
+            WHERE table_name = 'users' AND column_name = 'location'
+        ) THEN
+            ALTER TABLE users ADD COLUMN location GEOGRAPHY(POINT, 4326);
+            RAISE NOTICE 'Added PostGIS location column to users table';
+        END IF;
+    ELSE
+        RAISE NOTICE 'PostGIS not available - skipping location column for users';
+    END IF;
+END
+$$;
 
 UPDATE users 
 SET location_city = address_city 
@@ -15,6 +45,19 @@ ALTER TABLE posts ADD COLUMN IF NOT EXISTS location_city VARCHAR(100);
 ALTER TABLE posts ADD COLUMN IF NOT EXISTS location_state VARCHAR(50);
 ALTER TABLE posts ADD COLUMN IF NOT EXISTS location_county VARCHAR(100);
 
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'postgis') THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM information_schema.columns 
+            WHERE table_name = 'posts' AND column_name = 'location'
+        ) THEN
+            ALTER TABLE posts ADD COLUMN location GEOGRAPHY(POINT, 4326);
+            RAISE NOTICE 'Added PostGIS location column to posts table';
+        END IF;
+    END IF;
+END
+$$;
 
 CREATE TABLE IF NOT EXISTS comments (
     id SERIAL PRIMARY KEY,
@@ -98,9 +141,20 @@ CREATE TABLE IF NOT EXISTS notifications (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_users_location ON users USING GIST (location);
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'postgis') THEN
+        CREATE INDEX IF NOT EXISTS idx_users_location ON users USING GIST (location);
+        CREATE INDEX IF NOT EXISTS idx_posts_location ON posts USING GIST (location);
+        RAISE NOTICE 'Created PostGIS spatial indexes';
+    ELSE
+        CREATE INDEX IF NOT EXISTS idx_posts_lat_lng ON posts (latitude, longitude);
+        RAISE NOTICE 'Created fallback lat/lng index';
+    END IF;
+END
+$$;
+
 CREATE INDEX IF NOT EXISTS idx_users_city ON users(location_city, address_state);
-CREATE INDEX IF NOT EXISTS idx_posts_location ON posts USING GIST (location);
 CREATE INDEX IF NOT EXISTS idx_posts_city ON posts(location_city, location_state);
 CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_posts_type_priority ON posts(post_type, priority);
@@ -177,16 +231,16 @@ BEGIN
             p.id, p.user_id, p.title, p.content, p.post_type, p.priority,
             p.location_city, p.location_state, p.images, p.tags,
             p.is_emergency, p.is_resolved, p.created_at, p.updated_at,
-            ST_Distance(p.location::geometry, ST_SetSRID(ST_MakePoint(user_longitude, user_latitude), 4326)) * 69 as distance_miles,
+            ST_Distance(p.location, ST_SetSRID(ST_MakePoint(user_longitude, user_latitude), 4326)::geography) / 1609.34
             u.first_name, u.last_name, u.profile_image_url
         FROM posts p
         JOIN users u ON p.user_id = u.id
         WHERE p.location IS NOT NULL
-          AND ST_DWithin(
-            p.location::geometry,
-            ST_SetSRID(ST_MakePoint(user_longitude, user_latitude), 4326),
-            radius_miles / 69.0
-          )
+        ST_DWithin(
+        p.location,
+        ST_SetSRID(ST_MakePoint(user_longitude, user_latitude), 4326)::geography,
+        radius_miles * 1609.34
+        )
           AND (p.expires_at IS NULL OR p.expires_at > NOW())
         ORDER BY 
             CASE WHEN p.is_emergency = true THEN 1 ELSE 2 END,
@@ -204,57 +258,62 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION get_weather_alerts_for_location(
-    user_latitude DECIMAL,
-    user_longitude DECIMAL,
-    radius_miles DECIMAL DEFAULT 25.0
+  user_latitude double precision,
+  user_longitude double precision,
+  radius_miles double precision
 )
 RETURNS TABLE (
-    id INTEGER,
-    alert_id VARCHAR,
-    title VARCHAR,
-    description TEXT,
-    severity VARCHAR,
-    alert_type VARCHAR,
-    source VARCHAR,
-    start_time TIMESTAMP WITH TIME ZONE,
-    end_time TIMESTAMP WITH TIME ZONE,
-    is_active BOOLEAN,
-    created_at TIMESTAMP WITH TIME ZONE,
-    distance_miles DECIMAL
-) AS $$
+  id integer,
+  alert_id text,
+  title text,
+  description text,
+  severity text,
+  alert_type text,
+  source text,
+  start_time timestamptz,
+  end_time timestamptz,
+  is_active boolean,
+  created_at timestamptz,
+  distance_miles double precision
+)
+AS $$
 BEGIN
-    RETURN QUERY
-    SELECT 
-        wa.id, wa.alert_id, wa.title, wa.description, wa.severity,
-        wa.alert_type, wa.source, wa.start_time, wa.end_time,
-        wa.is_active, wa.created_at,
-        CASE 
-            WHEN wa.affected_areas IS NOT NULL THEN
-                ST_Distance(wa.affected_areas::geometry, ST_SetSRID(ST_MakePoint(user_longitude, user_latitude), 4326)) * 69
-            ELSE 0
-        END as distance_miles
-    FROM weather_alerts wa
-    WHERE wa.is_active = true
-      AND (wa.end_time IS NULL OR wa.end_time > NOW())
-      AND (
-        wa.affected_areas IS NULL OR
-        ST_DWithin(
-          wa.affected_areas::geometry,
-          ST_SetSRID(ST_MakePoint(user_longitude, user_latitude), 4326),
-          radius_miles / 69.0
-        )
+  RETURN QUERY
+  SELECT 
+      wa.id, wa.alert_id, wa.title, wa.description, wa.severity,
+      wa.alert_type, wa.source, wa.start_time, wa.end_time,
+      wa.is_active, wa.created_at,
+      CASE 
+          WHEN wa.affected_areas IS NOT NULL THEN
+              ST_Distance(wa.affected_areas::geometry, ST_SetSRID(ST_MakePoint(user_longitude, user_latitude), 4326)) * 69
+          ELSE 0
+      END as distance_miles
+  FROM weather_alerts wa
+  WHERE wa.is_active = true
+    AND (wa.end_time IS NULL OR wa.end_time > NOW())
+    AND (
+      wa.affected_areas IS NULL OR
+      ST_DWithin(
+        wa.affected_areas::geometry,
+        ST_SetSRID(ST_MakePoint(user_longitude, user_latitude), 4326),
+        radius_miles / 69.0
       )
-    ORDER BY 
-        CASE wa.severity 
-            WHEN 'CRITICAL' THEN 1 
-            WHEN 'HIGH' THEN 2 
-            WHEN 'MODERATE' THEN 3 
-            WHEN 'LOW' THEN 4 
-        END,
-        distance_miles ASC,
-        wa.created_at DESC;
+    )
+  ORDER BY 
+      CASE wa.severity 
+          WHEN 'CRITICAL' THEN 1 
+          WHEN 'HIGH' THEN 2 
+          WHEN 'MODERATE' THEN 3 
+          WHEN 'LOW' THEN 4 
+          ELSE 5
+      END,
+      distance_miles ASC,
+      wa.created_at DESC;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql STABLE;
+
+
+
 
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$

@@ -103,13 +103,15 @@ const getCurrentWeather = async (req, res) => {
 };
 
 const getAlerts = async (req, res) => {
+  const { latitude, longitude, radius } = req.query;
+  console.log("getAlerts query params:", latitude, longitude, radius);
   try {
     const { latitude, longitude, radius } = req.query;
     const userId = req.user?.userId;
 
     let userLat = latitude;
     let userLng = longitude;
-    const searchRadius = radius || 25;
+    const searchRadius = radius ? parseFloat(radius) : 25;
 
     if ((!userLat || !userLng) && userId) {
       const client = await pool.connect();
@@ -139,7 +141,10 @@ const getAlerts = async (req, res) => {
 
     try {
       const alertsResult = await client.query(
-        "SELECT * FROM get_weather_alerts_for_location($1, $2, $3)",
+        `SELECT
+     id, alert_id, title, description, severity, alert_type, source,
+     start_time, end_time, is_active, created_at, distance_miles
+   FROM get_weather_alerts_for_location($1, $2, $3)`,
         [userLat, userLng, searchRadius]
       );
 

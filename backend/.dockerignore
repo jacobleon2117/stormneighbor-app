@@ -1,0 +1,37 @@
+# Node modules
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Development files
+.git/
+.gitignore
+README.md
+.DS_Store
+*.log
+
+# Test files
+coverage/
+.nyc_output
+tests/
+*.test.js
+
+# Development tools
+.vscode/
+.idea/
+nodemon.json
+
+# Temporary files
+tmp/
+temp/
+.cache/
+
+# Documentation
+docs/
+*.md
+!README.md

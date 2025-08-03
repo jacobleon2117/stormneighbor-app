@@ -3,6 +3,7 @@ const express = require("express");
 const { body, query, param } = require("express-validator");
 const weatherController = require("../controllers/weatherController");
 const auth = require("../middleware/auth");
+const { handleValidationErrors } = require("../middleware/validation");
 
 const router = express.Router();
 
@@ -34,18 +35,36 @@ const updateAlertValidation = [
 
 router.get(
   "/",
-  [query("neighborhoodId").isInt({ min: 1 }).withMessage("Valid neighborhood ID is required")],
+  [
+    query("latitude").isFloat({ min: -90, max: 90 }).withMessage("Valid latitude is required"),
+    query("longitude").isFloat({ min: -180, max: 180 }).withMessage("Valid longitude is required"),
+    query("radius").optional().isFloat({ min: 0 }).withMessage("Radius must be a positive number"),
+  ],
+  handleValidationErrors,
   weatherController.getAlerts
 );
 
-router.post("/", auth, createAlertValidation, weatherController.createAlert);
+router.post(
+  "/",
+  auth,
+  createAlertValidation,
+  handleValidationErrors,
+  weatherController.createAlert
+);
 
-router.put("/:id", auth, updateAlertValidation, weatherController.updateAlert);
+router.put(
+  "/:id",
+  auth,
+  updateAlertValidation,
+  handleValidationErrors,
+  weatherController.updateAlert
+);
 
 router.delete(
   "/:id",
   auth,
   [param("id").isInt({ min: 1 }).withMessage("Valid alert ID is required")],
+  handleValidationErrors,
   weatherController.deleteAlert
 );
 

@@ -73,8 +73,6 @@ const registerValidation = [
     .trim()
     .matches(/^\d{5}(-\d{4})?$/)
     .withMessage("ZIP code must be in format 12345 or 12345-6789"),
-
-  handleValidationErrors,
 ];
 
 const loginValidation = [
@@ -85,14 +83,10 @@ const loginValidation = [
     .withMessage("Password is required")
     .isLength({ max: 128 })
     .withMessage("Invalid password format"),
-
-  handleValidationErrors,
 ];
 
 const forgotPasswordValidation = [
   body("email").isEmail().normalizeEmail().withMessage("Please provide a valid email address"),
-
-  handleValidationErrors,
 ];
 
 const verifyCodeValidation = [
@@ -102,8 +96,6 @@ const verifyCodeValidation = [
     .isLength({ min: 6, max: 6 })
     .isNumeric()
     .withMessage("Verification code must be 6 digits"),
-
-  handleValidationErrors,
 ];
 
 const resetPasswordValidation = [
@@ -118,8 +110,6 @@ const resetPasswordValidation = [
     .withMessage(
       "Password must contain at least one lowercase letter, one uppercase letter, and one number"
     ),
-
-  handleValidationErrors,
 ];
 
 const changePasswordValidation = [
@@ -132,8 +122,6 @@ const changePasswordValidation = [
     .withMessage(
       "New password must contain at least one lowercase letter, one uppercase letter, and one number"
     ),
-
-  handleValidationErrors,
 ];
 
 const updateProfileValidation = [
@@ -161,19 +149,50 @@ const updateProfileValidation = [
     .withMessage("Bio must be less than 500 characters"),
 
   validateCoordinates,
-  handleValidationErrors,
 ];
 
-router.post("/register", registerValidation, authController.register);
-router.post("/login", loginValidation, authController.login);
-router.post("/forgot-password", forgotPasswordValidation, authController.forgotPassword);
-router.post("/verify-code", verifyCodeValidation, authController.verifyCode);
-router.post("/reset-password", resetPasswordValidation, authController.resetPassword);
-router.post("/resend-code", forgotPasswordValidation, authController.resendVerificationCode);
+router.post("/register", registerValidation, handleValidationErrors, authController.register);
+router.post("/login", loginValidation, handleValidationErrors, authController.login);
+router.post(
+  "/forgot-password",
+  forgotPasswordValidation,
+  handleValidationErrors,
+  authController.forgotPassword
+);
+router.post(
+  "/verify-code",
+  verifyCodeValidation,
+  handleValidationErrors,
+  authController.verifyCode
+);
+router.post(
+  "/reset-password",
+  resetPasswordValidation,
+  handleValidationErrors,
+  authController.resetPassword
+);
+router.post(
+  "/resend-code",
+  forgotPasswordValidation,
+  handleValidationErrors,
+  authController.resendVerificationCode
+);
 
 router.get("/profile", auth, authController.getProfile);
-router.put("/profile", auth, updateProfileValidation, authController.updateProfile);
-router.post("/change-password", auth, changePasswordValidation, authController.changePassword);
+router.put(
+  "/profile",
+  auth,
+  updateProfileValidation,
+  handleValidationErrors,
+  authController.updateProfile
+);
+router.post(
+  "/change-password",
+  auth,
+  changePasswordValidation,
+  handleValidationErrors,
+  authController.changePassword
+);
 router.get("/verify-status", auth, authController.checkEmailVerification);
 router.post("/resend-verification", auth, authController.resendVerificationEmail);
 router.put("/notification-preferences", auth, authController.updateNotificationPreferences);

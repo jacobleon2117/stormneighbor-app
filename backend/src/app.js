@@ -16,36 +16,18 @@ const {
   healthCheck,
 } = require("./middleware/logging");
 const { getCacheStats, clearCache } = require("./middleware/cache");
+const { getSecurityConfig } = require("../config/security-environments");
 
 const app = express();
 
-app.use(
-  helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["self"],
-        styleSrc: ["self", "unsafe-inline"],
-        scriptSrc: ["self"],
-        imgSrc: ["self", "https://res.cloudinary.com", "https://api.weather.gov"],
-        connectSrc: ["self", "https://api.weather.gov"],
-        fontSrc: ["self"],
-        objectSrc: ["none"],
-        mediaSrc: ["self"],
-        frameSrc: ["none"],
-      },
-    },
-    crossOriginEmbedderPolicy: false,
-    hsts: {
-      maxAge: 31536000,
-      includeSubDomains: true,
-      preload: true,
-    },
-    noSniff: true,
-    frameguard: { action: "deny" },
-    xssFilter: true,
-    referrerPolicy: { policy: "same-origin" },
-  })
-);
+const helmetConfig = getSecurityConfig();
+app.use(helmet(helmetConfig));
+
+app.get("/api/test-query", (req, res) => {
+  const { latitude, longitude, radius } = req.query;
+  console.log("Test Query Params:", latitude, longitude, radius);
+  res.json({ latitude, longitude, radius });
+});
 
 app.use(
   cors({

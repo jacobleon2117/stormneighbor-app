@@ -42,26 +42,43 @@ function validateEnvironment() {
     }
   });
 
-  if (process.env.RESEND_API_KEY && !process.env.RESEND_API_KEY.startsWith("re_")) {
+  if (
+    process.env.RESEND_API_KEY &&
+    !process.env.RESEND_API_KEY.startsWith("re_")
+  ) {
     warnings.push(
       'RESEND_API_KEY should start with "re_" - please verify this is a valid Resend API key'
     );
   }
 
   if (process.env.FROM_EMAIL && !process.env.FROM_EMAIL.includes("@")) {
-    warnings.push("FROM_EMAIL appears to be invalid - should be a valid email address");
+    warnings.push(
+      "FROM_EMAIL appears to be invalid - should be a valid email address"
+    );
   }
 
-  if (process.env.CLOUDINARY_API_KEY && !/^\d+$/.test(process.env.CLOUDINARY_API_KEY)) {
-    warnings.push("CLOUDINARY_API_KEY should be numeric - please verify this is correct");
+  if (
+    process.env.CLOUDINARY_API_KEY &&
+    !/^\d+$/.test(process.env.CLOUDINARY_API_KEY)
+  ) {
+    warnings.push(
+      "CLOUDINARY_API_KEY should be numeric - please verify this is correct"
+    );
   }
 
-  if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_CLOUD_NAME.length < 3) {
-    warnings.push("CLOUDINARY_CLOUD_NAME seems too short - please verify this is correct");
+  if (
+    process.env.CLOUDINARY_CLOUD_NAME &&
+    process.env.CLOUDINARY_CLOUD_NAME.length < 3
+  ) {
+    warnings.push(
+      "CLOUDINARY_CLOUD_NAME seems too short - please verify this is correct"
+    );
   }
 
   if (process.env.JWT_SECRET && process.env.JWT_SECRET.length < 32) {
-    warnings.push("JWT_SECRET is quite short - consider using a longer secret for better security");
+    warnings.push(
+      "JWT_SECRET is quite short - consider using a longer secret for better security"
+    );
   }
 
   if (missing.length > 0) {
@@ -83,7 +100,7 @@ function validateEnvironment() {
         console.error(`   ${envVar}=value_here`);
       }
     });
-    throw new Error("Missing required environment variables");
+    process.exit(1);
   }
 
   if (warnings.length > 0) {
@@ -91,19 +108,27 @@ function validateEnvironment() {
     warnings.forEach((warning) => console.warn(`   - ${warning}`));
   }
 
-  console.log(`SUCCESS: Environment validated (${present.length} variables configured)`);
+  console.log(
+    `SUCCESS: Environment validated (${present.length} variables configured)`
+  );
 
   if (process.env.NODE_ENV === "development") {
     console.log("Running in development mode");
     if (!process.env.CLIENT_URL) {
-      console.log("   CLIENT_URL not set, using default: http://localhost:19006");
+      console.log(
+        "   CLIENT_URL not set, using default: http://localhost:19006"
+      );
     }
   }
 
   console.log("\nConfigured services:");
   console.log(`   Database: ${process.env.DATABASE_URL ? "SUCCESS" : "ERROR"}`);
-  console.log(`   Email (Resend): ${process.env.RESEND_API_KEY ? "SUCCESS" : "ERROR"}`);
-  console.log(`   Weather (NOAA): ${process.env.NOAA_API_BASE_URL ? "SUCCESS" : "ERROR"}`);
+  console.log(
+    `   Email (Resend): ${process.env.RESEND_API_KEY ? "SUCCESS" : "ERROR"}`
+  );
+  console.log(
+    `   Weather (NOAA): ${process.env.NOAA_API_BASE_URL ? "SUCCESS" : "ERROR"}`
+  );
   console.log(
     `   Image Storage (Cloudinary): ${
       process.env.CLOUDINARY_CLOUD_NAME &&
@@ -113,11 +138,15 @@ function validateEnvironment() {
         : "ERROR"
     }`
   );
-  console.log(`   JWT Security: ${process.env.JWT_SECRET ? "SUCCESS" : "ERROR"}`);
+  console.log(
+    `   JWT Security: ${process.env.JWT_SECRET ? "SUCCESS" : "ERROR"}`
+  );
 
   if (process.env.NODE_ENV === "development") {
     console.log("\nService details:");
-    console.log(`   Cloudinary Cloud: ${process.env.CLOUDINARY_CLOUD_NAME || "not set"}`);
+    console.log(
+      `   Cloudinary Cloud: ${process.env.CLOUDINARY_CLOUD_NAME || "not set"}`
+    );
     console.log(`   Email From: ${process.env.FROM_EMAIL || "not set"}`);
     console.log(`   Client URL: ${process.env.CLIENT_URL || "default"}`);
   }

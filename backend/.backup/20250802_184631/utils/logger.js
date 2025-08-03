@@ -38,8 +38,11 @@ const logger = {
 
   api: (method, path, statusCode, responseTime) => {
     const timestamp = new Date().toISOString();
-    const status = statusCode >= 400 ? "ERROR" : statusCode >= 300 ? "WARN" : "SUCCESS";
-    console.log(`[${timestamp}] ${status} ${method} ${path} - ${statusCode} (${responseTime}ms)`);
+    const status =
+      statusCode >= 400 ? "ERROR" : statusCode >= 300 ? "WARN" : "SUCCESS";
+    console.log(
+      `[${timestamp}] ${status} ${method} ${path} - ${statusCode} (${responseTime}ms)`
+    );
   },
 };
 

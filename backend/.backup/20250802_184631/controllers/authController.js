@@ -1,9 +1,13 @@
 // File: backend/src/controllers/authController.js
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 const { pool } = require("../config/database");
 const { validationResult } = require("express-validator");
-const { sendVerificationEmail, sendPasswordResetEmail } = require("../services/emailService");
+const {
+  sendVerificationEmail,
+  sendPasswordResetEmail,
+} = require("../services/emailService");
 
 const generateVerificationCode = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -38,7 +42,14 @@ const register = async (req, res) => {
       const lat = parseFloat(latitude);
       const lng = parseFloat(longitude);
 
-      if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      if (
+        isNaN(lat) ||
+        isNaN(lng) ||
+        lat < -90 ||
+        lat > 90 ||
+        lng < -180 ||
+        lng > 180
+      ) {
         return res.status(400).json({
           message: "Invalid coordinates provided",
         });
@@ -48,10 +59,15 @@ const register = async (req, res) => {
     const client = await pool.connect();
 
     try {
-      const existingUser = await client.query("SELECT id FROM users WHERE email = $1", [email]);
+      const existingUser = await client.query(
+        "SELECT id FROM users WHERE email = $1",
+        [email]
+      );
 
       if (existingUser.rows.length > 0) {
-        return res.status(400).json({ message: "User already exists with this email" });
+        return res
+          .status(400)
+          .json({ message: "User already exists with this email" });
       }
 
       const saltRounds = 12;
@@ -87,12 +103,14 @@ const register = async (req, res) => {
       ];
 
       if (latitude !== undefined && longitude !== undefined) {
-        insertQuery += ", location";
-        valuesClause += ", ST_SetSRID(ST_MakePoint($12, $13), 4326)";
+        insertQuery += `, location`;
+        valuesClause += `, ST_SetSRID(ST_MakePoint($12, $13), 4326)`;
         values.push(parseFloat(longitude), parseFloat(latitude));
       }
 
-      insertQuery += valuesClause + ") RETURNING id, email, first_name, last_name, created_at";
+      insertQuery +=
+        valuesClause +
+        `) RETURNING id, email, first_name, last_name, created_at`;
 
       const result = await client.query(insertQuery, values);
       const newUser = result.rows[0];
@@ -159,7 +177,10 @@ const login = async (req, res) => {
         return res.status(401).json({ message: "Account is deactivated" });
       }
 
-      const isValidPassword = await bcrypt.compare(password, user.password_hash);
+      const isValidPassword = await bcrypt.compare(
+        password,
+        user.password_hash
+      );
       if (!isValidPassword) {
         return res.status(401).json({ message: "Invalid email or password" });
       }
@@ -197,9 +218,12 @@ const forgotPassword = async (req, res) => {
     const client = await pool.connect();
 
     try {
-      const user = await client.query("SELECT id FROM users WHERE email = $1", [email]);
+      const user = await client.query("SELECT id FROM users WHERE email = $1", [
+        email,
+      ]);
 
-      const standardMessage = "If an account with that email exists, a reset code has been sent.";
+      const standardMessage =
+        "If an account with that email exists, a reset code has been sent.";
 
       if (user.rows.length === 0) {
         return res.json({ message: standardMessage });
@@ -216,7 +240,10 @@ const forgotPassword = async (req, res) => {
       const emailResult = await sendPasswordResetEmail(email, resetCode);
 
       if (!emailResult.success) {
-        console.error("Failed to send password reset email:", emailResult.error);
+        console.error(
+          "Failed to send password reset email:",
+          emailResult.error
+        );
       }
 
       res.json({ message: standardMessage });
@@ -257,7 +284,9 @@ const verifyCode = async (req, res) => {
       }
 
       if (new Date() > user.email_verification_expires) {
-        return res.status(400).json({ message: "Verification code has expired" });
+        return res
+          .status(400)
+          .json({ message: "Verification code has expired" });
       }
 
       await client.query(
@@ -343,9 +372,10 @@ const resendVerificationCode = async (req, res) => {
     const client = await pool.connect();
 
     try {
-      const user = await client.query("SELECT id, email_verified FROM users WHERE email = $1", [
-        email,
-      ]);
+      const user = await client.query(
+        "SELECT id, email_verified FROM users WHERE email = $1",
+        [email]
+      );
 
       if (user.rows.length === 0) {
         return res.status(404).json({ message: "User not found" });
@@ -366,7 +396,10 @@ const resendVerificationCode = async (req, res) => {
       const emailResult = await sendVerificationEmail(email, verificationCode);
 
       if (!emailResult.success) {
-        console.error("Failed to resend verification email:", emailResult.error);
+        console.error(
+          "Failed to resend verification email:",
+          emailResult.error
+        );
         return res.status(500).json({
           message: "Failed to send verification email. Please try again later.",
         });
@@ -378,7 +411,9 @@ const resendVerificationCode = async (req, res) => {
     }
   } catch (error) {
     console.error("Resend verification code error:", error);
-    res.status(500).json({ message: "Server error resending verification code" });
+    res
+      .status(500)
+      .json({ message: "Server error resending verification code" });
   }
 };
 
@@ -423,9 +458,9 @@ const getProfile = async (req, res) => {
           coordinates:
             user.longitude && user.latitude
               ? {
-                longitude: parseFloat(user.longitude),
-                latitude: parseFloat(user.latitude),
-              }
+                  longitude: parseFloat(user.longitude),
+                  latitude: parseFloat(user.latitude),
+                }
               : null,
           radiusMiles: user.location_radius_miles || 10.0,
           showCityOnly: user.show_city_only || false,
@@ -478,13 +513,21 @@ const updateProfile = async (req, res) => {
       const values = [];
       let paramCount = 0;
 
-      if (firstName !== undefined && firstName !== null && firstName.trim() !== "") {
+      if (
+        firstName !== undefined &&
+        firstName !== null &&
+        firstName.trim() !== ""
+      ) {
         paramCount++;
         updates.push(`first_name = $${paramCount}`);
         values.push(firstName.trim());
       }
 
-      if (lastName !== undefined && lastName !== null && lastName.trim() !== "") {
+      if (
+        lastName !== undefined &&
+        lastName !== null &&
+        lastName.trim() !== ""
+      ) {
         paramCount++;
         updates.push(`last_name = $${paramCount}`);
         values.push(lastName.trim());
@@ -558,16 +601,23 @@ const updateProfile = async (req, res) => {
         if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
           paramCount++;
           updates.push(
-            `location = ST_SetSRID(ST_MakePoint($${paramCount}, $${paramCount + 1}), 4326)`
+            `location = ST_SetSRID(ST_MakePoint($${paramCount}, $${
+              paramCount + 1
+            }), 4326)`
           );
           values.push(lng, lat);
           paramCount++;
         } else {
-          return res.status(400).json({ message: "Invalid coordinates provided" });
+          return res
+            .status(400)
+            .json({ message: "Invalid coordinates provided" });
         }
       }
 
-      if (notificationPreferences !== undefined && notificationPreferences !== null) {
+      if (
+        notificationPreferences !== undefined &&
+        notificationPreferences !== null
+      ) {
         paramCount++;
         updates.push(`notification_preferences = $${paramCount}`);
         values.push(JSON.stringify(notificationPreferences));
@@ -623,9 +673,9 @@ const updateProfile = async (req, res) => {
           coordinates:
             updatedUser.longitude && updatedUser.latitude
               ? {
-                longitude: parseFloat(updatedUser.longitude),
-                latitude: parseFloat(updatedUser.latitude),
-              }
+                  longitude: parseFloat(updatedUser.longitude),
+                  latitude: parseFloat(updatedUser.latitude),
+                }
               : null,
           radiusMiles: updatedUser.location_radius_miles || 10.0,
           showCityOnly: updatedUser.show_city_only || false,
@@ -666,7 +716,10 @@ const changePassword = async (req, res) => {
     const client = await pool.connect();
 
     try {
-      const result = await client.query("SELECT password_hash FROM users WHERE id = $1", [userId]);
+      const result = await client.query(
+        "SELECT password_hash FROM users WHERE id = $1",
+        [userId]
+      );
 
       if (result.rows.length === 0) {
         return res.status(404).json({ message: "User not found" });
@@ -674,18 +727,23 @@ const changePassword = async (req, res) => {
 
       const user = result.rows[0];
 
-      const isValidPassword = await bcrypt.compare(currentPassword, user.password_hash);
+      const isValidPassword = await bcrypt.compare(
+        currentPassword,
+        user.password_hash
+      );
       if (!isValidPassword) {
-        return res.status(400).json({ message: "Current password is incorrect" });
+        return res
+          .status(400)
+          .json({ message: "Current password is incorrect" });
       }
 
       const saltRounds = 12;
       const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
 
-      await client.query("UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2", [
-        hashedPassword,
-        userId,
-      ]);
+      await client.query(
+        "UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2",
+        [hashedPassword, userId]
+      );
 
       res.json({ message: "Password changed successfully" });
     } finally {
@@ -703,7 +761,10 @@ const checkEmailVerification = async (req, res) => {
     const client = await pool.connect();
 
     try {
-      const result = await client.query("SELECT email_verified FROM users WHERE id = $1", [userId]);
+      const result = await client.query(
+        "SELECT email_verified FROM users WHERE id = $1",
+        [userId]
+      );
 
       if (result.rows.length === 0) {
         return res.status(404).json({ message: "User not found" });
@@ -715,7 +776,9 @@ const checkEmailVerification = async (req, res) => {
     }
   } catch (error) {
     console.error("Check email verification error:", error);
-    res.status(500).json({ message: "Server error checking verification status" });
+    res
+      .status(500)
+      .json({ message: "Server error checking verification status" });
   }
 };
 
@@ -725,9 +788,10 @@ const resendVerificationEmail = async (req, res) => {
     const client = await pool.connect();
 
     try {
-      const result = await client.query("SELECT email, email_verified FROM users WHERE id = $1", [
-        userId,
-      ]);
+      const result = await client.query(
+        "SELECT email, email_verified FROM users WHERE id = $1",
+        [userId]
+      );
 
       if (result.rows.length === 0) {
         return res.status(404).json({ message: "User not found" });
@@ -747,10 +811,16 @@ const resendVerificationEmail = async (req, res) => {
         [verificationCode, codeExpiry, userId]
       );
 
-      const emailResult = await sendVerificationEmail(user.email, verificationCode);
+      const emailResult = await sendVerificationEmail(
+        user.email,
+        verificationCode
+      );
 
       if (!emailResult.success) {
-        console.error("Failed to resend verification email:", emailResult.error);
+        console.error(
+          "Failed to resend verification email:",
+          emailResult.error
+        );
         return res.status(500).json({
           message: "Failed to send verification email. Please try again later.",
         });
@@ -762,7 +832,9 @@ const resendVerificationEmail = async (req, res) => {
     }
   } catch (error) {
     console.error("Resend verification email error:", error);
-    res.status(500).json({ message: "Server error resending verification email" });
+    res
+      .status(500)
+      .json({ message: "Server error resending verification email" });
   }
 };
 
@@ -785,7 +857,9 @@ const updateNotificationPreferences = async (req, res) => {
     }
   } catch (error) {
     console.error("Update notification preferences error:", error);
-    res.status(500).json({ message: "Server error updating notification preferences" });
+    res
+      .status(500)
+      .json({ message: "Server error updating notification preferences" });
   }
 };
 

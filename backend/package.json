@@ -6,22 +6,47 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "NODE_ENV=test jest --verbose --detectOpenHandles",
+    "dev:debug": "nodemon --inspect src/server.js",
+    "test": "NODE_ENV=test jest --verbose --detectOpenHandles --forceExit",
     "test:watch": "NODE_ENV=test jest --watch --verbose",
-    "test:coverage": "NODE_ENV=test jest --coverage --verbose",
-    "test:ci": "NODE_ENV=test jest --ci --coverage --watchAll=false",
+    "test:coverage": "NODE_ENV=test jest --coverage --verbose --forceExit",
+    "test:ci": "NODE_ENV=test jest --ci --coverage --watchAll=false --forceExit --maxWorkers=2",
+    "test:integration": "NODE_ENV=test jest --testNamePattern='Integration' --verbose --forceExit",
     "db:migrate": "node create-tables.js",
     "db:test": "node test-db.js",
     "db:seed": "node src/utils/seed.js",
-    "db:setup-test": "node scripts/setup-test-db.js",
-    "lint": "eslint src/ tests/ --fix",
-    "lint:check": "eslint src/ tests/",
-    "format": "prettier --write src/ tests/",
-    "format:check": "prettier --check src/ tests/",
-    "audit:security": "npm audit --audit-level=moderate",
-    "build": "echo 'Build step - placeholder for future bundling'",
+    "db:setup": "node scripts/setup-test-db-improved.js",
+    "db:setup-test": "NODE_ENV=test node scripts/setup-test-db-improved.js",
+    "db:reset": "npm run db:setup && npm run db:seed",
+    "lint": "eslint src/ tests/ --fix --ext .js",
+    "lint:check": "eslint src/ tests/ --ext .js",
+    "lint:fix": "eslint src/ tests/ --fix --ext .js",
+    "format": "prettier --write src/ tests/ *.js",
+    "format:check": "prettier --check src/ tests/ *.js",
+    "format:fix": "prettier --write src/ tests/ *.js",
+    "security:audit": "npm audit --audit-level=moderate",
+    "security:fix": "npm audit fix",
+    "security:check": "npm audit --audit-level=high --dry-run",
+    "build": "echo 'Build step - copying files and preparing for production'",
+    "build:prod": "NODE_ENV=production npm run build",
+    "ci:install": "npm ci --prefer-offline --no-audit",
     "ci:test": "npm run lint:check && npm run format:check && npm run test:ci",
-    "ci:security": "npm run audit:security"
+    "ci:security": "npm run security:audit",
+    "ci:build": "npm run build && npm run security:check",
+    "ci:full": "npm run ci:install && npm run ci:test && npm run ci:security && npm run ci:build",
+    "fix:all": "npm run format:fix && npm run lint:fix",
+    "fix:eslint": "./scripts/fix-eslint-issues.sh",
+    "health:check": "node -e \"require('./src/app'); console.log('App loads successfully')\"",
+    "health:db": "node -e \"require('./src/config/database').testConnection()\"",
+    "health:full": "npm run health:check && npm run health:db",
+    "clean": "rm -rf node_modules coverage .nyc_output *.log",
+    "clean:all": "npm run clean && rm -rf .backup",
+    "reset": "npm run clean && npm install && npm run db:reset",
+    "logs": "tail -f *.log",
+    "logs:error": "tail -f error.log",
+    "precommit": "npm run lint:check && npm run format:check && npm run test",
+    "prepush": "npm run ci:test",
+    "postinstall": "echo 'StormNeighbor Backend dependencies installed successfully!'"
   },
   "dependencies": {
     "axios": "^1.11.0",
@@ -29,7 +54,7 @@
     "cloudinary": "^1.41.3",
     "compression": "^1.7.4",
     "cors": "^2.8.5",
-    "dotenv": "^16.3.1",
+    "dotenv": "^16.6.1",
     "express": "^4.18.2",
     "express-rate-limit": "^7.1.5",
     "express-validator": "^7.0.1",
@@ -67,7 +92,8 @@
     "coverageReporters": [
       "text",
       "lcov",
-      "html"
+      "html",
+      "json-summary"
     ],
     "testMatch": [
       "**/tests/**/*.test.js",
@@ -76,7 +102,11 @@
     "setupFilesAfterEnv": [
       "<rootDir>/tests/setup.js"
     ],
-    "testTimeout": 30000
+    "testTimeout": 30000,
+    "verbose": true,
+    "detectOpenHandles": true,
+    "forceExit": true,
+    "maxWorkers": "50%"
   },
   "eslintConfig": {
     "env": {
@@ -96,7 +126,29 @@
     "rules": {
       "no-console": "off",
       "node/no-unpublished-require": "off",
-      "security/detect-object-injection": "off"
+      "security/detect-object-injection": "off",
+      "no-unused-vars": [
+        "warn",
+        {
+          "argsIgnorePattern": "^_",
+          "varsIgnorePattern": "^_"
+        }
+      ],
+      "quotes": [
+        "error",
+        "double"
+      ],
+      "semi": [
+        "error",
+        "always"
+      ],
+      "indent": [
+        "error",
+        2
+      ],
+      "no-useless-escape": "error",
+      "prefer-const": "error",
+      "no-return-await": "error"
     }
   },
   "prettier": {
@@ -104,7 +156,9 @@
     "singleQuote": false,
     "trailingComma": "es5",
     "tabWidth": 2,
-    "printWidth": 100
+    "printWidth": 100,
+    "arrowParens": "always",
+    "endOfLine": "lf"
   },
   "keywords": [
     "weather",
@@ -114,12 +168,23 @@
     "nodejs",
     "express",
     "postgresql",
-    "postgis"
+    "postgis",
+    "real-time",
+    "socket.io",
+    "ci-cd"
   ],
   "author": "Jacob Leon",
   "license": "MIT",
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=8.0.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/stormneighbor-app.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/stormneighbor-app/issues"
+  },
+  "homepage": "https://github.com/yourusername/stormneighbor-app#readme"
 }

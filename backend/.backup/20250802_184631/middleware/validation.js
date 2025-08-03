@@ -99,7 +99,13 @@ const validateFileUpload = (options = {}) => {
   const {
     required = true,
     maxSize = 10 * 1024 * 1024,
-    allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"],
+    allowedTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+    ],
   } = options;
 
   return (req, res, next) => {

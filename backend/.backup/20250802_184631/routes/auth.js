@@ -4,7 +4,10 @@ const { body } = require("express-validator");
 const authController = require("../controllers/authController");
 const auth = require("../middleware/auth");
 const { testEmailService, sendEmail } = require("../services/emailService");
-const { handleValidationErrors, validateCoordinates } = require("../middleware/validation");
+const {
+  handleValidationErrors,
+  validateCoordinates,
+} = require("../middleware/validation");
 
 const router = express.Router();
 
@@ -32,14 +35,18 @@ const registerValidation = [
     .isLength({ min: 1, max: 50 })
     .withMessage("First name must be between 1 and 50 characters")
     .matches(/^[a-zA-Z\s'-]+$/)
-    .withMessage("First name can only contain letters, spaces, hyphens, and apostrophes"),
+    .withMessage(
+      "First name can only contain letters, spaces, hyphens, and apostrophes"
+    ),
 
   body("lastName")
     .trim()
     .isLength({ min: 1, max: 50 })
     .withMessage("Last name must be between 1 and 50 characters")
     .matches(/^[a-zA-Z\s'-]+$/)
-    .withMessage("Last name can only contain letters, spaces, hyphens, and apostrophes"),
+    .withMessage(
+      "Last name can only contain letters, spaces, hyphens, and apostrophes"
+    ),
 
   body("phone")
     .optional()
@@ -78,7 +85,10 @@ const registerValidation = [
 ];
 
 const loginValidation = [
-  body("email").isEmail().normalizeEmail().withMessage("Please provide a valid email address"),
+  body("email")
+    .isEmail()
+    .normalizeEmail()
+    .withMessage("Please provide a valid email address"),
 
   body("password")
     .notEmpty()
@@ -90,13 +100,19 @@ const loginValidation = [
 ];
 
 const forgotPasswordValidation = [
-  body("email").isEmail().normalizeEmail().withMessage("Please provide a valid email address"),
+  body("email")
+    .isEmail()
+    .normalizeEmail()
+    .withMessage("Please provide a valid email address"),
 
   handleValidationErrors,
 ];
 
 const verifyCodeValidation = [
-  body("email").isEmail().normalizeEmail().withMessage("Please provide a valid email address"),
+  body("email")
+    .isEmail()
+    .normalizeEmail()
+    .withMessage("Please provide a valid email address"),
 
   body("code")
     .isLength({ min: 6, max: 6 })
@@ -107,9 +123,15 @@ const verifyCodeValidation = [
 ];
 
 const resetPasswordValidation = [
-  body("email").isEmail().normalizeEmail().withMessage("Please provide a valid email address"),
+  body("email")
+    .isEmail()
+    .normalizeEmail()
+    .withMessage("Please provide a valid email address"),
 
-  body("code").isLength({ min: 6, max: 6 }).isNumeric().withMessage("Reset code must be 6 digits"),
+  body("code")
+    .isLength({ min: 6, max: 6 })
+    .isNumeric()
+    .withMessage("Reset code must be 6 digits"),
 
   body("newPassword")
     .isLength({ min: 8, max: 128 })
@@ -123,7 +145,9 @@ const resetPasswordValidation = [
 ];
 
 const changePasswordValidation = [
-  body("currentPassword").notEmpty().withMessage("Current password is required"),
+  body("currentPassword")
+    .notEmpty()
+    .withMessage("Current password is required"),
 
   body("newPassword")
     .isLength({ min: 8, max: 128 })
@@ -166,17 +190,47 @@ const updateProfileValidation = [
 
 router.post("/register", registerValidation, authController.register);
 router.post("/login", loginValidation, authController.login);
-router.post("/forgot-password", forgotPasswordValidation, authController.forgotPassword);
+router.post(
+  "/forgot-password",
+  forgotPasswordValidation,
+  authController.forgotPassword
+);
 router.post("/verify-code", verifyCodeValidation, authController.verifyCode);
-router.post("/reset-password", resetPasswordValidation, authController.resetPassword);
-router.post("/resend-code", forgotPasswordValidation, authController.resendVerificationCode);
+router.post(
+  "/reset-password",
+  resetPasswordValidation,
+  authController.resetPassword
+);
+router.post(
+  "/resend-code",
+  forgotPasswordValidation,
+  authController.resendVerificationCode
+);
 
 router.get("/profile", auth, authController.getProfile);
-router.put("/profile", auth, updateProfileValidation, authController.updateProfile);
-router.post("/change-password", auth, changePasswordValidation, authController.changePassword);
+router.put(
+  "/profile",
+  auth,
+  updateProfileValidation,
+  authController.updateProfile
+);
+router.post(
+  "/change-password",
+  auth,
+  changePasswordValidation,
+  authController.changePassword
+);
 router.get("/verify-status", auth, authController.checkEmailVerification);
-router.post("/resend-verification", auth, authController.resendVerificationEmail);
-router.put("/notification-preferences", auth, authController.updateNotificationPreferences);
+router.post(
+  "/resend-verification",
+  auth,
+  authController.resendVerificationEmail
+);
+router.put(
+  "/notification-preferences",
+  auth,
+  authController.updateNotificationPreferences
+);
 
 router.get("/test-email", async (req, res) => {
   try {
@@ -208,7 +262,10 @@ router.get("/test-email", async (req, res) => {
 router.post(
   "/send-test-email",
   [
-    body("to").isEmail().normalizeEmail().withMessage("Valid recipient email required"),
+    body("to")
+      .isEmail()
+      .normalizeEmail()
+      .withMessage("Valid recipient email required"),
     handleValidationErrors,
   ],
   async (req, res) => {
@@ -230,7 +287,9 @@ router.post(
 
       res.json({
         success: result.success,
-        message: result.success ? "Test email sent successfully" : "Failed to send test email",
+        message: result.success
+          ? "Test email sent successfully"
+          : "Failed to send test email",
         data: {
           messageId: result.messageId || null,
           error: result.error || null,

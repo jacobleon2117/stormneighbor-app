@@ -31,8 +31,11 @@ const getMonitoredClient = async (req) => {
 
       try {
         if (process.env.NODE_ENV === "development") {
-          const queryText = args[0]?.substring(0, 100) + (args[0]?.length > 100 ? "..." : "");
-          console.log(`[${new Date().toISOString()}] [${requestId}] DB Query: ${queryText}`);
+          const queryText =
+            args[0]?.substring(0, 100) + (args[0]?.length > 100 ? "..." : "");
+          console.log(
+            `[${new Date().toISOString()}] [${requestId}] DB Query: ${queryText}`
+          );
         }
 
         const result = await originalQuery(...args);
@@ -44,7 +47,8 @@ const getMonitoredClient = async (req) => {
         }
 
         dbStats.averageQueryTime =
-          dbStats.queryTimes.reduce((a, b) => a + b, 0) / dbStats.queryTimes.length;
+          dbStats.queryTimes.reduce((a, b) => a + b, 0) /
+          dbStats.queryTimes.length;
 
         if (queryDuration > 1000) {
           dbStats.slowQueries++;
@@ -64,11 +68,14 @@ const getMonitoredClient = async (req) => {
         return result;
       } catch (queryError) {
         dbStats.errors++;
-        console.error(`[${new Date().toISOString()}] [${requestId}] DB Query error:`, {
-          message: queryError.message,
-          query: args[0]?.substring(0, 200),
-          duration: `${Date.now() - queryStart}ms`,
-        });
+        console.error(
+          `[${new Date().toISOString()}] [${requestId}] DB Query error:`,
+          {
+            message: queryError.message,
+            query: args[0]?.substring(0, 200),
+            duration: `${Date.now() - queryStart}ms`,
+          }
+        );
         throw queryError;
       }
     };
@@ -113,11 +120,11 @@ const checkDatabaseHealth = async () => {
 
       let postgisVersion = null;
       try {
-        const postgisResult = await client.query("SELECT PostGIS_Version() as version");
+        const postgisResult = await client.query(
+          "SELECT PostGIS_Version() as version"
+        );
         postgisVersion = postgisResult.rows[0].version;
-      } catch (postgisError) {
-        /* PostGIS not available - OK for testing */
-      }
+      } catch (postgisError) {}
 
       const statsResult = await client.query(`
         SELECT 
@@ -166,7 +173,9 @@ const getDatabaseStats = () => {
     ...dbStats,
     uptime: `${Math.floor(uptime / 1000 / 60)} minutes`,
     queriesPerMinute:
-      dbStats.totalQueries > 0 ? (dbStats.totalQueries / (uptime / 1000 / 60)).toFixed(2) : "0",
+      dbStats.totalQueries > 0
+        ? (dbStats.totalQueries / (uptime / 1000 / 60)).toFixed(2)
+        : "0",
     errorRate:
       dbStats.totalQueries > 0
         ? ((dbStats.errors / dbStats.totalQueries) * 100).toFixed(2) + "%"
@@ -189,31 +198,40 @@ const databaseMiddleware = (req, res, next) => {
   next();
 };
 
-pool.on("connect", (_client) => {
+pool.on("connect", (client) => {
   console.log(`[${new Date().toISOString()}] DB Pool: New client connected`);
 });
 
-pool.on("acquire", (_client) => {
-  console.log(`[${new Date().toISOString()}] DB Pool: Client acquired from pool`);
+pool.on("acquire", (client) => {
+  console.log(
+    `[${new Date().toISOString()}] DB Pool: Client acquired from pool`
+  );
 });
 
-pool.on("release", (err, _client) => {
+pool.on("release", (err, client) => {
   if (err) {
     console.error(
       `[${new Date().toISOString()}] DB Pool: Client released with error:`,
       err.message
     );
   } else {
-    console.log(`[${new Date().toISOString()}] DB Pool: Client released back to pool`);
+    console.log(
+      `[${new Date().toISOString()}] DB Pool: Client released back to pool`
+    );
   }
 });
 
-pool.on("remove", (_client) => {
-  console.log(`[${new Date().toISOString()}] DB Pool: Client removed from pool`);
+pool.on("remove", (client) => {
+  console.log(
+    `[${new Date().toISOString()}] DB Pool: Client removed from pool`
+  );
 });
 
-pool.on("error", (err, _client) => {
-  console.error(`[${new Date().toISOString()}] DB Pool: Unexpected error:`, err.message);
+pool.on("error", (err, client) => {
+  console.error(
+    `[${new Date().toISOString()}] DB Pool: Unexpected error:`,
+    err.message
+  );
   dbStats.connectionErrors++;
 });
 

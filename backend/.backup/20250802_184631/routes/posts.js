@@ -32,15 +32,30 @@ const createPostValidation = [
     .isLength({ min: 1, max: 5000 })
     .withMessage("Content is required and must be under 5000 characters"),
   body("postType")
-    .isIn(["help_request", "help_offer", "lost_found", "safety_alert", "general"])
+    .isIn([
+      "help_request",
+      "help_offer",
+      "lost_found",
+      "safety_alert",
+      "general",
+    ])
     .withMessage("Invalid post type"),
   body("priority")
     .optional()
     .isIn(["low", "normal", "high", "urgent"])
     .withMessage("Invalid priority"),
-  body("isEmergency").optional().isBoolean().withMessage("isEmergency must be a boolean"),
-  body("latitude").optional().isFloat({ min: -90, max: 90 }).withMessage("Invalid latitude"),
-  body("longitude").optional().isFloat({ min: -180, max: 180 }).withMessage("Invalid longitude"),
+  body("isEmergency")
+    .optional()
+    .isBoolean()
+    .withMessage("isEmergency must be a boolean"),
+  body("latitude")
+    .optional()
+    .isFloat({ min: -90, max: 90 })
+    .withMessage("Invalid latitude"),
+  body("longitude")
+    .optional()
+    .isFloat({ min: -180, max: 180 })
+    .withMessage("Invalid longitude"),
   body("images").optional().isArray().withMessage("Images must be an array"),
   body("tags").optional().isArray().withMessage("Tags must be an array"),
 ];
@@ -60,9 +75,18 @@ const updatePostValidation = [
     .optional()
     .isIn(["low", "normal", "high", "urgent"])
     .withMessage("Invalid priority"),
-  body("isResolved").optional().isBoolean().withMessage("isResolved must be a boolean"),
-  body("latitude").optional().isFloat({ min: -90, max: 90 }).withMessage("Invalid latitude"),
-  body("longitude").optional().isFloat({ min: -180, max: 180 }).withMessage("Invalid longitude"),
+  body("isResolved")
+    .optional()
+    .isBoolean()
+    .withMessage("isResolved must be a boolean"),
+  body("latitude")
+    .optional()
+    .isFloat({ min: -90, max: 90 })
+    .withMessage("Invalid latitude"),
+  body("longitude")
+    .optional()
+    .isFloat({ min: -180, max: 180 })
+    .withMessage("Invalid longitude"),
   body("images").optional().isArray().withMessage("Images must be an array"),
   body("tags").optional().isArray().withMessage("Tags must be an array"),
 ];
@@ -71,7 +95,9 @@ const createCommentValidation = [
   body("content")
     .trim()
     .isLength({ min: 1, max: 500 })
-    .withMessage("Comment content is required and must be under 500 characters"),
+    .withMessage(
+      "Comment content is required and must be under 500 characters"
+    ),
   body("parentCommentId")
     .optional()
     .isInt()
@@ -83,7 +109,9 @@ const updateCommentValidation = [
   body("content")
     .trim()
     .isLength({ min: 1, max: 500 })
-    .withMessage("Comment content is required and must be under 500 characters"),
+    .withMessage(
+      "Comment content is required and must be under 500 characters"
+    ),
 ];
 
 const reactionValidation = [
@@ -134,7 +162,10 @@ router.delete("/:postId/reactions", auth, removeReaction);
 router.post(
   "/comments/:commentId/reactions",
   auth,
-  [param("commentId").isInt().withMessage("Valid comment ID is required"), ...reactionValidation],
+  [
+    param("commentId").isInt().withMessage("Valid comment ID is required"),
+    ...reactionValidation,
+  ],
   addCommentReaction
 );
 
@@ -148,7 +179,10 @@ router.delete(
 router.post(
   "/comments/:commentId/report",
   auth,
-  [param("commentId").isInt().withMessage("Valid comment ID is required"), ...reportValidation],
+  [
+    param("commentId").isInt().withMessage("Valid comment ID is required"),
+    ...reportValidation,
+  ],
   reportComment
 );
 

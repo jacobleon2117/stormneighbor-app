@@ -22,7 +22,9 @@ const sendEmail = async (to, subject, text, html = null) => {
     }
 
     if (!to || !subject || !text) {
-      throw new Error("Missing required email parameters: to, subject, or text");
+      throw new Error(
+        "Missing required email parameters: to, subject, or text"
+      );
     }
 
     const emailData = {
@@ -105,7 +107,7 @@ const sendVerificationEmail = async (to, code) => {
     </html>
   `;
 
-  return sendEmail(to, subject, text, html);
+  return await sendEmail(to, subject, text, html);
 };
 
 const sendPasswordResetEmail = async (to, code) => {
@@ -149,7 +151,7 @@ const sendPasswordResetEmail = async (to, code) => {
     </html>
   `;
 
-  return sendEmail(to, subject, text, html);
+  return await sendEmail(to, subject, text, html);
 };
 
 const generateDefaultHtml = (subject, text) => {

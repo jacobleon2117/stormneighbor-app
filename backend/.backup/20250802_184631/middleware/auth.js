@@ -6,7 +6,9 @@ const auth = async (req, res, next) => {
   try {
     const authHeader = req.header("Authorization");
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ message: "No token provided, authorization denied" });
+      return res
+        .status(401)
+        .json({ message: "No token provided, authorization denied" });
     }
 
     const token = authHeader.replace("Bearer ", "");
@@ -22,7 +24,9 @@ const auth = async (req, res, next) => {
         );
 
         if (userResult.rows.length === 0) {
-          return res.status(401).json({ message: "Token is not valid - user not found" });
+          return res
+            .status(401)
+            .json({ message: "Token is not valid - user not found" });
         }
 
         req.user = {

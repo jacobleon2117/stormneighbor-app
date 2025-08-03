@@ -47,38 +47,42 @@ router.get("/test", async (req, res) => {
   });
 });
 
-router.post("/test-upload", profileImageUpload.single("image"), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({
+router.post(
+  "/test-upload",
+  profileImageUpload.single("image"),
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: "No image file provided",
+        });
+      }
+
+      const imageUrl = req.file.path;
+      const publicId = req.file.filename;
+
+      console.log("Test image uploaded:", imageUrl);
+
+      res.json({
+        success: true,
+        message: "Test image uploaded successfully!",
+        data: {
+          imageUrl: imageUrl,
+          publicId: publicId,
+          size: req.file.size,
+          format: req.file.format,
+        },
+      });
+    } catch (error) {
+      console.error("Test upload error:", error);
+      res.status(500).json({
         success: false,
-        message: "No image file provided",
+        message: "Server error uploading image",
       });
     }
-
-    const imageUrl = req.file.path;
-    const publicId = req.file.filename;
-
-    console.log("Test image uploaded:", imageUrl);
-
-    res.json({
-      success: true,
-      message: "Test image uploaded successfully!",
-      data: {
-        imageUrl: imageUrl,
-        publicId: publicId,
-        size: req.file.size,
-        format: req.file.format,
-      },
-    });
-  } catch (error) {
-    console.error("Test upload error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server error uploading image",
-    });
   }
-});
+);
 
 router.get("/profile", auth, async (req, res) => {
   try {
@@ -189,7 +193,7 @@ router.delete("/image/:publicId", auth, deleteImageById);
 
 router.get("/stats", auth, getUploadStats);
 
-router.use((error, req, res, _next) => {
+router.use((error, req, res, next) => {
   console.error("Upload route error:", error);
 
   if (error.code === "LIMIT_FILE_SIZE") {

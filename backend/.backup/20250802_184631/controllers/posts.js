@@ -74,7 +74,9 @@ const getPosts = async (req, res) => {
         paramIndex += 3;
       }
 
-      query += ` ORDER BY p.created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+      query += ` ORDER BY p.created_at DESC LIMIT $${paramIndex} OFFSET $${
+        paramIndex + 1
+      }`;
       params.push(limit, offset);
 
       const result = await client.query(query, params);
@@ -281,14 +283,19 @@ const updatePost = async (req, res) => {
     const client = await pool.connect();
 
     try {
-      const postCheck = await client.query("SELECT user_id FROM posts WHERE id = $1", [id]);
+      const postCheck = await client.query(
+        "SELECT user_id FROM posts WHERE id = $1",
+        [id]
+      );
 
       if (postCheck.rows.length === 0) {
         return res.status(404).json({ message: "Post not found" });
       }
 
       if (postCheck.rows[0].user_id !== userId) {
-        return res.status(403).json({ message: "Not authorized to update this post" });
+        return res
+          .status(403)
+          .json({ message: "Not authorized to update this post" });
       }
 
       const updateFields = [];
@@ -307,7 +314,7 @@ const updatePost = async (req, res) => {
         return res.status(400).json({ message: "No valid fields to update" });
       }
 
-      updateFields.push("updated_at = NOW()");
+      updateFields.push(`updated_at = NOW()`);
       values.push(id);
 
       const query = `
@@ -341,14 +348,19 @@ const deletePost = async (req, res) => {
     const client = await pool.connect();
 
     try {
-      const postCheck = await client.query("SELECT user_id FROM posts WHERE id = $1", [id]);
+      const postCheck = await client.query(
+        "SELECT user_id FROM posts WHERE id = $1",
+        [id]
+      );
 
       if (postCheck.rows.length === 0) {
         return res.status(404).json({ message: "Post not found" });
       }
 
       if (postCheck.rows[0].user_id !== userId) {
-        return res.status(403).json({ message: "Not authorized to delete this post" });
+        return res
+          .status(403)
+          .json({ message: "Not authorized to delete this post" });
       }
 
       await client.query("DELETE FROM posts WHERE id = $1", [id]);
@@ -507,7 +519,9 @@ const updateComment = async (req, res) => {
       }
 
       if (commentCheck.rows[0].user_id !== userId) {
-        return res.status(403).json({ message: "Not authorized to update this comment" });
+        return res
+          .status(403)
+          .json({ message: "Not authorized to update this comment" });
       }
 
       const updateQuery = `
@@ -517,7 +531,11 @@ const updateComment = async (req, res) => {
         RETURNING updated_at
       `;
 
-      const result = await client.query(updateQuery, [content.trim(), commentId, postId]);
+      const result = await client.query(updateQuery, [
+        content.trim(),
+        commentId,
+        postId,
+      ]);
 
       res.json({
         message: "Comment updated successfully",
@@ -550,7 +568,9 @@ const deleteComment = async (req, res) => {
       }
 
       if (commentCheck.rows[0].user_id !== userId) {
-        return res.status(403).json({ message: "Not authorized to delete this comment" });
+        return res
+          .status(403)
+          .json({ message: "Not authorized to delete this comment" });
       }
 
       await client.query("DELETE FROM comments WHERE id = $1", [commentId]);
@@ -571,7 +591,13 @@ const addReaction = async (req, res) => {
     const userId = req.user.userId;
     const { reactionType } = req.body;
 
-    const validReactionTypes = ["like", "love", "helpful", "concerned", "angry"];
+    const validReactionTypes = [
+      "like",
+      "love",
+      "helpful",
+      "concerned",
+      "angry",
+    ];
     if (!validReactionTypes.includes(reactionType)) {
       return res.status(400).json({ message: "Invalid reaction type" });
     }
@@ -586,10 +612,10 @@ const addReaction = async (req, res) => {
 
       if (existingReaction.rows.length > 0) {
         if (existingReaction.rows[0].reaction_type === reactionType) {
-          await client.query("DELETE FROM reactions WHERE user_id = $1 AND post_id = $2", [
-            userId,
-            postId,
-          ]);
+          await client.query(
+            "DELETE FROM reactions WHERE user_id = $1 AND post_id = $2",
+            [userId, postId]
+          );
           return res.json({
             message: "Reaction removed successfully",
             action: "removed",
@@ -631,10 +657,10 @@ const removeReaction = async (req, res) => {
     const client = await pool.connect();
 
     try {
-      await client.query("DELETE FROM reactions WHERE user_id = $1 AND post_id = $2", [
-        userId,
-        postId,
-      ]);
+      await client.query(
+        "DELETE FROM reactions WHERE user_id = $1 AND post_id = $2",
+        [userId, postId]
+      );
 
       res.json({ message: "Reaction removed successfully" });
     } finally {
@@ -652,7 +678,13 @@ const addCommentReaction = async (req, res) => {
     const userId = req.user.userId;
     const { reactionType } = req.body;
 
-    const validReactionTypes = ["like", "love", "helpful", "concerned", "angry"];
+    const validReactionTypes = [
+      "like",
+      "love",
+      "helpful",
+      "concerned",
+      "angry",
+    ];
     if (!validReactionTypes.includes(reactionType)) {
       return res.status(400).json({ message: "Invalid reaction type" });
     }
@@ -660,7 +692,10 @@ const addCommentReaction = async (req, res) => {
     const client = await pool.connect();
 
     try {
-      const commentCheck = await client.query("SELECT id FROM comments WHERE id = $1", [commentId]);
+      const commentCheck = await client.query(
+        "SELECT id FROM comments WHERE id = $1",
+        [commentId]
+      );
 
       if (commentCheck.rows.length === 0) {
         return res.status(404).json({ message: "Comment not found" });
@@ -673,10 +708,10 @@ const addCommentReaction = async (req, res) => {
 
       if (existingReaction.rows.length > 0) {
         if (existingReaction.rows[0].reaction_type === reactionType) {
-          await client.query("DELETE FROM reactions WHERE user_id = $1 AND comment_id = $2", [
-            userId,
-            commentId,
-          ]);
+          await client.query(
+            "DELETE FROM reactions WHERE user_id = $1 AND comment_id = $2",
+            [userId, commentId]
+          );
           return res.json({
             message: "Reaction removed successfully",
             action: "removed",
@@ -718,10 +753,10 @@ const removeCommentReaction = async (req, res) => {
     const client = await pool.connect();
 
     try {
-      await client.query("DELETE FROM reactions WHERE user_id = $1 AND comment_id = $2", [
-        userId,
-        commentId,
-      ]);
+      await client.query(
+        "DELETE FROM reactions WHERE user_id = $1 AND comment_id = $2",
+        [userId, commentId]
+      );
 
       res.json({ message: "Reaction removed successfully" });
     } finally {
@@ -747,7 +782,10 @@ const reportComment = async (req, res) => {
     const client = await pool.connect();
 
     try {
-      const commentCheck = await client.query("SELECT id FROM comments WHERE id = $1", [commentId]);
+      const commentCheck = await client.query(
+        "SELECT id FROM comments WHERE id = $1",
+        [commentId]
+      );
 
       if (commentCheck.rows.length === 0) {
         return res.status(404).json({ message: "Comment not found" });

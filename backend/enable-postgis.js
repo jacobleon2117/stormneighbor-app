@@ -1,3 +1,4 @@
+// File: backend/enable-postgis.js
 const { pool } = require("./src/config/database");
 
 async function enablePostGIS() {
@@ -21,9 +22,7 @@ async function enablePostGIS() {
       console.log(
         " No PostGIS extensions found. This PostgreSQL instance may not support PostGIS."
       );
-      console.log(
-        "Railway might need a different PostgreSQL image with PostGIS support."
-      );
+      console.log("Railway might need a different PostgreSQL image with PostGIS support.");
     } else {
       console.log("Available PostGIS extensions:");
       extensionsResult.rows.forEach((row) => {
@@ -48,7 +47,6 @@ async function enablePostGIS() {
   }
 
   console.log("\nPostGIS setup attempt complete!");
-  process.exit(0);
 }
 
 enablePostGIS();

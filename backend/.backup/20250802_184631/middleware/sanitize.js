@@ -1,6 +1,5 @@
 // File: backend/src/middleware/sanitize.js
 const createDOMPurify = require("isomorphic-dompurify");
-const path = require("path");
 
 const DOMPurify = createDOMPurify();
 
@@ -43,15 +42,10 @@ const sanitizeObject = (obj) => {
   }
 
   if (typeof obj === "string") {
-    return (
-      DOMPurify.sanitize(obj, {
-        ALLOWED_TAGS: [],
-        ALLOWED_ATTR: [],
-      })
-        // eslint-disable-next-line no-control-regex
-        .replace(/[\x00-\x1F\x7F]/g, "")
-        .trim()
-    );
+    return DOMPurify.sanitize(obj, {
+      ALLOWED_TAGS: [],
+      ALLOWED_ATTR: [],
+    }).trim();
   }
 
   return obj;
@@ -64,8 +58,7 @@ const sanitizeSensitive = (req, res, next) => {
     if (req.body && typeof req.body === "object") {
       sensitiveFields.forEach((field) => {
         if (req.body[field] && typeof req.body[field] === "string") {
-          // eslint-disable-next-line no-control-regex
-          req.body[field] = req.body[field].replace(/[\x00-\x1F\x7F<>"'&]/g, "").trim();
+          req.body[field] = req.body[field].replace(/[<>\"'&]/g, "");
         }
       });
     }
@@ -79,30 +72,22 @@ const sanitizeSensitive = (req, res, next) => {
 
 const sanitizeFileMetadata = (req, res, next) => {
   try {
-    const cleanFilename = (name) => {
-      let sanitized = DOMPurify.sanitize(name, {
-        ALLOWED_TAGS: [],
-        ALLOWED_ATTR: [],
-      });
-
-      sanitized = Array.from(sanitized)
-        .filter((char) => {
-          const code = char.charCodeAt(0);
-          return code >= 32 && code !== 127;
-        })
-        .join("");
-
-      return path.basename(sanitized);
-    };
-
-    if (req.file?.originalname) {
-      req.file.originalname = cleanFilename(req.file.originalname);
+    if (req.file) {
+      if (req.file.originalname) {
+        req.file.originalname = DOMPurify.sanitize(req.file.originalname, {
+          ALLOWED_TAGS: [],
+          ALLOWED_ATTR: [],
+        });
+      }
     }
 
-    if (Array.isArray(req.files)) {
+    if (req.files && Array.isArray(req.files)) {
       req.files.forEach((file) => {
         if (file.originalname) {
-          file.originalname = cleanFilename(file.originalname);
+          file.originalname = DOMPurify.sanitize(file.originalname, {
+            ALLOWED_TAGS: [],
+            ALLOWED_ATTR: [],
+          });
         }
       });
     }

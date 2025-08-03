@@ -11,15 +11,21 @@ const requestLogger = (req, res, next) => {
 
   req.requestId = requestId;
 
-  console.log(`[${new Date().toISOString()}] [${requestId}] ${req.method} ${req.path}`, {
-    ip: req.ip || req.connection.remoteAddress,
-    userAgent: req.get("User-Agent"),
-    contentLength: req.get("Content-Length") || 0,
-    ...(process.env.NODE_ENV === "development" && {
-      query: Object.keys(req.query).length > 0 ? req.query : undefined,
-      body: req.method !== "GET" && req.body ? sanitizeLogData(req.body) : undefined,
-    }),
-  });
+  console.log(
+    `[${new Date().toISOString()}] [${requestId}] ${req.method} ${req.path}`,
+    {
+      ip: req.ip || req.connection.remoteAddress,
+      userAgent: req.get("User-Agent"),
+      contentLength: req.get("Content-Length") || 0,
+      ...(process.env.NODE_ENV === "development" && {
+        query: Object.keys(req.query).length > 0 ? req.query : undefined,
+        body:
+          req.method !== "GET" && req.body
+            ? sanitizeLogData(req.body)
+            : undefined,
+      }),
+    }
+  );
 
   const originalJson = res.json;
   res.json = function (data) {
@@ -34,8 +40,8 @@ const requestLogger = (req, res, next) => {
         contentLength: JSON.stringify(data).length,
         ...(process.env.NODE_ENV === "development" &&
           res.statusCode >= 400 && {
-          responseData: sanitizeLogData(data),
-        }),
+            responseData: sanitizeLogData(data),
+          }),
       }
     );
 
@@ -107,25 +113,32 @@ const performanceMonitor = (req, res, next) => {
     const finalMemory = process.memoryUsage();
 
     if (duration > 1000) {
-      console.warn(`[${new Date().toISOString()}] [${req.requestId}] SLOW REQUEST:`, {
-        method: req.method,
-        path: req.path,
-        duration: `${duration.toFixed(2)}ms`,
-        memoryDelta: {
-          heapUsed: `${((finalMemory.heapUsed - initialMemory.heapUsed) / 1024 / 1024).toFixed(2)}MB`,
-          rss: `${((finalMemory.rss - initialMemory.rss) / 1024 / 1024).toFixed(2)}MB`,
-        },
-      });
+      console.warn(
+        `[${new Date().toISOString()}] [${req.requestId}] SLOW REQUEST:`,
+        {
+          method: req.method,
+          path: req.path,
+          duration: `${duration.toFixed(2)}ms`,
+          memoryDelta: {
+            heapUsed: `${((finalMemory.heapUsed - initialMemory.heapUsed) / 1024 / 1024).toFixed(2)}MB`,
+            rss: `${((finalMemory.rss - initialMemory.rss) / 1024 / 1024).toFixed(2)}MB`,
+          },
+        }
+      );
     }
 
-    const heapIncrease = (finalMemory.heapUsed - initialMemory.heapUsed) / 1024 / 1024;
+    const heapIncrease =
+      (finalMemory.heapUsed - initialMemory.heapUsed) / 1024 / 1024;
     if (heapIncrease > 50) {
-      console.warn(`[${new Date().toISOString()}] [${req.requestId}] HIGH MEMORY USAGE:`, {
-        method: req.method,
-        path: req.path,
-        heapIncrease: `${heapIncrease.toFixed(2)}MB`,
-        currentHeap: `${(finalMemory.heapUsed / 1024 / 1024).toFixed(2)}MB`,
-      });
+      console.warn(
+        `[${new Date().toISOString()}] [${req.requestId}] HIGH MEMORY USAGE:`,
+        {
+          method: req.method,
+          path: req.path,
+          heapIncrease: `${heapIncrease.toFixed(2)}MB`,
+          currentHeap: `${(finalMemory.heapUsed / 1024 / 1024).toFixed(2)}MB`,
+        }
+      );
     }
   });
 
@@ -153,7 +166,8 @@ const analyticsTracker = (() => {
 
       res.on("finish", () => {
         const statusCode = res.statusCode;
-        stats.statusCodes[statusCode] = (stats.statusCodes[statusCode] || 0) + 1;
+        stats.statusCodes[statusCode] =
+          (stats.statusCodes[statusCode] || 0) + 1;
 
         if (statusCode >= 400) {
           stats.errors++;
@@ -173,7 +187,9 @@ const analyticsTracker = (() => {
             ? ((stats.errors / stats.totalRequests) * 100).toFixed(2) + "%"
             : "0%",
         requestsPerMinute:
-          stats.totalRequests > 0 ? (stats.totalRequests / (uptime / 1000 / 60)).toFixed(2) : "0",
+          stats.totalRequests > 0
+            ? (stats.totalRequests / (uptime / 1000 / 60)).toFixed(2)
+            : "0",
       };
     },
   };

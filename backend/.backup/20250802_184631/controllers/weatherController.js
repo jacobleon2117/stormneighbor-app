@@ -3,7 +3,8 @@ const axios = require("axios");
 const { pool } = require("../config/database");
 const { validationResult } = require("express-validator");
 
-const NOAA_API_BASE = process.env.NOAA_API_BASE_URL || "https://api.weather.gov";
+const NOAA_API_BASE =
+  process.env.NOAA_API_BASE_URL || "https://api.weather.gov";
 
 const getCurrentWeather = async (req, res) => {
   try {
@@ -16,12 +17,15 @@ const getCurrentWeather = async (req, res) => {
     }
 
     try {
-      const pointResponse = await axios.get(`${NOAA_API_BASE}/points/${lat},${lng}`, {
-        headers: {
-          "User-Agent": "StormNeighbor/1.0 (contact@stormneighbor.com)",
-        },
-        timeout: 10000,
-      });
+      const pointResponse = await axios.get(
+        `${NOAA_API_BASE}/points/${lat},${lng}`,
+        {
+          headers: {
+            "User-Agent": "StormNeighbor/1.0 (contact@stormneighbor.com)",
+          },
+          timeout: 10000,
+        }
+      );
 
       if (!pointResponse.data || !pointResponse.data.properties) {
         throw new Error("Invalid response from weather service");
@@ -75,7 +79,8 @@ const getCurrentWeather = async (req, res) => {
           windSpeed: "10 mph",
           windDirection: "SW",
           shortForecast: "Partly Cloudy",
-          detailedForecast: "Partly cloudy skies with comfortable temperatures.",
+          detailedForecast:
+            "Partly cloudy skies with comfortable temperatures.",
           icon: "https://api.weather.gov/icons/land/day/few?size=medium",
           isDaytime: true,
         },
@@ -109,7 +114,7 @@ const getAlerts = async (req, res) => {
 
     let userLat = latitude;
     let userLng = longitude;
-    const searchRadius = radius || 25;
+    let searchRadius = radius || 25;
 
     if ((!userLat || !userLng) && userId) {
       const client = await pool.connect();
@@ -139,7 +144,7 @@ const getAlerts = async (req, res) => {
 
     try {
       const alertsResult = await client.query(
-        "SELECT * FROM get_weather_alerts_for_location($1, $2, $3)",
+        `SELECT * FROM get_weather_alerts_for_location($1, $2, $3)`,
         [userLat, userLng, searchRadius]
       );
 
@@ -353,16 +358,19 @@ const updateAlert = async (req, res) => {
     const client = await pool.connect();
 
     try {
-      const alertCheck = await client.query("SELECT created_by FROM weather_alerts WHERE id = $1", [
-        id,
-      ]);
+      const alertCheck = await client.query(
+        "SELECT created_by FROM weather_alerts WHERE id = $1",
+        [id]
+      );
 
       if (alertCheck.rows.length === 0) {
         return res.status(404).json({ message: "Alert not found" });
       }
 
       if (alertCheck.rows[0].created_by !== userId) {
-        return res.status(403).json({ message: "Not authorized to update this alert" });
+        return res
+          .status(403)
+          .json({ message: "Not authorized to update this alert" });
       }
 
       const updateQuery = `
@@ -397,16 +405,19 @@ const deleteAlert = async (req, res) => {
     const client = await pool.connect();
 
     try {
-      const alertCheck = await client.query("SELECT created_by FROM weather_alerts WHERE id = $1", [
-        id,
-      ]);
+      const alertCheck = await client.query(
+        "SELECT created_by FROM weather_alerts WHERE id = $1",
+        [id]
+      );
 
       if (alertCheck.rows.length === 0) {
         return res.status(404).json({ message: "Alert not found" });
       }
 
       if (alertCheck.rows[0].created_by !== userId) {
-        return res.status(403).json({ message: "Not authorized to delete this alert" });
+        return res
+          .status(403)
+          .json({ message: "Not authorized to delete this alert" });
       }
 
       await client.query("DELETE FROM weather_alerts WHERE id = $1", [id]);

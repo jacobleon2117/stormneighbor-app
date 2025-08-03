@@ -23,7 +23,7 @@ const testCloudinaryConnection = async () => {
       return false;
     }
 
-    const _result = await cloudinary.api.ping();
+    const result = await cloudinary.api.ping();
     console.log("Cloudinary connection successful");
     console.log("Cloudinary account:", process.env.CLOUDINARY_CLOUD_NAME);
     return true;
@@ -46,7 +46,7 @@ const profileImageStorage = new CloudinaryStorage({
       { fetch_format: "auto" },
       { width: 400, height: 400, crop: "fill", gravity: "face" },
     ],
-    public_id: (req, _file) => {
+    public_id: (req, file) => {
       const timestamp = Date.now();
       const userId = req.user?.userId || "unknown";
       return `profile_${userId}_${timestamp}`;
@@ -64,7 +64,7 @@ const postImageStorage = new CloudinaryStorage({
       { fetch_format: "auto" },
       { width: 800, height: 600, crop: "limit" },
     ],
-    public_id: (req, _file) => {
+    public_id: (req, file) => {
       const timestamp = Date.now();
       const postId = req.params.postId || "new";
       return `post_${postId}_${timestamp}`;
@@ -82,7 +82,7 @@ const commentImageStorage = new CloudinaryStorage({
       { fetch_format: "auto" },
       { width: 600, height: 400, crop: "limit" },
     ],
-    public_id: (req, _file) => {
+    public_id: (req, file) => {
       const timestamp = Date.now();
       const commentId = req.params.commentId || "new";
       return `comment_${commentId}_${timestamp}`;
@@ -97,11 +97,20 @@ const profileImageUpload = multer({
     files: 1,
   },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
+    const allowedTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+    ];
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error("Only image files (JPEG, PNG, GIF, WebP) are allowed"), false);
+      cb(
+        new Error("Only image files (JPEG, PNG, GIF, WebP) are allowed"),
+        false
+      );
     }
   },
 });
@@ -113,11 +122,20 @@ const postImageUpload = multer({
     files: 1,
   },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
+    const allowedTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+    ];
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error("Only image files (JPEG, PNG, GIF, WebP) are allowed"), false);
+      cb(
+        new Error("Only image files (JPEG, PNG, GIF, WebP) are allowed"),
+        false
+      );
     }
   },
 });
@@ -129,11 +147,20 @@ const commentImageUpload = multer({
     files: 1,
   },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
+    const allowedTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+    ];
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error("Only image files (JPEG, PNG, GIF, WebP) are allowed"), false);
+      cb(
+        new Error("Only image files (JPEG, PNG, GIF, WebP) are allowed"),
+        false
+      );
     }
   },
 });
@@ -141,9 +168,11 @@ const commentImageUpload = multer({
 const getPublicIdFromUrl = (url) => {
   if (!url) return null;
   try {
-    const matches = url.match(/([^/]+)\.(jpg|jpeg|png|gif|webp)$/i);
+    const matches = url.match(/\/([^\/]+)\.(jpg|jpeg|png|gif|webp)$/i);
     if (matches && matches[1]) {
-      const pathMatches = url.match(/stormneighbor\/[^/]+\/([^/]+)\.(jpg|jpeg|png|gif|webp)$/i);
+      const pathMatches = url.match(
+        /\/stormneighbor\/[^\/]+\/([^\/]+)\.(jpg|jpeg|png|gif|webp)$/i
+      );
       if (pathMatches) {
         const folder = url.includes("/profiles/")
           ? "stormneighbor/profiles/"

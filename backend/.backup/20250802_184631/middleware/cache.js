@@ -25,7 +25,10 @@ class InMemoryCache {
       userAgent: req.get("User-Agent")?.substring(0, 50),
     };
 
-    return crypto.createHash("md5").update(JSON.stringify(keyData)).digest("hex");
+    return crypto
+      .createHash("md5")
+      .update(JSON.stringify(keyData))
+      .digest("hex");
   }
 
   get(key) {
@@ -124,7 +127,9 @@ class InMemoryCache {
       ...this.stats,
       size: this.cache.size,
       hitRate:
-        totalRequests > 0 ? ((this.stats.hits / totalRequests) * 100).toFixed(2) + "%" : "0%",
+        totalRequests > 0
+          ? ((this.stats.hits / totalRequests) * 100).toFixed(2) + "%"
+          : "0%",
       uptime: `${Math.floor(uptime / 1000 / 60)} minutes`,
       memoryUsage: `${(JSON.stringify([...this.cache.values()]).length / 1024 / 1024).toFixed(2)}MB`,
     };
@@ -222,7 +227,9 @@ const invalidateCache = (patterns = []) => {
           for (const [key, entry] of cache.cache.entries()) {
             const shouldInvalidate = patterns.some((pattern) => {
               if (typeof pattern === "string") {
-                return entry.data && JSON.stringify(entry.data).includes(pattern);
+                return (
+                  entry.data && JSON.stringify(entry.data).includes(pattern)
+                );
               }
               if (pattern instanceof RegExp) {
                 return pattern.test(key);
@@ -264,7 +271,8 @@ const cacheConfigs = {
 
   posts: createCacheMiddleware({
     ttl: 2 * 60 * 1000,
-    keyGenerator: (req) => `posts:${req.user?.userId}:${JSON.stringify(req.query)}`,
+    keyGenerator: (req) =>
+      `posts:${req.user?.userId}:${JSON.stringify(req.query)}`,
   }),
 
   static: createCacheMiddleware({
@@ -310,7 +318,7 @@ const clearCache = (req, res) => {
 
   res.json({
     success: true,
-    message: "Cache cleared successfully",
+    message: `Cache cleared successfully`,
     data: {
       entriesRemoved: sizeBefore,
       cacheSize: cache.cache.size,

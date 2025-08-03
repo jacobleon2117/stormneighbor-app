@@ -28,9 +28,10 @@ const uploadProfileImage = async (req, res) => {
     const client = await pool.connect();
 
     try {
-      const currentUser = await client.query("SELECT profile_image_url FROM users WHERE id = $1", [
-        userId,
-      ]);
+      const currentUser = await client.query(
+        "SELECT profile_image_url FROM users WHERE id = $1",
+        [userId]
+      );
 
       const result = await client.query(
         "UPDATE users SET profile_image_url = $1, updated_at = NOW() WHERE id = $2 RETURNING profile_image_url, first_name, last_name",
@@ -49,7 +50,9 @@ const uploadProfileImage = async (req, res) => {
         currentUser.rows[0]?.profile_image_url &&
         currentUser.rows[0].profile_image_url !== imageUrl
       ) {
-        const oldPublicId = getPublicIdFromUrl(currentUser.rows[0].profile_image_url);
+        const oldPublicId = getPublicIdFromUrl(
+          currentUser.rows[0].profile_image_url
+        );
         if (oldPublicId) {
           try {
             await deleteImage(oldPublicId);
@@ -109,7 +112,12 @@ const uploadPostImage = async (req, res) => {
     const { postId } = req.params;
     const userId = req.user.userId;
 
-    console.log("Post image upload request for post:", postId, "by user:", userId);
+    console.log(
+      "Post image upload request for post:",
+      postId,
+      "by user:",
+      userId
+    );
 
     if (!req.file) {
       return res.status(400).json({
@@ -130,9 +138,10 @@ const uploadPostImage = async (req, res) => {
     const client = await pool.connect();
 
     try {
-      const postCheck = await client.query("SELECT user_id, images FROM posts WHERE id = $1", [
-        postId,
-      ]);
+      const postCheck = await client.query(
+        "SELECT user_id, images FROM posts WHERE id = $1",
+        [postId]
+      );
 
       if (postCheck.rows.length === 0) {
         await deleteImage(publicId);
@@ -197,7 +206,12 @@ const uploadCommentImage = async (req, res) => {
     const { commentId } = req.params;
     const userId = req.user.userId;
 
-    console.log("Comment image upload request for comment:", commentId, "by user:", userId);
+    console.log(
+      "Comment image upload request for comment:",
+      commentId,
+      "by user:",
+      userId
+    );
 
     if (!req.file) {
       return res.status(400).json({
@@ -280,7 +294,12 @@ const deleteImageById = async (req, res) => {
     const { publicId } = req.params;
     const userId = req.user.userId;
 
-    console.log("Delete image request for publicId:", publicId, "by user:", userId);
+    console.log(
+      "Delete image request for publicId:",
+      publicId,
+      "by user:",
+      userId
+    );
 
     if (!publicId) {
       return res.status(400).json({
@@ -324,29 +343,38 @@ const getUploadStats = async (req, res) => {
 
     try {
       const postImages = await client.query(
-        "SELECT array_length(images, 1) as image_count FROM posts WHERE user_id = $1 AND images IS NOT NULL",
+        `SELECT array_length(images, 1) as image_count FROM posts WHERE user_id = $1 AND images IS NOT NULL`,
         [userId]
       );
 
       const commentImages = await client.query(
-        "SELECT array_length(images, 1) as image_count FROM comments WHERE user_id = $1 AND images IS NOT NULL",
+        `SELECT array_length(images, 1) as image_count FROM comments WHERE user_id = $1 AND images IS NOT NULL`,
         [userId]
       );
 
       const profileImage = await client.query(
-        "SELECT profile_image_url FROM users WHERE id = $1 AND profile_image_url IS NOT NULL",
+        `SELECT profile_image_url FROM users WHERE id = $1 AND profile_image_url IS NOT NULL`,
         [userId]
       );
 
       const stats = {
-        postImages: postImages.rows.reduce((sum, row) => sum + (row.image_count || 0), 0),
-        commentImages: commentImages.rows.reduce((sum, row) => sum + (row.image_count || 0), 0),
+        postImages: postImages.rows.reduce(
+          (sum, row) => sum + (row.image_count || 0),
+          0
+        ),
+        commentImages: commentImages.rows.reduce(
+          (sum, row) => sum + (row.image_count || 0),
+          0
+        ),
         hasProfileImage: profileImage.rows.length > 0,
         profileImageUrl: profileImage.rows[0]?.profile_image_url || null,
         totalImages: 0,
       };
 
-      stats.totalImages = stats.postImages + stats.commentImages + (stats.hasProfileImage ? 1 : 0);
+      stats.totalImages =
+        stats.postImages +
+        stats.commentImages +
+        (stats.hasProfileImage ? 1 : 0);
 
       res.json({
         success: true,

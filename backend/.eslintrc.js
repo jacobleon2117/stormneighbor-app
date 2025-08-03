@@ -12,6 +12,7 @@ module.exports = {
   },
   rules: {
     "no-console": "off",
+
     "no-unused-vars": [
       "warn",
       {
@@ -21,6 +22,7 @@ module.exports = {
     ],
     "no-var": "error",
     "prefer-const": "error",
+
     "no-duplicate-imports": "error",
 
     "no-eval": "error",
@@ -36,7 +38,6 @@ module.exports = {
     indent: ["error", 2],
     quotes: ["error", "double"],
     semi: ["error", "always"],
-    "comma-trailing": "off",
 
     "no-process-exit": "warn",
     "no-path-concat": "error",

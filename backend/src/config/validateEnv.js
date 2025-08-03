@@ -44,7 +44,7 @@ function validateEnvironment() {
 
   if (process.env.RESEND_API_KEY && !process.env.RESEND_API_KEY.startsWith("re_")) {
     warnings.push(
-      'RESEND_API_KEY should start with "re_" - please verify this is a valid Resend API key'
+      "RESEND_API_KEY should start with \"re_\" - please verify this is a valid Resend API key"
     );
   }
 

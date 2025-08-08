@@ -196,7 +196,10 @@ class SearchService {
 
       const popularResult = await client.query(
         `
-        SELECT DISTINCT search_term as suggestion_text, 'popular' as suggestion_type
+        SELECT 
+          search_term as suggestion_text, 
+          'popular' as suggestion_type,
+          search_count
         FROM trending_searches
         WHERE search_count > 5
         AND (city IS NULL OR city = $1)
@@ -381,16 +384,16 @@ class SearchService {
         FROM users
         WHERE is_active = true
         AND (
-          first_name ILIKE $2 OR
-          last_name ILIKE $2 OR
-          COALESCE(bio, '') ILIKE $2
+          first_name ILIKE $1 OR
+          last_name ILIKE $1 OR
+          COALESCE(bio, '') ILIKE $1
         )
-        AND (location_city = $3 OR $3 IS NULL)
-        AND (address_state = $4 OR $4 IS NULL)
+        AND (location_city = $2 OR $2 IS NULL)
+        AND (address_state = $3 OR $3 IS NULL)
         ORDER BY first_name, last_name
-        LIMIT $5
+        LIMIT $4
       `,
-        [query, `%${query}%`, city, state, limit]
+        [`%${query}%`, city, state, limit]
       );
 
       return result.rows.map((row) => ({
@@ -482,44 +485,52 @@ class SearchService {
 
   static async logSearchQuery(client, userId, query, filters, city, state) {
     if (userId) {
-      await client.query(
-        `
-        INSERT INTO search_queries (
-          user_id, query_text, filters, search_city, search_state, source
-        ) VALUES ($1, $2, $3, $4, $5, $6)
-      `,
-        [userId, query, JSON.stringify(filters), city, state, "manual"]
-      );
+      try {
+        await client.query(
+          `
+          INSERT INTO search_queries (
+            user_id, query_text, filters, search_city, search_state, source
+          ) VALUES ($1, $2, $3, $4, $5, $6)
+        `,
+          [userId, query, JSON.stringify(filters), city, state, "manual"]
+        );
+      } catch (error) {
+        console.error("Error logging search query:", error.message);
+      }
     }
   }
 
   static async updateSearchQueryStats(client, query, resultCount, executionTime) {
     if (!query) return;
 
-    await client.query(
-      `
-      UPDATE search_queries 
-      SET results_count = $1, execution_time_ms = $2
-      WHERE query_text = $3 
-      AND created_at >= NOW() - INTERVAL '1 minute'
-      ORDER BY created_at DESC
-      LIMIT 1
-    `,
-      [resultCount, executionTime, query]
-    );
+    try {
+      await client.query(
+        `
+        UPDATE search_queries 
+        SET results_count = $1, execution_time_ms = $2
+        WHERE query_text = $3 
+        AND created_at >= NOW() - INTERVAL '1 minute'
+        ORDER BY created_at DESC
+        LIMIT 1
+      `,
+        [resultCount, executionTime, query]
+      );
 
-    await client.query(
-      `
-      INSERT INTO search_suggestions (suggestion_text, suggestion_type, search_count, result_count)
-      VALUES ($1, 'query', 1, $2)
-      ON CONFLICT (suggestion_text, suggestion_type, city, state)
-      DO UPDATE SET 
-        search_count = search_suggestions.search_count + 1,
-        result_count = (search_suggestions.result_count + $2) / 2,
-        updated_at = NOW()
-    `,
-      [query, resultCount]
-    );
+      await client.query(
+        `
+        INSERT INTO search_suggestions (suggestion_text, suggestion_type, search_count, result_count)
+        VALUES ($1, 'query', 1, $2)
+        ON CONFLICT (suggestion_text, suggestion_type, city, state)
+        DO UPDATE SET 
+          search_count = search_suggestions.search_count + 1,
+          result_count = (search_suggestions.result_count + $2) / 2,
+          updated_at = NOW()
+      `,
+        [query, resultCount]
+      );
+    } catch (error) {
+      console.error("Error updating search stats:", error.message);
+    }
   }
 }
 

@@ -19,7 +19,6 @@ const {
 
 const router = express.Router();
 
-// Validation rules
 const searchPostsValidation = [
   query("q")
     .optional()
@@ -103,26 +102,25 @@ const searchUsersValidation = [
   query("limit").optional().isInt({ min: 1, max: 50 }),
 ];
 
-// Main search endpoint
+router.get("/test-system", testSearchSystem);
+
 router.get(
   "/",
   auth,
   searchPostsValidation,
   handleValidationErrors,
-  cacheConfigs.shortTerm, // Cache for 1 minute
+  cacheConfigs.shortTerm,
   searchPosts
 );
 
-// Search suggestions and autocomplete
 router.get(
   "/suggestions",
   searchSuggestionsValidation,
   handleValidationErrors,
-  cacheConfigs.static, // Cache for 30 minutes
+  cacheConfigs.static,
   getSearchSuggestions
 );
 
-// Trending searches (public endpoint)
 router.get(
   "/trending",
   [
@@ -131,21 +129,19 @@ router.get(
     query("limit").optional().isInt({ min: 1, max: 50 }),
   ],
   handleValidationErrors,
-  cacheConfigs.static, // Cache for 30 minutes
+  cacheConfigs.static,
   getTrendingSearches
 );
 
-// Search users
 router.get(
   "/users",
   auth,
   searchUsersValidation,
   handleValidationErrors,
-  cacheConfigs.shortTerm, // Cache for 1 minute
+  cacheConfigs.shortTerm,
   searchUsers
 );
 
-// Saved searches endpoints
 router.get("/saved", auth, getSavedSearches);
 
 router.post("/saved", auth, saveSearchValidation, handleValidationErrors, saveSearch);
@@ -166,7 +162,6 @@ router.delete(
   deleteSavedSearch
 );
 
-// Search analytics (admin/insights)
 router.get(
   "/analytics",
   auth, // TODO: Add admin middleware when implemented
@@ -182,10 +177,6 @@ router.get(
   getSearchAnalytics
 );
 
-// Test search system
-router.get("/test-system", testSearchSystem);
-
-// Quick search endpoints for specific use cases
 router.get(
   "/quick/emergency",
   auth,
@@ -238,7 +229,6 @@ router.get(
   searchPosts
 );
 
-// Advanced search with complex filters endpoint
 router.post(
   "/advanced",
   auth,
@@ -262,7 +252,6 @@ router.post(
   ],
   handleValidationErrors,
   async (req, res, next) => {
-    // Transform POST body to query parameters for reuse
     const { query, location, filters, sorting, pagination } = req.body;
 
     req.query = {

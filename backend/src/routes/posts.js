@@ -19,7 +19,6 @@ const {
   removeReaction,
   addCommentReaction,
   removeCommentReaction,
-  reportComment,
 } = require("../controllers/posts");
 
 const createPostValidation = [
@@ -40,8 +39,6 @@ const createPostValidation = [
     .isIn(["low", "normal", "high", "urgent"])
     .withMessage("Invalid priority"),
   body("isEmergency").optional().isBoolean().withMessage("isEmergency must be a boolean"),
-  body("latitude").optional().isFloat({ min: -90, max: 90 }).withMessage("Invalid latitude"),
-  body("longitude").optional().isFloat({ min: -180, max: 180 }).withMessage("Invalid longitude"),
   body("images").optional().isArray().withMessage("Images must be an array"),
   body("tags").optional().isArray().withMessage("Tags must be an array"),
 ];
@@ -62,8 +59,6 @@ const updatePostValidation = [
     .isIn(["low", "normal", "high", "urgent"])
     .withMessage("Invalid priority"),
   body("isResolved").optional().isBoolean().withMessage("isResolved must be a boolean"),
-  body("latitude").optional().isFloat({ min: -90, max: 90 }).withMessage("Invalid latitude"),
-  body("longitude").optional().isFloat({ min: -180, max: 180 }).withMessage("Invalid longitude"),
   body("images").optional().isArray().withMessage("Images must be an array"),
   body("tags").optional().isArray().withMessage("Tags must be an array"),
 ];
@@ -91,12 +86,6 @@ const reactionValidation = [
   body("reactionType")
     .isIn(["like", "love", "helpful", "concerned", "angry"])
     .withMessage("Invalid reaction type"),
-];
-
-const reportValidation = [
-  body("reason")
-    .isIn(["inappropriate", "spam", "harassment", "other"])
-    .withMessage("Invalid report reason"),
 ];
 
 router.get("/", auth, getPosts);
@@ -199,14 +188,6 @@ router.delete(
   removeCommentReaction
 );
 
-router.post(
-  "/comments/:commentId/report",
-  auth,
-  [param("commentId").isInt().withMessage("Valid comment ID is required"), ...reportValidation],
-  handleValidationErrors,
-  reportComment
-);
-
 router.get("/test", auth, async (req, res) => {
   try {
     const { pool } = require("../config/database");
@@ -218,17 +199,18 @@ router.get("/test", auth, async (req, res) => {
       `);
 
       const userResult = await client.query(
-        `
-        SELECT id, first_name, location_city FROM users WHERE id = $1
-      `,
+        "SELECT id, first_name, location_city FROM users WHERE id = $1",
         [req.user.userId]
       );
 
       res.json({
+        success: true,
         message: "Posts endpoint is working!",
-        postCount: result.rows[0].count,
-        user: userResult.rows[0] || null,
-        timestamp: new Date().toISOString(),
+        data: {
+          postCount: result.rows[0].count,
+          user: userResult.rows[0] || null,
+          timestamp: new Date().toISOString(),
+        },
       });
     } finally {
       client.release();
@@ -236,6 +218,7 @@ router.get("/test", auth, async (req, res) => {
   } catch (error) {
     console.error("Test endpoint error:", error);
     res.status(500).json({
+      success: false,
       message: "Test failed",
       error: error.message,
     });

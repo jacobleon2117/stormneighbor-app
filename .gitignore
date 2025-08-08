@@ -155,4 +155,5 @@ ios/Pods/Flipper-RSocket
 *.tar.gz
 
 # Sentry
-.sentryclirc
+.sentryclirc*.json
+firebase-*.json

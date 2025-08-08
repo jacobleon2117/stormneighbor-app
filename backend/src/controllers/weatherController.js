@@ -11,6 +11,7 @@ const getCurrentWeather = async (req, res) => {
 
     if (!lat || !lng) {
       return res.status(400).json({
+        success: false,
         message: "Latitude and longitude are required",
       });
     }
@@ -61,9 +62,14 @@ const getCurrentWeather = async (req, res) => {
         source: "NOAA",
       };
 
-      res.json(weatherData);
+      res.json({
+        success: true,
+        message: "Weather data retrieved successfully",
+        data: weatherData,
+      });
     } catch (apiError) {
       console.error("NOAA API Error:", apiError.message);
+
       const mockWeatherData = {
         location: {
           latitude: parseFloat(lat),
@@ -94,98 +100,68 @@ const getCurrentWeather = async (req, res) => {
         note: "Weather service temporarily unavailable. Showing sample data.",
       };
 
-      res.json(mockWeatherData);
+      res.json({
+        success: true,
+        message: "Weather data retrieved (using fallback data)",
+        data: mockWeatherData,
+      });
     }
   } catch (error) {
     console.error("Get weather error:", error);
-    res.status(500).json({ message: "Server error fetching weather data" });
+    res.status(500).json({
+      success: false,
+      message: "Server error fetching weather data",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
 const getAlerts = async (req, res) => {
-  const { latitude, longitude, radius } = req.query;
-  console.log("getAlerts query params:", latitude, longitude, radius);
   try {
-    const { latitude, longitude, radius } = req.query;
+    const { latitude, longitude, city, state } = req.query;
     const userId = req.user?.userId;
 
     let userLat = latitude;
     let userLng = longitude;
-    const searchRadius = radius ? parseFloat(radius) : 25;
+    let userCity = city;
+    let userState = state;
 
-    if ((!userLat || !userLng) && userId) {
+    if ((!userCity || !userState) && userId) {
       const client = await pool.connect();
       try {
         const userResult = await client.query(
-          "SELECT ST_X(location::geometry) as longitude, ST_Y(location::geometry) as latitude FROM users WHERE id = $1",
+          "SELECT location_city, address_state, latitude, longitude FROM users WHERE id = $1",
           [userId]
         );
 
         if (userResult.rows.length > 0) {
           const user = userResult.rows[0];
-          userLat = user.latitude;
-          userLng = user.longitude;
+          userCity = userCity || user.location_city;
+          userState = userState || user.address_state;
+          userLat = userLat || user.latitude;
+          userLng = userLng || user.longitude;
         }
       } finally {
         client.release();
       }
     }
 
-    if (!userLat || !userLng) {
+    if (!userCity || !userState) {
       return res.status(400).json({
-        message: "Location coordinates are required",
+        success: false,
+        message: "City and state are required for alerts",
       });
     }
 
     const client = await pool.connect();
 
     try {
-      const alertsResult = await client.query(
-        `SELECT
-     id, alert_id, title, description, severity, alert_type, source,
-     start_time, end_time, is_active, created_at, distance_miles
-   FROM get_weather_alerts_for_location($1, $2, $3)`,
-        [userLat, userLng, searchRadius]
-      );
+      const dbAlertsResult = await client.query("SELECT * FROM get_alerts_by_location($1, $2)", [
+        userCity,
+        userState,
+      ]);
 
-      let noaaAlerts = [];
-      try {
-        const noaaResponse = await axios.get(
-          `${NOAA_API_BASE}/alerts/active?point=${userLat},${userLng}`,
-          {
-            headers: {
-              "User-Agent": "StormNeighbor/1.0 (contact@stormneighbor.com)",
-            },
-            timeout: 10000,
-          }
-        );
-
-        if (noaaResponse.data && noaaResponse.data.features) {
-          noaaAlerts = noaaResponse.data.features.map((alert) => ({
-            id: `noaa-${alert.id}`,
-            alertId: alert.id,
-            title: alert.properties.headline,
-            description: alert.properties.description,
-            severity: alert.properties.severity?.toUpperCase() || "MODERATE",
-            alertType: alert.properties.event,
-            source: "NOAA",
-            startTime: alert.properties.onset,
-            endTime: alert.properties.expires,
-            isActive: true,
-            createdAt: alert.properties.sent,
-            distanceMiles: 0,
-            metadata: {
-              urgency: alert.properties.urgency,
-              certainty: alert.properties.certainty,
-              areas: alert.properties.areaDesc,
-            },
-          }));
-        }
-      } catch (noaaError) {
-        console.warn("Failed to fetch NOAA alerts:", noaaError.message);
-      }
-
-      const dbAlerts = alertsResult.rows.map((row) => ({
+      const dbAlerts = dbAlertsResult.rows.map((row) => ({
         id: row.id,
         alertId: row.alert_id,
         title: row.title,
@@ -197,9 +173,53 @@ const getAlerts = async (req, res) => {
         endTime: row.end_time,
         isActive: row.is_active,
         createdAt: row.created_at,
-        distanceMiles: parseFloat(row.distance_miles || 0),
-        metadata: {},
+        location: {
+          city: userCity,
+          state: userState,
+        },
       }));
+
+      let noaaAlerts = [];
+      if (userLat && userLng) {
+        try {
+          const noaaResponse = await axios.get(
+            `${NOAA_API_BASE}/alerts/active?point=${userLat},${userLng}`,
+            {
+              headers: {
+                "User-Agent": "StormNeighbor/1.0 (contact@stormneighbor.com)",
+              },
+              timeout: 10000,
+            }
+          );
+
+          if (noaaResponse.data && noaaResponse.data.features) {
+            noaaAlerts = noaaResponse.data.features.map((alert) => ({
+              id: `noaa-${alert.id}`,
+              alertId: alert.id,
+              title: alert.properties.headline,
+              description: alert.properties.description,
+              severity: alert.properties.severity?.toUpperCase() || "MODERATE",
+              alertType: alert.properties.event,
+              source: "NOAA",
+              startTime: alert.properties.onset,
+              endTime: alert.properties.expires,
+              isActive: true,
+              createdAt: alert.properties.sent,
+              location: {
+                city: userCity,
+                state: userState,
+              },
+              metadata: {
+                urgency: alert.properties.urgency,
+                certainty: alert.properties.certainty,
+                areas: alert.properties.areaDesc,
+              },
+            }));
+          }
+        } catch (noaaError) {
+          console.warn("Failed to fetch NOAA alerts:", noaaError.message);
+        }
+      }
 
       const allAlerts = [...dbAlerts, ...noaaAlerts];
 
@@ -212,24 +232,43 @@ const getAlerts = async (req, res) => {
           return aSeverity - bSeverity;
         }
 
-        return (a.distanceMiles || 0) - (b.distanceMiles || 0);
+        return new Date(b.createdAt || b.startTime) - new Date(a.createdAt || a.startTime);
       });
 
       res.json({
-        alerts: allAlerts,
-        location: {
-          latitude: parseFloat(userLat),
-          longitude: parseFloat(userLng),
-          radiusMiles: parseFloat(searchRadius),
+        success: true,
+        message: "Alerts retrieved successfully",
+        data: {
+          alerts: allAlerts,
+          location: {
+            city: userCity,
+            state: userState,
+            coordinates:
+              userLat && userLng
+                ? {
+                  latitude: parseFloat(userLat),
+                  longitude: parseFloat(userLng),
+                }
+                : null,
+          },
+          lastUpdated: new Date().toISOString(),
+          sources: {
+            database: dbAlerts.length,
+            noaa: noaaAlerts.length,
+            total: allAlerts.length,
+          },
         },
-        lastUpdated: new Date().toISOString(),
       });
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Get alerts error:", error);
-    res.status(500).json({ message: "Server error fetching alerts" });
+    res.status(500).json({
+      success: false,
+      message: "Server error fetching alerts",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -237,56 +276,49 @@ const createAlert = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        errors: errors.array(),
+      });
     }
 
     const userId = req.user.userId;
-    const {
-      title,
-      description,
-      severity,
-      alertType,
-      startTime,
-      endTime,
-      latitude,
-      longitude,
-      metadata = {},
-    } = req.body;
+    const { title, description, severity, alertType, startTime, endTime, metadata = {} } = req.body;
 
     const client = await pool.connect();
 
     try {
       const userResult = await client.query(
-        `SELECT 
-          location_city,
-          address_state as location_state,
-          location_county,
-          ST_X(location::geometry) as user_longitude,
-          ST_Y(location::geometry) as user_latitude
-        FROM users WHERE id = $1`,
+        "SELECT location_city, address_state, location_county FROM users WHERE id = $1",
         [userId]
       );
 
       if (userResult.rows.length === 0) {
-        return res.status(404).json({ message: "User not found" });
+        return res.status(404).json({
+          success: false,
+          message: "User not found",
+        });
       }
 
       const user = userResult.rows[0];
 
-      const alertLat = latitude || user.user_latitude;
-      const alertLng = longitude || user.user_longitude;
-      const alertCity = user.location_city;
-      const alertState = user.location_state;
-      const alertCounty = user.location_county;
-
-      if (!alertLat || !alertLng) {
+      if (!user.location_city || !user.address_state) {
         return res.status(400).json({
-          message: "Location required. Please complete your profile setup.",
+          success: false,
+          message: "Please complete your profile with city and state information to create alerts",
         });
       }
 
-      let locationQuery = "";
-      let locationValue = null;
+      const insertQuery = `
+        INSERT INTO weather_alerts (
+          title, description, severity, alert_type, source,
+          start_time, end_time, created_by, location_city, location_state, location_county, metadata
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
+        ) RETURNING id, created_at
+      `;
+
       const values = [
         title,
         description,
@@ -296,48 +328,30 @@ const createAlert = async (req, res) => {
         startTime,
         endTime,
         userId,
-        alertCity,
-        alertState,
-        alertCounty,
+        user.location_city,
+        user.address_state,
+        user.location_county,
         metadata,
       ];
-
-      if (alertLat && alertLng) {
-        locationQuery = ", affected_areas";
-        locationValue = `ST_SetSRID(ST_GeomFromText('POINT(${alertLng} ${alertLat})'), 4326)`;
-      }
-
-      const insertQuery = `
-        INSERT INTO weather_alerts (
-          title, description, severity, alert_type, source,
-          start_time, end_time, created_by, location_city, location_state, location_county, metadata
-          ${locationQuery}
-        ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
-          ${locationValue ? `, ${locationValue}` : ""}
-        ) RETURNING id, created_at
-      `;
 
       const result = await client.query(insertQuery, values);
       const newAlert = result.rows[0];
 
-      if (req.io) {
-        req.io.emit("emergency-alert", {
-          alertId: newAlert.id,
-          city: alertCity,
-          state: alertState,
-          title,
-          severity,
-          alertType,
-          userId,
-        });
-      }
-
       res.status(201).json({
+        success: true,
         message: "Alert created successfully",
-        alert: {
-          id: newAlert.id,
-          createdAt: newAlert.created_at,
+        data: {
+          alert: {
+            id: newAlert.id,
+            title,
+            severity,
+            alertType,
+            location: {
+              city: user.location_city,
+              state: user.address_state,
+            },
+            createdAt: newAlert.created_at,
+          },
         },
       });
     } finally {
@@ -345,7 +359,11 @@ const createAlert = async (req, res) => {
     }
   } catch (error) {
     console.error("Create alert error:", error);
-    res.status(500).json({ message: "Server error creating alert" });
+    res.status(500).json({
+      success: false,
+      message: "Server error creating alert",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -363,11 +381,17 @@ const updateAlert = async (req, res) => {
       ]);
 
       if (alertCheck.rows.length === 0) {
-        return res.status(404).json({ message: "Alert not found" });
+        return res.status(404).json({
+          success: false,
+          message: "Alert not found",
+        });
       }
 
       if (alertCheck.rows[0].created_by !== userId) {
-        return res.status(403).json({ message: "Not authorized to update this alert" });
+        return res.status(403).json({
+          success: false,
+          message: "Not authorized to update this alert",
+        });
       }
 
       const updateQuery = `
@@ -382,15 +406,22 @@ const updateAlert = async (req, res) => {
       const result = await client.query(updateQuery, [id, isActive, endTime]);
 
       res.json({
+        success: true,
         message: "Alert updated successfully",
-        updatedAt: result.rows[0].updated_at,
+        data: {
+          updatedAt: result.rows[0].updated_at,
+        },
       });
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Update alert error:", error);
-    res.status(500).json({ message: "Server error updating alert" });
+    res.status(500).json({
+      success: false,
+      message: "Server error updating alert",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -407,16 +438,23 @@ const deleteAlert = async (req, res) => {
       ]);
 
       if (alertCheck.rows.length === 0) {
-        return res.status(404).json({ message: "Alert not found" });
+        return res.status(404).json({
+          success: false,
+          message: "Alert not found",
+        });
       }
 
       if (alertCheck.rows[0].created_by !== userId) {
-        return res.status(403).json({ message: "Not authorized to delete this alert" });
+        return res.status(403).json({
+          success: false,
+          message: "Not authorized to delete this alert",
+        });
       }
 
       await client.query("DELETE FROM weather_alerts WHERE id = $1", [id]);
 
       res.json({
+        success: true,
         message: "Alert deleted successfully",
       });
     } finally {
@@ -424,7 +462,11 @@ const deleteAlert = async (req, res) => {
     }
   } catch (error) {
     console.error("Delete alert error:", error);
-    res.status(500).json({ message: "Server error deleting alert" });
+    res.status(500).json({
+      success: false,
+      message: "Server error deleting alert",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 

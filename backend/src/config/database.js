@@ -1,41 +1,38 @@
+// File: backend/src/config/database.js
 const { Pool } = require("pg");
 require("dotenv").config();
 
 const getDatabaseConfig = () => {
   const isProduction = process.env.NODE_ENV === "production";
   const isStaging = process.env.NODE_ENV === "staging";
+  const isTest = process.env.NODE_ENV === "test";
 
   let sslConfig = false;
 
-  if (process.env.DATABASE_SSL === "true" || isProduction || isStaging) {
+  if (isProduction || isStaging || process.env.DATABASE_SSL === "true") {
     sslConfig = {
-      rejectUnauthorized: process.env.DATABASE_SSL_REJECT_UNAUTHORIZED !== "false",
+      rejectUnauthorized: false,
     };
-
-    if (
-      process.env.DATABASE_URL?.includes("supabase") ||
-      process.env.DATABASE_URL?.includes("railway") ||
-      process.env.DATABASE_URL?.includes("render") ||
-      process.env.DATABASE_URL?.includes("heroku")
-    ) {
-      sslConfig.rejectUnauthorized = false;
-    }
   }
 
-  return {
+  const poolConfig = {
     connectionString: process.env.DATABASE_URL,
     ssl: sslConfig,
-    max: parseInt(process.env.DB_POOL_SIZE) || (isProduction ? 20 : 5),
-    connectionTimeoutMillis: parseInt(process.env.DB_CONNECTION_TIMEOUT) || 10000,
-    idleTimeoutMillis: parseInt(process.env.DB_IDLE_TIMEOUT) || 30000,
+    max: isTest ? 2 : isProduction ? 20 : 5,
+    connectionTimeoutMillis: isTest ? 5000 : 15000,
+    idleTimeoutMillis: isTest ? 10000 : 30000,
+    acquireTimeoutMillis: isTest ? 10000 : 60000,
   };
+
+  return poolConfig;
 };
 
 const pool = new Pool(getDatabaseConfig());
 
 const testConnection = async () => {
+  let client;
   try {
-    const client = await pool.connect();
+    client = await pool.connect();
     console.log("SUCCESS: Database connected successfully!");
 
     const result = await client.query("SELECT NOW() as current_time, version()");
@@ -49,7 +46,12 @@ const testConnection = async () => {
       console.log("INFO: PostGIS not available (this is OK for basic functionality)");
     }
 
-    client.release();
+    console.log("Pool status:", {
+      total: pool.totalCount,
+      idle: pool.idleCount,
+      waiting: pool.waitingCount,
+    });
+
     return true;
   } catch (error) {
     console.error("ERROR: Database connection failed:", error.message);
@@ -61,25 +63,37 @@ const testConnection = async () => {
     } else if (error.code === "3D000") {
       console.error("HINT: Database does not exist - create it first");
     } else if (error.message.includes("SSL")) {
-      console.error(
-        "HINT: Try setting DATABASE_SSL=true or DATABASE_SSL_REJECT_UNAUTHORIZED=false"
-      );
+      console.error("HINT: Try setting DATABASE_SSL=true for cloud databases");
+    } else if (error.message.includes("timeout")) {
+      console.error("HINT: Database connection timeout - check network connectivity");
     }
 
     return false;
+  } finally {
+    if (client) {
+      client.release();
+    }
   }
 };
 
 const enablePostGIS = async () => {
+  let client;
   try {
-    const client = await pool.connect();
+    client = await pool.connect();
+
     await client.query("CREATE EXTENSION IF NOT EXISTS postgis;");
     await client.query("CREATE EXTENSION IF NOT EXISTS postgis_topology;");
+
     console.log("SUCCESS: PostGIS extensions enabled");
-    client.release();
+    return true;
   } catch (error) {
-    console.warn("WARN: Failed to enable PostGIS:", error.message);
-    console.warn("INFO: This is OK if PostGIS is not needed for current features");
+    console.warn("WARN: PostGIS not available:", error.message);
+    console.warn("INFO: This is OK - city/state matching will work without PostGIS");
+    return false;
+  } finally {
+    if (client) {
+      client.release();
+    }
   }
 };
 
@@ -93,8 +107,18 @@ const gracefulShutdown = async () => {
   }
 };
 
-process.on("SIGTERM", gracefulShutdown);
-process.on("SIGINT", gracefulShutdown);
+if (process.env.NODE_ENV !== "test") {
+  process.on("SIGTERM", gracefulShutdown);
+  process.on("SIGINT", gracefulShutdown);
+}
+
+pool.on("connect", () => {
+  console.log("New database client connected");
+});
+
+pool.on("error", (err) => {
+  console.error("FAILED: Unexpected database error:", err.message);
+});
 
 module.exports = {
   pool,

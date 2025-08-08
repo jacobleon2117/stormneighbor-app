@@ -3,23 +3,30 @@ const { pool } = require("../config/database");
 
 const getPosts = async (req, res) => {
   try {
-    const {
-      limit = 20,
-      offset = 0,
-      postType,
-      priority,
-      latitude,
-      longitude,
-      radius = 10,
-    } = req.query;
+    const { limit = 20, offset = 0, postType, priority, city, state } = req.query;
 
     const client = await pool.connect();
 
     try {
+      let userCity = city;
+      let userState = state;
+
+      if (!userCity || !userState) {
+        const userResult = await client.query(
+          "SELECT location_city, address_state FROM users WHERE id = $1",
+          [req.user.userId]
+        );
+
+        if (userResult.rows.length > 0) {
+          userCity = userCity || userResult.rows[0].location_city;
+          userState = userState || userResult.rows[0].address_state;
+        }
+      }
+
       let query = `
         SELECT 
           p.id, p.title, p.content, p.post_type, p.priority, p.is_emergency,
-          p.latitude, p.longitude, p.images, p.tags, p.is_resolved,
+          p.location_city, p.location_state, p.images, p.tags, p.is_resolved,
           p.created_at, p.updated_at,
           u.id as user_id, u.first_name, u.last_name, u.profile_image_url,
           COALESCE(comment_counts.comment_count, 0) as comment_count,
@@ -44,11 +51,17 @@ const getPosts = async (req, res) => {
           GROUP BY post_id
         ) reaction_counts ON p.id = reaction_counts.post_id
         LEFT JOIN reactions user_reactions ON p.id = user_reactions.post_id AND user_reactions.user_id = $1
-        WHERE 1=1
+        WHERE u.is_active = true
       `;
 
       const params = [req.user.userId];
       let paramIndex = 2;
+
+      if (userCity && userState) {
+        query += ` AND p.location_city = $${paramIndex} AND p.location_state = $${paramIndex + 1}`;
+        params.push(userCity, userState);
+        paramIndex += 2;
+      }
 
       if (postType) {
         query += ` AND p.post_type = $${paramIndex}`;
@@ -62,19 +75,19 @@ const getPosts = async (req, res) => {
         paramIndex++;
       }
 
-      if (latitude && longitude) {
-        query += ` AND (
-          6371 * acos(
-            cos(radians($${paramIndex})) * cos(radians(p.latitude)) *
-            cos(radians(p.longitude) - radians($${paramIndex + 1})) +
-            sin(radians($${paramIndex})) * sin(radians(p.latitude))
-          )
-        ) <= $${paramIndex + 2}`;
-        params.push(latitude, longitude, radius);
-        paramIndex += 3;
-      }
-
-      query += ` ORDER BY p.created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+      query += ` 
+        ORDER BY 
+          CASE WHEN p.is_emergency = true THEN 1 ELSE 2 END,
+          CASE p.priority 
+            WHEN 'urgent' THEN 1 
+            WHEN 'high' THEN 2 
+            WHEN 'normal' THEN 3 
+            WHEN 'low' THEN 4 
+            ELSE 5
+          END,
+          p.created_at DESC 
+        LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+      `;
       params.push(limit, offset);
 
       const result = await client.query(query, params);
@@ -86,8 +99,10 @@ const getPosts = async (req, res) => {
         postType: row.post_type,
         priority: row.priority,
         isEmergency: row.is_emergency,
-        latitude: row.latitude,
-        longitude: row.longitude,
+        location: {
+          city: row.location_city,
+          state: row.location_state,
+        },
         images: row.images || [],
         tags: row.tags || [],
         isResolved: row.is_resolved,
@@ -106,13 +121,29 @@ const getPosts = async (req, res) => {
         },
       }));
 
-      res.json({ posts });
+      res.json({
+        success: true,
+        message: "Posts retrieved successfully",
+        data: {
+          posts,
+          location: userCity && userState ? { city: userCity, state: userState } : null,
+          pagination: {
+            limit: parseInt(limit),
+            offset: parseInt(offset),
+            count: posts.length,
+          },
+        },
+      });
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Get posts error:", error);
-    res.status(500).json({ message: "Server error fetching posts" });
+    res.status(500).json({
+      success: false,
+      message: "Server error fetching posts",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -127,7 +158,7 @@ const getPost = async (req, res) => {
       const query = `
         SELECT 
           p.id, p.title, p.content, p.post_type, p.priority, p.is_emergency,
-          p.latitude, p.longitude, p.images, p.tags, p.is_resolved,
+          p.location_city, p.location_state, p.images, p.tags, p.is_resolved,
           p.created_at, p.updated_at,
           u.id as user_id, u.first_name, u.last_name, u.profile_image_url,
           COALESCE(comment_counts.comment_count, 0) as comment_count,
@@ -152,13 +183,16 @@ const getPost = async (req, res) => {
           GROUP BY post_id
         ) reaction_counts ON p.id = reaction_counts.post_id
         LEFT JOIN reactions user_reactions ON p.id = user_reactions.post_id AND user_reactions.user_id = $2
-        WHERE p.id = $1
+        WHERE p.id = $1 AND u.is_active = true
       `;
 
       const result = await client.query(query, [id, userId]);
 
       if (result.rows.length === 0) {
-        return res.status(404).json({ message: "Post not found" });
+        return res.status(404).json({
+          success: false,
+          message: "Post not found",
+        });
       }
 
       const row = result.rows[0];
@@ -169,8 +203,10 @@ const getPost = async (req, res) => {
         postType: row.post_type,
         priority: row.priority,
         isEmergency: row.is_emergency,
-        latitude: row.latitude,
-        longitude: row.longitude,
+        location: {
+          city: row.location_city,
+          state: row.location_state,
+        },
         images: row.images || [],
         tags: row.tags || [],
         isResolved: row.is_resolved,
@@ -189,13 +225,21 @@ const getPost = async (req, res) => {
         },
       };
 
-      res.json({ post });
+      res.json({
+        success: true,
+        message: "Post retrieved successfully",
+        data: { post },
+      });
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Get post error:", error);
-    res.status(500).json({ message: "Server error fetching post" });
+    res.status(500).json({
+      success: false,
+      message: "Server error fetching post",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -208,8 +252,6 @@ const createPost = async (req, res) => {
       postType,
       priority = "normal",
       isEmergency = false,
-      latitude,
-      longitude,
       images = [],
       tags = [],
     } = req.body;
@@ -217,49 +259,45 @@ const createPost = async (req, res) => {
     const client = await pool.connect();
 
     try {
-      let finalLat = latitude;
-      let finalLng = longitude;
+      const userQuery = await client.query(
+        "SELECT location_city, address_state FROM users WHERE id = $1",
+        [userId]
+      );
 
-      if (!finalLat || !finalLng) {
-        const userQuery = await client.query(
-          `SELECT 
-              (location->'coordinates'->>'latitude')::float as latitude,
-              (location->'coordinates'->>'longitude')::float as longitude
-           FROM users WHERE id = $1`,
-          [userId]
-        );
-
-        if (userQuery.rows[0]) {
-          finalLat = userQuery.rows[0].latitude;
-          finalLng = userQuery.rows[0].longitude;
-        }
+      if (userQuery.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "User not found",
+        });
       }
 
-      if (!finalLat || !finalLng) {
-        return res.status(400).json({ message: "Latitude and longitude are required" });
+      const user = userQuery.rows[0];
+      if (!user.location_city || !user.address_state) {
+        return res.status(400).json({
+          success: false,
+          message: "Please complete your profile with city and state information to create posts",
+        });
       }
 
       const query = `
         INSERT INTO posts (
           user_id, title, content, post_type, priority, is_emergency,
-          location, images, tags
+          location_city, location_state, images, tags
         ) VALUES (
-          $1, $2, $3, $4, $5, $6,
-          ST_SetSRID(ST_MakePoint($8, $7), 4326)::geography,
-          $9, $10
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
         )
         RETURNING *
       `;
 
       const result = await client.query(query, [
         userId,
-        title,
+        title || null,
         content,
         postType,
         priority,
         isEmergency,
-        finalLat,
-        finalLng,
+        user.location_city,
+        user.address_state,
         Array.isArray(images) && images.length > 0 ? images : null,
         Array.isArray(tags) && tags.length > 0 ? tags : null,
       ]);
@@ -267,15 +305,36 @@ const createPost = async (req, res) => {
       const newPost = result.rows[0];
 
       res.status(201).json({
+        success: true,
         message: "Post created successfully",
-        post: { ...newPost, images: newPost.images || [], tags: newPost.tags || [] },
+        data: {
+          post: {
+            id: newPost.id,
+            title: newPost.title,
+            content: newPost.content,
+            postType: newPost.post_type,
+            priority: newPost.priority,
+            isEmergency: newPost.is_emergency,
+            location: {
+              city: newPost.location_city,
+              state: newPost.location_state,
+            },
+            images: newPost.images || [],
+            tags: newPost.tags || [],
+            createdAt: newPost.created_at,
+          },
+        },
       });
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Create post error:", error);
-    res.status(500).json({ message: "Server error creating post" });
+    res.status(500).json({
+      success: false,
+      message: "Server error creating post",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -291,19 +350,27 @@ const updatePost = async (req, res) => {
       const postCheck = await client.query("SELECT user_id FROM posts WHERE id = $1", [id]);
 
       if (postCheck.rows.length === 0) {
-        return res.status(404).json({ message: "Post not found" });
+        return res.status(404).json({
+          success: false,
+          message: "Post not found",
+        });
       }
 
       if (postCheck.rows[0].user_id !== userId) {
-        return res.status(403).json({ message: "Not authorized to update this post" });
+        return res.status(403).json({
+          success: false,
+          message: "Not authorized to update this post",
+        });
       }
 
       const updateFields = [];
       const values = [];
       let paramIndex = 1;
 
+      const allowedFields = ["title", "content", "priority", "is_resolved", "images", "tags"];
+
       Object.keys(updates).forEach((key) => {
-        if (updates[key] !== undefined) {
+        if (allowedFields.includes(key) && updates[key] !== undefined) {
           updateFields.push(`${key} = $${paramIndex}`);
           values.push(updates[key]);
           paramIndex++;
@@ -311,7 +378,10 @@ const updatePost = async (req, res) => {
       });
 
       if (updateFields.length === 0) {
-        return res.status(400).json({ message: "No valid fields to update" });
+        return res.status(400).json({
+          success: false,
+          message: "No valid fields to update",
+        });
       }
 
       updateFields.push("updated_at = NOW()");
@@ -328,15 +398,36 @@ const updatePost = async (req, res) => {
       const updatedPost = result.rows[0];
 
       res.json({
+        success: true,
         message: "Post updated successfully",
-        post: updatedPost,
+        data: {
+          post: {
+            id: updatedPost.id,
+            title: updatedPost.title,
+            content: updatedPost.content,
+            postType: updatedPost.post_type,
+            priority: updatedPost.priority,
+            isResolved: updatedPost.is_resolved,
+            location: {
+              city: updatedPost.location_city,
+              state: updatedPost.location_state,
+            },
+            images: updatedPost.images || [],
+            tags: updatedPost.tags || [],
+            updatedAt: updatedPost.updated_at,
+          },
+        },
       });
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Update post error:", error);
-    res.status(500).json({ message: "Server error updating post" });
+    res.status(500).json({
+      success: false,
+      message: "Server error updating post",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -351,22 +442,35 @@ const deletePost = async (req, res) => {
       const postCheck = await client.query("SELECT user_id FROM posts WHERE id = $1", [id]);
 
       if (postCheck.rows.length === 0) {
-        return res.status(404).json({ message: "Post not found" });
+        return res.status(404).json({
+          success: false,
+          message: "Post not found",
+        });
       }
 
       if (postCheck.rows[0].user_id !== userId) {
-        return res.status(403).json({ message: "Not authorized to delete this post" });
+        return res.status(403).json({
+          success: false,
+          message: "Not authorized to delete this post",
+        });
       }
 
       await client.query("DELETE FROM posts WHERE id = $1", [id]);
 
-      res.json({ message: "Post deleted successfully" });
+      res.json({
+        success: true,
+        message: "Post deleted successfully",
+      });
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Delete post error:", error);
-    res.status(500).json({ message: "Server error deleting post" });
+    res.status(500).json({
+      success: false,
+      message: "Server error deleting post",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -400,7 +504,7 @@ const getComments = async (req, res) => {
           GROUP BY comment_id
         ) reaction_counts ON c.id = reaction_counts.comment_id
         LEFT JOIN reactions user_reactions ON c.id = user_reactions.comment_id AND user_reactions.user_id = $2
-        WHERE c.post_id = $1
+        WHERE c.post_id = $1 AND u.is_active = true
         ORDER BY c.created_at ASC
         LIMIT $3 OFFSET $4
       `;
@@ -427,13 +531,28 @@ const getComments = async (req, res) => {
         },
       }));
 
-      res.json({ comments });
+      res.json({
+        success: true,
+        message: "Comments retrieved successfully",
+        data: {
+          comments,
+          pagination: {
+            limit: parseInt(limit),
+            offset: parseInt(offset),
+            count: comments.length,
+          },
+        },
+      });
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Get comments error:", error);
-    res.status(500).json({ message: "Server error fetching comments" });
+    res.status(500).json({
+      success: false,
+      message: "Server error fetching comments",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -443,16 +562,24 @@ const createComment = async (req, res) => {
     const userId = req.user.userId;
     const { content, parentCommentId } = req.body;
 
-    console.log("Creating comment:", {
-      postId,
-      userId,
-      content,
-      parentCommentId,
-    });
+    if (!content || !content.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Comment content is required",
+      });
+    }
 
     const client = await pool.connect();
 
     try {
+      const postCheck = await client.query("SELECT id FROM posts WHERE id = $1", [postId]);
+      if (postCheck.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Post not found",
+        });
+      }
+
       const query = `
         INSERT INTO comments (post_id, user_id, content, parent_comment_id)
         VALUES ($1, $2, $3, $4)
@@ -462,24 +589,26 @@ const createComment = async (req, res) => {
       const result = await client.query(query, [
         parseInt(postId),
         userId,
-        content?.trim() || "",
+        content.trim(),
         parentCommentId ? parseInt(parentCommentId) : null,
       ]);
 
       const newComment = result.rows[0];
 
-      console.log("Comment created successfully:", newComment.id);
-
       res.status(201).json({
+        success: true,
         message: "Comment created successfully",
-        comment: {
-          id: newComment.id,
-          content: newComment.content,
-          parentCommentId: newComment.parent_comment_id,
-          images: [],
-          createdAt: newComment.created_at,
-          likeCount: 0,
-          userHasLiked: false,
+        data: {
+          comment: {
+            id: newComment.id,
+            content: newComment.content,
+            parentCommentId: newComment.parent_comment_id,
+            images: [],
+            isEdited: false,
+            createdAt: newComment.created_at,
+            likeCount: 0,
+            userHasLiked: false,
+          },
         },
       });
     } finally {
@@ -487,7 +616,11 @@ const createComment = async (req, res) => {
     }
   } catch (error) {
     console.error("Create comment error:", error);
-    res.status(500).json({ message: "Server error creating comment" });
+    res.status(500).json({
+      success: false,
+      message: "Server error creating comment",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -498,7 +631,10 @@ const updateComment = async (req, res) => {
     const { content } = req.body;
 
     if (!content || !content.trim()) {
-      return res.status(400).json({ message: "Comment content is required" });
+      return res.status(400).json({
+        success: false,
+        message: "Comment content is required",
+      });
     }
 
     const client = await pool.connect();
@@ -510,11 +646,17 @@ const updateComment = async (req, res) => {
       );
 
       if (commentCheck.rows.length === 0) {
-        return res.status(404).json({ message: "Comment not found" });
+        return res.status(404).json({
+          success: false,
+          message: "Comment not found",
+        });
       }
 
       if (commentCheck.rows[0].user_id !== userId) {
-        return res.status(403).json({ message: "Not authorized to update this comment" });
+        return res.status(403).json({
+          success: false,
+          message: "Not authorized to update this comment",
+        });
       }
 
       const updateQuery = `
@@ -527,15 +669,22 @@ const updateComment = async (req, res) => {
       const result = await client.query(updateQuery, [content.trim(), commentId, postId]);
 
       res.json({
+        success: true,
         message: "Comment updated successfully",
-        updatedAt: result.rows[0].updated_at,
+        data: {
+          updatedAt: result.rows[0].updated_at,
+        },
       });
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Update comment error:", error);
-    res.status(500).json({ message: "Server error updating comment" });
+    res.status(500).json({
+      success: false,
+      message: "Server error updating comment",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -553,22 +702,35 @@ const deleteComment = async (req, res) => {
       );
 
       if (commentCheck.rows.length === 0) {
-        return res.status(404).json({ message: "Comment not found" });
+        return res.status(404).json({
+          success: false,
+          message: "Comment not found",
+        });
       }
 
       if (commentCheck.rows[0].user_id !== userId) {
-        return res.status(403).json({ message: "Not authorized to delete this comment" });
+        return res.status(403).json({
+          success: false,
+          message: "Not authorized to delete this comment",
+        });
       }
 
       await client.query("DELETE FROM comments WHERE id = $1", [commentId]);
 
-      res.json({ message: "Comment deleted successfully" });
+      res.json({
+        success: true,
+        message: "Comment deleted successfully",
+      });
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Delete comment error:", error);
-    res.status(500).json({ message: "Server error deleting comment" });
+    res.status(500).json({
+      success: false,
+      message: "Server error deleting comment",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -580,7 +742,10 @@ const addReaction = async (req, res) => {
 
     const validReactionTypes = ["like", "love", "helpful", "concerned", "angry"];
     if (!validReactionTypes.includes(reactionType)) {
-      return res.status(400).json({ message: "Invalid reaction type" });
+      return res.status(400).json({
+        success: false,
+        message: "Invalid reaction type",
+      });
     }
 
     const client = await pool.connect();
@@ -598,8 +763,9 @@ const addReaction = async (req, res) => {
             postId,
           ]);
           return res.json({
+            success: true,
             message: "Reaction removed successfully",
-            action: "removed",
+            data: { action: "removed" },
           });
         } else {
           await client.query(
@@ -607,8 +773,9 @@ const addReaction = async (req, res) => {
             [reactionType, userId, postId]
           );
           return res.json({
+            success: true,
             message: "Reaction updated successfully",
-            action: "updated",
+            data: { action: "updated" },
           });
         }
       } else {
@@ -617,8 +784,9 @@ const addReaction = async (req, res) => {
           [userId, postId, reactionType]
         );
         return res.json({
+          success: true,
           message: "Reaction added successfully",
-          action: "added",
+          data: { action: "added" },
         });
       }
     } finally {
@@ -626,7 +794,11 @@ const addReaction = async (req, res) => {
     }
   } catch (error) {
     console.error("Add reaction error:", error);
-    res.status(500).json({ message: "Server error adding reaction" });
+    res.status(500).json({
+      success: false,
+      message: "Server error adding reaction",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -643,13 +815,20 @@ const removeReaction = async (req, res) => {
         postId,
       ]);
 
-      res.json({ message: "Reaction removed successfully" });
+      res.json({
+        success: true,
+        message: "Reaction removed successfully",
+      });
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Remove reaction error:", error);
-    res.status(500).json({ message: "Server error removing reaction" });
+    res.status(500).json({
+      success: false,
+      message: "Server error removing reaction",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -661,7 +840,10 @@ const addCommentReaction = async (req, res) => {
 
     const validReactionTypes = ["like", "love", "helpful", "concerned", "angry"];
     if (!validReactionTypes.includes(reactionType)) {
-      return res.status(400).json({ message: "Invalid reaction type" });
+      return res.status(400).json({
+        success: false,
+        message: "Invalid reaction type",
+      });
     }
 
     const client = await pool.connect();
@@ -670,7 +852,10 @@ const addCommentReaction = async (req, res) => {
       const commentCheck = await client.query("SELECT id FROM comments WHERE id = $1", [commentId]);
 
       if (commentCheck.rows.length === 0) {
-        return res.status(404).json({ message: "Comment not found" });
+        return res.status(404).json({
+          success: false,
+          message: "Comment not found",
+        });
       }
 
       const existingReaction = await client.query(
@@ -685,8 +870,9 @@ const addCommentReaction = async (req, res) => {
             commentId,
           ]);
           return res.json({
+            success: true,
             message: "Reaction removed successfully",
-            action: "removed",
+            data: { action: "removed" },
           });
         } else {
           await client.query(
@@ -694,8 +880,9 @@ const addCommentReaction = async (req, res) => {
             [reactionType, userId, commentId]
           );
           return res.json({
+            success: true,
             message: "Reaction updated successfully",
-            action: "updated",
+            data: { action: "updated" },
           });
         }
       } else {
@@ -704,8 +891,9 @@ const addCommentReaction = async (req, res) => {
           [userId, commentId, reactionType]
         );
         return res.json({
+          success: true,
           message: "Reaction added successfully",
-          action: "added",
+          data: { action: "added" },
         });
       }
     } finally {
@@ -713,7 +901,11 @@ const addCommentReaction = async (req, res) => {
     }
   } catch (error) {
     console.error("Add comment reaction error:", error);
-    res.status(500).json({ message: "Server error adding reaction" });
+    res.status(500).json({
+      success: false,
+      message: "Server error adding reaction",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -730,50 +922,20 @@ const removeCommentReaction = async (req, res) => {
         commentId,
       ]);
 
-      res.json({ message: "Reaction removed successfully" });
+      res.json({
+        success: true,
+        message: "Reaction removed successfully",
+      });
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Remove comment reaction error:", error);
-    res.status(500).json({ message: "Server error removing reaction" });
-  }
-};
-
-const reportComment = async (req, res) => {
-  try {
-    const { commentId } = req.params;
-    const userId = req.user.userId;
-    const { reason } = req.body;
-
-    const validReasons = ["inappropriate", "spam", "harassment", "other"];
-    if (!validReasons.includes(reason)) {
-      return res.status(400).json({ message: "Invalid report reason" });
-    }
-
-    const client = await pool.connect();
-
-    try {
-      const commentCheck = await client.query("SELECT id FROM comments WHERE id = $1", [commentId]);
-
-      if (commentCheck.rows.length === 0) {
-        return res.status(404).json({ message: "Comment not found" });
-      }
-
-      await client.query(
-        `INSERT INTO comment_reports (comment_id, reporter_id, reason) 
-         VALUES ($1, $2, $3) 
-         ON CONFLICT (comment_id, reporter_id) DO NOTHING`,
-        [commentId, userId, reason]
-      );
-
-      res.json({ message: "Report submitted successfully" });
-    } finally {
-      client.release();
-    }
-  } catch (error) {
-    console.error("Report comment error:", error);
-    res.status(500).json({ message: "Server error submitting report" });
+    res.status(500).json({
+      success: false,
+      message: "Server error removing reaction",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
@@ -791,5 +953,4 @@ module.exports = {
   removeReaction,
   addCommentReaction,
   removeCommentReaction,
-  reportComment,
 };

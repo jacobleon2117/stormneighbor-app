@@ -20,15 +20,11 @@ const { getSecurityConfig } = require("../config/security-environments");
 
 const app = express();
 
+// Security headers
 const helmetConfig = getSecurityConfig();
 app.use(helmet(helmetConfig));
 
-app.get("/api/test-query", (req, res) => {
-  const { latitude, longitude, radius } = req.query;
-  console.log("Test Query Params:", latitude, longitude, radius);
-  res.json({ latitude, longitude, radius });
-});
-
+// CORS configuration
 app.use(
   cors({
     origin: process.env.CLIENT_URL || "http://localhost:19006",
@@ -38,34 +34,46 @@ app.use(
   })
 );
 
+// Rate limiting
 const generalLimiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
-  message: "Too many requests from this IP, please try again later.",
+  message: {
+    success: false,
+    message: "Too many requests from this IP, please try again later.",
+  },
   standardHeaders: true,
   legacyHeaders: false,
 });
 
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
+  windowMs: 15 * 60 * 1000, // 15 minutes
   max: 10,
-  message: "Too many authentication attempts, please try again later.",
+  message: {
+    success: false,
+    message: "Too many authentication attempts, please try again later.",
+  },
   standardHeaders: true,
   legacyHeaders: false,
 });
 
 const uploadLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
+  windowMs: 15 * 60 * 1000, // 15 minutes
   max: 50,
-  message: "Too many upload requests, please try again later.",
+  message: {
+    success: false,
+    message: "Too many upload requests, please try again later.",
+  },
   standardHeaders: true,
   legacyHeaders: false,
 });
 
+// Apply rate limiting
 app.use("/api/", generalLimiter);
 app.use("/api/auth/", authLimiter);
 app.use("/api/upload/", uploadLimiter);
 
+// Body parsing
 app.use(
   express.json({
     limit: "10mb",
@@ -73,7 +81,10 @@ app.use(
       try {
         JSON.parse(buf);
       } catch (e) {
-        res.status(400).json({ message: "Invalid JSON" });
+        res.status(400).json({
+          success: false,
+          message: "Invalid JSON format",
+        });
         throw new Error("Invalid JSON");
       }
     },
@@ -88,26 +99,27 @@ app.use(
   })
 );
 
+// Compression
 app.use(compression());
 
+// Logging and monitoring (skip in test environment)
 if (process.env.NODE_ENV !== "test") {
   app.use(requestLogger);
   app.use(performanceMonitor);
   app.use(analyticsTracker.middleware);
 }
 
+// Request logging
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 } else if (process.env.NODE_ENV !== "test") {
   app.use(morgan("combined"));
 }
 
+// Input sanitization
 app.use(sanitizeInput);
 
-app.use((req, res, next) => {
-  next();
-});
-
+// Additional security headers
 app.use((req, res, next) => {
   res.removeHeader("X-Powered-By");
   res.setHeader("X-Content-Type-Options", "nosniff");
@@ -118,32 +130,25 @@ app.use((req, res, next) => {
   next();
 });
 
+// Health check endpoint
 app.get("/health", healthCheck);
 
-app.get("/analytics", (req, res) => {
-  if (process.env.NODE_ENV !== "development") {
-    return res.status(403).json({ message: "Analytics endpoint only available in development" });
-  }
-  res.json({
-    message: "API Analytics",
-    data: analyticsTracker.getStats(),
+// Development-only endpoints
+if (process.env.NODE_ENV === "development") {
+  app.get("/analytics", (req, res) => {
+    res.json({
+      success: true,
+      message: "API Analytics",
+      data: analyticsTracker.getStats(),
+    });
   });
-});
 
-app.get("/cache/stats", (req, res) => {
-  if (process.env.NODE_ENV !== "development") {
-    return res.status(403).json({ message: "Cache stats endpoint only available in development" });
-  }
-  getCacheStats(req, res);
-});
+  app.get("/cache/stats", getCacheStats);
 
-app.delete("/cache", (req, res) => {
-  if (process.env.NODE_ENV !== "development") {
-    return res.status(403).json({ message: "Cache management only available in development" });
-  }
-  clearCache(req, res);
-});
+  app.delete("/cache", clearCache);
+}
 
+// API Routes
 try {
   console.log("Loading auth routes...");
   const authRoutes = require("./routes/auth");
@@ -165,6 +170,14 @@ try {
   const uploadRoutes = require("./routes/upload");
   app.use("/api/upload", uploadRoutes);
 
+  console.log("Loading notifications routes...");
+  const notificationsRoutes = require("./routes/notifications");
+  app.use("/api/notifications", notificationsRoutes);
+
+  console.log("Loading search routes...");
+  const searchRoutes = require("./routes/search");
+  app.use("/api/search", searchRoutes);
+
   console.log("All routes loaded successfully");
 } catch (routeError) {
   console.error("Error loading routes:", routeError);
@@ -173,27 +186,41 @@ try {
   }
 }
 
+// Error logging (skip in test environment)
 if (process.env.NODE_ENV !== "test") {
   app.use(errorLogger);
 }
 
+// Global error handler
 app.use((err, req, res, _next) => {
   if (process.env.NODE_ENV !== "test") {
     console.error("Global error handler:", err);
   }
 
+  // Handle specific error types
   if (err.type === "entity.parse.failed") {
-    return res.status(400).json({ message: "Invalid JSON format" });
+    return res.status(400).json({
+      success: false,
+      message: "Invalid JSON format",
+    });
   }
 
   if (err.type === "entity.too.large") {
-    return res.status(413).json({ message: "Request too large" });
+    return res.status(413).json({
+      success: false,
+      message: "Request too large",
+    });
   }
 
+  // Default error response
   if (process.env.NODE_ENV === "production") {
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
   } else {
     res.status(500).json({
+      success: false,
       message: err.message,
       stack: process.env.NODE_ENV === "test" ? undefined : err.stack,
       requestId: req.requestId,
@@ -201,8 +228,10 @@ app.use((err, req, res, _next) => {
   }
 });
 
+// 404 handler
 app.use((req, res) => {
   res.status(404).json({
+    success: false,
     message: "Route not found",
     path: req.path,
     method: req.method,

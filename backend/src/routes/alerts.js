@@ -8,7 +8,6 @@ const { handleValidationErrors } = require("../middleware/validation");
 const router = express.Router();
 
 const createAlertValidation = [
-  body("neighborhoodId").isInt({ min: 1 }).withMessage("Valid neighborhood ID is required"),
   body("title")
     .trim()
     .isLength({ min: 1, max: 255 })
@@ -23,8 +22,7 @@ const createAlertValidation = [
   body("alertType").trim().isLength({ min: 1, max: 100 }).withMessage("Alert type is required"),
   body("startTime").optional().isISO8601().withMessage("Invalid start time format"),
   body("endTime").optional().isISO8601().withMessage("Invalid end time format"),
-  body("latitude").optional().isFloat({ min: -90, max: 90 }).withMessage("Invalid latitude"),
-  body("longitude").optional().isFloat({ min: -180, max: 180 }).withMessage("Invalid longitude"),
+  body("metadata").optional().isObject().withMessage("Metadata must be an object"),
 ];
 
 const updateAlertValidation = [
@@ -36,9 +34,24 @@ const updateAlertValidation = [
 router.get(
   "/",
   [
-    query("latitude").isFloat({ min: -90, max: 90 }).withMessage("Valid latitude is required"),
-    query("longitude").isFloat({ min: -180, max: 180 }).withMessage("Valid longitude is required"),
-    query("radius").optional().isFloat({ min: 0 }).withMessage("Radius must be a positive number"),
+    query("latitude")
+      .optional()
+      .isFloat({ min: -90, max: 90 })
+      .withMessage("Valid latitude required if provided"),
+    query("longitude")
+      .optional()
+      .isFloat({ min: -180, max: 180 })
+      .withMessage("Valid longitude required if provided"),
+    query("city")
+      .optional()
+      .trim()
+      .isLength({ min: 1, max: 100 })
+      .withMessage("City name must be between 1 and 100 characters"),
+    query("state")
+      .optional()
+      .trim()
+      .isLength({ min: 1, max: 50 })
+      .withMessage("State name must be between 1 and 50 characters"),
   ],
   handleValidationErrors,
   weatherController.getAlerts

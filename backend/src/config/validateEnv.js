@@ -104,17 +104,17 @@ function validateEnvironment() {
   console.log(`Environment: ${process.env.NODE_ENV}`);
 
   if (process.env.NODE_ENV === "development") {
-    console.log("   Development mode settings:");
-    console.log(`   Client URL: ${process.env.CLIENT_URL || "http://localhost:19006"}`);
-    console.log(`   Database SSL: ${process.env.DATABASE_SSL || "false"}`);
+    console.log("Development mode settings:");
+    console.log(`Client URL: ${process.env.CLIENT_URL || "http://localhost:19006"}`);
+    console.log(`Database SSL: ${process.env.DATABASE_SSL || "false"}`);
   }
 
   console.log("\nConfigured services:");
-  console.log(`   Database: ${process.env.DATABASE_URL ? "SUCCESS" : "ERROR"}`);
-  console.log(`   Email (Resend): ${process.env.RESEND_API_KEY ? "SUCCESS" : "ERROR"}`);
-  console.log(`   Weather (NOAA): ${process.env.NOAA_API_BASE_URL ? "SUCCESS" : "ERROR"}`);
+  console.log(`Database: ${process.env.DATABASE_URL ? "SUCCESS" : "ERROR"}`);
+  console.log(`Email (Resend): ${process.env.RESEND_API_KEY ? "SUCCESS" : "ERROR"}`);
+  console.log(`Weather (NOAA): ${process.env.NOAA_API_BASE_URL ? "SUCCESS" : "ERROR"}`);
   console.log(
-    `   Images (Cloudinary): ${
+    `Images (Cloudinary): ${
       process.env.CLOUDINARY_CLOUD_NAME &&
       process.env.CLOUDINARY_API_KEY &&
       process.env.CLOUDINARY_API_SECRET

@@ -1,0 +1,1 @@
+// Name, email, password, confirm password. (Only once should the user go through this step)

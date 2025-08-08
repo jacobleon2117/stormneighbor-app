@@ -1,0 +1,1 @@
+// Notifications from user(s) post for safety badges? weather alerts just from user(s) post? Still thinking about this for now to see if adding this into weather notification screen instead of two screens?

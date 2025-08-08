@@ -1,0 +1,1 @@
+// This screen is the loading screen for when the user open the app on their device

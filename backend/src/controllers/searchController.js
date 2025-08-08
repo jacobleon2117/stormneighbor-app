@@ -2,7 +2,6 @@
 const { validationResult } = require("express-validator");
 const SearchService = require("../services/searchService");
 
-// Advanced search for posts
 const searchPosts = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -30,7 +29,6 @@ const searchPosts = async (req, res) => {
       offset: parseInt(req.query.offset) || 0,
     };
 
-    // Get user's location if not provided
     if (!searchParams.city || !searchParams.state) {
       const { pool } = require("../config/database");
       const client = await pool.connect();
@@ -90,7 +88,6 @@ const searchPosts = async (req, res) => {
   }
 };
 
-// Get search suggestions and autocomplete
 const getSearchSuggestions = async (req, res) => {
   try {
     const { q: query, city, state, limit = 10 } = req.query;
@@ -127,8 +124,8 @@ const getSearchSuggestions = async (req, res) => {
 const getTrendingSearches = async (req, res) => {
   try {
     const userId = req.user?.userId;
-    let { city, state } = req.query; // Changed to 'let' since they get reassigned
-    const { limit = 10 } = req.query; // Only limit can be const
+    let { city, state } = req.query;
+    const { limit = 10 } = req.query;
 
     if ((!city || !state) && userId) {
       const { pool } = require("../config/database");
@@ -168,7 +165,6 @@ const getTrendingSearches = async (req, res) => {
   }
 };
 
-// Search users
 const searchUsers = async (req, res) => {
   try {
     const { q: query, city, state, limit = 10 } = req.query;
@@ -205,7 +201,6 @@ const searchUsers = async (req, res) => {
   }
 };
 
-// Save a search
 const saveSearch = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -250,7 +245,6 @@ const saveSearch = async (req, res) => {
   }
 };
 
-// Get user's saved searches
 const getSavedSearches = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -274,7 +268,6 @@ const getSavedSearches = async (req, res) => {
   }
 };
 
-// Execute a saved search
 const executeSavedSearch = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -305,7 +298,6 @@ const executeSavedSearch = async (req, res) => {
   }
 };
 
-// Delete a saved search
 const deleteSavedSearch = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -345,7 +337,6 @@ const deleteSavedSearch = async (req, res) => {
   }
 };
 
-// Get search analytics (admin/insights)
 const getSearchAnalytics = async (req, res) => {
   try {
     const { city, state, days = 7 } = req.query;
@@ -367,14 +358,12 @@ const getSearchAnalytics = async (req, res) => {
   }
 };
 
-// Test search system
 const testSearchSystem = async (req, res) => {
   try {
     const { pool } = require("../config/database");
     const client = await pool.connect();
 
     try {
-      // Check if search tables exist
       const tablesResult = await client.query(`
         SELECT table_name 
         FROM information_schema.tables 
@@ -385,23 +374,29 @@ const testSearchSystem = async (req, res) => {
 
       const tables = tablesResult.rows.map((row) => row.table_name);
 
-      // Check search suggestions
       const suggestionsResult = await client.query(`
         SELECT COUNT(*) as suggestion_count FROM search_suggestions WHERE is_approved = true
       `);
 
-      // Check if posts have search vectors
-      const searchVectorResult = await client.query(`
-        SELECT COUNT(*) as posts_with_vectors 
-        FROM posts 
-        WHERE search_vector IS NOT NULL
+      const postsResult = await client.query(`
+        SELECT COUNT(*) as total_posts FROM posts
       `);
 
-      // Test the search function
-      const functionTest = await client.query(`
-        SELECT COUNT(*) as function_works
-        FROM search_posts('test', 'Austin', 'Texas', NULL, NULL, NULL, NULL, false, 'all', 'relevance', 1, 0)
-      `);
+      let searchFunctionWorking = false;
+      try {
+        await SearchService.searchPosts(
+          {
+            query: "test",
+            city: "Austin",
+            state: "Texas",
+            limit: 1,
+          },
+          1
+        );
+        searchFunctionWorking = true;
+      } catch (searchError) {
+        console.log("Search service test failed:", searchError.message);
+      }
 
       const userId = req.user?.userId;
       let userSearches = null;
@@ -434,15 +429,15 @@ const testSearchSystem = async (req, res) => {
           suggestions: {
             active: parseInt(suggestionsResult.rows[0].suggestion_count),
           },
-          searchVectors: {
-            postsWithVectors: parseInt(searchVectorResult.rows[0].posts_with_vectors),
+          posts: {
+            total: parseInt(postsResult.rows[0].total_posts),
           },
           searchFunction: {
-            working: functionTest.rows.length > 0,
+            working: searchFunctionWorking,
           },
           userSearches,
           features: {
-            fullTextSearch: true,
+            textSearch: true,
             advancedFiltering: true,
             savedSearches: true,
             searchSuggestions: true,

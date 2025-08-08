@@ -2,7 +2,6 @@
 const { pool } = require("../config/database");
 
 class SearchService {
-  // Main search function with all filters
   static async searchPosts(searchParams, userId) {
     const {
       query = "",
@@ -23,33 +22,116 @@ class SearchService {
     const client = await pool.connect();
 
     try {
-      // Log the search query for analytics
       await this.logSearchQuery(client, userId, query, searchParams, city, state);
 
-      // Execute the advanced search function
+      const whereConditions = ["u.is_active = true"];
+      const params = [];
+      let paramIndex = 1;
+
+      if (query && query.trim()) {
+        whereConditions.push(
+          `(p.title ILIKE '%' || $${paramIndex} || '%' OR p.content ILIKE '%' || $${paramIndex} || '%')`
+        );
+        params.push(query.trim());
+        paramIndex++;
+      }
+
+      if (city) {
+        whereConditions.push(`p.location_city = $${paramIndex}`);
+        params.push(city);
+        paramIndex++;
+      }
+      if (state) {
+        whereConditions.push(`p.location_state = $${paramIndex}`);
+        params.push(state);
+        paramIndex++;
+      }
+
+      if (postTypes && postTypes.length > 0) {
+        whereConditions.push(`p.post_type = ANY($${paramIndex})`);
+        params.push(postTypes);
+        paramIndex++;
+      }
+
+      if (priorities && priorities.length > 0) {
+        whereConditions.push(`p.priority = ANY($${paramIndex})`);
+        params.push(priorities);
+        paramIndex++;
+      }
+
+      if (emergencyOnly) {
+        whereConditions.push("p.is_emergency = true");
+      }
+
+      if (resolvedFilter === "resolved") {
+        whereConditions.push("p.is_resolved = true");
+      } else if (resolvedFilter === "unresolved") {
+        whereConditions.push("p.is_resolved = false");
+      }
+
+      if (dateFrom) {
+        whereConditions.push(`p.created_at >= $${paramIndex}`);
+        params.push(dateFrom);
+        paramIndex++;
+      }
+      if (dateTo) {
+        whereConditions.push(`p.created_at <= $${paramIndex}`);
+        params.push(dateTo);
+        paramIndex++;
+      }
+
+      let orderBy = `
+        CASE WHEN p.is_emergency THEN 1 ELSE 2 END,
+        CASE p.priority 
+          WHEN 'urgent' THEN 1 
+          WHEN 'high' THEN 2 
+          WHEN 'normal' THEN 3 
+          WHEN 'low' THEN 4 
+          ELSE 5
+        END,
+        p.created_at DESC
+      `;
+
+      if (sortBy === "popularity") {
+        orderBy =
+          `
+          (COALESCE(cc.comment_count, 0) + COALESCE(rc.reaction_count, 0)) DESC,
+          ` + orderBy;
+      }
+
       const result = await client.query(
         `
-        SELECT * FROM search_posts($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        SELECT 
+          p.id, p.title, p.content, p.post_type, p.priority,
+          p.location_city, p.location_state, p.is_emergency, p.is_resolved, p.created_at,
+          u.id as author_id, 
+          CONCAT(u.first_name, ' ', u.last_name) as author_name,
+          u.profile_image_url as author_image,
+          1.0 as match_score,
+          COALESCE(cc.comment_count, 0) as comment_count,
+          COALESCE(rc.reaction_count, 0) as reaction_count
+        FROM posts p
+        JOIN users u ON p.user_id = u.id
+        LEFT JOIN (
+          SELECT post_id, COUNT(*) as comment_count 
+          FROM comments 
+          GROUP BY post_id
+        ) cc ON p.id = cc.post_id
+        LEFT JOIN (
+          SELECT post_id, COUNT(*) as reaction_count 
+          FROM reactions 
+          WHERE post_id IS NOT NULL 
+          GROUP BY post_id
+        ) rc ON p.id = rc.post_id
+        WHERE ${whereConditions.join(" AND ")}
+        ORDER BY ${orderBy}
+        LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
       `,
-        [
-          query || null,
-          city || null,
-          state || null,
-          postTypes || null,
-          priorities || null,
-          dateFrom || null,
-          dateTo || null,
-          emergencyOnly,
-          resolvedFilter,
-          sortBy,
-          limit,
-          offset,
-        ]
+        [...params, limit, offset]
       );
 
       const executionTime = Date.now() - startTime;
 
-      // Update search query with results count and execution time
       await this.updateSearchQueryStats(client, query, result.rows.length, executionTime);
 
       return {
@@ -88,12 +170,10 @@ class SearchService {
     }
   }
 
-  // Search suggestions and autocomplete
   static async getSearchSuggestions(partialQuery, city, state, limit = 10) {
     const client = await pool.connect();
 
     try {
-      // Get suggestions based on partial query
       const suggestionsResult = await client.query(
         `
         SELECT 
@@ -102,23 +182,18 @@ class SearchService {
           category,
           search_count
         FROM search_suggestions
-        WHERE (
-          suggestion_text ILIKE $1 OR
-          to_tsvector('english', suggestion_text) @@ plainto_tsquery('english', $2)
-        )
+        WHERE suggestion_text ILIKE $1
         AND is_approved = true
-        AND (city IS NULL OR city = $3)
-        AND (state IS NULL OR state = $4)
+        AND (city IS NULL OR city = $2)
+        AND (state IS NULL OR state = $3)
         ORDER BY 
-          CASE WHEN suggestion_text ILIKE $1 THEN 1 ELSE 2 END,
           search_count DESC,
           click_through_rate DESC
-        LIMIT $5
+        LIMIT $4
       `,
-        [`${partialQuery}%`, partialQuery, city, state, limit]
+        [`${partialQuery}%`, city, state, limit]
       );
 
-      // Get popular searches in the area
       const popularResult = await client.query(
         `
         SELECT DISTINCT search_term as suggestion_text, 'popular' as suggestion_type
@@ -143,7 +218,6 @@ class SearchService {
     }
   }
 
-  // Get trending searches
   static async getTrendingSearches(city, state, limit = 10) {
     const client = await pool.connect();
 
@@ -178,7 +252,6 @@ class SearchService {
     }
   }
 
-  // Save a search for a user
   static async saveSearch(userId, searchData) {
     const { name, description, query, filters } = searchData;
     const client = await pool.connect();
@@ -209,7 +282,6 @@ class SearchService {
     }
   }
 
-  // Get user's saved searches
   static async getSavedSearches(userId) {
     const client = await pool.connect();
 
@@ -251,12 +323,10 @@ class SearchService {
     }
   }
 
-  // Execute a saved search
   static async executeSavedSearch(userId, savedSearchId) {
     const client = await pool.connect();
 
     try {
-      // Get the saved search
       const savedSearchResult = await client.query(
         `
         SELECT query_text, filters FROM saved_searches
@@ -271,7 +341,6 @@ class SearchService {
 
       const { query_text, filters } = savedSearchResult.rows[0];
 
-      // Execute the search
       const searchResults = await this.searchPosts(
         {
           query: query_text,
@@ -280,7 +349,6 @@ class SearchService {
         userId
       );
 
-      // Update saved search stats
       await client.query(
         `
         UPDATE saved_searches 
@@ -300,7 +368,6 @@ class SearchService {
     }
   }
 
-  // Search users (for @mentions, finding neighbors, etc.)
   static async searchUsers(query, city, state, limit = 10) {
     const client = await pool.connect();
 
@@ -310,21 +377,17 @@ class SearchService {
         SELECT 
           id, first_name, last_name, profile_image_url, bio,
           location_city, address_state,
-          ts_rank(
-            to_tsvector('english', first_name || ' ' || last_name || ' ' || coalesce(bio, '')),
-            plainto_tsquery('english', $1)
-          ) as match_score
+          1.0 as match_score
         FROM users
         WHERE is_active = true
         AND (
-          to_tsvector('english', first_name || ' ' || last_name || ' ' || coalesce(bio, '')) 
-          @@ plainto_tsquery('english', $1)
-          OR first_name ILIKE $2
-          OR last_name ILIKE $2
+          first_name ILIKE $2 OR
+          last_name ILIKE $2 OR
+          COALESCE(bio, '') ILIKE $2
         )
         AND (location_city = $3 OR $3 IS NULL)
         AND (address_state = $4 OR $4 IS NULL)
-        ORDER BY match_score DESC, first_name, last_name
+        ORDER BY first_name, last_name
         LIMIT $5
       `,
         [query, `%${query}%`, city, state, limit]
@@ -347,12 +410,10 @@ class SearchService {
     }
   }
 
-  // Get search analytics for admin/insights
   static async getSearchAnalytics(city, state, days = 7) {
     const client = await pool.connect();
 
     try {
-      // Popular search terms
       const popularTerms = await client.query(
         `
         SELECT 
@@ -361,7 +422,7 @@ class SearchService {
           AVG(results_count) as avg_results,
           COUNT(DISTINCT user_id) as unique_users
         FROM search_queries
-        WHERE created_at >= NOW() - INTERVAL '${days} days'
+        WHERE created_at >= NOW() - INTERVAL '${parseInt(days)} days'
         AND (search_city = $1 OR $1 IS NULL)
         AND (search_state = $2 OR $2 IS NULL)
         AND query_text IS NOT NULL
@@ -374,7 +435,6 @@ class SearchService {
         [city, state]
       );
 
-      // Search volume over time
       const searchVolume = await client.query(
         `
         SELECT 
@@ -383,7 +443,7 @@ class SearchService {
           COUNT(DISTINCT user_id) as unique_users,
           AVG(results_count) as avg_results
         FROM search_queries
-        WHERE created_at >= NOW() - INTERVAL '${days} days'
+        WHERE created_at >= NOW() - INTERVAL '${parseInt(days)} days'
         AND (search_city = $1 OR $1 IS NULL)
         AND (search_state = $2 OR $2 IS NULL)
         GROUP BY DATE(created_at)
@@ -392,13 +452,12 @@ class SearchService {
         [city, state]
       );
 
-      // No results searches (for improving suggestions)
       const noResults = await client.query(
         `
         SELECT query_text, COUNT(*) as frequency
         FROM search_queries
         WHERE results_count = 0
-        AND created_at >= NOW() - INTERVAL '${days} days'
+        AND created_at >= NOW() - INTERVAL '${parseInt(days)} days'
         AND (search_city = $1 OR $1 IS NULL)
         AND (search_state = $2 OR $2 IS NULL)
         AND query_text IS NOT NULL
@@ -421,16 +480,17 @@ class SearchService {
     }
   }
 
-  // Private helper methods
   static async logSearchQuery(client, userId, query, filters, city, state) {
-    await client.query(
-      `
-      INSERT INTO search_queries (
-        user_id, query_text, filters, search_city, search_state, source
-      ) VALUES ($1, $2, $3, $4, $5, $6)
-    `,
-      [userId, query, JSON.stringify(filters), city, state, "manual"]
-    );
+    if (userId) {
+      await client.query(
+        `
+        INSERT INTO search_queries (
+          user_id, query_text, filters, search_city, search_state, source
+        ) VALUES ($1, $2, $3, $4, $5, $6)
+      `,
+        [userId, query, JSON.stringify(filters), city, state, "manual"]
+      );
+    }
   }
 
   static async updateSearchQueryStats(client, query, resultCount, executionTime) {
@@ -448,7 +508,6 @@ class SearchService {
       [resultCount, executionTime, query]
     );
 
-    // Update or create search suggestion
     await client.query(
       `
       INSERT INTO search_suggestions (suggestion_text, suggestion_type, search_count, result_count)

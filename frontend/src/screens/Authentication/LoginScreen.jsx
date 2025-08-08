@@ -1,1 +1,0 @@
-// Screen if the user already has an account or i sloggin back in after logging out

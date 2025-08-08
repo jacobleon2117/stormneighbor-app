@@ -1,1 +1,0 @@
-// For first time users or just downloaded the app this screen will have signup or login buttons for the user(s) to pick. If the user has an account and logs in and then logs out this screen will show.

@@ -164,7 +164,7 @@ router.delete(
 
 router.get(
   "/analytics",
-  auth, // TODO: Add admin middleware when implemented
+  auth, // TODO: Add admin middleware
   [
     query("city").optional().trim().isLength({ max: 100 }),
     query("state").optional().trim().isLength({ max: 50 }),

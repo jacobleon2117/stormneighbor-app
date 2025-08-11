@@ -5,11 +5,12 @@ const validateEnvironment = require("./config/validateEnv");
 validateEnvironment();
 
 const app = require("./app");
+const sessionCleanupJob = require("./jobs/sessionCleanup");
 
 const PORT = process.env.PORT || 3000;
 
 const server = app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on port: ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV}`);
   console.log(`Health check: http://localhost:${PORT}/health`);
 
@@ -21,20 +22,142 @@ const server = app.listen(PORT, () => {
   console.log("Security: Enhanced headers and input sanitization enabled");
   console.log("Logging: Request tracking and performance monitoring enabled");
   console.log("Caching: Intelligent response caching system enabled");
+  console.log("Authentication: JWT access + refresh token system enabled");
   console.log("SUCCESS API: REST endpoints ready");
+  
+  console.log("\nStarting background jobs...");
+  try {
+    sessionCleanupJob.start();
+    console.log("Session cleanup job started");
+    
+    const jobStatus = sessionCleanupJob.getStatus();
+    if (jobStatus.scheduled) {
+      console.log(`Next cleanup: ${jobStatus.nextRun}`);
+    }
+    
+    console.log("All background jobs initialized successfully");
+  } catch (error) {
+    console.error("ERROR: Error starting background jobs:", error);
+  }
+
+  console.log("\nBackend is ready");
+  console.log("=======================================");
+  
+  console.log("\nAvailable Endpoints:");
+  console.log("Authentication:");
+  console.log("   POST /api/auth/register");
+  console.log("   POST /api/auth/login");
+  console.log("   POST /api/auth/logout");
+  console.log("   POST /api/auth/logout-all");
+  console.log("   POST /api/auth/refresh-token");
+  console.log("   GET  /api/auth/sessions");
+  console.log("   DELETE /api/auth/sessions");
+  console.log("Profile:");
+  console.log("   GET  /api/auth/profile");
+  console.log("   PUT  /api/auth/profile");
+  console.log("   POST /api/auth/change-password");
+  console.log("Email:");
+  console.log("   POST /api/auth/forgot-password");
+  console.log("   POST /api/auth/verify-code");
+  console.log("   POST /api/auth/reset-password");
+  console.log("   POST /api/auth/resend-verification");
+  console.log("Posts:");
+  console.log("   GET  /api/posts");
+  console.log("   POST /api/posts");
+  console.log("   GET  /api/posts/:id");
+  console.log("Weather:");
+  console.log("   GET  /api/weather/current");
+  console.log("Alerts:");
+  console.log("   GET  /api/alerts");
+  console.log("   POST /api/alerts");
+  console.log("Uploads:");
+  console.log("   POST /api/upload/profile");
+  console.log("   GET  /api/upload/profile");
+  console.log("Search:");
+  console.log("   GET  /api/search/posts");
+  console.log("   GET  /api/search/users");
+  console.log("Notifications:");
+  console.log("   GET  /api/notifications");
+  console.log("   POST /api/notifications/register-device");
+  
+  console.log("\nTips:");
+  console.log("   Access tokens expire in 15 minutes");
+  console.log("   Refresh tokens expire in 7 days");
+  console.log("   Session cleanup runs daily at 2:00 AM UTC");
+  console.log("   Max 5 active sessions per user");
+  console.log("   Check /health for system status");
+  
+  if (process.env.NODE_ENV === "development") {
+    console.log("\nDevelopment Tools:");
+    console.log("   GET  /analytics - API usage statistics");
+    console.log("   GET  /cache/stats - Cache performance");
+    console.log("   DELETE /cache - Clear cache");
+    console.log("   GET  /api/auth/test-email - Test email service");
+    console.log("   POST /api/auth/send-test-email - Send test email");
+  }
 });
 
 process.on("SIGTERM", () => {
-  console.log("SIGTERM received, shutting down gracefully...");
+  console.log("\nSIGTERM received, shutting down gracefully...");
+  console.log("Stopping background jobs...");
+  
+  try {
+    sessionCleanupJob.stop();
+    console.log("Session cleanup job stopped");
+  } catch (error) {
+    console.error("ERROR: Error stopping background jobs:", error);
+  }
+  
   server.close(() => {
-    console.log("Process terminated");
+    console.log("Server connections closed");
+    console.log("Process terminated gracefully");
+    process.exit(0);
   });
 });
 
 process.on("SIGINT", () => {
-  console.log("SIGINT received, shutting down gracefully...");
+  console.log("\nSIGINT received, shutting down gracefully...");
+  console.log("Stopping background jobs...");
+  
+  try {
+    sessionCleanupJob.stop();
+    console.log("Session cleanup job stopped");
+  } catch (error) {
+    console.error("ERROR: Error stopping background jobs:", error);
+  }
+  
   server.close(() => {
-    console.log("Process terminated");
+    console.log("Server connections closed");
+    console.log("Process terminated gracefully");
+    process.exit(0);
+  });
+});
+
+process.on("uncaughtException", (error) => {
+  console.error("FAILED: Uncaught Exception:", error);
+  console.log("ERROR: Shutting down due to uncaught exception...");
+  
+  try {
+    sessionCleanupJob.stop();
+  } catch (jobError) {
+    console.error("ERROR: Error stopping jobs during crash:", jobError);
+  }
+  
+  process.exit(1);
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("FAILED: Unhandled Rejection at:", promise, "reason:", reason);
+  console.log("ERROR: Shutting down due to unhandled promise rejection...");
+  
+  try {
+    sessionCleanupJob.stop();
+  } catch (jobError) {
+    console.error("ERORR: Error stopping jobs during crash:", jobError);
+  }
+  
+  server.close(() => {
+    process.exit(1);
   });
 });
 

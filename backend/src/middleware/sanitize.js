@@ -1,5 +1,4 @@
 // File: backend/src/middleware/sanitize.js
-/* eslint-disable no-control-regex */
 const createDOMPurify = require("isomorphic-dompurify");
 const { JSDOM } = require("jsdom");
 const path = require("path");

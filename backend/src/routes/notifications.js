@@ -17,7 +17,6 @@ const {
 
 const router = express.Router();
 
-// Validation rules
 const registerDeviceValidation = [
   body("deviceToken").trim().isLength({ min: 10 }).withMessage("Valid device token is required"),
   body("deviceType")
@@ -73,7 +72,6 @@ const testNotificationValidation = [
     .withMessage("Invalid notification type"),
 ];
 
-// Device registration
 router.post(
   "/devices/register",
   auth,
@@ -82,7 +80,6 @@ router.post(
   registerUserDevice
 );
 
-// Get user notifications
 router.get(
   "/",
   auth,
@@ -98,7 +95,6 @@ router.get(
   getUserNotifications
 );
 
-// Mark single notification as read
 router.put(
   "/:id/read",
   auth,
@@ -107,10 +103,8 @@ router.put(
   markNotificationRead
 );
 
-// Mark all notifications as read
 router.put("/read-all", auth, markAllNotificationsRead);
 
-// Track notification click
 router.post(
   "/:id/click",
   auth,
@@ -119,10 +113,8 @@ router.post(
   trackNotificationClick
 );
 
-// Get notification preferences
 router.get("/preferences", auth, getNotificationPreferences);
 
-// Update notification preferences
 router.put(
   "/preferences",
   auth,
@@ -131,7 +123,6 @@ router.put(
   updateNotificationPreferences
 );
 
-// Send test notification (development only)
 router.post(
   "/test",
   auth,
@@ -140,7 +131,7 @@ router.post(
   sendTestNotification
 );
 
-// Get notification statistics (admin only - you can add admin middleware later)
+// TODO: Add admin middleware
 router.get(
   "/stats",
   auth,
@@ -154,14 +145,12 @@ router.get(
   getNotificationStats
 );
 
-// Test endpoint to verify notifications system
 router.get("/test-system", auth, async (req, res) => {
   try {
     const { pool } = require("../config/database");
     const client = await pool.connect();
 
     try {
-      // Check if notification tables exist
       const tablesResult = await client.query(`
         SELECT table_name 
         FROM information_schema.tables 
@@ -172,12 +161,10 @@ router.get("/test-system", auth, async (req, res) => {
 
       const tables = tablesResult.rows.map((row) => row.table_name);
 
-      // Check notification templates
       const templatesResult = await client.query(`
         SELECT COUNT(*) as template_count FROM notification_templates WHERE is_active = true
       `);
 
-      // Check user's devices
       const devicesResult = await client.query(
         `
         SELECT COUNT(*) as device_count FROM user_devices WHERE user_id = $1 AND is_active = true
@@ -185,7 +172,6 @@ router.get("/test-system", auth, async (req, res) => {
         [req.user.userId]
       );
 
-      // Check user's notification count
       const notificationsResult = await client.query(
         `
         SELECT 

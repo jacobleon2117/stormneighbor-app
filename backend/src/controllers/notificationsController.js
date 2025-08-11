@@ -3,7 +3,6 @@ const { pool } = require("../config/database");
 const { validationResult } = require("express-validator");
 const { registerDevice, sendNotificationToUsers } = require("../services/pushNotificationService");
 
-// Register user device for push notifications
 const registerUserDevice = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -43,7 +42,6 @@ const registerUserDevice = async (req, res) => {
   }
 };
 
-// Get user's notifications
 const getUserNotifications = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -103,7 +101,6 @@ const getUserNotifications = async (req, res) => {
         createdAt: row.created_at,
         metadata: row.metadata || {},
 
-        // Related entities
         relatedPost: row.related_post_id
           ? {
             id: row.related_post_id,
@@ -130,7 +127,6 @@ const getUserNotifications = async (req, res) => {
           : null,
       }));
 
-      // Get unread count
       const unreadResult = await client.query(
         "SELECT COUNT(*) as unread_count FROM notifications WHERE user_id = $1 AND is_read = false",
         [userId]
@@ -162,7 +158,6 @@ const getUserNotifications = async (req, res) => {
   }
 };
 
-// Mark notification as read
 const markNotificationRead = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -205,7 +200,6 @@ const markNotificationRead = async (req, res) => {
   }
 };
 
-// Mark all notifications as read
 const markAllNotificationsRead = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -241,7 +235,6 @@ const markAllNotificationsRead = async (req, res) => {
   }
 };
 
-// Track notification click
 const trackNotificationClick = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -285,7 +278,6 @@ const trackNotificationClick = async (req, res) => {
   }
 };
 
-// Get user's notification preferences
 const getNotificationPreferences = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -302,7 +294,6 @@ const getNotificationPreferences = async (req, res) => {
 
       let preferences;
       if (result.rows.length === 0) {
-        // Create default preferences if they don't exist
         const defaultResult = await client.query(
           `
           INSERT INTO notification_preferences (user_id)
@@ -316,7 +307,6 @@ const getNotificationPreferences = async (req, res) => {
         preferences = result.rows[0];
       }
 
-      // Remove internal fields
       delete preferences.id;
       delete preferences.user_id;
       delete preferences.created_at;
@@ -340,7 +330,6 @@ const getNotificationPreferences = async (req, res) => {
   }
 };
 
-// Update user's notification preferences
 const updateNotificationPreferences = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -349,7 +338,6 @@ const updateNotificationPreferences = async (req, res) => {
     const client = await pool.connect();
 
     try {
-      // Build dynamic update query
       const allowedFields = [
         "push_enabled",
         "emergency_alerts",
@@ -399,7 +387,6 @@ const updateNotificationPreferences = async (req, res) => {
       const result = await client.query(query, values);
       const updatedPreferences = result.rows[0];
 
-      // Remove internal fields
       delete updatedPreferences.id;
       delete updatedPreferences.user_id;
       delete updatedPreferences.created_at;
@@ -423,7 +410,6 @@ const updateNotificationPreferences = async (req, res) => {
   }
 };
 
-// Send test notification (for debugging)
 const sendTestNotification = async (req, res) => {
   try {
     if (process.env.NODE_ENV === "production") {
@@ -458,7 +444,6 @@ const sendTestNotification = async (req, res) => {
   }
 };
 
-// Get notification statistics (for admin/analytics)
 const getNotificationStats = async (req, res) => {
   try {
     const { days = 7 } = req.query;
@@ -466,7 +451,6 @@ const getNotificationStats = async (req, res) => {
     const client = await pool.connect();
 
     try {
-      // Get notification counts by type and status
       const statsQuery = `
         SELECT 
           notification_type,
@@ -483,7 +467,6 @@ const getNotificationStats = async (req, res) => {
 
       const statsResult = await client.query(statsQuery);
 
-      // Get daily notification counts
       const dailyQuery = `
         SELECT 
           DATE(created_at) as date,
@@ -498,7 +481,6 @@ const getNotificationStats = async (req, res) => {
 
       const dailyResult = await client.query(dailyQuery);
 
-      // Get device statistics
       const deviceQuery = `
         SELECT 
           device_type,

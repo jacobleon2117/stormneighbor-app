@@ -17,14 +17,18 @@ const {
 } = require("./middleware/logging");
 const { getCacheStats, clearCache } = require("./middleware/cache");
 const { getSecurityConfig } = require("../config/security-environments");
+const securityMiddleware = require("./middleware/security");
 
 const app = express();
 
-// Security headers
+app.set('trust proxy', true);
+
 const helmetConfig = getSecurityConfig();
+
 app.use(helmet(helmetConfig));
 
-// CORS configuration
+app.use(securityMiddleware.contentSecurityPolicy());
+
 app.use(
   cors({
     origin: process.env.CLIENT_URL || "http://localhost:19006",
@@ -34,49 +38,57 @@ app.use(
   })
 );
 
-// Rate limiting
 const generalLimiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
   message: {
     success: false,
     message: "Too many requests from this IP, please try again later.",
+    code: "RATE_LIMIT_EXCEEDED",
   },
   standardHeaders: true,
   legacyHeaders: false,
 });
 
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000,
   max: 10,
   message: {
     success: false,
     message: "Too many authentication attempts, please try again later.",
+    code: "AUTH_RATE_LIMIT",
   },
   standardHeaders: true,
   legacyHeaders: false,
 });
 
 const uploadLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 50,
+  windowMs: 15 * 60 * 1000,
+  max: 20,
   message: {
     success: false,
     message: "Too many upload requests, please try again later.",
+    code: "UPLOAD_RATE_LIMIT",
   },
   standardHeaders: true,
   legacyHeaders: false,
 });
 
-// Apply rate limiting
+app.use("/api/", securityMiddleware.apiAbuseDetection());
+
 app.use("/api/", generalLimiter);
+
 app.use("/api/auth/", authLimiter);
+
 app.use("/api/upload/", uploadLimiter);
 
-// Body parsing
+app.use(securityMiddleware.enhancedInputValidation());
+
+app.use("/api/", securityMiddleware.sqlInjectionDetection());
+
 app.use(
   express.json({
-    limit: "10mb",
+    limit: "5mb",
     verify: (req, res, buf) => {
       try {
         JSON.parse(buf);
@@ -84,6 +96,7 @@ app.use(
         res.status(400).json({
           success: false,
           message: "Invalid JSON format",
+          code: "INVALID_JSON",
         });
         throw new Error("Invalid JSON");
       }
@@ -94,32 +107,28 @@ app.use(
 app.use(
   express.urlencoded({
     extended: true,
-    limit: "10mb",
-    parameterLimit: 1000,
+    limit: "5mb",
+    parameterLimit: 100,
   })
 );
 
-// Compression
 app.use(compression());
 
-// Logging and monitoring (skip in test environment)
 if (process.env.NODE_ENV !== "test") {
   app.use(requestLogger);
   app.use(performanceMonitor);
   app.use(analyticsTracker.middleware);
+  app.use(securityMiddleware.auditLogger());
 }
 
-// Request logging
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 } else if (process.env.NODE_ENV !== "test") {
   app.use(morgan("combined"));
 }
 
-// Input sanitization
 app.use(sanitizeInput);
 
-// Additional security headers
 app.use((req, res, next) => {
   res.removeHeader("X-Powered-By");
   res.setHeader("X-Content-Type-Options", "nosniff");
@@ -127,13 +136,13 @@ app.use((req, res, next) => {
   res.setHeader("X-XSS-Protection", "1; mode=block");
   res.setHeader("Referrer-Policy", "same-origin");
   res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  res.setHeader("X-Download-Options", "noopen");
+  res.setHeader("X-DNS-Prefetch-Control", "off");
   next();
 });
 
-// Health check endpoint
 app.get("/health", healthCheck);
 
-// Development-only endpoints
 if (process.env.NODE_ENV === "development") {
   app.get("/analytics", (req, res) => {
     res.json({
@@ -144,11 +153,9 @@ if (process.env.NODE_ENV === "development") {
   });
 
   app.get("/cache/stats", getCacheStats);
-
   app.delete("/cache", clearCache);
 }
 
-// API Routes
 try {
   console.log("Loading auth routes...");
   const authRoutes = require("./routes/auth");
@@ -186,22 +193,29 @@ try {
   }
 }
 
-// Error logging (skip in test environment)
 if (process.env.NODE_ENV !== "test") {
   app.use(errorLogger);
 }
 
-// Global error handler
 app.use((err, req, res, _next) => {
+  if (err.message.includes("Invalid JSON") || 
+      err.message.includes("too large") ||
+      err.type === "entity.parse.failed") {
+    securityMiddleware.logSecurityEvent(req, 'MALFORMED_REQUEST', {
+      error: err.message,
+      type: err.type,
+    });
+  }
+
   if (process.env.NODE_ENV !== "test") {
     console.error("Global error handler:", err);
   }
 
-  // Handle specific error types
   if (err.type === "entity.parse.failed") {
     return res.status(400).json({
       success: false,
-      message: "Invalid JSON format",
+      message: "Invalid request format",
+      code: "INVALID_REQUEST",
     });
   }
 
@@ -209,14 +223,15 @@ app.use((err, req, res, _next) => {
     return res.status(413).json({
       success: false,
       message: "Request too large",
+      code: "REQUEST_TOO_LARGE",
     });
   }
 
-  // Default error response
   if (process.env.NODE_ENV === "production") {
     res.status(500).json({
       success: false,
       message: "Internal server error",
+      code: "INTERNAL_ERROR",
     });
   } else {
     res.status(500).json({
@@ -224,17 +239,28 @@ app.use((err, req, res, _next) => {
       message: err.message,
       stack: process.env.NODE_ENV === "test" ? undefined : err.stack,
       requestId: req.requestId,
+      code: "INTERNAL_ERROR",
     });
   }
 });
 
-// 404 handler
 app.use((req, res) => {
+  if (req.path.includes('/admin') || 
+      req.path.includes('/wp-') ||
+      req.path.includes('/.env') ||
+      req.path.includes('/config')) {
+    securityMiddleware.logSecurityEvent(req, 'SUSPICIOUS_404', {
+      path: req.path,
+      query: req.query,
+    });
+  }
+
   res.status(404).json({
     success: false,
     message: "Route not found",
     path: req.path,
     method: req.method,
+    code: "NOT_FOUND",
   });
 });
 

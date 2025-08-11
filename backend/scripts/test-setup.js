@@ -92,14 +92,14 @@ async function runDiagnostics() {
   const criticalPassing = criticalServices.every((service) => results[service]);
 
   if (criticalPassing) {
-    console.log("\nAll critical services are working! Your backend is ready to go.");
-    console.log("\nNext Steps:");
-    console.log("1. Run the schema setup: node scripts/setup-schema.js");
-    console.log("2. Start your server: npm run dev");
-    console.log("3. Test your API endpoints");
+    console.log("\nAll critical services are working, backend ready");
+    console.log("\nContinue with these steps:");
+    console.log("Run schema setup");
+    console.log("Start server");
+    console.log("Test API endpoints");
   } else {
-    console.log("\nWARN:  Some critical services need attention before proceeding.");
-    console.log("\nFix the failing services above, then run this script again.");
+    console.log("\nWARN: Some critical services need attention before proceeding.");
+    console.log("\nFix failing services, then run script again.");
   }
 
   return criticalPassing;

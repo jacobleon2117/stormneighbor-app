@@ -1,3 +1,4 @@
+-- File: backend/schema.sql
 DO $$
 BEGIN
     BEGIN
@@ -9,6 +10,7 @@ BEGIN
 END
 $$;
 
+-- Users table
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
@@ -44,6 +46,23 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- User Sessions table for refresh tokens
+CREATE TABLE IF NOT EXISTS user_sessions (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    refresh_token VARCHAR(512) NOT NULL UNIQUE,
+    device_info JSONB DEFAULT '{}',
+    device_fingerprint VARCHAR(255),
+    ip_address INET,
+    user_agent TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    last_used_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Posts table
 CREATE TABLE IF NOT EXISTS posts (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -70,6 +89,7 @@ CREATE TABLE IF NOT EXISTS posts (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Comments table
 CREATE TABLE IF NOT EXISTS comments (
     id SERIAL PRIMARY KEY,
     post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
@@ -82,6 +102,37 @@ CREATE TABLE IF NOT EXISTS comments (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Comment reports table
+CREATE TABLE IF NOT EXISTS comment_reports (
+    id SERIAL PRIMARY KEY,
+    comment_id INTEGER NOT NULL REFERENCES comments(id) ON DELETE CASCADE,
+    reported_by INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    report_reason VARCHAR(100) NOT NULL,
+    report_description TEXT,
+    status VARCHAR(20) DEFAULT 'pending',
+    reviewed_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    reviewed_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    
+    UNIQUE(comment_id, reported_by)
+);
+
+-- Post reports table
+CREATE TABLE IF NOT EXISTS post_reports (
+    id SERIAL PRIMARY KEY,
+    post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+    reported_by INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    report_reason VARCHAR(100) NOT NULL,
+    report_description TEXT,
+    status VARCHAR(20) DEFAULT 'pending',
+    reviewed_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    reviewed_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    
+    UNIQUE(post_id, reported_by)
+);
+
+-- Reactions table
 CREATE TABLE IF NOT EXISTS reactions (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -99,6 +150,7 @@ CREATE TABLE IF NOT EXISTS reactions (
     UNIQUE(user_id, comment_id, reaction_type)
 );
 
+-- Weather alerts table
 CREATE TABLE IF NOT EXISTS weather_alerts (
     id SERIAL PRIMARY KEY,
     alert_id VARCHAR(255) UNIQUE,
@@ -125,6 +177,7 @@ CREATE TABLE IF NOT EXISTS weather_alerts (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Emergency resources table
 CREATE TABLE IF NOT EXISTS emergency_resources (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -150,6 +203,7 @@ CREATE TABLE IF NOT EXISTS emergency_resources (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- User devices table
 CREATE TABLE IF NOT EXISTS user_devices (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -164,6 +218,7 @@ CREATE TABLE IF NOT EXISTS user_devices (
     UNIQUE(device_token)
 );
 
+-- Notification templates table
 CREATE TABLE IF NOT EXISTS notification_templates (
     id SERIAL PRIMARY KEY,
     template_key VARCHAR(100) UNIQUE NOT NULL,
@@ -176,6 +231,7 @@ CREATE TABLE IF NOT EXISTS notification_templates (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Notification preferences table
 CREATE TABLE IF NOT EXISTS notification_preferences (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -190,6 +246,7 @@ CREATE TABLE IF NOT EXISTS notification_preferences (
     UNIQUE(user_id, notification_type)
 );
 
+-- Notification campaigns table
 CREATE TABLE IF NOT EXISTS notification_campaigns (
     id SERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
@@ -206,6 +263,7 @@ CREATE TABLE IF NOT EXISTS notification_campaigns (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Notifications table
 CREATE TABLE IF NOT EXISTS notifications (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -228,6 +286,7 @@ CREATE TABLE IF NOT EXISTS notifications (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Search queries table
 CREATE TABLE IF NOT EXISTS search_queries (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
@@ -249,6 +308,7 @@ CREATE TABLE IF NOT EXISTS search_queries (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Saved searches table
 CREATE TABLE IF NOT EXISTS saved_searches (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -274,6 +334,7 @@ CREATE TABLE IF NOT EXISTS saved_searches (
     UNIQUE(user_id, name)
 );
 
+-- Search suggestions table
 CREATE TABLE IF NOT EXISTS search_suggestions (
     id SERIAL PRIMARY KEY,
     suggestion_text VARCHAR(255) NOT NULL,
@@ -297,6 +358,7 @@ CREATE TABLE IF NOT EXISTS search_suggestions (
     UNIQUE(suggestion_text, suggestion_type, city, state)
 );
 
+-- Trending searches table
 CREATE TABLE IF NOT EXISTS trending_searches (
     id SERIAL PRIMARY KEY,
     search_term VARCHAR(255) NOT NULL,
@@ -325,28 +387,47 @@ CREATE TABLE IF NOT EXISTS trending_searches (
     UNIQUE(search_term, city, state)
 );
 
+-- INDEXES
+-- User indexes
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_location ON users(location_city, address_state);
 CREATE INDEX IF NOT EXISTS idx_users_active ON users(is_active) WHERE is_active = true;
 
+-- User sessions indexes for refresh tokens
+CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_refresh_token ON user_sessions(refresh_token);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_expires_at ON user_sessions(expires_at);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_active ON user_sessions(user_id, is_active) WHERE is_active = true;
+
+-- Post indexes
 CREATE INDEX IF NOT EXISTS idx_posts_location ON posts(location_city, location_state);
 CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_posts_user ON posts(user_id);
 CREATE INDEX IF NOT EXISTS idx_posts_type_priority ON posts(post_type, priority);
 CREATE INDEX IF NOT EXISTS idx_posts_emergency ON posts(is_emergency) WHERE is_emergency = true;
 
+-- Comment indexes
 CREATE INDEX IF NOT EXISTS idx_comments_post ON comments(post_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_comments_user ON comments(user_id);
 CREATE INDEX IF NOT EXISTS idx_comments_parent ON comments(parent_comment_id) WHERE parent_comment_id IS NOT NULL;
 
+-- Report indexes
+CREATE INDEX IF NOT EXISTS idx_comment_reports_comment ON comment_reports(comment_id);
+CREATE INDEX IF NOT EXISTS idx_comment_reports_status ON comment_reports(status) WHERE status = 'pending';
+CREATE INDEX IF NOT EXISTS idx_post_reports_post ON post_reports(post_id);
+CREATE INDEX IF NOT EXISTS idx_post_reports_status ON post_reports(status) WHERE status = 'pending';
+
+-- Reaction indexes
 CREATE INDEX IF NOT EXISTS idx_reactions_post ON reactions(post_id) WHERE post_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_reactions_comment ON reactions(comment_id) WHERE comment_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_reactions_user ON reactions(user_id);
 
+-- Alert indexes
 CREATE INDEX IF NOT EXISTS idx_alerts_location ON weather_alerts(location_city, location_state);
 CREATE INDEX IF NOT EXISTS idx_alerts_active ON weather_alerts(is_active) WHERE is_active = true;
 CREATE INDEX IF NOT EXISTS idx_alerts_severity ON weather_alerts(severity);
 
+-- Device and notification indexes
 CREATE INDEX IF NOT EXISTS idx_user_devices_user_active ON user_devices(user_id) WHERE is_active = true;
 CREATE INDEX IF NOT EXISTS idx_user_devices_token ON user_devices(device_token);
 CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications(user_id) WHERE is_read = false;
@@ -355,20 +436,49 @@ CREATE INDEX IF NOT EXISTS idx_notifications_push_pending ON notifications(push_
 CREATE INDEX IF NOT EXISTS idx_notification_prefs_user ON notification_preferences(user_id);
 CREATE INDEX IF NOT EXISTS idx_campaigns_status ON notification_campaigns(status, send_at);
 
+-- Search indexes
 CREATE INDEX IF NOT EXISTS idx_search_queries_user ON search_queries(user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_search_queries_location ON search_queries(search_city, search_state, created_at DESC);
-
 CREATE INDEX IF NOT EXISTS idx_saved_searches_user_active ON saved_searches(user_id) WHERE is_active = true;
 CREATE INDEX IF NOT EXISTS idx_saved_searches_notification ON saved_searches(notify_new_results, last_notification_sent) WHERE notify_new_results = true;
-
 CREATE INDEX IF NOT EXISTS idx_search_suggestions_type ON search_suggestions(suggestion_type, search_count DESC);
 CREATE INDEX IF NOT EXISTS idx_search_suggestions_location ON search_suggestions(city, state, search_count DESC);
 CREATE INDEX IF NOT EXISTS idx_search_suggestions_trending ON search_suggestions(is_trending, click_through_rate DESC) WHERE is_trending = true;
-
 CREATE INDEX IF NOT EXISTS idx_trending_searches_location ON trending_searches(city, state, trend_score DESC);
 CREATE INDEX IF NOT EXISTS idx_trending_searches_category ON trending_searches(category, trend_score DESC);
 CREATE INDEX IF NOT EXISTS idx_trending_searches_time ON trending_searches(is_trending, created_at DESC) WHERE is_trending = true;
 
+-- FUNCTIONS
+-- Function to cleanup expired sessions
+CREATE OR REPLACE FUNCTION cleanup_expired_sessions()
+RETURNS void AS $$
+BEGIN
+    DELETE FROM user_sessions 
+    WHERE expires_at < NOW() OR is_active = false;
+    
+    DELETE FROM user_sessions 
+    WHERE created_at < NOW() - INTERVAL '90 days';
+    
+    RAISE NOTICE 'Session cleanup completed at %', NOW();
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger function to update the updated_at timestamp for sessions
+CREATE OR REPLACE FUNCTION update_session_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create trigger for user_sessions updated_at
+CREATE TRIGGER trigger_update_session_updated_at
+    BEFORE UPDATE ON user_sessions
+    FOR EACH ROW
+    EXECUTE FUNCTION update_session_updated_at();
+
+-- Function to get posts by location
 CREATE OR REPLACE FUNCTION get_posts_by_location(
     user_city VARCHAR DEFAULT NULL,
     user_state VARCHAR DEFAULT NULL,
@@ -405,166 +515,199 @@ BEGIN
     JOIN users u ON p.user_id = u.id
     WHERE (user_city IS NULL OR p.location_city = user_city)
       AND (user_state IS NULL OR p.location_state = user_state)
-      AND u.is_active = true
-      AND (p.expires_at IS NULL OR p.expires_at > NOW())
-    ORDER BY 
-        CASE WHEN p.is_emergency = true THEN 1 ELSE 2 END,
-        CASE p.priority 
-            WHEN 'urgent' THEN 1 
-            WHEN 'high' THEN 2 
-            WHEN 'normal' THEN 3 
-            WHEN 'low' THEN 4 
-            ELSE 5
-        END,
-        p.created_at DESC
+    ORDER BY p.created_at DESC
     LIMIT post_limit OFFSET post_offset;
 END;
-$$ LANGUAGE plpgsql STABLE;
+$$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION search_posts(
-    search_query TEXT DEFAULT NULL,
+-- Function to get nearby posts
+CREATE OR REPLACE FUNCTION get_nearby_posts(
+    user_lat DECIMAL DEFAULT NULL,
+    user_lng DECIMAL DEFAULT NULL,
     user_city VARCHAR DEFAULT NULL,
     user_state VARCHAR DEFAULT NULL,
-    post_types VARCHAR[] DEFAULT NULL,
-    priorities VARCHAR[] DEFAULT NULL,
-    date_from TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-    date_to TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-    emergency_only BOOLEAN DEFAULT FALSE,
-    resolved_filter VARCHAR DEFAULT 'all',
-    sort_by VARCHAR DEFAULT 'date',
-    search_limit INTEGER DEFAULT 20,
-    search_offset INTEGER DEFAULT 0
+    radius_miles DECIMAL DEFAULT 10.0,
+    include_emergency BOOLEAN DEFAULT TRUE,
+    post_limit INTEGER DEFAULT 20,
+    post_offset INTEGER DEFAULT 0
 )
 RETURNS TABLE (
     id INTEGER,
+    user_id INTEGER,
     title VARCHAR,
     content TEXT,
     post_type VARCHAR,
     priority VARCHAR,
     location_city VARCHAR,
     location_state VARCHAR,
+    latitude DECIMAL,
+    longitude DECIMAL,
+    distance_miles DECIMAL,
+    images TEXT[],
+    tags TEXT[],
     is_emergency BOOLEAN,
     is_resolved BOOLEAN,
     created_at TIMESTAMP WITH TIME ZONE,
-    author_id INTEGER,
-    author_name VARCHAR,
-    author_image VARCHAR,
-    match_score REAL,
-    comment_count BIGINT,
-    reaction_count BIGINT
+    updated_at TIMESTAMP WITH TIME ZONE,
+    author_first_name VARCHAR,
+    author_last_name VARCHAR,
+    author_profile_image VARCHAR
 ) AS $$
 BEGIN
-    RETURN QUERY
-    SELECT 
-        p.id,
-        p.title,
-        p.content,
-        p.post_type,
-        p.priority,
-        p.location_city,
-        p.location_state,
-        p.is_emergency,
-        p.is_resolved,
-        p.created_at,
-        u.id as author_id,
-        CONCAT(u.first_name, ' ', u.last_name) as author_name,
-        u.profile_image_url as author_image,
-        1.0 as match_score,
-        COALESCE(cc.comment_count, 0) as comment_count,
-        COALESCE(rc.reaction_count, 0) as reaction_count
-    FROM posts p
-    JOIN users u ON p.user_id = u.id
-    LEFT JOIN (
-        SELECT post_id, COUNT(*) as comment_count 
-        FROM comments 
-        GROUP BY post_id
-    ) cc ON p.id = cc.post_id
-    LEFT JOIN (
-        SELECT post_id, COUNT(*) as reaction_count 
-        FROM reactions 
-        WHERE post_id IS NOT NULL 
-        GROUP BY post_id
-    ) rc ON p.id = rc.post_id
-    WHERE 
-        u.is_active = true
-        AND (p.expires_at IS NULL OR p.expires_at > NOW())
-        
-        AND (search_query IS NULL OR 
-             p.title ILIKE '%' || search_query || '%' OR
-             p.content ILIKE '%' || search_query || '%')
-        
-        AND (user_city IS NULL OR p.location_city = user_city)
-        AND (user_state IS NULL OR p.location_state = user_state)
-        
-        AND (post_types IS NULL OR p.post_type = ANY(post_types))
-        
-        AND (priorities IS NULL OR p.priority = ANY(priorities))
-        
-        AND (date_from IS NULL OR p.created_at >= date_from)
-        AND (date_to IS NULL OR p.created_at <= date_to)
-        
-        AND (emergency_only = FALSE OR p.is_emergency = TRUE)
-        
-        AND (resolved_filter = 'all' OR 
-             (resolved_filter = 'resolved' AND p.is_resolved = TRUE) OR
-             (resolved_filter = 'unresolved' AND p.is_resolved = FALSE))
-    
-    ORDER BY 
-        CASE WHEN sort_by = 'popularity' THEN (COALESCE(cc.comment_count, 0) + COALESCE(rc.reaction_count, 0)) END DESC,
-        CASE WHEN p.is_emergency THEN 1 ELSE 2 END,
-        CASE p.priority 
-            WHEN 'urgent' THEN 1 
-            WHEN 'high' THEN 2 
-            WHEN 'normal' THEN 3 
-            WHEN 'low' THEN 4 
-            ELSE 5 
-        END,
-        p.created_at DESC
-    
-    LIMIT search_limit OFFSET search_offset;
+    IF user_lat IS NULL OR user_lng IS NULL THEN
+        RETURN QUERY
+        SELECT 
+            p.id, p.user_id, p.title, p.content, p.post_type, p.priority,
+            p.location_city, p.location_state, p.latitude, p.longitude,
+            0.0::DECIMAL as distance_miles,
+            p.images, p.tags, p.is_emergency, p.is_resolved, 
+            p.created_at, p.updated_at,
+            u.first_name, u.last_name, u.profile_image_url
+        FROM posts p
+        JOIN users u ON p.user_id = u.id
+        WHERE (user_city IS NULL OR p.location_city = user_city)
+          AND (user_state IS NULL OR p.location_state = user_state)
+          AND (include_emergency = TRUE OR p.is_emergency = FALSE)
+        ORDER BY p.created_at DESC
+        LIMIT post_limit OFFSET post_offset;
+    ELSE
+        BEGIN
+            RETURN QUERY
+            SELECT 
+                p.id, p.user_id, p.title, p.content, p.post_type, p.priority,
+                p.location_city, p.location_state, p.latitude, p.longitude,
+                ST_Distance(
+                    ST_GeogFromText('POINT(' || user_lng || ' ' || user_lat || ')'),
+                    ST_GeogFromText('POINT(' || p.longitude || ' ' || p.latitude || ')')
+                ) / 1609.34 as distance_miles,
+                p.images, p.tags, p.is_emergency, p.is_resolved, 
+                p.created_at, p.updated_at,
+                u.first_name, u.last_name, u.profile_image_url
+            FROM posts p
+            JOIN users u ON p.user_id = u.id
+            WHERE p.latitude IS NOT NULL 
+              AND p.longitude IS NOT NULL
+              AND ST_DWithin(
+                  ST_GeogFromText('POINT(' || user_lng || ' ' || user_lat || ')'),
+                  ST_GeogFromText('POINT(' || p.longitude || ' ' || p.latitude || ')'),
+                  radius_miles * 1609.34
+              )
+              AND (include_emergency = TRUE OR p.is_emergency = FALSE)
+            ORDER BY distance_miles ASC, p.created_at DESC
+            LIMIT post_limit OFFSET post_offset;
+        EXCEPTION WHEN OTHERS THEN
+            RETURN QUERY
+            SELECT 
+                p.id, p.user_id, p.title, p.content, p.post_type, p.priority,
+                p.location_city, p.location_state, p.latitude, p.longitude,
+                SQRT(
+                    POW((p.latitude - user_lat) * 69.0, 2) + 
+                    POW((p.longitude - user_lng) * 53.0, 2)
+                )::DECIMAL as distance_miles,
+                p.images, p.tags, p.is_emergency, p.is_resolved, 
+                p.created_at, p.updated_at,
+                u.first_name, u.last_name, u.profile_image_url
+            FROM posts p
+            JOIN users u ON p.user_id = u.id
+            WHERE p.latitude IS NOT NULL 
+              AND p.longitude IS NOT NULL
+              AND SQRT(
+                  POW((p.latitude - user_lat) * 69.0, 2) + 
+                  POW((p.longitude - user_lng) * 53.0, 2)
+              ) <= radius_miles
+              AND (include_emergency = TRUE OR p.is_emergency = FALSE)
+            ORDER BY distance_miles ASC, p.created_at DESC
+            LIMIT post_limit OFFSET post_offset;
+        END;
+    END IF;
 END;
-$$ LANGUAGE plpgsql STABLE;
+$$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION get_alerts_by_location(
-    user_city VARCHAR DEFAULT NULL,
-    user_state VARCHAR DEFAULT NULL
-)
+-- Function to get post statistics
+CREATE OR REPLACE FUNCTION get_post_stats(post_id_param INTEGER)
 RETURNS TABLE (
-    id INTEGER,
-    alert_id VARCHAR,
-    title VARCHAR,
-    description TEXT,
-    severity VARCHAR,
-    alert_type VARCHAR,
-    source VARCHAR,
-    start_time TIMESTAMP WITH TIME ZONE,
-    end_time TIMESTAMP WITH TIME ZONE,
-    is_active BOOLEAN,
-    created_at TIMESTAMP WITH TIME ZONE
+    post_id INTEGER,
+    comment_count BIGINT,
+    reaction_count BIGINT,
+    like_count BIGINT,
+    love_count BIGINT,
+    helpful_count BIGINT,
+    report_count BIGINT
 ) AS $$
 BEGIN
     RETURN QUERY
     SELECT 
-        wa.id, wa.alert_id, wa.title, wa.description, wa.severity,
-        wa.alert_type, wa.source, wa.start_time, wa.end_time,
-        wa.is_active, wa.created_at
-    FROM weather_alerts wa
-    WHERE wa.is_active = true
-      AND (wa.end_time IS NULL OR wa.end_time > NOW())
-      AND (user_city IS NULL OR wa.location_city = user_city)
-      AND (user_state IS NULL OR wa.location_state = user_state)
-    ORDER BY 
-        CASE wa.severity 
-            WHEN 'CRITICAL' THEN 1 
-            WHEN 'HIGH' THEN 2 
-            WHEN 'MODERATE' THEN 3 
-            WHEN 'LOW' THEN 4 
-            ELSE 5
-        END,
-        wa.created_at DESC;
+        post_id_param,
+        (SELECT COUNT(*) FROM comments WHERE post_id = post_id_param),
+        (SELECT COUNT(*) FROM reactions WHERE post_id = post_id_param),
+        (SELECT COUNT(*) FROM reactions WHERE post_id = post_id_param AND reaction_type = 'like'),
+        (SELECT COUNT(*) FROM reactions WHERE post_id = post_id_param AND reaction_type = 'love'),
+        (SELECT COUNT(*) FROM reactions WHERE post_id = post_id_param AND reaction_type = 'helpful'),
+        (SELECT COUNT(*) FROM post_reports WHERE post_id = post_id_param);
 END;
-$$ LANGUAGE plpgsql STABLE;
+$$ LANGUAGE plpgsql;
 
+-- Function to get comment statistics
+CREATE OR REPLACE FUNCTION get_comment_stats(comment_id_param INTEGER)
+RETURNS TABLE (
+    comment_id INTEGER,
+    reaction_count BIGINT,
+    like_count BIGINT,
+    love_count BIGINT,
+    helpful_count BIGINT,
+    report_count BIGINT,
+    reply_count BIGINT
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        comment_id_param,
+        (SELECT COUNT(*) FROM reactions WHERE comment_id = comment_id_param),
+        (SELECT COUNT(*) FROM reactions WHERE comment_id = comment_id_param AND reaction_type = 'like'),
+        (SELECT COUNT(*) FROM reactions WHERE comment_id = comment_id_param AND reaction_type = 'love'),
+        (SELECT COUNT(*) FROM reactions WHERE comment_id = comment_id_param AND reaction_type = 'helpful'),
+        (SELECT COUNT(*) FROM comment_reports WHERE comment_id = comment_id_param),
+        (SELECT COUNT(*) FROM comments WHERE parent_comment_id = comment_id_param);
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to get user post count
+CREATE OR REPLACE FUNCTION get_user_post_count(user_id_param INTEGER)
+RETURNS INTEGER AS $$
+DECLARE
+    post_count INTEGER;
+BEGIN
+    SELECT COUNT(*) INTO post_count
+    FROM posts 
+    WHERE user_id = user_id_param;
+    
+    RETURN post_count;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to cleanup old data
+CREATE OR REPLACE FUNCTION cleanup_old_data()
+RETURNS void AS $$
+BEGIN
+    DELETE FROM weather_alerts 
+    WHERE end_time < NOW() - INTERVAL '7 days' 
+      AND is_active = false;
+    
+    DELETE FROM search_queries 
+    WHERE created_at < NOW() - INTERVAL '6 months';
+    
+    DELETE FROM notifications 
+    WHERE created_at < NOW() - INTERVAL '3 months'
+      AND is_read = true;
+    
+    PERFORM cleanup_expired_sessions();
+    
+    RAISE NOTICE 'Old data cleanup completed at %', NOW();
+END;
+$$ LANGUAGE plpgsql;
+
+-- TRIGGERS
+-- Trigger to update updated_at timestamp for tables
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -573,52 +716,80 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS update_users_updated_at ON users;
-CREATE TRIGGER update_users_updated_at 
-    BEFORE UPDATE ON users 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER trigger_users_updated_at
+    BEFORE UPDATE ON users
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
 
-DROP TRIGGER IF EXISTS update_posts_updated_at ON posts;
-CREATE TRIGGER update_posts_updated_at 
-    BEFORE UPDATE ON posts 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER trigger_posts_updated_at
+    BEFORE UPDATE ON posts
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
 
-DROP TRIGGER IF EXISTS update_comments_updated_at ON comments;
-CREATE TRIGGER update_comments_updated_at 
-    BEFORE UPDATE ON comments 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER trigger_comments_updated_at
+    BEFORE UPDATE ON comments
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
 
-DROP TRIGGER IF EXISTS update_weather_alerts_updated_at ON weather_alerts;
-CREATE TRIGGER update_weather_alerts_updated_at 
-    BEFORE UPDATE ON weather_alerts 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER trigger_weather_alerts_updated_at
+    BEFORE UPDATE ON weather_alerts
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
 
-DROP TRIGGER IF EXISTS update_emergency_resources_updated_at ON emergency_resources;
-CREATE TRIGGER update_emergency_resources_updated_at 
-    BEFORE UPDATE ON emergency_resources 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER trigger_emergency_resources_updated_at
+    BEFORE UPDATE ON emergency_resources
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
 
-DROP TRIGGER IF EXISTS update_notifications_updated_at ON notifications;
-CREATE TRIGGER update_notifications_updated_at 
-    BEFORE UPDATE ON notifications 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER trigger_notifications_updated_at
+    BEFORE UPDATE ON notifications
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
 
-DROP TRIGGER IF EXISTS update_user_devices_updated_at ON user_devices;
-CREATE TRIGGER update_user_devices_updated_at 
-    BEFORE UPDATE ON user_devices 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER trigger_notification_campaigns_updated_at
+    BEFORE UPDATE ON notification_campaigns
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
 
-DROP TRIGGER IF EXISTS update_notification_templates_updated_at ON notification_templates;
-CREATE TRIGGER update_notification_templates_updated_at 
-    BEFORE UPDATE ON notification_templates 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER trigger_saved_searches_updated_at
+    BEFORE UPDATE ON saved_searches
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
 
-DROP TRIGGER IF EXISTS update_notification_preferences_updated_at ON notification_preferences;
-CREATE TRIGGER update_notification_preferences_updated_at 
-    BEFORE UPDATE ON notification_preferences 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER trigger_search_suggestions_updated_at
+    BEFORE UPDATE ON search_suggestions
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
 
-DROP TRIGGER IF EXISTS update_notification_campaigns_updated_at ON notification_campaigns;
-CREATE TRIGGER update_notification_campaigns_updated_at 
-    BEFORE UPDATE ON notification_campaigns 
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER trigger_trending_searches_updated_at
+    BEFORE UPDATE ON trending_searches
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- INITIAL DATA
+-- Insert default notification templates
+INSERT INTO notification_templates (template_key, title_template, body_template, priority) VALUES
+('new_post', 'New Post in Your Area', 'There''s a new {{post_type}} post near you: {{title}}', 'normal'),
+('emergency_alert', 'Emergency Alert', 'EMERGENCY: {{title}} - {{description}}', 'high'),
+('weather_alert', 'Weather Alert', 'Weather Alert for {{location}}: {{description}}', 'high'),
+('comment_reply', 'Someone Replied', '{{author}} replied to your comment', 'normal'),
+('post_reaction', 'Someone Liked Your Post', '{{author}} reacted to your post', 'low'),
+('comment_reported', 'Content Reported', 'A comment has been reported and needs review', 'normal'),
+('post_reported', 'Post Reported', 'A post has been reported and needs review', 'normal')
+ON CONFLICT (template_key) DO NOTHING;
+
+-- Insert default search suggestions
+INSERT INTO search_suggestions (suggestion_text, suggestion_type, category, source) VALUES
+('power outage', 'emergency', 'utility', 'system'),
+('road closure', 'infrastructure', 'traffic', 'system'),
+('severe weather', 'weather', 'alert', 'system'),
+('flooding', 'emergency', 'weather', 'system'),
+('community event', 'general', 'social', 'system'),
+('lost pet', 'general', 'pets', 'system'),
+('neighborhood watch', 'safety', 'security', 'system'),
+('storm damage', 'emergency', 'weather', 'system'),
+('tornado warning', 'emergency', 'weather', 'system'),
+('evacuation', 'emergency', 'safety', 'system'),
+('volunteer needed', 'general', 'community', 'system'),
+('traffic accident', 'infrastructure', 'traffic', 'system')
+ON CONFLICT (suggestion_text, suggestion_type, city, state) DO NOTHING;

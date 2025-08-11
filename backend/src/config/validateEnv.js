@@ -95,7 +95,7 @@ function validateEnvironment() {
   }
 
   if (warnings.length > 0) {
-    console.warn("\nWARN:  Configuration warnings:");
+    console.warn("\nWARN: Configuration warnings:");
     warnings.forEach((warning) => console.warn(`   - ${warning}`));
   }
 
@@ -122,8 +122,8 @@ function validateEnvironment() {
         : "ERROR"
     }`
   );
-  console.log(`   JWT Security: ${process.env.JWT_SECRET ? "SUCCESS" : "ERROR"}`);
-  console.log(`   Redis Cache: ${process.env.REDIS_URL ? "SUCCESS" : "Optional"}`);
+  console.log(`JWT Security: ${process.env.JWT_SECRET ? "SUCCESS" : "ERROR"}`);
+  console.log(`Redis Cache: ${process.env.REDIS_URL ? "SUCCESS" : "Optional"}`);
 }
 
 module.exports = validateEnvironment;

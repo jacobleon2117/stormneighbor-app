@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const { pool } = require("../config/database");
 const { validationResult } = require("express-validator");
 const { sendVerificationEmail, sendPasswordResetEmail } = require("../services/emailService");
+const tokenService = require("../services/tokenService");
 
 const generateVerificationCode = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -13,11 +14,18 @@ const generateToken = (userId) => {
   return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: "7d" });
 };
 
+const generateTokens = async (userId, req) => {
+  return await tokenService.createSession(userId, req);
+};
+
 const register = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({ 
+        success: false,
+        errors: errors.array() 
+      });
     }
 
     const {
@@ -40,6 +48,7 @@ const register = async (req, res) => {
 
       if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
         return res.status(400).json({
+          success: false,
           message: "Invalid coordinates provided",
         });
       }
@@ -51,7 +60,10 @@ const register = async (req, res) => {
       const existingUser = await client.query("SELECT id FROM users WHERE email = $1", [email]);
 
       if (existingUser.rows.length > 0) {
-        return res.status(400).json({ message: "User already exists with this email" });
+        return res.status(400).json({ 
+          success: false,
+          message: "User already exists with this email" 
+        });
       }
 
       const saltRounds = 12;
@@ -103,28 +115,34 @@ const register = async (req, res) => {
         console.error("Failed to send verification email:", emailResult.error);
       }
 
-      const token = generateToken(newUser.id);
+      const tokens = await generateTokens(newUser.id, req);
 
       res.status(201).json({
+        success: true,
         message: emailResult.success
           ? "User registered successfully. Please check your email for verification code."
           : "User registered successfully. There was an issue sending the verification email, but you can request a new code.",
-        token,
-        user: {
-          id: newUser.id,
-          email: newUser.email,
-          firstName: newUser.first_name,
-          lastName: newUser.last_name,
-          emailVerified: false,
+        data: {
+          user: {
+            id: newUser.id,
+            email: newUser.email,
+            firstName: newUser.first_name,
+            lastName: newUser.last_name,
+            emailVerified: false,
+          },
+          accessToken: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
         },
-        emailSent: emailResult.success,
       });
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Register error:", error);
-    res.status(500).json({ message: "Server error during registration" });
+    res.status(500).json({ 
+      success: false,
+      message: "Server error during registration" 
+    });
   }
 };
 
@@ -132,49 +150,64 @@ const login = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({ 
+        success: false,
+        errors: errors.array() 
+      });
     }
 
     const { email, password } = req.body;
     const client = await pool.connect();
 
     try {
-      const query = `
-        SELECT 
-          id, email, password_hash, first_name, last_name,
-          email_verified, is_active, created_at
-        FROM users 
-        WHERE email = $1
-      `;
-
-      const result = await client.query(query, [email]);
+      const result = await client.query(
+        "SELECT id, email, password_hash, email_verified, first_name, last_name, is_active FROM users WHERE email = $1",
+        [email]
+      );
 
       if (result.rows.length === 0) {
-        return res.status(401).json({ message: "Invalid email or password" });
+        return res.status(401).json({ 
+          success: false,
+          message: "Invalid credentials" 
+        });
       }
 
       const user = result.rows[0];
 
       if (!user.is_active) {
-        return res.status(401).json({ message: "Account is deactivated" });
+        return res.status(401).json({ 
+          success: false,
+          message: "Account has been deactivated" 
+        });
       }
 
       const isValidPassword = await bcrypt.compare(password, user.password_hash);
+
       if (!isValidPassword) {
-        return res.status(401).json({ message: "Invalid email or password" });
+        return res.status(401).json({ 
+          success: false,
+          message: "Invalid credentials" 
+        });
       }
 
-      const token = generateToken(user.id);
+      const tokens = await generateTokens(user.id, req);
+
+      const userData = {
+        id: user.id,
+        email: user.email,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        emailVerified: user.email_verified,
+        isActive: user.is_active,
+      };
 
       res.json({
+        success: true,
         message: "Login successful",
-        token,
-        user: {
-          id: user.id,
-          email: user.email,
-          firstName: user.first_name,
-          lastName: user.last_name,
-          emailVerified: user.email_verified,
+        data: {
+          user: userData,
+          accessToken: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
         },
       });
     } finally {
@@ -182,7 +215,10 @@ const login = async (req, res) => {
     }
   } catch (error) {
     console.error("Login error:", error);
-    res.status(500).json({ message: "Server error during login" });
+    res.status(500).json({ 
+      success: false,
+      message: "Server error during login" 
+    });
   }
 };
 
@@ -190,19 +226,25 @@ const forgotPassword = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({ 
+        success: false,
+        errors: errors.array() 
+      });
     }
 
     const { email } = req.body;
+    const standardMessage = "If an account with that email exists, we've sent a password reset code.";
+
     const client = await pool.connect();
 
     try {
       const user = await client.query("SELECT id FROM users WHERE email = $1", [email]);
 
-      const standardMessage = "If an account with that email exists, a reset code has been sent.";
-
       if (user.rows.length === 0) {
-        return res.json({ message: standardMessage });
+        return res.json({ 
+          success: true,
+          message: standardMessage 
+        });
       }
 
       const resetCode = generateVerificationCode();
@@ -219,13 +261,19 @@ const forgotPassword = async (req, res) => {
         console.error("Failed to send password reset email:", emailResult.error);
       }
 
-      res.json({ message: standardMessage });
+      res.json({ 
+        success: true,
+        message: standardMessage 
+      });
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Forgot password error:", error);
-    res.status(500).json({ message: "Server error processing request" });
+    res.status(500).json({ 
+      success: false,
+      message: "Server error processing request" 
+    });
   }
 };
 
@@ -233,7 +281,10 @@ const verifyCode = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({ 
+        success: false,
+        errors: errors.array() 
+      });
     }
 
     const { email, code } = req.body;
@@ -247,17 +298,26 @@ const verifyCode = async (req, res) => {
       );
 
       if (result.rows.length === 0) {
-        return res.status(400).json({ message: "Invalid verification code" });
+        return res.status(400).json({ 
+          success: false,
+          message: "Invalid verification code" 
+        });
       }
 
       const user = result.rows[0];
 
       if (user.email_verification_code !== code) {
-        return res.status(400).json({ message: "Invalid verification code" });
+        return res.status(400).json({ 
+          success: false,
+          message: "Invalid verification code" 
+        });
       }
 
       if (new Date() > user.email_verification_expires) {
-        return res.status(400).json({ message: "Verification code has expired" });
+        return res.status(400).json({ 
+          success: false,
+          message: "Verification code has expired" 
+        });
       }
 
       await client.query(
@@ -269,13 +329,19 @@ const verifyCode = async (req, res) => {
         [email]
       );
 
-      res.json({ message: "Email verified successfully" });
+      res.json({ 
+        success: true,
+        message: "Email verified successfully" 
+      });
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Verify code error:", error);
-    res.status(500).json({ message: "Server error verifying code" });
+    res.status(500).json({ 
+      success: false,
+      message: "Server error verifying code" 
+    });
   }
 };
 
@@ -283,7 +349,10 @@ const resetPassword = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({ 
+        success: false,
+        errors: errors.array() 
+      });
     }
 
     const { email, code, newPassword } = req.body;
@@ -297,17 +366,26 @@ const resetPassword = async (req, res) => {
       );
 
       if (result.rows.length === 0) {
-        return res.status(400).json({ message: "Invalid reset code" });
+        return res.status(400).json({ 
+          success: false,
+          message: "Invalid reset code" 
+        });
       }
 
       const user = result.rows[0];
 
       if (user.password_reset_code !== code) {
-        return res.status(400).json({ message: "Invalid reset code" });
+        return res.status(400).json({ 
+          success: false,
+          message: "Invalid reset code" 
+        });
       }
 
       if (new Date() > user.password_reset_expires) {
-        return res.status(400).json({ message: "Reset code has expired" });
+        return res.status(400).json({ 
+          success: false,
+          message: "Reset code has expired" 
+        });
       }
 
       const saltRounds = 12;
@@ -322,13 +400,19 @@ const resetPassword = async (req, res) => {
         [hashedPassword, email]
       );
 
-      res.json({ message: "Password reset successfully" });
+      res.json({ 
+        success: true,
+        message: "Password reset successfully" 
+      });
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Reset password error:", error);
-    res.status(500).json({ message: "Server error resetting password" });
+    res.status(500).json({ 
+      success: false,
+      message: "Server error resetting password" 
+    });
   }
 };
 
@@ -336,7 +420,10 @@ const resendVerificationCode = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({ 
+        success: false,
+        errors: errors.array() 
+      });
     }
 
     const { email } = req.body;
@@ -348,11 +435,17 @@ const resendVerificationCode = async (req, res) => {
       ]);
 
       if (user.rows.length === 0) {
-        return res.status(404).json({ message: "User not found" });
+        return res.status(404).json({ 
+          success: false,
+          message: "User not found" 
+        });
       }
 
       if (user.rows[0].email_verified) {
-        return res.status(400).json({ message: "Email is already verified" });
+        return res.status(400).json({ 
+          success: false,
+          message: "Email is already verified" 
+        });
       }
 
       const verificationCode = generateVerificationCode();
@@ -368,17 +461,24 @@ const resendVerificationCode = async (req, res) => {
       if (!emailResult.success) {
         console.error("Failed to resend verification email:", emailResult.error);
         return res.status(500).json({
+          success: false,
           message: "Failed to send verification email. Please try again later.",
         });
       }
 
-      res.json({ message: "Verification code sent successfully" });
+      res.json({ 
+        success: true,
+        message: "Verification email sent successfully" 
+      });
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Resend verification code error:", error);
-    res.status(500).json({ message: "Server error resending verification code" });
+    res.status(500).json({ 
+      success: false,
+      message: "Server error resending verification code" 
+    });
   }
 };
 
@@ -388,268 +488,149 @@ const getProfile = async (req, res) => {
     const client = await pool.connect();
 
     try {
-      const query = `
-        SELECT 
-          id, email, first_name, last_name, phone, profile_image_url,
-          location_city, address_state, zip_code, address,
-          location_radius_miles, show_city_only, email_verified,
-          notification_preferences, created_at,
-          ST_X(location::geometry) as longitude,
-          ST_Y(location::geometry) as latitude
-        FROM users WHERE id = $1
-      `;
-
-      const result = await client.query(query, [userId]);
+      const result = await client.query(
+        `SELECT id, email, first_name, last_name, phone, bio, profile_image,
+                location_city, address_state, zip_code, address,
+                ST_X(location) as longitude, ST_Y(location) as latitude,
+                email_verified, notification_preferences, created_at, updated_at
+         FROM users WHERE id = $1`,
+        [userId]
+      );
 
       if (result.rows.length === 0) {
-        return res.status(404).json({ message: "User not found" });
+        return res.status(404).json({ 
+          success: false,
+          message: "User not found" 
+        });
       }
 
       const user = result.rows[0];
 
-      const profile = {
-        id: user.id,
-        email: user.email,
-        firstName: user.first_name,
-        lastName: user.last_name,
-        phone: user.phone,
-        profileImageUrl: user.profile_image_url,
-
-        location: {
-          city: user.location_city,
-          state: user.address_state,
-          zipCode: user.zip_code,
-          address: user.address,
-          coordinates:
-            user.longitude && user.latitude
-              ? {
-                longitude: parseFloat(user.longitude),
-                latitude: parseFloat(user.latitude),
-              }
-              : null,
-          radiusMiles: user.location_radius_miles || 10.0,
-          showCityOnly: user.show_city_only || false,
+      res.json({
+        success: true,
+        message: "Profile retrieved successfully",
+        data: {
+          id: user.id,
+          email: user.email,
+          firstName: user.first_name,
+          lastName: user.last_name,
+          phone: user.phone,
+          bio: user.bio,
+          profileImage: user.profile_image,
+          location: {
+            city: user.location_city,
+            state: user.address_state,
+            zipCode: user.zip_code,
+            address: user.address,
+            coordinates: user.longitude && user.latitude ? {
+              longitude: parseFloat(user.longitude),
+              latitude: parseFloat(user.latitude),
+            } : null,
+          },
+          emailVerified: user.email_verified,
+          notificationPreferences: user.notification_preferences || {},
+          createdAt: user.created_at,
+          updatedAt: user.updated_at,
         },
-
-        location_city: user.location_city,
-        address_state: user.address_state,
-
-        emailVerified: user.email_verified,
-        notificationPreferences: user.notification_preferences || {},
-        createdAt: user.created_at,
-      };
-
-      res.json(profile);
+      });
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Get profile error:", error);
-    res.status(500).json({ message: "Server error fetching profile" });
+    res.status(500).json({ 
+      success: false,
+      message: "Server error getting profile" 
+    });
   }
 };
 
 const updateProfile = async (req, res) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ 
+        success: false,
+        errors: errors.array() 
+      });
+    }
+
     const userId = req.user.userId;
     const {
       firstName,
       lastName,
       phone,
-      profileImageUrl,
+      bio,
+      latitude,
+      longitude,
+      address,
       city,
       state,
       zipCode,
-      address,
-      latitude,
-      longitude,
-      radiusMiles,
-      showCityOnly,
-      notificationPreferences,
-      bio,
     } = req.body;
-
-    console.log("updateProfile called with data:", req.body);
 
     const client = await pool.connect();
 
     try {
-      const updates = [];
-      const values = [];
-      let paramCount = 0;
+      let updateQuery = `
+        UPDATE users SET 
+        first_name = COALESCE($1, first_name),
+        last_name = COALESCE($2, last_name),
+        phone = COALESCE($3, phone),
+        bio = COALESCE($4, bio),
+        location_city = COALESCE($5, location_city),
+        address_state = COALESCE($6, address_state),
+        zip_code = COALESCE($7, zip_code),
+        address = COALESCE($8, address),
+        updated_at = NOW()
+      `;
 
-      if (firstName !== undefined && firstName !== null && firstName.trim() !== "") {
-        paramCount++;
-        updates.push(`first_name = $${paramCount}`);
-        values.push(firstName.trim());
-      }
+      const values = [
+        firstName,
+        lastName,
+        phone,
+        bio,
+        city,
+        state,
+        zipCode,
+        address,
+        userId,
+      ];
 
-      if (lastName !== undefined && lastName !== null && lastName.trim() !== "") {
-        paramCount++;
-        updates.push(`last_name = $${paramCount}`);
-        values.push(lastName.trim());
-      }
-
-      if (phone !== undefined && phone !== null) {
-        paramCount++;
-        updates.push(`phone = $${paramCount}`);
-        values.push(phone);
-      }
-
-      if (profileImageUrl !== undefined && profileImageUrl !== null) {
-        paramCount++;
-        updates.push(`profile_image_url = $${paramCount}`);
-        values.push(profileImageUrl);
-      }
-
-      if (city !== undefined && city !== null && city.trim() !== "") {
-        paramCount++;
-        updates.push(`location_city = $${paramCount}`);
-        values.push(city.trim());
-      }
-
-      if (state !== undefined && state !== null && state.trim() !== "") {
-        paramCount++;
-        updates.push(`address_state = $${paramCount}`);
-        values.push(state.trim());
-      }
-
-      if (zipCode !== undefined && zipCode !== null && zipCode.trim() !== "") {
-        paramCount++;
-        updates.push(`zip_code = $${paramCount}`);
-        values.push(zipCode.trim());
-      }
-
-      if (address !== undefined && address !== null) {
-        paramCount++;
-        updates.push(`address = $${paramCount}`);
-        values.push(address);
-      }
-
-      if (radiusMiles !== undefined && radiusMiles !== null) {
-        paramCount++;
-        updates.push(`location_radius_miles = $${paramCount}`);
-        values.push(radiusMiles);
-      }
-
-      if (showCityOnly !== undefined && showCityOnly !== null) {
-        paramCount++;
-        updates.push(`show_city_only = $${paramCount}`);
-        values.push(showCityOnly);
-      }
-
-      if (bio !== undefined && bio !== null) {
-        paramCount++;
-        updates.push(`bio = $${paramCount}`);
-        values.push(bio);
-      }
-
-      if (
-        latitude !== undefined &&
-        latitude !== null &&
-        longitude !== undefined &&
-        longitude !== null &&
-        !isNaN(latitude) &&
-        !isNaN(longitude)
-      ) {
+      if (latitude !== undefined && longitude !== undefined) {
         const lat = parseFloat(latitude);
         const lng = parseFloat(longitude);
 
-        if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
-          paramCount++;
-          updates.push(
-            `location = ST_SetSRID(ST_MakePoint($${paramCount}, $${paramCount + 1}), 4326)`
-          );
-          values.push(lng, lat);
-          paramCount++;
-        } else {
-          return res.status(400).json({ message: "Invalid coordinates provided" });
+        if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+          updateQuery += ", location = ST_SetSRID(ST_MakePoint($10, $11), 4326)";
+          values.splice(-1, 0, lng, lat);
         }
       }
 
-      if (notificationPreferences !== undefined && notificationPreferences !== null) {
-        paramCount++;
-        updates.push(`notification_preferences = $${paramCount}`);
-        values.push(JSON.stringify(notificationPreferences));
-      }
-
-      updates.push("updated_at = NOW()");
-
-      if (updates.length === 1) {
-        console.log("No profile fields to update, just updating timestamp");
-      }
-
-      paramCount++;
-      values.push(userId);
-
-      const updateQuery = `
-        UPDATE users 
-        SET ${updates.join(", ")}
-        WHERE id = $${paramCount}
-        RETURNING 
-          id, email, first_name, last_name, phone, profile_image_url,
-          location_city, address_state, zip_code, address, bio,
-          location_radius_miles, show_city_only, email_verified,
-          notification_preferences, updated_at,
-          ST_X(location::geometry) as longitude,
-          ST_Y(location::geometry) as latitude
-      `;
-
-      console.log("Executing update query:", updateQuery);
-      console.log("With values:", values);
+      updateQuery += " WHERE id = $" + values.length + " RETURNING id";
 
       const result = await client.query(updateQuery, values);
 
       if (result.rows.length === 0) {
-        return res.status(404).json({ message: "User not found" });
+        return res.status(404).json({ 
+          success: false,
+          message: "User not found" 
+        });
       }
 
-      const updatedUser = result.rows[0];
-
-      const profile = {
-        id: updatedUser.id,
-        email: updatedUser.email,
-        firstName: updatedUser.first_name,
-        lastName: updatedUser.last_name,
-        phone: updatedUser.phone,
-        profileImageUrl: updatedUser.profile_image_url,
-        bio: updatedUser.bio,
-
-        location: {
-          city: updatedUser.location_city,
-          state: updatedUser.address_state,
-          zipCode: updatedUser.zip_code,
-          address: updatedUser.address,
-          coordinates:
-            updatedUser.longitude && updatedUser.latitude
-              ? {
-                longitude: parseFloat(updatedUser.longitude),
-                latitude: parseFloat(updatedUser.latitude),
-              }
-              : null,
-          radiusMiles: updatedUser.location_radius_miles || 10.0,
-          showCityOnly: updatedUser.show_city_only || false,
-        },
-
-        location_city: updatedUser.location_city,
-        address_state: updatedUser.address_state,
-
-        emailVerified: updatedUser.email_verified,
-        notificationPreferences: updatedUser.notification_preferences || {},
-        updatedAt: updatedUser.updated_at,
-      };
-
-      res.json({
-        message: "Profile updated successfully",
-        user: profile,
-        updatedAt: result.rows[0].updated_at,
+      res.json({ 
+        success: true,
+        message: "Profile updated successfully" 
       });
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Update profile error:", error);
-    res.status(500).json({ message: "Server error updating profile" });
+    res.status(500).json({ 
+      success: false,
+      message: "Server error updating profile" 
+    });
   }
 };
 
@@ -657,7 +638,10 @@ const changePassword = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({ 
+        success: false,
+        errors: errors.array() 
+      });
     }
 
     const userId = req.user.userId;
@@ -666,34 +650,51 @@ const changePassword = async (req, res) => {
     const client = await pool.connect();
 
     try {
-      const result = await client.query("SELECT password_hash FROM users WHERE id = $1", [userId]);
+      const result = await client.query(
+        "SELECT password_hash FROM users WHERE id = $1",
+        [userId]
+      );
 
       if (result.rows.length === 0) {
-        return res.status(404).json({ message: "User not found" });
+        return res.status(404).json({ 
+          success: false,
+          message: "User not found" 
+        });
       }
 
       const user = result.rows[0];
-
       const isValidPassword = await bcrypt.compare(currentPassword, user.password_hash);
+
       if (!isValidPassword) {
-        return res.status(400).json({ message: "Current password is incorrect" });
+        return res.status(400).json({ 
+          success: false,
+          message: "Current password is incorrect" 
+        });
       }
 
       const saltRounds = 12;
-      const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+      const hashedNewPassword = await bcrypt.hash(newPassword, saltRounds);
 
-      await client.query("UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2", [
-        hashedPassword,
-        userId,
-      ]);
+      await client.query(
+        "UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2",
+        [hashedNewPassword, userId]
+      );
 
-      res.json({ message: "Password changed successfully" });
+      await tokenService.revokeAllUserSessions(userId);
+
+      res.json({ 
+        success: true,
+        message: "Password changed successfully. Please log in again on other devices." 
+      });
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Change password error:", error);
-    res.status(500).json({ message: "Server error changing password" });
+    res.status(500).json({ 
+      success: false,
+      message: "Server error changing password" 
+    });
   }
 };
 
@@ -703,19 +704,36 @@ const checkEmailVerification = async (req, res) => {
     const client = await pool.connect();
 
     try {
-      const result = await client.query("SELECT email_verified FROM users WHERE id = $1", [userId]);
+      const result = await client.query(
+        "SELECT email_verified FROM users WHERE id = $1",
+        [userId]
+      );
 
       if (result.rows.length === 0) {
-        return res.status(404).json({ message: "User not found" });
+        return res.status(404).json({ 
+          success: false,
+          message: "User not found" 
+        });
       }
 
-      res.json({ emailVerified: result.rows[0].email_verified });
+      const user = result.rows[0];
+
+      res.json({
+        success: true,
+        message: "Email verification status retrieved",
+        data: {
+          verified: user.email_verified,
+        },
+      });
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Check email verification error:", error);
-    res.status(500).json({ message: "Server error checking verification status" });
+    res.status(500).json({ 
+      success: false,
+      message: "Server error checking verification status" 
+    });
   }
 };
 
@@ -730,13 +748,19 @@ const resendVerificationEmail = async (req, res) => {
       ]);
 
       if (result.rows.length === 0) {
-        return res.status(404).json({ message: "User not found" });
+        return res.status(404).json({ 
+          success: false,
+          message: "User not found" 
+        });
       }
 
       const user = result.rows[0];
 
       if (user.email_verified) {
-        return res.status(400).json({ message: "Email is already verified" });
+        return res.status(400).json({ 
+          success: false,
+          message: "Email is already verified" 
+        });
       }
 
       const verificationCode = generateVerificationCode();
@@ -752,17 +776,24 @@ const resendVerificationEmail = async (req, res) => {
       if (!emailResult.success) {
         console.error("Failed to resend verification email:", emailResult.error);
         return res.status(500).json({
+          success: false,
           message: "Failed to send verification email. Please try again later.",
         });
       }
 
-      res.json({ message: "Verification email sent successfully" });
+      res.json({ 
+        success: true,
+        message: "Verification email sent successfully" 
+      });
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Resend verification email error:", error);
-    res.status(500).json({ message: "Server error resending verification email" });
+    res.status(500).json({ 
+      success: false,
+      message: "Server error resending verification email" 
+    });
   }
 };
 
@@ -779,13 +810,222 @@ const updateNotificationPreferences = async (req, res) => {
         [JSON.stringify(notificationPreferences), userId]
       );
 
-      res.json({ message: "Notification preferences updated successfully" });
+      res.json({ 
+        success: true,
+        message: "Notification preferences updated successfully" 
+      });
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Update notification preferences error:", error);
-    res.status(500).json({ message: "Server error updating notification preferences" });
+    res.status(500).json({ 
+      success: false,
+      message: "Server error updating notification preferences" 
+    });
+  }
+};
+
+const refreshToken = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.status(400).json({ 
+        success: false,
+        message: "Refresh token is required",
+        code: "NO_REFRESH_TOKEN"
+      });
+    }
+
+    try {
+      const result = await tokenService.refreshAccessToken(refreshToken, req);
+
+      res.json({
+        success: true,
+        message: "Token refreshed successfully",
+        data: {
+          accessToken: result.accessToken,
+          refreshToken: result.refreshToken || refreshToken,
+        },
+      });
+    } catch (error) {
+      console.error("Token refresh error:", error);
+      
+      if (error.message.includes("Invalid or expired")) {
+        return res.status(401).json({ 
+          success: false,
+          message: "Invalid or expired refresh token",
+          code: "INVALID_REFRESH_TOKEN"
+        });
+      }
+
+      return res.status(500).json({ 
+        success: false,
+        message: "Failed to refresh token",
+        code: "REFRESH_ERROR"
+      });
+    }
+  } catch (error) {
+    console.error("Refresh token endpoint error:", error);
+    res.status(500).json({ 
+      success: false,
+      message: "Server error refreshing token",
+      code: "SERVER_ERROR"
+    });
+  }
+};
+
+const logout = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (refreshToken) {
+      try {
+        await tokenService.revokeSession(refreshToken);
+      } catch (error) {
+        console.error("Error revoking session:", error);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: "Logged out successfully",
+    });
+  } catch (error) {
+    console.error("Logout error:", error);
+    res.status(500).json({ 
+      success: false,
+      message: "Server error during logout" 
+    });
+  }
+};
+
+const logoutAll = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    try {
+      const revokedCount = await tokenService.revokeAllUserSessions(userId);
+      
+      res.json({
+        success: true,
+        message: `Logged out from ${revokedCount} devices successfully`,
+        data: {
+          revokedSessions: revokedCount,
+        },
+      });
+    } catch (error) {
+      console.error("Error revoking all sessions:", error);
+      return res.status(500).json({ 
+        success: false,
+        message: "Failed to logout from all devices" 
+      });
+    }
+  } catch (error) {
+    console.error("Logout all error:", error);
+    res.status(500).json({ 
+      success: false,
+      message: "Server error during logout" 
+    });
+  }
+};
+
+const getActiveSessions = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    try {
+      const sessions = await tokenService.getUserSessions(userId);
+      
+      res.json({
+        success: true,
+        message: "Active sessions retrieved successfully",
+        data: {
+          sessions,
+          count: sessions.length,
+        },
+      });
+    } catch (error) {
+      console.error("Error getting active sessions:", error);
+      return res.status(500).json({ 
+        success: false,
+        message: "Failed to get active sessions" 
+      });
+    }
+  } catch (error) {
+    console.error("Get active sessions error:", error);
+    res.status(500).json({ 
+      success: false,
+      message: "Server error getting sessions" 
+    });
+  }
+};
+
+const revokeSession = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+    const userId = req.user.userId;
+
+    if (!refreshToken) {
+      return res.status(400).json({ 
+        success: false,
+        message: "Refresh token is required" 
+      });
+    }
+
+    try {
+      const client = await pool.connect();
+      
+      try {
+        const sessionResult = await client.query(
+          "SELECT user_id FROM user_sessions WHERE refresh_token = $1 AND is_active = true",
+          [refreshToken]
+        );
+
+        if (sessionResult.rows.length === 0) {
+          return res.status(404).json({ 
+            success: false,
+            message: "Session not found" 
+          });
+        }
+
+        if (sessionResult.rows[0].user_id !== userId) {
+          return res.status(403).json({ 
+            success: false,
+            message: "Not authorized to revoke this session" 
+          });
+        }
+
+        const revoked = await tokenService.revokeSession(refreshToken);
+        
+        if (revoked) {
+          res.json({
+            success: true,
+            message: "Session revoked successfully",
+          });
+        } else {
+          res.status(404).json({ 
+            success: false,
+            message: "Session not found or already revoked" 
+          });
+        }
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      console.error("Error revoking session:", error);
+      return res.status(500).json({ 
+        success: false,
+        message: "Failed to revoke session" 
+      });
+    }
+  } catch (error) {
+    console.error("Revoke session error:", error);
+    res.status(500).json({ 
+      success: false,
+      message: "Server error revoking session" 
+    });
   }
 };
 
@@ -802,4 +1042,9 @@ module.exports = {
   checkEmailVerification,
   resendVerificationEmail,
   updateNotificationPreferences,
+  refreshToken,
+  logout,
+  logoutAll,
+  getActiveSessions,
+  revokeSession,
 };

@@ -2,14 +2,12 @@
 const admin = require("firebase-admin");
 const { pool } = require("../config/database");
 
-// Initialize Firebase Admin SDK
 let firebaseApp = null;
 
 const initializeFirebase = () => {
   if (firebaseApp) return firebaseApp;
 
   try {
-    // Initialize with service account (you'll need to add this to your env)
     const serviceAccount = {
       type: "service_account",
       project_id: process.env.FIREBASE_PROJECT_ID,
@@ -27,26 +25,23 @@ const initializeFirebase = () => {
       projectId: process.env.FIREBASE_PROJECT_ID,
     });
 
-    console.log("✅ Firebase Admin SDK initialized successfully");
+    console.log("Firebase Admin SDK initialized successfully");
     return firebaseApp;
   } catch (error) {
-    console.error("❌ Firebase initialization failed:", error.message);
+    console.error("Firebase initialization failed:", error.message);
     return null;
   }
 };
 
-// Register user device for push notifications
 const registerDevice = async (userId, deviceToken, deviceType, deviceName, appVersion) => {
   const client = await pool.connect();
 
   try {
-    // Deactivate old tokens for this user/device type
     await client.query(
       "UPDATE user_devices SET is_active = false WHERE user_id = $1 AND device_type = $2",
       [userId, deviceType]
     );
 
-    // Insert new device token
     const result = await client.query(
       `
       INSERT INTO user_devices (user_id, device_token, device_type, device_name, app_version)
@@ -63,7 +58,7 @@ const registerDevice = async (userId, deviceToken, deviceType, deviceName, appVe
       [userId, deviceToken, deviceType, deviceName, appVersion]
     );
 
-    console.log(`📱 Device registered for user ${userId}: ${deviceType}`);
+    console.log(`Device registered for user ${userId}: ${deviceType}`);
     return { success: true, deviceId: result.rows[0].id };
   } catch (error) {
     console.error("Device registration error:", error);
@@ -73,7 +68,6 @@ const registerDevice = async (userId, deviceToken, deviceType, deviceName, appVe
   }
 };
 
-// Get active device tokens for a user
 const getUserDeviceTokens = async (userId) => {
   const client = await pool.connect();
 
@@ -99,7 +93,6 @@ const getUserDeviceTokens = async (userId) => {
   }
 };
 
-// Send push notification to specific users
 const sendNotificationToUsers = async (userIds, notificationData) => {
   if (!firebaseApp) {
     firebaseApp = initializeFirebase();
@@ -111,7 +104,6 @@ const sendNotificationToUsers = async (userIds, notificationData) => {
   const client = await pool.connect();
 
   try {
-    // Get all device tokens for the users
     const deviceResult = await client.query(
       `
       SELECT DISTINCT device_token, user_id, device_type
@@ -128,7 +120,6 @@ const sendNotificationToUsers = async (userIds, notificationData) => {
 
     const tokens = deviceResult.rows.map((row) => row.device_token);
 
-    // Prepare FCM message
     const message = {
       notification: {
         title: notificationData.title,
@@ -161,14 +152,12 @@ const sendNotificationToUsers = async (userIds, notificationData) => {
       tokens: tokens,
     };
 
-    // Send to FCM
     const response = await admin.messaging().sendMulticast(message);
 
     console.log(
-      `📤 Push notification sent: ${response.successCount} success, ${response.failureCount} failed`
+      `Push notification sent: ${response.successCount} success, ${response.failureCount} failed`
     );
 
-    // Log results
     if (response.failureCount > 0) {
       response.responses.forEach((resp, idx) => {
         if (!resp.success) {
@@ -177,7 +166,6 @@ const sendNotificationToUsers = async (userIds, notificationData) => {
       });
     }
 
-    // Update notification records
     for (const userId of userIds) {
       await client.query(
         `
@@ -215,12 +203,10 @@ const sendNotificationToUsers = async (userIds, notificationData) => {
   }
 };
 
-// Send notification to users in a specific city
 const sendNotificationToCity = async (city, state, notificationData) => {
   const client = await pool.connect();
 
   try {
-    // Get users in the city who have push notifications enabled
     const userResult = await client.query(
       `
       SELECT DISTINCT u.id
@@ -250,7 +236,7 @@ const sendNotificationToCity = async (city, state, notificationData) => {
       return { success: true, sent: 0, failed: 0 };
     }
 
-    console.log(`📍 Sending notification to ${userIds.length} users in ${city}, ${state}`);
+    console.log(`Sending notification to ${userIds.length} users in ${city}, ${state}`);
     return await sendNotificationToUsers(userIds, notificationData);
   } catch (error) {
     console.error("City notification error:", error);
@@ -260,9 +246,7 @@ const sendNotificationToCity = async (city, state, notificationData) => {
   }
 };
 
-// Notification helper functions for common scenarios
 const notificationHelpers = {
-  // New message notification
   newMessage: async (senderId, recipientId, messagePreview) => {
     const client = await pool.connect();
     try {
@@ -291,9 +275,8 @@ const notificationHelpers = {
     }
   },
 
-  // Post comment notification
   postComment: async (postId, commenterId, postAuthorId, commentPreview) => {
-    if (commenterId === postAuthorId) return; // Don't notify self
+    if (commenterId === postAuthorId) return;
 
     const client = await pool.connect();
     try {
@@ -329,7 +312,7 @@ const notificationHelpers = {
 
   emergencyAlert: async (city, state, alertTitle, alertDescription, alertId) => {
     return sendNotificationToCity(city, state, {
-      title: `🚨 Emergency Alert: ${alertTitle}`,
+      title: `Emergency Alert: ${alertTitle}`,
       message: alertDescription,
       type: "emergency_alert",
       alertId: alertId,
@@ -357,7 +340,6 @@ const notificationHelpers = {
     });
   },
 
-  // New neighborhood post notification
   neighborhoodPost: async (postId, authorId, city, state, postTitle, postPreview) => {
     const client = await pool.connect();
     try {

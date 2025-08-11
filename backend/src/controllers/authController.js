@@ -1,6 +1,5 @@
 // File: backend/src/controllers/authController.js
 const bcrypt = require("bcryptjs");
-// const jwt = require("jsonwebtoken");
 const { pool } = require("../config/database");
 const { validationResult } = require("express-validator");
 const { sendVerificationEmail, sendPasswordResetEmail } = require("../services/emailService");

@@ -324,14 +324,14 @@ const notificationHelpers = {
 
   weatherAlert: async (city, state, severity, alertTitle, alertId) => {
     const severityEmoji = {
-      CRITICAL: "🔴",
-      HIGH: "🟡",
-      MODERATE: "🟠",
-      LOW: "🟢",
+      CRITICAL: "Critical",
+      HIGH: "High",
+      MODERATE: "Moderate",
+      LOW: "Low",
     };
 
     return sendNotificationToCity(city, state, {
-      title: `${severityEmoji[severity] || "⚠️"} Weather Alert for ${city}`,
+      title: `${severityEmoji[severity] || "Warning"} Weather Alert for ${city}`,
       message: `${severity}: ${alertTitle}`,
       type: "weather_alert",
       alertId: alertId,

@@ -1,6 +1,6 @@
 // File: backend/src/controllers/authController.js
 const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
+// const jwt = require("jsonwebtoken");
 const { pool } = require("../config/database");
 const { validationResult } = require("express-validator");
 const { sendVerificationEmail, sendPasswordResetEmail } = require("../services/emailService");
@@ -10,21 +10,17 @@ const generateVerificationCode = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-const generateToken = (userId) => {
-  return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: "7d" });
-};
-
 const generateTokens = async (userId, req) => {
-  return await tokenService.createSession(userId, req);
+  return tokenService.createSession(userId, req);
 };
 
 const register = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        errors: errors.array() 
+        errors: errors.array(),
       });
     }
 
@@ -60,9 +56,9 @@ const register = async (req, res) => {
       const existingUser = await client.query("SELECT id FROM users WHERE email = $1", [email]);
 
       if (existingUser.rows.length > 0) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           success: false,
-          message: "User already exists with this email" 
+          message: "User already exists with this email",
         });
       }
 
@@ -139,9 +135,9 @@ const register = async (req, res) => {
     }
   } catch (error) {
     console.error("Register error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: "Server error during registration" 
+      message: "Server error during registration",
     });
   }
 };
@@ -150,9 +146,9 @@ const login = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        errors: errors.array() 
+        errors: errors.array(),
       });
     }
 
@@ -166,27 +162,27 @@ const login = async (req, res) => {
       );
 
       if (result.rows.length === 0) {
-        return res.status(401).json({ 
+        return res.status(401).json({
           success: false,
-          message: "Invalid credentials" 
+          message: "Invalid credentials",
         });
       }
 
       const user = result.rows[0];
 
       if (!user.is_active) {
-        return res.status(401).json({ 
+        return res.status(401).json({
           success: false,
-          message: "Account has been deactivated" 
+          message: "Account has been deactivated",
         });
       }
 
       const isValidPassword = await bcrypt.compare(password, user.password_hash);
 
       if (!isValidPassword) {
-        return res.status(401).json({ 
+        return res.status(401).json({
           success: false,
-          message: "Invalid credentials" 
+          message: "Invalid credentials",
         });
       }
 
@@ -215,9 +211,9 @@ const login = async (req, res) => {
     }
   } catch (error) {
     console.error("Login error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: "Server error during login" 
+      message: "Server error during login",
     });
   }
 };
@@ -226,14 +222,15 @@ const forgotPassword = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        errors: errors.array() 
+        errors: errors.array(),
       });
     }
 
     const { email } = req.body;
-    const standardMessage = "If an account with that email exists, we've sent a password reset code.";
+    const standardMessage =
+      "If an account with that email exists, we've sent a password reset code.";
 
     const client = await pool.connect();
 
@@ -241,9 +238,9 @@ const forgotPassword = async (req, res) => {
       const user = await client.query("SELECT id FROM users WHERE email = $1", [email]);
 
       if (user.rows.length === 0) {
-        return res.json({ 
+        return res.json({
           success: true,
-          message: standardMessage 
+          message: standardMessage,
         });
       }
 
@@ -261,18 +258,18 @@ const forgotPassword = async (req, res) => {
         console.error("Failed to send password reset email:", emailResult.error);
       }
 
-      res.json({ 
+      res.json({
         success: true,
-        message: standardMessage 
+        message: standardMessage,
       });
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Forgot password error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: "Server error processing request" 
+      message: "Server error processing request",
     });
   }
 };
@@ -281,9 +278,9 @@ const verifyCode = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        errors: errors.array() 
+        errors: errors.array(),
       });
     }
 
@@ -298,25 +295,25 @@ const verifyCode = async (req, res) => {
       );
 
       if (result.rows.length === 0) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           success: false,
-          message: "Invalid verification code" 
+          message: "Invalid verification code",
         });
       }
 
       const user = result.rows[0];
 
       if (user.email_verification_code !== code) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           success: false,
-          message: "Invalid verification code" 
+          message: "Invalid verification code",
         });
       }
 
       if (new Date() > user.email_verification_expires) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           success: false,
-          message: "Verification code has expired" 
+          message: "Verification code has expired",
         });
       }
 
@@ -329,18 +326,18 @@ const verifyCode = async (req, res) => {
         [email]
       );
 
-      res.json({ 
+      res.json({
         success: true,
-        message: "Email verified successfully" 
+        message: "Email verified successfully",
       });
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Verify code error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: "Server error verifying code" 
+      message: "Server error verifying code",
     });
   }
 };
@@ -349,9 +346,9 @@ const resetPassword = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        errors: errors.array() 
+        errors: errors.array(),
       });
     }
 
@@ -366,25 +363,25 @@ const resetPassword = async (req, res) => {
       );
 
       if (result.rows.length === 0) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           success: false,
-          message: "Invalid reset code" 
+          message: "Invalid reset code",
         });
       }
 
       const user = result.rows[0];
 
       if (user.password_reset_code !== code) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           success: false,
-          message: "Invalid reset code" 
+          message: "Invalid reset code",
         });
       }
 
       if (new Date() > user.password_reset_expires) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           success: false,
-          message: "Reset code has expired" 
+          message: "Reset code has expired",
         });
       }
 
@@ -400,18 +397,18 @@ const resetPassword = async (req, res) => {
         [hashedPassword, email]
       );
 
-      res.json({ 
+      res.json({
         success: true,
-        message: "Password reset successfully" 
+        message: "Password reset successfully",
       });
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Reset password error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: "Server error resetting password" 
+      message: "Server error resetting password",
     });
   }
 };
@@ -420,9 +417,9 @@ const resendVerificationCode = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        errors: errors.array() 
+        errors: errors.array(),
       });
     }
 
@@ -435,16 +432,16 @@ const resendVerificationCode = async (req, res) => {
       ]);
 
       if (user.rows.length === 0) {
-        return res.status(404).json({ 
+        return res.status(404).json({
           success: false,
-          message: "User not found" 
+          message: "User not found",
         });
       }
 
       if (user.rows[0].email_verified) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           success: false,
-          message: "Email is already verified" 
+          message: "Email is already verified",
         });
       }
 
@@ -466,18 +463,18 @@ const resendVerificationCode = async (req, res) => {
         });
       }
 
-      res.json({ 
+      res.json({
         success: true,
-        message: "Verification email sent successfully" 
+        message: "Verification email sent successfully",
       });
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Resend verification code error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: "Server error resending verification code" 
+      message: "Server error resending verification code",
     });
   }
 };
@@ -498,9 +495,9 @@ const getProfile = async (req, res) => {
       );
 
       if (result.rows.length === 0) {
-        return res.status(404).json({ 
+        return res.status(404).json({
           success: false,
-          message: "User not found" 
+          message: "User not found",
         });
       }
 
@@ -522,10 +519,13 @@ const getProfile = async (req, res) => {
             state: user.address_state,
             zipCode: user.zip_code,
             address: user.address,
-            coordinates: user.longitude && user.latitude ? {
-              longitude: parseFloat(user.longitude),
-              latitude: parseFloat(user.latitude),
-            } : null,
+            coordinates:
+              user.longitude && user.latitude
+                ? {
+                  longitude: parseFloat(user.longitude),
+                  latitude: parseFloat(user.latitude),
+                }
+                : null,
           },
           emailVerified: user.email_verified,
           notificationPreferences: user.notification_preferences || {},
@@ -538,9 +538,9 @@ const getProfile = async (req, res) => {
     }
   } catch (error) {
     console.error("Get profile error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: "Server error getting profile" 
+      message: "Server error getting profile",
     });
   }
 };
@@ -549,25 +549,15 @@ const updateProfile = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        errors: errors.array() 
+        errors: errors.array(),
       });
     }
 
     const userId = req.user.userId;
-    const {
-      firstName,
-      lastName,
-      phone,
-      bio,
-      latitude,
-      longitude,
-      address,
-      city,
-      state,
-      zipCode,
-    } = req.body;
+    const { firstName, lastName, phone, bio, latitude, longitude, address, city, state, zipCode } =
+      req.body;
 
     const client = await pool.connect();
 
@@ -585,17 +575,7 @@ const updateProfile = async (req, res) => {
         updated_at = NOW()
       `;
 
-      const values = [
-        firstName,
-        lastName,
-        phone,
-        bio,
-        city,
-        state,
-        zipCode,
-        address,
-        userId,
-      ];
+      const values = [firstName, lastName, phone, bio, city, state, zipCode, address, userId];
 
       if (latitude !== undefined && longitude !== undefined) {
         const lat = parseFloat(latitude);
@@ -612,24 +592,24 @@ const updateProfile = async (req, res) => {
       const result = await client.query(updateQuery, values);
 
       if (result.rows.length === 0) {
-        return res.status(404).json({ 
+        return res.status(404).json({
           success: false,
-          message: "User not found" 
+          message: "User not found",
         });
       }
 
-      res.json({ 
+      res.json({
         success: true,
-        message: "Profile updated successfully" 
+        message: "Profile updated successfully",
       });
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Update profile error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: "Server error updating profile" 
+      message: "Server error updating profile",
     });
   }
 };
@@ -638,9 +618,9 @@ const changePassword = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        errors: errors.array() 
+        errors: errors.array(),
       });
     }
 
@@ -650,15 +630,12 @@ const changePassword = async (req, res) => {
     const client = await pool.connect();
 
     try {
-      const result = await client.query(
-        "SELECT password_hash FROM users WHERE id = $1",
-        [userId]
-      );
+      const result = await client.query("SELECT password_hash FROM users WHERE id = $1", [userId]);
 
       if (result.rows.length === 0) {
-        return res.status(404).json({ 
+        return res.status(404).json({
           success: false,
-          message: "User not found" 
+          message: "User not found",
         });
       }
 
@@ -666,34 +643,34 @@ const changePassword = async (req, res) => {
       const isValidPassword = await bcrypt.compare(currentPassword, user.password_hash);
 
       if (!isValidPassword) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           success: false,
-          message: "Current password is incorrect" 
+          message: "Current password is incorrect",
         });
       }
 
       const saltRounds = 12;
       const hashedNewPassword = await bcrypt.hash(newPassword, saltRounds);
 
-      await client.query(
-        "UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2",
-        [hashedNewPassword, userId]
-      );
+      await client.query("UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2", [
+        hashedNewPassword,
+        userId,
+      ]);
 
       await tokenService.revokeAllUserSessions(userId);
 
-      res.json({ 
+      res.json({
         success: true,
-        message: "Password changed successfully. Please log in again on other devices." 
+        message: "Password changed successfully. Please log in again on other devices.",
       });
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Change password error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: "Server error changing password" 
+      message: "Server error changing password",
     });
   }
 };
@@ -704,15 +681,12 @@ const checkEmailVerification = async (req, res) => {
     const client = await pool.connect();
 
     try {
-      const result = await client.query(
-        "SELECT email_verified FROM users WHERE id = $1",
-        [userId]
-      );
+      const result = await client.query("SELECT email_verified FROM users WHERE id = $1", [userId]);
 
       if (result.rows.length === 0) {
-        return res.status(404).json({ 
+        return res.status(404).json({
           success: false,
-          message: "User not found" 
+          message: "User not found",
         });
       }
 
@@ -730,9 +704,9 @@ const checkEmailVerification = async (req, res) => {
     }
   } catch (error) {
     console.error("Check email verification error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: "Server error checking verification status" 
+      message: "Server error checking verification status",
     });
   }
 };
@@ -748,18 +722,18 @@ const resendVerificationEmail = async (req, res) => {
       ]);
 
       if (result.rows.length === 0) {
-        return res.status(404).json({ 
+        return res.status(404).json({
           success: false,
-          message: "User not found" 
+          message: "User not found",
         });
       }
 
       const user = result.rows[0];
 
       if (user.email_verified) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           success: false,
-          message: "Email is already verified" 
+          message: "Email is already verified",
         });
       }
 
@@ -781,18 +755,18 @@ const resendVerificationEmail = async (req, res) => {
         });
       }
 
-      res.json({ 
+      res.json({
         success: true,
-        message: "Verification email sent successfully" 
+        message: "Verification email sent successfully",
       });
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Resend verification email error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: "Server error resending verification email" 
+      message: "Server error resending verification email",
     });
   }
 };
@@ -810,18 +784,18 @@ const updateNotificationPreferences = async (req, res) => {
         [JSON.stringify(notificationPreferences), userId]
       );
 
-      res.json({ 
+      res.json({
         success: true,
-        message: "Notification preferences updated successfully" 
+        message: "Notification preferences updated successfully",
       });
     } finally {
       client.release();
     }
   } catch (error) {
     console.error("Update notification preferences error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: "Server error updating notification preferences" 
+      message: "Server error updating notification preferences",
     });
   }
 };
@@ -831,10 +805,10 @@ const refreshToken = async (req, res) => {
     const { refreshToken } = req.body;
 
     if (!refreshToken) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
         message: "Refresh token is required",
-        code: "NO_REFRESH_TOKEN"
+        code: "NO_REFRESH_TOKEN",
       });
     }
 
@@ -851,27 +825,27 @@ const refreshToken = async (req, res) => {
       });
     } catch (error) {
       console.error("Token refresh error:", error);
-      
+
       if (error.message.includes("Invalid or expired")) {
-        return res.status(401).json({ 
+        return res.status(401).json({
           success: false,
           message: "Invalid or expired refresh token",
-          code: "INVALID_REFRESH_TOKEN"
+          code: "INVALID_REFRESH_TOKEN",
         });
       }
 
-      return res.status(500).json({ 
+      return res.status(500).json({
         success: false,
         message: "Failed to refresh token",
-        code: "REFRESH_ERROR"
+        code: "REFRESH_ERROR",
       });
     }
   } catch (error) {
     console.error("Refresh token endpoint error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
       message: "Server error refreshing token",
-      code: "SERVER_ERROR"
+      code: "SERVER_ERROR",
     });
   }
 };
@@ -894,9 +868,9 @@ const logout = async (req, res) => {
     });
   } catch (error) {
     console.error("Logout error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: "Server error during logout" 
+      message: "Server error during logout",
     });
   }
 };
@@ -907,7 +881,7 @@ const logoutAll = async (req, res) => {
 
     try {
       const revokedCount = await tokenService.revokeAllUserSessions(userId);
-      
+
       res.json({
         success: true,
         message: `Logged out from ${revokedCount} devices successfully`,
@@ -917,16 +891,16 @@ const logoutAll = async (req, res) => {
       });
     } catch (error) {
       console.error("Error revoking all sessions:", error);
-      return res.status(500).json({ 
+      return res.status(500).json({
         success: false,
-        message: "Failed to logout from all devices" 
+        message: "Failed to logout from all devices",
       });
     }
   } catch (error) {
     console.error("Logout all error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: "Server error during logout" 
+      message: "Server error during logout",
     });
   }
 };
@@ -937,7 +911,7 @@ const getActiveSessions = async (req, res) => {
 
     try {
       const sessions = await tokenService.getUserSessions(userId);
-      
+
       res.json({
         success: true,
         message: "Active sessions retrieved successfully",
@@ -948,16 +922,16 @@ const getActiveSessions = async (req, res) => {
       });
     } catch (error) {
       console.error("Error getting active sessions:", error);
-      return res.status(500).json({ 
+      return res.status(500).json({
         success: false,
-        message: "Failed to get active sessions" 
+        message: "Failed to get active sessions",
       });
     }
   } catch (error) {
     console.error("Get active sessions error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: "Server error getting sessions" 
+      message: "Server error getting sessions",
     });
   }
 };
@@ -968,15 +942,15 @@ const revokeSession = async (req, res) => {
     const userId = req.user.userId;
 
     if (!refreshToken) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        message: "Refresh token is required" 
+        message: "Refresh token is required",
       });
     }
 
     try {
       const client = await pool.connect();
-      
+
       try {
         const sessionResult = await client.query(
           "SELECT user_id FROM user_sessions WHERE refresh_token = $1 AND is_active = true",
@@ -984,30 +958,30 @@ const revokeSession = async (req, res) => {
         );
 
         if (sessionResult.rows.length === 0) {
-          return res.status(404).json({ 
+          return res.status(404).json({
             success: false,
-            message: "Session not found" 
+            message: "Session not found",
           });
         }
 
         if (sessionResult.rows[0].user_id !== userId) {
-          return res.status(403).json({ 
+          return res.status(403).json({
             success: false,
-            message: "Not authorized to revoke this session" 
+            message: "Not authorized to revoke this session",
           });
         }
 
         const revoked = await tokenService.revokeSession(refreshToken);
-        
+
         if (revoked) {
           res.json({
             success: true,
             message: "Session revoked successfully",
           });
         } else {
-          res.status(404).json({ 
+          res.status(404).json({
             success: false,
-            message: "Session not found or already revoked" 
+            message: "Session not found or already revoked",
           });
         }
       } finally {
@@ -1015,16 +989,16 @@ const revokeSession = async (req, res) => {
       }
     } catch (error) {
       console.error("Error revoking session:", error);
-      return res.status(500).json({ 
+      return res.status(500).json({
         success: false,
-        message: "Failed to revoke session" 
+        message: "Failed to revoke session",
       });
     }
   } catch (error) {
     console.error("Revoke session error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: "Server error revoking session" 
+      message: "Server error revoking session",
     });
   }
 };

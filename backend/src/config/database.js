@@ -107,7 +107,7 @@ const gracefulShutdown = async () => {
   }
 };
 
-if (process.env.NODE_ENV !== "test") {
+if (process.env.NODE_ENV === "test") {
   process.on("SIGTERM", gracefulShutdown);
   process.on("SIGINT", gracefulShutdown);
 }

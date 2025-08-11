@@ -39,7 +39,12 @@ const sanitizeObject = (obj) => {
       ALLOWED_TAGS: [],
       ALLOWED_ATTR: [],
     })
-      .replace(/[\x00-\x1F\x7F]/g, "")
+      .split("")
+      .filter((char) => {
+        const code = char.charCodeAt(0);
+        return code >= 32 && code !== 127;
+      })
+      .join("")
       .trim();
   }
   return obj;
@@ -51,7 +56,14 @@ const sanitizeSensitive = (req, res, next) => {
     if (req.body && typeof req.body === "object") {
       sensitiveFields.forEach((field) => {
         if (req.body[field] && typeof req.body[field] === "string") {
-          req.body[field] = req.body[field].replace(/[\x00-\x1F\x7F<>"'&]/g, "").trim();
+          req.body[field] = req.body[field]
+            .split("")
+            .filter((char) => {
+              const code = char.charCodeAt(0);
+              return code >= 32 && code !== 127 && !"<>\"'&".includes(char);
+            })
+            .join("")
+            .trim();
         }
       });
     }

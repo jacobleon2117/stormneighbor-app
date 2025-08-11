@@ -97,8 +97,18 @@ const server = app.listen(PORT, () => {
   }
 });
 
-process.on("SIGTERM", () => {
-  console.log("\nSIGTERM received, shutting down gracefully...");
+const { gracefulShutdown: shutdownDatabase } = require("./config/database");
+
+let isShuttingDown = false;
+
+const performGracefulShutdown = async (signal) => {
+  if (isShuttingDown) {
+    console.log(`${signal} received but shutdown already in progress...`);
+    return;
+  }
+
+  isShuttingDown = true;
+  console.log(`\n${signal} received, shutting down gracefully...`);
   console.log("Stopping background jobs...");
 
   try {
@@ -106,58 +116,61 @@ process.on("SIGTERM", () => {
     console.log("Session cleanup job stopped");
   } catch (error) {
     console.error("ERROR: Error stopping background jobs:", error);
+    process.exitCode = 1;
   }
 
-  server.close(() => {
+  server.close(async () => {
     console.log("Server connections closed");
-    console.log("Process terminated gracefully");
-    process.exitCode = 1;
+
+    try {
+      await shutdownDatabase();
+      console.log("Process terminated gracefully");
+      process.exitCode = 0;
+    } catch (error) {
+      console.error("ERROR: Error during database shutdown:", error);
+      process.exitCode = 1;
+    }
   });
-});
+};
 
-process.on("SIGINT", () => {
-  console.log("\nSIGINT received, shutting down gracefully...");
-  console.log("Stopping background jobs...");
+process.on("SIGTERM", () => performGracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => performGracefulShutdown("SIGINT"));
 
-  try {
-    sessionCleanupJob.stop();
-    console.log("Session cleanup job stopped");
-  } catch (error) {
-    console.error("ERROR: Error stopping background jobs:", error);
-  }
-
-  server.close(() => {
-    console.log("Server connections closed");
-    console.log("Process terminated gracefully");
-    process.exitCode = 1;
-  });
-});
-
-process.on("uncaughtException", (error) => {
+process.on("uncaughtException", async (error) => {
   console.error("FAILED: Uncaught Exception:", error);
   console.log("ERROR: Shutting down due to uncaught exception...");
 
-  try {
-    sessionCleanupJob.stop();
-  } catch (jobError) {
-    console.error("ERROR: Error stopping jobs during crash:", jobError);
+  if (!isShuttingDown) {
+    isShuttingDown = true;
+    try {
+      sessionCleanupJob.stop();
+      await shutdownDatabase();
+    } catch (jobError) {
+      console.error("ERROR: Error stopping services during crash:", jobError);
+    }
   }
 
   process.exitCode = 1;
+  throw error;
 });
 
-process.on("unhandledRejection", (reason, promise) => {
+process.on("unhandledRejection", async (reason, promise) => {
   console.error("FAILED: Unhandled Rejection at:", promise, "reason:", reason);
   console.log("ERROR: Shutting down due to unhandled promise rejection...");
 
-  try {
-    sessionCleanupJob.stop();
-  } catch (jobError) {
-    console.error("ERORR: Error stopping jobs during crash:", jobError);
+  if (!isShuttingDown) {
+    isShuttingDown = true;
+    try {
+      sessionCleanupJob.stop();
+      await shutdownDatabase();
+    } catch (jobError) {
+      console.error("ERROR: Error stopping services during crash:", jobError);
+    }
   }
 
   server.close(() => {
     process.exitCode = 1;
+    throw new Error(`Unhandled promise rejection: ${reason}`);
   });
 });
 

@@ -351,6 +351,49 @@ class SecurityMiddleware {
       next();
     };
   }
+
+  cleanup() {
+    const now = Date.now();
+
+    for (const [key, attempts] of bruteForceStore.entries()) {
+      if (now - attempts.firstAttempt > this.LOCKOUT_DURATION) {
+        bruteForceStore.delete(key);
+      }
+    }
+
+    for (const [email, lockData] of accountLockouts.entries()) {
+      if (now > lockData.expiresAt) {
+        accountLockouts.delete(email);
+      }
+    }
+
+    if (this.requestCounts) {
+      for (const [key, requests] of this.requestCounts.entries()) {
+        const recentRequests = requests.filter((time) => now - time < 60000);
+        if (recentRequests.length === 0) {
+          this.requestCounts.delete(key);
+        } else {
+          this.requestCounts.set(key, recentRequests);
+        }
+      }
+    }
+  }
 }
 
-module.exports = new SecurityMiddleware();
+const securityMiddleware = new SecurityMiddleware();
+
+const cleanupInterval = setInterval(
+  () => {
+    securityMiddleware.cleanup();
+  },
+  5 * 60 * 1000
+);
+
+securityMiddleware.clearCleanupInterval = () => {
+  if (cleanupInterval) {
+    clearInterval(cleanupInterval);
+    console.log("Security middleware cleanup interval cleared");
+  }
+};
+
+module.exports = securityMiddleware;

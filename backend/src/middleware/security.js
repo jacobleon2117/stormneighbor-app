@@ -12,7 +12,57 @@ class SecurityMiddleware {
     this.LOCKOUT_DURATION = 15 * 60 * 1000;
     this.MAX_PASSWORD_RESET_ATTEMPTS = 3;
     this.SUSPICIOUS_ACTIVITY_THRESHOLD = 10;
-    this.IP_WHITELIST = new Set(process.env.ADMIN_IP_WHITELIST?.split(',') || []);
+    this.IP_WHITELIST = new Set(process.env.ADMIN_IP_WHITELIST?.split(",") || []);
+    this.requestCounts = new Map();
+  }
+
+  getClientIP(req) {
+    return (
+      req.ip ||
+      req.connection?.remoteAddress ||
+      req.socket?.remoteAddress ||
+      req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
+      req.headers["x-real-ip"] ||
+      "unknown"
+    );
+  }
+
+  logSecurityEvent(req, eventType, details = {}) {
+    const logEntry = {
+      timestamp: new Date().toISOString(),
+      eventType,
+      ip: this.getClientIP(req),
+      userAgent: req.get("User-Agent"),
+      endpoint: req.path,
+      method: req.method,
+      userId: req.user?.userId,
+      ...details,
+    };
+
+    console.warn(`[SECURITY] ${eventType}:`, JSON.stringify(logEntry, null, 2));
+
+    if (process.env.NODE_ENV === "production") {
+      this.saveSecurityLog(logEntry);
+    }
+  }
+
+  async saveSecurityLog(logEntry) {
+    try {
+      const client = await pool.connect();
+      try {
+        await client.query(
+          `
+          INSERT INTO security_logs (event_type, ip_address, user_id, details, created_at)
+          VALUES ($1, $2, $3, $4, NOW())
+        `,
+          [logEntry.eventType, logEntry.ip, logEntry.userId, JSON.stringify(logEntry)]
+        );
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      console.error("Failed to save security log:", error.message);
+    }
   }
 
   loginBruteForceProtection() {
@@ -36,7 +86,7 @@ class SecurityMiddleware {
       }
 
       const attempts = bruteForceStore.get(key) || { count: 0, firstAttempt: Date.now() };
-      
+
       if (attempts.count >= this.MAX_LOGIN_ATTEMPTS) {
         const timeSinceFirst = Date.now() - attempts.firstAttempt;
         if (timeSinceFirst < this.LOCKOUT_DURATION) {
@@ -45,7 +95,7 @@ class SecurityMiddleware {
             attempts: attempts.count,
           });
 
-          this.logSecurityEvent(req, 'BRUTE_FORCE_DETECTED', {
+          this.logSecurityEvent(req, "BRUTE_FORCE_DETECTED", {
             email,
             attempts: attempts.count,
             timeWindow: timeSinceFirst,
@@ -63,17 +113,24 @@ class SecurityMiddleware {
       }
 
       const originalJson = res.json;
-      res.json = function(data) {
-        if (data.success === false && data.message && data.message.includes('Invalid credentials')) {
+      res.json = function (data) {
+        if (
+          data.success === false &&
+          data.message &&
+          data.message.includes("Invalid credentials")
+        ) {
           attempts.count++;
           attempts.lastAttempt = Date.now();
           bruteForceStore.set(key, attempts);
 
-          data.attemptsRemaining = Math.max(0, SecurityMiddleware.prototype.MAX_LOGIN_ATTEMPTS - attempts.count);
+          data.attemptsRemaining = Math.max(
+            0,
+            SecurityMiddleware.prototype.MAX_LOGIN_ATTEMPTS - attempts.count
+          );
         } else if (data.success === true) {
           bruteForceStore.delete(key);
         }
-        
+
         return originalJson.call(this, data);
       };
 
@@ -95,10 +152,16 @@ class SecurityMiddleware {
       },
       standardHeaders: true,
       legacyHeaders: false,
-      onLimitReached: (req) => {
-        this.logSecurityEvent(req, 'PASSWORD_RESET_ABUSE', {
+      handler: (req, res) => {
+        this.logSecurityEvent(req, "PASSWORD_RESET_ABUSE", {
           email: req.body.email,
           attempts: this.MAX_PASSWORD_RESET_ATTEMPTS,
+        });
+
+        res.status(429).json({
+          success: false,
+          message: "Too many password reset requests. Please try again later.",
+          code: "PASSWORD_RESET_LIMIT",
         });
       },
     });
@@ -123,133 +186,136 @@ class SecurityMiddleware {
     return async (req, res, next) => {
       const clientIP = this.getClientIP(req);
       const userId = req.user?.userId;
-      
+
       const key = userId || clientIP;
       const now = Date.now();
       const windowMs = 60 * 1000;
-      
+
       if (!this.requestCounts) {
         this.requestCounts = new Map();
       }
-      
+
       const requests = this.requestCounts.get(key) || [];
-      
-      const recentRequests = requests.filter(time => now - time < windowMs);
-      
+
+      const recentRequests = requests.filter((time) => now - time < windowMs);
+
       if (recentRequests.length > this.SUSPICIOUS_ACTIVITY_THRESHOLD) {
         suspiciousIPs.add(clientIP);
-        
-        this.logSecurityEvent(req, 'API_ABUSE_DETECTED', {
+
+        this.logSecurityEvent(req, "API_ABUSE_DETECTED", {
           userId,
           requestCount: recentRequests.length,
           windowMs,
         });
-        
+
         return res.status(429).json({
           success: false,
           message: "Suspicious activity detected. Please slow down.",
           code: "API_ABUSE",
         });
       }
-      
+
       recentRequests.push(now);
       this.requestCounts.set(key, recentRequests);
-      
+
       next();
     };
   }
 
-  adminIPWhitelist() {
+  enhancedInputValidation() {
     return (req, res, next) => {
-      if (process.env.NODE_ENV === 'development') {
-        return next();
+      const suspiciousPatterns = [
+        /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+        /javascript:/gi,
+        /on\w+\s*=/gi,
+        /data:\s*text\/html/gi,
+        /vbscript:/gi,
+      ];
+
+      const checkInput = (obj, path = "") => {
+        if (typeof obj === "string") {
+          for (const pattern of suspiciousPatterns) {
+            if (pattern.test(obj)) {
+              this.logSecurityEvent(req, "XSS_ATTEMPT_DETECTED", {
+                path,
+                value: obj.substring(0, 100),
+                pattern: pattern.toString(),
+              });
+
+              return res.status(400).json({
+                success: false,
+                message: "Invalid input detected",
+                code: "INVALID_INPUT",
+              });
+            }
+          }
+        } else if (typeof obj === "object" && obj !== null) {
+          for (const [key, value] of Object.entries(obj)) {
+            const result = checkInput(value, `${path}.${key}`);
+            if (result) return result;
+          }
+        }
+      };
+
+      if (req.body) {
+        const result = checkInput(req.body, "body");
+        if (result) return result;
       }
 
-      const clientIP = this.getClientIP(req);
-      
-      if (!this.IP_WHITELIST.has(clientIP)) {
-        this.logSecurityEvent(req, 'ADMIN_ACCESS_DENIED', {
-          deniedIP: clientIP,
-          path: req.path,
-        });
-        
-        return res.status(403).json({
-          success: false,
-          message: "Access denied. IP not whitelisted.",
-          code: "IP_NOT_WHITELISTED",
-        });
+      if (req.query) {
+        const result = checkInput(req.query, "query");
+        if (result) return result;
       }
-      
+
       next();
     };
   }
 
   sqlInjectionDetection() {
     return (req, res, next) => {
-      const suspiciousPatterns = [
-        /(\s*(union|select|insert|update|delete|drop|create|alter|exec|execute|script|javascript)\s*)/gi,
-        /(\'|\"|;|\-\-|\/\*|\*\/|xp_|sp_)/gi,
-        /(benchmark|sleep|waitfor|delay)\s*\(/gi,
-        /(script|javascript|vbscript|onload|onerror|onclick)/gi,
+      const sqlPatterns = [
+        /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION|SCRIPT)\b)/gi,
+        /(\b(OR|AND)\s+\d+\s*=\s*\d+)/gi,
+        /(--|\/\*|\*\/|;)/g,
+        /(\b(CONCAT|CHAR|ASCII|SUBSTRING)\s*\()/gi,
+        /(\b(INFORMATION_SCHEMA|SYSOBJECTS|SYSCOLUMNS)\b)/gi,
+        /(0x[0-9A-Fa-f]+)/g,
       ];
 
-      const checkForInjection = (obj, path = '') => {
-        for (const key in obj) {
-          if (obj.hasOwnProperty(key)) {
-            const value = obj[key];
-            const currentPath = path ? `${path}.${key}` : key;
-            
-            if (typeof value === 'string') {
-              for (const pattern of suspiciousPatterns) {
-                if (pattern.test(value)) {
-                  this.logSecurityEvent(req, 'SQL_INJECTION_ATTEMPT', {
-                    field: currentPath,
-                    value: value.substring(0, 100),
-                    pattern: pattern.source,
-                  });
-                  
-                  return res.status(400).json({
-                    success: false,
-                    message: "Invalid input detected.",
-                    code: "INVALID_INPUT",
-                  });
-                }
-              }
-            } else if (typeof value === 'object' && value !== null) {
-              const result = checkForInjection(value, currentPath);
-              if (result) return result;
+      const checkForSQLInjection = (obj, path = "") => {
+        if (typeof obj === "string") {
+          for (const pattern of sqlPatterns) {
+            if (pattern.test(obj)) {
+              this.logSecurityEvent(req, "SQL_INJECTION_ATTEMPT", {
+                path,
+                value: obj.substring(0, 100),
+                pattern: pattern.toString(),
+              });
+
+              return res.status(400).json({
+                success: false,
+                message: "Invalid input detected",
+                code: "SECURITY_VIOLATION",
+              });
             }
+          }
+        } else if (typeof obj === "object" && obj !== null) {
+          for (const [key, value] of Object.entries(obj)) {
+            const result = checkForSQLInjection(value, `${path}.${key}`);
+            if (result) return result;
           }
         }
       };
 
-      const result = checkForInjection({ ...req.body, ...req.query, ...req.params });
-      if (result) return result;
+      if (req.body) {
+        const result = checkForSQLInjection(req.body, "body");
+        if (result) return result;
+      }
 
-      next();
-    };
-  }
-
-  auditLogger() {
-    return async (req, res, next) => {
-      const originalJson = res.json;
-      const startTime = Date.now();
-
-      res.json = function(data) {
-        const duration = Date.now() - startTime;
-        
-        if (req.path.includes('/admin/') || req.method !== 'GET') {
-          SecurityMiddleware.prototype.logAuditEvent(req, {
-            action: `${req.method} ${req.path}`,
-            userId: req.user?.userId,
-            success: data.success !== false,
-            duration,
-            response: data.success === false ? data.message : 'success',
-          });
-        }
-        
-        return originalJson.call(this, data);
-      };
+      if (req.query) {
+        const result = checkForSQLInjection(req.query, "query");
+        if (result) return result;
+      }
 
       next();
     };
@@ -257,116 +323,34 @@ class SecurityMiddleware {
 
   contentSecurityPolicy() {
     return (req, res, next) => {
-      res.setHeader('Content-Security-Policy', [
-        "default-src 'self'",
-        "script-src 'self' 'unsafe-inline'",
-        "style-src 'self' 'unsafe-inline'",
-        "img-src 'self' data: https://res.cloudinary.com https://api.weather.gov",
-        "connect-src 'self' https://api.weather.gov",
-        "font-src 'self'",
-        "object-src 'none'",
-        "media-src 'self'",
-        "frame-src 'none'",
-      ].join('; '));
-      
+      res.setHeader(
+        "Content-Security-Policy",
+        "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https:; font-src 'self' https:; object-src 'none'; media-src 'self'; frame-src 'none';"
+      );
       next();
     };
   }
 
-  enhancedInputValidation() {
+  auditLogger() {
     return (req, res, next) => {
-      const MAX_INPUT_LENGTH = 10000;
-      
-      const checkLength = (obj) => {
-        for (const key in obj) {
-          if (typeof obj[key] === 'string' && obj[key].length > MAX_INPUT_LENGTH) {
-            return res.status(400).json({
-              success: false,
-              message: `Input too long for field: ${key}`,
-              code: "INPUT_TOO_LONG",
-            });
-          }
+      const startTime = Date.now();
+
+      const originalJson = res.json;
+      res.json = function (data) {
+        const responseTime = Date.now() - startTime;
+
+        if (req.method !== "GET" || res.statusCode >= 400) {
+          console.log(
+            `[AUDIT] ${req.method} ${req.path} - Status: ${res.statusCode} - Time: ${responseTime}ms - IP: ${req.ip} - User: ${req.user?.userId || "anonymous"}`
+          );
         }
+
+        return originalJson.call(this, data);
       };
 
-      checkLength(req.body);
-      checkLength(req.query);
-
       next();
     };
-  }
-
-  getClientIP(req) {
-    return req.ip || 
-           req.connection?.remoteAddress || 
-           req.socket?.remoteAddress ||
-           req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
-           req.headers['x-real-ip'] ||
-           'unknown';
-  }
-
-  logSecurityEvent(req, event, data = {}) {
-    const securityLog = {
-      timestamp: new Date().toISOString(),
-      event,
-      ip: this.getClientIP(req),
-      userAgent: req.get('User-Agent'),
-      path: req.path,
-      method: req.method,
-      userId: req.user?.userId || null,
-      ...data,
-    };
-
-    console.log(`SECURITY_EVENT: ${JSON.stringify(securityLog)}`);
-    
-    // I will find the best security monitoring service that suits my app for when i'm in production
-    // e.g., Sentry, DataDog, CloudWatch, etc.
-  }
-
-  logAuditEvent(req, data = {}) {
-    const auditLog = {
-      timestamp: new Date().toISOString(),
-      ip: this.getClientIP(req),
-      userAgent: req.get('User-Agent'),
-      ...data,
-    };
-
-    console.log(`AUDIT_LOG: ${JSON.stringify(auditLog)}`);
-
-  }
-
-  cleanup() {
-    const now = Date.now();
-    
-    for (const [key, attempts] of bruteForceStore.entries()) {
-      if (now - attempts.firstAttempt > this.LOCKOUT_DURATION) {
-        bruteForceStore.delete(key);
-      }
-    }
-    
-    for (const [email, lockData] of accountLockouts.entries()) {
-      if (now > lockData.expiresAt) {
-        accountLockouts.delete(email);
-      }
-    }
-    
-    if (this.requestCounts) {
-      for (const [key, requests] of this.requestCounts.entries()) {
-        const recentRequests = requests.filter(time => now - time < 60000);
-        if (recentRequests.length === 0) {
-          this.requestCounts.delete(key);
-        } else {
-          this.requestCounts.set(key, recentRequests);
-        }
-      }
-    }
   }
 }
 
-const securityMiddleware = new SecurityMiddleware();
-
-setInterval(() => {
-  securityMiddleware.cleanup();
-}, 5 * 60 * 1000);
-
-module.exports = securityMiddleware;
+module.exports = new SecurityMiddleware();

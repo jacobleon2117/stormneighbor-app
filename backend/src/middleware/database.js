@@ -116,6 +116,7 @@ const checkDatabaseHealth = async () => {
         const postgisResult = await client.query("SELECT PostGIS_Version() as version");
         postgisVersion = postgisResult.rows[0].version;
       } catch (postgisError) {
+        console.log("PostGIS not available:", postgisError.message);
       }
 
       const statsResult = await client.query(`

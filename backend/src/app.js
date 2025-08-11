@@ -21,7 +21,7 @@ const securityMiddleware = require("./middleware/security");
 
 const app = express();
 
-app.set('trust proxy', true);
+app.set("trust proxy", true);
 
 const helmetConfig = getSecurityConfig();
 
@@ -198,10 +198,12 @@ if (process.env.NODE_ENV !== "test") {
 }
 
 app.use((err, req, res, _next) => {
-  if (err.message.includes("Invalid JSON") || 
-      err.message.includes("too large") ||
-      err.type === "entity.parse.failed") {
-    securityMiddleware.logSecurityEvent(req, 'MALFORMED_REQUEST', {
+  if (
+    err.message.includes("Invalid JSON") ||
+    err.message.includes("too large") ||
+    err.type === "entity.parse.failed"
+  ) {
+    securityMiddleware.logSecurityEvent(req, "MALFORMED_REQUEST", {
       error: err.message,
       type: err.type,
     });
@@ -245,11 +247,13 @@ app.use((err, req, res, _next) => {
 });
 
 app.use((req, res) => {
-  if (req.path.includes('/admin') || 
-      req.path.includes('/wp-') ||
-      req.path.includes('/.env') ||
-      req.path.includes('/config')) {
-    securityMiddleware.logSecurityEvent(req, 'SUSPICIOUS_404', {
+  if (
+    req.path.includes("/admin") ||
+    req.path.includes("/wp-") ||
+    req.path.includes("/.env") ||
+    req.path.includes("/config")
+  ) {
+    securityMiddleware.logSecurityEvent(req, "SUSPICIOUS_404", {
       path: req.path,
       query: req.query,
     });

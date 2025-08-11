@@ -1,7 +1,7 @@
 // File: backend/src/routes/notifications.js
 const express = require("express");
 const { body, param, query } = require("express-validator");
-const auth = require("../middleware/auth");
+const { auth } = require("../middleware/auth");
 const { handleValidationErrors } = require("../middleware/validation");
 const {
   registerUserDevice,

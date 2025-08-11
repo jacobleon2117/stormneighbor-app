@@ -24,17 +24,17 @@ const server = app.listen(PORT, () => {
   console.log("Caching: Intelligent response caching system enabled");
   console.log("Authentication: JWT access + refresh token system enabled");
   console.log("SUCCESS API: REST endpoints ready");
-  
+
   console.log("\nStarting background jobs...");
   try {
     sessionCleanupJob.start();
     console.log("Session cleanup job started");
-    
+
     const jobStatus = sessionCleanupJob.getStatus();
     if (jobStatus.scheduled) {
       console.log(`Next cleanup: ${jobStatus.nextRun}`);
     }
-    
+
     console.log("All background jobs initialized successfully");
   } catch (error) {
     console.error("ERROR: Error starting background jobs:", error);
@@ -42,7 +42,7 @@ const server = app.listen(PORT, () => {
 
   console.log("\nBackend is ready");
   console.log("=======================================");
-  
+
   console.log("\nAvailable Endpoints:");
   console.log("Authentication:");
   console.log("   POST /api/auth/register");
@@ -79,14 +79,14 @@ const server = app.listen(PORT, () => {
   console.log("Notifications:");
   console.log("   GET  /api/notifications");
   console.log("   POST /api/notifications/register-device");
-  
+
   console.log("\nTips:");
   console.log("   Access tokens expire in 15 minutes");
   console.log("   Refresh tokens expire in 7 days");
   console.log("   Session cleanup runs daily at 2:00 AM UTC");
   console.log("   Max 5 active sessions per user");
   console.log("   Check /health for system status");
-  
+
   if (process.env.NODE_ENV === "development") {
     console.log("\nDevelopment Tools:");
     console.log("   GET  /analytics - API usage statistics");
@@ -100,64 +100,64 @@ const server = app.listen(PORT, () => {
 process.on("SIGTERM", () => {
   console.log("\nSIGTERM received, shutting down gracefully...");
   console.log("Stopping background jobs...");
-  
+
   try {
     sessionCleanupJob.stop();
     console.log("Session cleanup job stopped");
   } catch (error) {
     console.error("ERROR: Error stopping background jobs:", error);
   }
-  
+
   server.close(() => {
     console.log("Server connections closed");
     console.log("Process terminated gracefully");
-    process.exit(0);
+    process.exitCode = 1;
   });
 });
 
 process.on("SIGINT", () => {
   console.log("\nSIGINT received, shutting down gracefully...");
   console.log("Stopping background jobs...");
-  
+
   try {
     sessionCleanupJob.stop();
     console.log("Session cleanup job stopped");
   } catch (error) {
     console.error("ERROR: Error stopping background jobs:", error);
   }
-  
+
   server.close(() => {
     console.log("Server connections closed");
     console.log("Process terminated gracefully");
-    process.exit(0);
+    process.exitCode = 1;
   });
 });
 
 process.on("uncaughtException", (error) => {
   console.error("FAILED: Uncaught Exception:", error);
   console.log("ERROR: Shutting down due to uncaught exception...");
-  
+
   try {
     sessionCleanupJob.stop();
   } catch (jobError) {
     console.error("ERROR: Error stopping jobs during crash:", jobError);
   }
-  
-  process.exit(1);
+
+  process.exitCode = 1;
 });
 
 process.on("unhandledRejection", (reason, promise) => {
   console.error("FAILED: Unhandled Rejection at:", promise, "reason:", reason);
   console.log("ERROR: Shutting down due to unhandled promise rejection...");
-  
+
   try {
     sessionCleanupJob.stop();
   } catch (jobError) {
     console.error("ERORR: Error stopping jobs during crash:", jobError);
   }
-  
+
   server.close(() => {
-    process.exit(1);
+    process.exitCode = 1;
   });
 });
 

@@ -17,10 +17,10 @@ const registerValidation = [
     .isLength({ max: 255 })
     .withMessage("Email must be less than 255 characters")
     .custom((value) => {
-      const disposableDomains = ['tempmail.org', '10minutemail.com', 'guerrillamail.com'];
-      const domain = value.split('@')[1];
+      const disposableDomains = ["tempmail.org", "10minutemail.com", "guerrillamail.com"];
+      const domain = value.split("@")[1];
       if (disposableDomains.includes(domain)) {
-        throw new Error('Disposable email addresses are not allowed');
+        throw new Error("Disposable email addresses are not allowed");
       }
       return true;
     }),
@@ -29,7 +29,9 @@ const registerValidation = [
     .isLength({ min: 8, max: 128 })
     .withMessage("Password must be between 8 and 128 characters")
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
-    .withMessage("Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character"),
+    .withMessage(
+      "Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character"
+    ),
 
   body("firstName")
     .trim()
@@ -76,11 +78,8 @@ const forgotPasswordValidation = [
 ];
 
 const verifyCodeValidation = [
-  body("email")
-    .isEmail()
-    .normalizeEmail()
-    .withMessage("Please provide a valid email address"),
-    
+  body("email").isEmail().normalizeEmail().withMessage("Please provide a valid email address"),
+
   body("code")
     .isLength({ min: 6, max: 6 })
     .isNumeric()
@@ -88,33 +87,32 @@ const verifyCodeValidation = [
 ];
 
 const resetPasswordValidation = [
-  body("email")
-    .isEmail()
-    .normalizeEmail()
-    .withMessage("Please provide a valid email address"),
-    
+  body("email").isEmail().normalizeEmail().withMessage("Please provide a valid email address"),
+
   body("code")
     .isLength({ min: 6, max: 6 })
     .isNumeric()
     .withMessage("Verification code must be 6 digits"),
-    
+
   body("newPassword")
     .isLength({ min: 8, max: 128 })
     .withMessage("Password must be between 8 and 128 characters")
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
-    .withMessage("Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character"),
+    .withMessage(
+      "Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character"
+    ),
 ];
 
 const changePasswordValidation = [
-  body("currentPassword")
-    .notEmpty()
-    .withMessage("Current password is required"),
+  body("currentPassword").notEmpty().withMessage("Current password is required"),
 
   body("newPassword")
     .isLength({ min: 8, max: 128 })
     .withMessage("New password must be between 8 and 128 characters")
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
-    .withMessage("New password must contain at least one lowercase letter, one uppercase letter, one number, and one special character"),
+    .withMessage(
+      "New password must contain at least one lowercase letter, one uppercase letter, one number, and one special character"
+    ),
 ];
 
 const updateProfileValidation = [
@@ -178,18 +176,18 @@ const revokeSessionValidation = [
 ];
 
 router.post(
-  "/register", 
+  "/register",
   securityMiddleware.registrationProtection(),
-  registerValidation, 
-  handleValidationErrors, 
+  registerValidation,
+  handleValidationErrors,
   authController.register
 );
 
 router.post(
-  "/login", 
+  "/login",
   securityMiddleware.loginBruteForceProtection(),
-  loginValidation, 
-  handleValidationErrors, 
+  loginValidation,
+  handleValidationErrors,
   authController.login
 );
 
@@ -254,12 +252,7 @@ router.post(
   authController.refreshToken
 );
 
-router.post(
-  "/logout",
-  logoutValidation,
-  handleValidationErrors,
-  authController.logout
-);
+router.post("/logout", logoutValidation, handleValidationErrors, authController.logout);
 
 router.post("/logout-all", auth, authController.logoutAll);
 
@@ -342,7 +335,7 @@ router.post(
   }
 );
 
-if (process.env.NODE_ENV === 'development') {
+if (process.env.NODE_ENV === "development") {
   router.get("/security-stats", (req, res) => {
     res.json({
       success: true,

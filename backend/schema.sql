@@ -576,10 +576,10 @@ BEGIN
             SELECT 
                 p.id, p.user_id, p.title, p.content, p.post_type, p.priority,
                 p.location_city, p.location_state, p.latitude, p.longitude,
-                ST_Distance(
+                (ST_Distance(
                     ST_GeogFromText('POINT(' || user_lng || ' ' || user_lat || ')'),
                     ST_GeogFromText('POINT(' || p.longitude || ' ' || p.latitude || ')')
-                ) / 1609.34 as distance_miles,
+                ) / 1609.34)::DECIMAL as distance_miles,
                 p.images, p.tags, p.is_emergency, p.is_resolved, 
                 p.created_at, p.updated_at,
                 u.first_name, u.last_name, u.profile_image_url
@@ -600,10 +600,10 @@ BEGIN
             SELECT 
                 p.id, p.user_id, p.title, p.content, p.post_type, p.priority,
                 p.location_city, p.location_state, p.latitude, p.longitude,
-                SQRT(
+                (SQRT(
                     POW((p.latitude - user_lat) * 69.0, 2) + 
                     POW((p.longitude - user_lng) * 53.0, 2)
-                )::DECIMAL as distance_miles,
+                ))::DECIMAL as distance_miles,
                 p.images, p.tags, p.is_emergency, p.is_resolved, 
                 p.created_at, p.updated_at,
                 u.first_name, u.last_name, u.profile_image_url

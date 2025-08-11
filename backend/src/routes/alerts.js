@@ -2,7 +2,7 @@
 const express = require("express");
 const { body, query, param } = require("express-validator");
 const weatherController = require("../controllers/weatherController");
-const auth = require("../middleware/auth");
+const { auth } = require("../middleware/auth");
 const { handleValidationErrors } = require("../middleware/validation");
 
 const router = express.Router();

@@ -119,6 +119,26 @@ const performGracefulShutdown = async (signal) => {
     process.exitCode = 1;
   }
 
+  try {
+    const { cache } = require("./middleware/cache");
+    if (cache && cache.clearCleanupInterval) {
+      cache.clearCleanupInterval();
+      console.log("Cache cleanup interval cleared");
+    }
+  } catch (error) {
+    console.error("ERROR: Error clearing cache interval:", error);
+  }
+
+  try {
+    const securityMiddleware = require("./middleware/security");
+    if (securityMiddleware && securityMiddleware.clearCleanupInterval) {
+      securityMiddleware.clearCleanupInterval();
+      console.log("Security cleanup interval cleared");
+    }
+  } catch (error) {
+    console.error("ERROR: Error clearing security interval:", error);
+  }
+
   server.close(async () => {
     console.log("Server connections closed");
 
@@ -126,9 +146,17 @@ const performGracefulShutdown = async (signal) => {
       await shutdownDatabase();
       console.log("Process terminated gracefully");
       process.exitCode = 0;
+
+      setTimeout(() => {
+        console.log("Force exiting after graceful shutdown completed");
+        process.exitCode = 1;
+      }, 1000);
     } catch (error) {
       console.error("ERROR: Error during database shutdown:", error);
       process.exitCode = 1;
+      setTimeout(() => {
+        process.exitCode = 1;
+      }, 1000);
     }
   });
 };

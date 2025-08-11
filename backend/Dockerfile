@@ -1,10 +1,11 @@
-FROM node:18-alpine
+FROM node:22-alpine
 
-# Install system dependencies
-RUN apk add --no-cache \
+# Upgrade Alpine packages and install dependencies
+RUN apk upgrade --no-cache && \
+    apk add --no-cache \
     postgresql-client \
-    curl \
-    && rm -rf /var/cache/apk/*
+    curl && \
+    rm -rf /var/cache/apk/*
 
 # Create app directory
 WORKDIR /app

@@ -80,12 +80,25 @@ const server = app.listen(PORT, () => {
   console.log("   GET  /api/notifications");
   console.log("   POST /api/notifications/register-device");
 
+  console.log("Admin (Authenticated):");
+  console.log("   GET  /api/v1/admin/dashboard");
+  console.log("   GET  /api/v1/admin/users");
+  console.log("   PATCH /api/v1/admin/users/:userId/status");
+  console.log("   GET  /api/v1/admin/moderation");
+  console.log("   PATCH /api/v1/admin/moderation/:queueId");
+  console.log("   GET  /api/v1/admin/settings");
+  console.log("   PATCH /api/v1/admin/settings/:settingKey");
+  console.log("   GET  /api/v1/admin/analytics");
+  console.log("   GET  /api/v1/admin/roles");
+  console.log("   POST /api/v1/admin/users/:userId/roles");
+
   console.log("\nTips:");
   console.log("   Access tokens expire in 15 minutes");
   console.log("   Refresh tokens expire in 7 days");
   console.log("   Session cleanup runs daily at 2:00 AM UTC");
   console.log("   Max 5 active sessions per user");
   console.log("   Check /health for system status");
+  console.log("   Admin access requires special role assignment");
 
   if (process.env.NODE_ENV === "development") {
     console.log("\nDevelopment Tools:");

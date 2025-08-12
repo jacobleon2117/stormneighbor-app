@@ -1,6 +1,3 @@
--- File: backend/admin-schema.sql
-
--- Admin roles definition
 CREATE TABLE IF NOT EXISTS admin_roles (
     id SERIAL PRIMARY KEY,
     name VARCHAR(50) UNIQUE NOT NULL,
@@ -12,7 +9,6 @@ CREATE TABLE IF NOT EXISTS admin_roles (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- User admin role assignments
 CREATE TABLE IF NOT EXISTS user_admin_roles (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -26,7 +22,6 @@ CREATE TABLE IF NOT EXISTS user_admin_roles (
     UNIQUE(user_id, role_id)
 );
 
--- Admin action audit log
 CREATE TABLE IF NOT EXISTS admin_actions (
     id SERIAL PRIMARY KEY,
     admin_id INTEGER NOT NULL REFERENCES users(id) ON DELETE SET NULL,
@@ -41,7 +36,6 @@ CREATE TABLE IF NOT EXISTS admin_actions (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- System settings for admin configuration
 CREATE TABLE IF NOT EXISTS system_settings (
     id SERIAL PRIMARY KEY,
     setting_key VARCHAR(100) UNIQUE NOT NULL,
@@ -55,7 +49,6 @@ CREATE TABLE IF NOT EXISTS system_settings (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Admin sessions (enhanced security for admin access)
 CREATE TABLE IF NOT EXISTS admin_sessions (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -68,7 +61,6 @@ CREATE TABLE IF NOT EXISTS admin_sessions (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Content moderation queue
 CREATE TABLE IF NOT EXISTS moderation_queue (
     id SERIAL PRIMARY KEY,
     content_type VARCHAR(20) NOT NULL,
@@ -86,7 +78,6 @@ CREATE TABLE IF NOT EXISTS moderation_queue (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Daily analytics snapshots for faster dashboard loading
 CREATE TABLE IF NOT EXISTS daily_analytics (
     id SERIAL PRIMARY KEY,
     date DATE NOT NULL UNIQUE,
@@ -107,36 +98,29 @@ CREATE TABLE IF NOT EXISTS daily_analytics (
     generated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Admin roles and permissions indexes
 CREATE INDEX IF NOT EXISTS idx_admin_roles_active ON admin_roles(is_active) WHERE is_active = TRUE;
 CREATE INDEX IF NOT EXISTS idx_user_admin_roles_user ON user_admin_roles(user_id) WHERE is_active = TRUE;
 CREATE INDEX IF NOT EXISTS idx_user_admin_roles_role ON user_admin_roles(role_id) WHERE is_active = TRUE;
 CREATE INDEX IF NOT EXISTS idx_user_admin_roles_expires ON user_admin_roles(expires_at) WHERE expires_at IS NOT NULL;
 
--- Admin actions indexes for audit queries
 CREATE INDEX IF NOT EXISTS idx_admin_actions_admin ON admin_actions(admin_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_admin_actions_target ON admin_actions(target_type, target_id);
 CREATE INDEX IF NOT EXISTS idx_admin_actions_type ON admin_actions(action_type, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_admin_actions_date ON admin_actions(created_at DESC);
 
--- System settings indexes
 CREATE INDEX IF NOT EXISTS idx_system_settings_type ON system_settings(setting_type);
 CREATE INDEX IF NOT EXISTS idx_system_settings_public ON system_settings(is_public) WHERE is_public = TRUE;
 
--- Admin sessions indexes
 CREATE INDEX IF NOT EXISTS idx_admin_sessions_user ON admin_sessions(user_id, expires_at);
 CREATE INDEX IF NOT EXISTS idx_admin_sessions_token ON admin_sessions(session_token);
 CREATE INDEX IF NOT EXISTS idx_admin_sessions_expires ON admin_sessions(expires_at);
 
--- Moderation queue indexes
 CREATE INDEX IF NOT EXISTS idx_moderation_queue_status ON moderation_queue(status, priority, created_at);
 CREATE INDEX IF NOT EXISTS idx_moderation_queue_content ON moderation_queue(content_type, content_id);
 CREATE INDEX IF NOT EXISTS idx_moderation_queue_moderator ON moderation_queue(moderator_id, status);
 
--- Analytics indexes
 CREATE INDEX IF NOT EXISTS idx_daily_analytics_date ON daily_analytics(date DESC);
 
--- Insert default admin roles
 INSERT INTO admin_roles (name, display_name, description, permissions) VALUES
 ('super_admin', 'Super Administrator', 'Full system access with all permissions', '{
     "users": ["read", "write", "delete", "ban", "admin"],
@@ -171,7 +155,6 @@ ON CONFLICT (name) DO UPDATE SET
     permissions = EXCLUDED.permissions,
     updated_at = NOW();
 
--- Insert default system settings
 INSERT INTO system_settings (setting_key, setting_value, setting_type, display_name, description, is_public) VALUES
 ('maintenance_mode', 'false', 'system', 'Maintenance Mode', 'Enable maintenance mode to prevent user access', FALSE),
 ('allow_registrations', 'true', 'users', 'Allow New Registrations', 'Allow new users to register accounts', TRUE),
@@ -189,7 +172,6 @@ ON CONFLICT (setting_key) DO UPDATE SET
     description = EXCLUDED.description,
     updated_at = NOW();
 
--- Function to get user admin permissions
 CREATE OR REPLACE FUNCTION get_user_admin_permissions(user_id_param INTEGER)
 RETURNS JSONB AS $$
 DECLARE
@@ -212,7 +194,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Function to check if user has specific permission
 CREATE OR REPLACE FUNCTION user_has_permission(user_id_param INTEGER, resource_param VARCHAR, action_param VARCHAR)
 RETURNS BOOLEAN AS $$
 DECLARE
@@ -235,52 +216,43 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Function to generate daily analytics
 CREATE OR REPLACE FUNCTION generate_daily_analytics(target_date DATE DEFAULT CURRENT_DATE - INTERVAL '1 day')
 RETURNS VOID AS $$
 DECLARE
     analytics_data RECORD;
 BEGIN
     SELECT 
-        -- User stats
         (SELECT COUNT(*) FROM users WHERE DATE(created_at) <= target_date) as total_users,
         (SELECT COUNT(*) FROM users WHERE DATE(created_at) = target_date) as new_users,
         (SELECT COUNT(DISTINCT user_id) FROM user_sessions 
          WHERE DATE(last_used_at) = target_date AND is_active = true) as active_users,
         
-        -- Post stats
         (SELECT COUNT(*) FROM posts WHERE DATE(created_at) <= target_date) as total_posts,
         (SELECT COUNT(*) FROM posts WHERE DATE(created_at) = target_date) as new_posts,
         (SELECT COUNT(*) FROM posts WHERE DATE(created_at) = target_date AND is_emergency = true) as emergency_posts,
         
-        -- Comment stats
         (SELECT COUNT(*) FROM comments WHERE DATE(created_at) <= target_date) as total_comments,
         (SELECT COUNT(*) FROM comments WHERE DATE(created_at) = target_date) as new_comments,
         
-        -- Reaction stats
         (SELECT COUNT(*) FROM reactions WHERE DATE(created_at) <= target_date) as total_reactions,
         (SELECT COUNT(*) FROM reactions WHERE DATE(created_at) = target_date) as new_reactions,
         
-        -- Report stats
         (SELECT COUNT(*) FROM post_reports WHERE DATE(created_at) <= target_date) +
         (SELECT COUNT(*) FROM comment_reports WHERE DATE(created_at) <= target_date) as total_reports,
         (SELECT COUNT(*) FROM post_reports WHERE DATE(created_at) = target_date) +
         (SELECT COUNT(*) FROM comment_reports WHERE DATE(created_at) = target_date) as new_reports,
         
-        -- Posts by type
         (SELECT jsonb_object_agg(post_type, post_count) 
          FROM (SELECT post_type, COUNT(*) as post_count 
                FROM posts WHERE DATE(created_at) = target_date 
                GROUP BY post_type) pt) as posts_by_type,
         
-        -- Top cities
         (SELECT jsonb_object_agg(location_city, user_count) 
          FROM (SELECT location_city, COUNT(*) as user_count 
                FROM users WHERE location_city IS NOT NULL 
                GROUP BY location_city ORDER BY user_count DESC LIMIT 10) tc) as top_cities
     INTO analytics_data;
     
-    -- Insert or update the analytics record
     INSERT INTO daily_analytics (
         date, total_users, new_users, active_users,
         total_posts, new_posts, emergency_posts,
@@ -314,7 +286,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Trigger to update updated_at timestamps
 CREATE OR REPLACE FUNCTION update_admin_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -338,7 +309,213 @@ CREATE TRIGGER trigger_moderation_queue_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_admin_updated_at();
 
--- Success message
+ALTER TABLE admin_roles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_admin_roles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE admin_actions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE system_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE admin_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE moderation_queue ENABLE ROW LEVEL SECURITY;
+ALTER TABLE daily_analytics ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "admin_roles_select" ON admin_roles
+    FOR SELECT
+    TO authenticated
+    USING (
+        user_has_permission(auth.uid()::integer, 'admin', 'read')
+    );
+
+CREATE POLICY "admin_roles_insert" ON admin_roles
+    FOR INSERT
+    TO authenticated
+    WITH CHECK (
+        user_has_permission(auth.uid()::integer, 'admin', 'write')
+    );
+
+CREATE POLICY "admin_roles_update" ON admin_roles
+    FOR UPDATE
+    TO authenticated
+    USING (
+        user_has_permission(auth.uid()::integer, 'admin', 'write')
+    )
+    WITH CHECK (
+        user_has_permission(auth.uid()::integer, 'admin', 'write')
+    );
+
+CREATE POLICY "admin_roles_delete" ON admin_roles
+    FOR DELETE
+    TO authenticated
+    USING (
+        user_has_permission(auth.uid()::integer, 'admin', 'write')
+    );
+
+CREATE POLICY "user_admin_roles_select" ON user_admin_roles
+    FOR SELECT
+    TO authenticated
+    USING (
+        user_has_permission(auth.uid()::integer, 'admin', 'read')
+        OR user_id = auth.uid()::integer
+    );
+
+CREATE POLICY "user_admin_roles_insert" ON user_admin_roles
+    FOR INSERT
+    TO authenticated
+    WITH CHECK (
+        user_has_permission(auth.uid()::integer, 'admin', 'assign_roles')
+    );
+
+CREATE POLICY "user_admin_roles_update" ON user_admin_roles
+    FOR UPDATE
+    TO authenticated
+    USING (
+        user_has_permission(auth.uid()::integer, 'admin', 'assign_roles')
+    )
+    WITH CHECK (
+        user_has_permission(auth.uid()::integer, 'admin', 'assign_roles')
+    );
+
+CREATE POLICY "user_admin_roles_delete" ON user_admin_roles
+    FOR DELETE
+    TO authenticated
+    USING (
+        user_has_permission(auth.uid()::integer, 'admin', 'assign_roles')
+    );
+
+CREATE POLICY "admin_actions_select" ON admin_actions
+    FOR SELECT
+    TO authenticated
+    USING (
+        user_has_permission(auth.uid()::integer, 'security', 'audit')
+        OR user_has_permission(auth.uid()::integer, 'security', 'read')
+    );
+
+CREATE POLICY "admin_actions_insert" ON admin_actions
+    FOR INSERT
+    TO authenticated
+    WITH CHECK (
+        admin_id = auth.uid()::integer
+        OR user_has_permission(auth.uid()::integer, 'security', 'audit')
+    );
+
+CREATE POLICY "system_settings_select" ON system_settings
+    FOR SELECT
+    TO authenticated
+    USING (
+        is_public = true
+        OR user_has_permission(auth.uid()::integer, 'system', 'read')
+    );
+
+CREATE POLICY "system_settings_insert" ON system_settings
+    FOR INSERT
+    TO authenticated
+    WITH CHECK (
+        user_has_permission(auth.uid()::integer, 'system', 'write')
+    );
+
+CREATE POLICY "system_settings_update" ON system_settings
+    FOR UPDATE
+    TO authenticated
+    USING (
+        user_has_permission(auth.uid()::integer, 'system', 'write')
+    )
+    WITH CHECK (
+        user_has_permission(auth.uid()::integer, 'system', 'write')
+    );
+
+CREATE POLICY "system_settings_delete" ON system_settings
+    FOR DELETE
+    TO authenticated
+    USING (
+        user_has_permission(auth.uid()::integer, 'system', 'write')
+    );
+
+CREATE POLICY "admin_sessions_select" ON admin_sessions
+    FOR SELECT
+    TO authenticated
+    USING (
+        user_id = auth.uid()::integer
+        OR user_has_permission(auth.uid()::integer, 'security', 'read')
+    );
+
+CREATE POLICY "admin_sessions_insert" ON admin_sessions
+    FOR INSERT
+    TO authenticated
+    WITH CHECK (
+        user_id = auth.uid()::integer
+    );
+
+CREATE POLICY "admin_sessions_update" ON admin_sessions
+    FOR UPDATE
+    TO authenticated
+    USING (
+        user_id = auth.uid()::integer
+    )
+    WITH CHECK (
+        user_id = auth.uid()::integer
+    );
+
+CREATE POLICY "admin_sessions_delete" ON admin_sessions
+    FOR DELETE
+    TO authenticated
+    USING (
+        user_id = auth.uid()::integer
+        OR user_has_permission(auth.uid()::integer, 'security', 'read')
+    );
+
+CREATE POLICY "moderation_queue_select" ON moderation_queue
+    FOR SELECT
+    TO authenticated
+    USING (
+        user_has_permission(auth.uid()::integer, 'content', 'moderate')
+        OR user_has_permission(auth.uid()::integer, 'content', 'read')
+        OR reporter_id = auth.uid()::integer
+    );
+
+CREATE POLICY "moderation_queue_insert" ON moderation_queue
+    FOR INSERT
+    TO authenticated
+    WITH CHECK (
+        reporter_id = auth.uid()::integer
+        OR user_has_permission(auth.uid()::integer, 'content', 'moderate')
+    );
+
+CREATE POLICY "moderation_queue_update" ON moderation_queue
+    FOR UPDATE
+    TO authenticated
+    USING (
+        user_has_permission(auth.uid()::integer, 'content', 'moderate')
+    )
+    WITH CHECK (
+        user_has_permission(auth.uid()::integer, 'content', 'moderate')
+    );
+
+CREATE POLICY "daily_analytics_select" ON daily_analytics
+    FOR SELECT
+    TO authenticated
+    USING (
+        user_has_permission(auth.uid()::integer, 'analytics', 'read')
+    );
+
+CREATE POLICY "daily_analytics_insert" ON daily_analytics
+    FOR INSERT
+    TO authenticated
+    WITH CHECK (
+        user_has_permission(auth.uid()::integer, 'system', 'write')
+    );
+
+CREATE POLICY "daily_analytics_update" ON daily_analytics
+    FOR UPDATE
+    TO authenticated
+    USING (
+        user_has_permission(auth.uid()::integer, 'system', 'write')
+    )
+    WITH CHECK (
+        user_has_permission(auth.uid()::integer, 'system', 'write')
+    );
+
+GRANT EXECUTE ON FUNCTION get_user_admin_permissions(INTEGER) TO authenticated;
+GRANT EXECUTE ON FUNCTION user_has_permission(INTEGER, VARCHAR, VARCHAR) TO authenticated;
+GRANT EXECUTE ON FUNCTION generate_daily_analytics(DATE) TO authenticated;
+
 DO $$
 BEGIN
     RAISE NOTICE 'Admin schema setup completed successfully!';

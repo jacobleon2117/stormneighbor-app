@@ -1,4 +1,3 @@
--- File: backend/schema.sql
 DO $$
 BEGIN
     BEGIN
@@ -10,7 +9,6 @@ BEGIN
 END
 $$;
 
--- Users table
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
@@ -46,7 +44,6 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- User Sessions table for refresh tokens
 CREATE TABLE IF NOT EXISTS user_sessions (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -62,7 +59,6 @@ CREATE TABLE IF NOT EXISTS user_sessions (
     last_used_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Posts table
 CREATE TABLE IF NOT EXISTS posts (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -89,7 +85,6 @@ CREATE TABLE IF NOT EXISTS posts (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Comments table
 CREATE TABLE IF NOT EXISTS comments (
     id SERIAL PRIMARY KEY,
     post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
@@ -102,7 +97,6 @@ CREATE TABLE IF NOT EXISTS comments (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Comment reports table
 CREATE TABLE IF NOT EXISTS comment_reports (
     id SERIAL PRIMARY KEY,
     comment_id INTEGER NOT NULL REFERENCES comments(id) ON DELETE CASCADE,
@@ -117,7 +111,6 @@ CREATE TABLE IF NOT EXISTS comment_reports (
     UNIQUE(comment_id, reported_by)
 );
 
--- Post reports table
 CREATE TABLE IF NOT EXISTS post_reports (
     id SERIAL PRIMARY KEY,
     post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
@@ -132,7 +125,6 @@ CREATE TABLE IF NOT EXISTS post_reports (
     UNIQUE(post_id, reported_by)
 );
 
--- Reactions table
 CREATE TABLE IF NOT EXISTS reactions (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -150,7 +142,6 @@ CREATE TABLE IF NOT EXISTS reactions (
     UNIQUE(user_id, comment_id, reaction_type)
 );
 
--- Weather alerts table
 CREATE TABLE IF NOT EXISTS weather_alerts (
     id SERIAL PRIMARY KEY,
     alert_id VARCHAR(255) UNIQUE,
@@ -177,7 +168,6 @@ CREATE TABLE IF NOT EXISTS weather_alerts (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Emergency resources table
 CREATE TABLE IF NOT EXISTS emergency_resources (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -203,7 +193,6 @@ CREATE TABLE IF NOT EXISTS emergency_resources (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- User devices table
 CREATE TABLE IF NOT EXISTS user_devices (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -218,7 +207,6 @@ CREATE TABLE IF NOT EXISTS user_devices (
     UNIQUE(device_token)
 );
 
--- Notification templates table
 CREATE TABLE IF NOT EXISTS notification_templates (
     id SERIAL PRIMARY KEY,
     template_key VARCHAR(100) UNIQUE NOT NULL,
@@ -231,7 +219,6 @@ CREATE TABLE IF NOT EXISTS notification_templates (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Notification preferences table
 CREATE TABLE IF NOT EXISTS notification_preferences (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -246,7 +233,6 @@ CREATE TABLE IF NOT EXISTS notification_preferences (
     UNIQUE(user_id, notification_type)
 );
 
--- Notification campaigns table
 CREATE TABLE IF NOT EXISTS notification_campaigns (
     id SERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
@@ -263,7 +249,6 @@ CREATE TABLE IF NOT EXISTS notification_campaigns (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Notifications table
 CREATE TABLE IF NOT EXISTS notifications (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -286,7 +271,6 @@ CREATE TABLE IF NOT EXISTS notifications (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Search queries table
 CREATE TABLE IF NOT EXISTS search_queries (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
@@ -308,7 +292,6 @@ CREATE TABLE IF NOT EXISTS search_queries (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Saved searches table
 CREATE TABLE IF NOT EXISTS saved_searches (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -334,7 +317,6 @@ CREATE TABLE IF NOT EXISTS saved_searches (
     UNIQUE(user_id, name)
 );
 
--- Search suggestions table
 CREATE TABLE IF NOT EXISTS search_suggestions (
     id SERIAL PRIMARY KEY,
     suggestion_text VARCHAR(255) NOT NULL,
@@ -358,7 +340,6 @@ CREATE TABLE IF NOT EXISTS search_suggestions (
     UNIQUE(suggestion_text, suggestion_type, city, state)
 );
 
--- Trending searches table
 CREATE TABLE IF NOT EXISTS trending_searches (
     id SERIAL PRIMARY KEY,
     search_term VARCHAR(255) NOT NULL,
@@ -387,47 +368,38 @@ CREATE TABLE IF NOT EXISTS trending_searches (
     UNIQUE(search_term, city, state)
 );
 
--- INDEXES
--- User indexes
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_location ON users(location_city, address_state);
 CREATE INDEX IF NOT EXISTS idx_users_active ON users(is_active) WHERE is_active = true;
 
--- User sessions indexes for refresh tokens
 CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_sessions_refresh_token ON user_sessions(refresh_token);
 CREATE INDEX IF NOT EXISTS idx_user_sessions_expires_at ON user_sessions(expires_at);
 CREATE INDEX IF NOT EXISTS idx_user_sessions_active ON user_sessions(user_id, is_active) WHERE is_active = true;
 
--- Post indexes
 CREATE INDEX IF NOT EXISTS idx_posts_location ON posts(location_city, location_state);
 CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_posts_user ON posts(user_id);
 CREATE INDEX IF NOT EXISTS idx_posts_type_priority ON posts(post_type, priority);
 CREATE INDEX IF NOT EXISTS idx_posts_emergency ON posts(is_emergency) WHERE is_emergency = true;
 
--- Comment indexes
 CREATE INDEX IF NOT EXISTS idx_comments_post ON comments(post_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_comments_user ON comments(user_id);
 CREATE INDEX IF NOT EXISTS idx_comments_parent ON comments(parent_comment_id) WHERE parent_comment_id IS NOT NULL;
 
--- Report indexes
 CREATE INDEX IF NOT EXISTS idx_comment_reports_comment ON comment_reports(comment_id);
 CREATE INDEX IF NOT EXISTS idx_comment_reports_status ON comment_reports(status) WHERE status = 'pending';
 CREATE INDEX IF NOT EXISTS idx_post_reports_post ON post_reports(post_id);
 CREATE INDEX IF NOT EXISTS idx_post_reports_status ON post_reports(status) WHERE status = 'pending';
 
--- Reaction indexes
 CREATE INDEX IF NOT EXISTS idx_reactions_post ON reactions(post_id) WHERE post_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_reactions_comment ON reactions(comment_id) WHERE comment_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_reactions_user ON reactions(user_id);
 
--- Alert indexes
 CREATE INDEX IF NOT EXISTS idx_alerts_location ON weather_alerts(location_city, location_state);
 CREATE INDEX IF NOT EXISTS idx_alerts_active ON weather_alerts(is_active) WHERE is_active = true;
 CREATE INDEX IF NOT EXISTS idx_alerts_severity ON weather_alerts(severity);
 
--- Device and notification indexes
 CREATE INDEX IF NOT EXISTS idx_user_devices_user_active ON user_devices(user_id) WHERE is_active = true;
 CREATE INDEX IF NOT EXISTS idx_user_devices_token ON user_devices(device_token);
 CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications(user_id) WHERE is_read = false;
@@ -436,7 +408,6 @@ CREATE INDEX IF NOT EXISTS idx_notifications_push_pending ON notifications(push_
 CREATE INDEX IF NOT EXISTS idx_notification_prefs_user ON notification_preferences(user_id);
 CREATE INDEX IF NOT EXISTS idx_campaigns_status ON notification_campaigns(status, send_at);
 
--- Search indexes
 CREATE INDEX IF NOT EXISTS idx_search_queries_user ON search_queries(user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_search_queries_location ON search_queries(search_city, search_state, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_saved_searches_user_active ON saved_searches(user_id) WHERE is_active = true;
@@ -448,8 +419,6 @@ CREATE INDEX IF NOT EXISTS idx_trending_searches_location ON trending_searches(c
 CREATE INDEX IF NOT EXISTS idx_trending_searches_category ON trending_searches(category, trend_score DESC);
 CREATE INDEX IF NOT EXISTS idx_trending_searches_time ON trending_searches(is_trending, created_at DESC) WHERE is_trending = true;
 
--- FUNCTIONS
--- Function to cleanup expired sessions
 CREATE OR REPLACE FUNCTION cleanup_expired_sessions()
 RETURNS void AS $$
 BEGIN
@@ -463,7 +432,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Trigger function to update the updated_at timestamp for sessions
 CREATE OR REPLACE FUNCTION update_session_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -472,13 +440,11 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Create trigger for user_sessions updated_at
 CREATE TRIGGER trigger_update_session_updated_at
     BEFORE UPDATE ON user_sessions
     FOR EACH ROW
     EXECUTE FUNCTION update_session_updated_at();
 
--- Function to get posts by location
 CREATE OR REPLACE FUNCTION get_posts_by_location(
     user_city VARCHAR DEFAULT NULL,
     user_state VARCHAR DEFAULT NULL,
@@ -520,7 +486,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Function to get nearby posts
 CREATE OR REPLACE FUNCTION get_nearby_posts(
     user_lat DECIMAL DEFAULT NULL,
     user_lng DECIMAL DEFAULT NULL,
@@ -623,7 +588,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Function to get post statistics
 CREATE OR REPLACE FUNCTION get_post_stats(post_id_param INTEGER)
 RETURNS TABLE (
     post_id INTEGER,
@@ -647,7 +611,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Function to get comment statistics
 CREATE OR REPLACE FUNCTION get_comment_stats(comment_id_param INTEGER)
 RETURNS TABLE (
     comment_id INTEGER,
@@ -671,7 +634,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Function to get user post count
 CREATE OR REPLACE FUNCTION get_user_post_count(user_id_param INTEGER)
 RETURNS INTEGER AS $$
 DECLARE
@@ -685,7 +647,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Function to cleanup old data
 CREATE OR REPLACE FUNCTION cleanup_old_data()
 RETURNS void AS $$
 BEGIN
@@ -706,8 +667,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- TRIGGERS
--- Trigger to update updated_at timestamp for tables
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -766,8 +725,6 @@ CREATE TRIGGER trigger_trending_searches_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
--- INITIAL DATA
--- Insert default notification templates
 INSERT INTO notification_templates (template_key, title_template, body_template, priority) VALUES
 ('new_post', 'New Post in Your Area', 'There''s a new {{post_type}} post near you: {{title}}', 'normal'),
 ('emergency_alert', 'Emergency Alert', 'EMERGENCY: {{title}} - {{description}}', 'high'),
@@ -778,7 +735,6 @@ INSERT INTO notification_templates (template_key, title_template, body_template,
 ('post_reported', 'Post Reported', 'A post has been reported and needs review', 'normal')
 ON CONFLICT (template_key) DO NOTHING;
 
--- Insert default search suggestions
 INSERT INTO search_suggestions (suggestion_text, suggestion_type, category, source) VALUES
 ('power outage', 'emergency', 'utility', 'system'),
 ('road closure', 'infrastructure', 'traffic', 'system'),

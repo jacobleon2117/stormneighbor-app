@@ -185,6 +185,10 @@ try {
   const searchRoutes = require("./routes/search");
   app.use("/api/search", searchRoutes);
 
+  console.log("Loading admin routes...");
+  const adminRoutes = require("./routes/admin");
+  app.use("/api/v1/admin", adminRoutes);
+
   console.log("All routes loaded successfully");
 } catch (routeError) {
   console.error("Error loading routes:", routeError);
@@ -192,7 +196,6 @@ try {
     throw new Error(`Failed to load routes: ${routeError.message}`);
   }
 }
-
 if (process.env.NODE_ENV !== "test") {
   app.use(errorLogger);
 }

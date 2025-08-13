@@ -33,7 +33,7 @@ const optionalEnvVars = [
 ];
 
 function validateEnvironment() {
-  console.log("Validating environment variables...");
+  console.log("WORKING: Validating environment variables");
 
   const missing = [];
   const present = [];
@@ -55,24 +55,26 @@ function validateEnvironment() {
 
   if (process.env.RESEND_API_KEY && !process.env.RESEND_API_KEY.startsWith("re_")) {
     warnings.push(
-      "RESEND_API_KEY should start with 're_' - please verify this is a valid Resend API key"
+      "WARN: RESEND_API_KEY should start with 're_' (please verify this is a valid Resend API key)"
     );
   }
 
   if (process.env.FROM_EMAIL && !process.env.FROM_EMAIL.includes("@")) {
-    warnings.push("FROM_EMAIL appears to be invalid - should be a valid email address");
+    warnings.push("WARN: FROM_EMAIL appears to be invalid (should be a valid email address)");
   }
 
   if (process.env.CLOUDINARY_API_KEY && !/^\d+$/.test(process.env.CLOUDINARY_API_KEY)) {
-    warnings.push("CLOUDINARY_API_KEY should be numeric - please verify this is correct");
+    warnings.push("WARN: CLOUDINARY_API_KEY should be numeric (please verify this is correct)");
   }
 
   if (process.env.JWT_SECRET && process.env.JWT_SECRET.length < 32) {
-    warnings.push("JWT_SECRET is quite short - consider using a longer secret for better security");
+    warnings.push(
+      "WARN: JWT_SECRET is quite short (consider using a longer secret for better security)"
+    );
   }
 
   if (process.env.NODE_ENV === "production" && process.env.DATABASE_SSL !== "true") {
-    warnings.push("DATABASE_SSL should be 'true' in production for security");
+    warnings.push("WARN: DATABASE_SSL should be 'true' in production for security");
   }
 
   if (process.env.NODE_ENV === "production") {
@@ -87,11 +89,11 @@ function validateEnvironment() {
   if (missing.length > 0) {
     console.error("ERROR: Missing required environment variables:");
     missing.forEach((envVar) => console.error(`   - ${envVar}`));
-    console.error("\nAdd these to your .env file:");
+    console.error("\nINFO: Add these to your .env file:");
     missing.forEach((envVar) => {
       console.error(`   ${envVar}=value_here`);
     });
-    throw new Error("Missing required environment variables");
+    throw new Error("ERROR: Missing required environment variables");
   }
 
   if (warnings.length > 0) {
@@ -99,20 +101,20 @@ function validateEnvironment() {
     warnings.forEach((warning) => console.warn(`   - ${warning}`));
   }
 
-  console.log(`Environment validated (${present.length} variables configured)`);
+  console.log(`WORKING: Environment validated (${present.length} variables configured)`);
 
   console.log(`Environment: ${process.env.NODE_ENV}`);
 
   if (process.env.NODE_ENV === "development") {
     console.log("Development mode settings:");
-    console.log(`Client URL: ${process.env.CLIENT_URL || "http://localhost:19006"}`);
-    console.log(`Database SSL: ${process.env.DATABASE_SSL || "false"}`);
+    console.log(`INFO: Client URL: ${process.env.CLIENT_URL || "http://localhost:19006"}`);
+    console.log(`INFO: Database SSL: ${process.env.DATABASE_SSL || "false"}`);
   }
 
   console.log("\nConfigured services:");
-  console.log(`Database: ${process.env.DATABASE_URL ? "SUCCESS" : "ERROR"}`);
-  console.log(`Email (Resend): ${process.env.RESEND_API_KEY ? "SUCCESS" : "ERROR"}`);
-  console.log(`Weather (NOAA): ${process.env.NOAA_API_BASE_URL ? "SUCCESS" : "ERROR"}`);
+  console.log(`INFO: Database: ${process.env.DATABASE_URL ? "SUCCESS" : "ERROR"}`);
+  console.log(`INFO: Email (Resend): ${process.env.RESEND_API_KEY ? "SUCCESS" : "ERROR"}`);
+  console.log(`INFO: Weather (NOAA): ${process.env.NOAA_API_BASE_URL ? "SUCCESS" : "ERROR"}`);
   console.log(
     `Images (Cloudinary): ${
       process.env.CLOUDINARY_CLOUD_NAME &&

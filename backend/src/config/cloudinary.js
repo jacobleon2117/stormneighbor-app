@@ -16,7 +16,7 @@ const testCloudinaryConnection = async () => {
       !process.env.CLOUDINARY_API_KEY ||
       !process.env.CLOUDINARY_API_SECRET
     ) {
-      console.error("Missing Cloudinary environment variables");
+      console.error("ERROR: Missing Cloudinary environment variables");
       console.log(
         "Required variables: CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET"
       );
@@ -24,13 +24,13 @@ const testCloudinaryConnection = async () => {
     }
 
     const _result = await cloudinary.api.ping();
-    console.log("Cloudinary connection successful");
-    console.log("Cloudinary account:", process.env.CLOUDINARY_CLOUD_NAME);
+    console.log("SUCCESS: Cloudinary connection successful");
+    console.log("INFO: Cloudinary account:", process.env.CLOUDINARY_CLOUD_NAME);
     return true;
   } catch (error) {
-    console.error("Cloudinary connection failed:", error.message);
+    console.error("ERROR: Cloudinary connection failed:", error.message);
     if (error.http_code === 401) {
-      console.error("Check your API credentials");
+      console.error("INFO: Check your API credentials");
     }
     return false;
   }
@@ -101,7 +101,7 @@ const profileImageUpload = multer({
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error("Only image files (JPEG, PNG, GIF, WebP) are allowed"), false);
+      cb(new Error("INFO: Only image files (JPEG, PNG, GIF, WebP) are allowed"), false);
     }
   },
 });
@@ -117,7 +117,7 @@ const postImageUpload = multer({
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error("Only image files (JPEG, PNG, GIF, WebP) are allowed"), false);
+      cb(new Error("INFO: Only image files (JPEG, PNG, GIF, WebP) are allowed"), false);
     }
   },
 });
@@ -133,7 +133,7 @@ const commentImageUpload = multer({
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error("Only image files (JPEG, PNG, GIF, WebP) are allowed"), false);
+      cb(new Error("INFO: Only image files (JPEG, PNG, GIF, WebP) are allowed"), false);
     }
   },
 });
@@ -158,7 +158,7 @@ const getPublicIdFromUrl = (url) => {
     }
     return null;
   } catch (error) {
-    console.error("Error extracting public_id from URL:", error);
+    console.error("ERROR: Error extracting public_id from URL:", error);
     return null;
   }
 };
@@ -169,12 +169,12 @@ const deleteImage = async (publicId) => {
       throw new Error("No public_id provided");
     }
 
-    console.log("Deleting image with public_id:", publicId);
+    console.log("WORKING: Deleting image with public_id:", publicId);
     const result = await cloudinary.uploader.destroy(publicId);
-    console.log("Image deletion result:", result);
+    console.log("INFO: Image deletion result:", result);
     return result;
   } catch (error) {
-    console.error("Error deleting image:", error);
+    console.error("ERROR: Error deleting image:", error);
     throw error;
   }
 };

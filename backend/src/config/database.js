@@ -36,14 +36,14 @@ const testConnection = async () => {
     console.log("SUCCESS: Database connected successfully!");
 
     const result = await client.query("SELECT NOW() as current_time, version()");
-    console.log("Database time:", result.rows[0].current_time);
-    console.log("PostgreSQL version:", result.rows[0].version.split(" ")[0]);
+    console.log("INFO: Database time:", result.rows[0].current_time);
+    console.log("INFO: PostgreSQL version:", result.rows[0].version.split(" ")[0]);
 
     try {
       const postgisResult = await client.query("SELECT PostGIS_Version() as version");
       console.log("PostGIS version:", postgisResult.rows[0].version);
     } catch (postgisError) {
-      console.log("INFO: PostGIS not available (this is OK for basic functionality)");
+      console.log("INFO: PostGIS not available (OK for testing)");
     }
 
     console.log("Pool status:", {
@@ -57,15 +57,15 @@ const testConnection = async () => {
     console.error("ERROR: Database connection failed:", error.message);
 
     if (error.code === "ECONNREFUSED") {
-      console.error("HINT: Make sure PostgreSQL is running and accessible");
+      console.error("INFO: Make sure PostgreSQL is running and accessible");
     } else if (error.code === "28P01") {
-      console.error("HINT: Check your database credentials in DATABASE_URL");
+      console.error("INFO: Check your database credentials in DATABASE_URL");
     } else if (error.code === "3D000") {
-      console.error("HINT: Database does not exist - create it first");
+      console.error("INFO: Database does not exist, create it first");
     } else if (error.message.includes("SSL")) {
-      console.error("HINT: Try setting DATABASE_SSL=true for cloud databases");
+      console.error("INFO: Try setting DATABASE_SSL=true for cloud databases");
     } else if (error.message.includes("timeout")) {
-      console.error("HINT: Database connection timeout - check network connectivity");
+      console.error("INFO: Database connection timeout, check network connectivity");
     }
 
     return false;
@@ -88,7 +88,7 @@ const enablePostGIS = async () => {
     return true;
   } catch (error) {
     console.warn("WARN: PostGIS not available:", error.message);
-    console.warn("INFO: This is OK - city/state matching will work without PostGIS");
+    console.warn("INFO: This is OK (city/state matching will work without PostGIS)");
     return false;
   } finally {
     if (client) {
@@ -98,7 +98,7 @@ const enablePostGIS = async () => {
 };
 
 const gracefulShutdown = async () => {
-  console.log("Shutting down database pool...");
+  console.log("WORKING: Shutting down database pool");
   try {
     await pool.end();
     console.log("SUCCESS: Database pool closed gracefully");
@@ -113,11 +113,11 @@ if (process.env.NODE_ENV === "test") {
 }
 
 pool.on("connect", () => {
-  console.log("New database client connected");
+  console.log("SUCCESS: New database client connected");
 });
 
 pool.on("error", (err) => {
-  console.error("FAILED: Unexpected database error:", err.message);
+  console.error("ERROR: Unexpected database error:", err.message);
 });
 
 module.exports = {

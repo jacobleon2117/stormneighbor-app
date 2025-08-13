@@ -132,7 +132,7 @@ class TokenService {
 
     console.log(`SECURITY_EVENT: ${JSON.stringify(logEntry)}`);
     
-    // In production, might need to send this to a security monitoring service
+    // In production, I'll need to send this to a security monitoring service
     // e.g., Sentry, DataDog, or your own logging service
   }
 

@@ -7,7 +7,7 @@ const {
   adminAuth,
   requirePermission,
   requireSuperAdmin,
-  requireModerator,
+  // requireModerator, unused need to add back.
   requireAnalytics,
 } = require("../middleware/adminAuth");
 const { logAdminAction } = require("../utils/adminLogger");
@@ -22,30 +22,18 @@ router.get("/dashboard", requireAnalytics, async (req, res) => {
     const today = new Date().toISOString().split("T")[0];
 
     const stats = await client.query(
-      `
-      SELECT 
-        total_users,
-        new_users,
-        active_users,
-        total_posts,
-        new_posts,
-        emergency_posts,
-        total_comments,
-        new_comments,
-        total_reports,
-        new_reports
-      FROM daily_analytics 
-      WHERE date = $1
-    `,
+      `SELECT 
+         total_users, new_users, active_users,
+         total_posts, new_posts, emergency_posts,
+         total_comments, new_comments,
+         total_reports, new_reports
+       FROM daily_analytics 
+       WHERE date = $1`,
       [today]
     );
 
     const recentActivity = await client.query(`
-      SELECT 
-        action_type,
-        target_type,
-        created_at,
-        success
+      SELECT action_type, target_type, created_at, success
       FROM admin_actions 
       WHERE created_at > NOW() - INTERVAL '24 hours'
       ORDER BY created_at DESC 
@@ -53,9 +41,7 @@ router.get("/dashboard", requireAnalytics, async (req, res) => {
     `);
 
     const moderationStats = await client.query(`
-      SELECT 
-        status,
-        COUNT(*) as count
+      SELECT status, COUNT(*) as count
       FROM moderation_queue 
       WHERE created_at > NOW() - INTERVAL '7 days'
       GROUP BY status
@@ -97,51 +83,34 @@ router.get("/users", requirePermission("users", "read"), async (req, res) => {
     const { page = 1, limit = 50, search, status } = req.query;
     const offset = (page - 1) * limit;
 
-    let whereClause = "";
-    const params = [limit, offset];
-    let paramCount = 2;
+    let whereClause = "WHERE 1=1";
+    const params = [];
+    let paramCount = 0;
 
     if (search) {
       paramCount++;
-      whereClause += ` AND (CONCAT(first_name, ' ', last_name) ILIKE ${paramCount} OR email ILIKE ${paramCount})`;
+      whereClause += ` AND (CONCAT(first_name, ' ', last_name) ILIKE $${paramCount} OR email ILIKE $${paramCount})`;
       params.push(`%${search}%`);
     }
 
-    if (status) {
+    if (status && status !== "all") {
       paramCount++;
       whereClause += ` AND is_active = $${paramCount}`;
       params.push(status === "active");
     }
 
-    const users = await client.query(
-      `
-      SELECT 
-        id,
-        CONCAT(first_name, ' ', last_name) as full_name,
-        email,
-        first_name,
-        last_name,
-        is_active,
-        email_verified,
-        created_at,
-        (SELECT MAX(last_used_at) FROM user_sessions WHERE user_id = users.id) as last_login_at,
-        (SELECT COUNT(*) FROM posts WHERE user_id = users.id) as post_count,
-        (SELECT COUNT(*) FROM comments WHERE user_id = users.id) as comment_count
-      FROM users 
-      WHERE 1=1 ${whereClause}
-      ORDER BY created_at DESC
-      LIMIT $1 OFFSET $2
-    `,
-      params
-    );
+    params.push(limit, offset);
 
-    const totalUsers = await client.query(
-      `
-      SELECT COUNT(*) as total 
-      FROM users 
-      WHERE 1=1 ${whereClause}
-    `,
-      params.slice(2)
+    const users = await client.query(
+      `SELECT 
+         id, CONCAT(first_name, ' ', last_name) as full_name,
+         email, first_name, last_name, is_active, email_verified,
+         created_at, profile_image_url
+       FROM users 
+       ${whereClause}
+       ORDER BY created_at DESC
+       LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`,
+      params
     );
 
     res.json({
@@ -151,7 +120,7 @@ router.get("/users", requirePermission("users", "read"), async (req, res) => {
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),
-          total: parseInt(totalUsers.rows[0].total),
+          total: users.rows.length,
         },
       },
     });
@@ -160,242 +129,6 @@ router.get("/users", requirePermission("users", "read"), async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error fetching users",
-    });
-  } finally {
-    client.release();
-  }
-});
-
-router.patch("/users/:userId/status", requirePermission("users", "write"), async (req, res) => {
-  const client = await pool.connect();
-
-  try {
-    const { userId } = req.params;
-    const { is_active, reason } = req.body;
-
-    await client.query(
-      `
-      UPDATE users 
-      SET is_active = $1, updated_at = NOW()
-      WHERE id = $2
-    `,
-      [is_active, userId]
-    );
-
-    await logAdminAction(
-      req.admin.userId,
-      is_active ? "user_activated" : "user_deactivated",
-      "user",
-      parseInt(userId),
-      { reason },
-      req.ip,
-      req.get("User-Agent")
-    );
-
-    res.json({
-      success: true,
-      message: `User ${is_active ? "activated" : "deactivated"} successfully`,
-    });
-  } catch (error) {
-    console.error("User status update error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error updating user status",
-    });
-  } finally {
-    client.release();
-  }
-});
-
-router.get("/moderation", requireModerator, async (req, res) => {
-  const client = await pool.connect();
-
-  try {
-    const { status = "pending", page = 1, limit = 20 } = req.query;
-    const offset = (page - 1) * limit;
-
-    const queue = await client.query(
-      `
-      SELECT 
-        mq.*,
-        CONCAT(u_reporter.first_name, ' ', u_reporter.last_name) as reporter_name,
-        CONCAT(u_moderator.first_name, ' ', u_moderator.last_name) as moderator_name
-      FROM moderation_queue mq
-      LEFT JOIN users u_reporter ON mq.reporter_id = u_reporter.id
-      LEFT JOIN users u_moderator ON mq.moderator_id = u_moderator.id
-      WHERE mq.status = $1
-      ORDER BY 
-        CASE WHEN mq.priority = 'high' THEN 1
-             WHEN mq.priority = 'normal' THEN 2
-             ELSE 3 END,
-        mq.created_at ASC
-      LIMIT $2 OFFSET $3
-    `,
-      [status, limit, offset]
-    );
-
-    res.json({
-      success: true,
-      data: queue.rows,
-    });
-  } catch (error) {
-    console.error("Moderation queue error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error fetching moderation queue",
-    });
-  } finally {
-    client.release();
-  }
-});
-
-router.patch("/moderation/:queueId", requireModerator, async (req, res) => {
-  const client = await pool.connect();
-
-  try {
-    const { queueId } = req.params;
-    const { status, action_taken, moderator_notes } = req.body;
-
-    await client.query(
-      `
-      UPDATE moderation_queue 
-      SET 
-        status = $1,
-        action_taken = $2,
-        moderator_notes = $3,
-        moderator_id = $4,
-        reviewed_at = NOW(),
-        updated_at = NOW()
-      WHERE id = $5
-    `,
-      [status, action_taken, moderator_notes, req.admin.userId, queueId]
-    );
-
-    await logAdminAction(
-      req.admin.userId,
-      "moderation_action",
-      "moderation_queue",
-      parseInt(queueId),
-      { status, action_taken, moderator_notes },
-      req.ip,
-      req.get("User-Agent")
-    );
-
-    res.json({
-      success: true,
-      message: "Moderation action completed",
-    });
-  } catch (error) {
-    console.error("Moderation action error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error processing moderation action",
-    });
-  } finally {
-    client.release();
-  }
-});
-
-router.get("/settings", requirePermission("system", "read"), async (req, res) => {
-  const client = await pool.connect();
-
-  try {
-    const settings = await client.query(`
-      SELECT 
-        setting_key,
-        setting_value,
-        setting_type,
-        display_name,
-        description,
-        is_public
-      FROM system_settings 
-      ORDER BY setting_type, setting_key
-    `);
-
-    res.json({
-      success: true,
-      data: settings.rows,
-    });
-  } catch (error) {
-    console.error("Settings fetch error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error fetching settings",
-    });
-  } finally {
-    client.release();
-  }
-});
-
-router.patch("/settings/:settingKey", requirePermission("system", "write"), async (req, res) => {
-  const client = await pool.connect();
-
-  try {
-    const { settingKey } = req.params;
-    const { setting_value } = req.body;
-
-    await client.query(
-      `
-      UPDATE system_settings 
-      SET 
-        setting_value = $1,
-        updated_by = $2,
-        updated_at = NOW()
-      WHERE setting_key = $3
-    `,
-      [JSON.stringify(setting_value), req.admin.userId, settingKey]
-    );
-
-    await logAdminAction(
-      req.admin.userId,
-      "setting_update",
-      "system_setting",
-      null,
-      { setting_key: settingKey, new_value: setting_value },
-      req.ip,
-      req.get("User-Agent")
-    );
-
-    res.json({
-      success: true,
-      message: "Setting updated successfully",
-    });
-  } catch (error) {
-    console.error("Setting update error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error updating setting",
-    });
-  } finally {
-    client.release();
-  }
-});
-
-router.get("/analytics", requireAnalytics, async (req, res) => {
-  const client = await pool.connect();
-
-  try {
-    const { start_date, end_date } = req.query;
-
-    const analytics = await client.query(
-      `
-      SELECT *
-      FROM daily_analytics 
-      WHERE date BETWEEN $1 AND $2
-      ORDER BY date DESC
-    `,
-      [start_date || "2024-01-01", end_date || new Date().toISOString().split("T")[0]]
-    );
-
-    res.json({
-      success: true,
-      data: analytics.rows,
-    });
-  } catch (error) {
-    console.error("Analytics fetch error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error fetching analytics",
     });
   } finally {
     client.release();
@@ -434,18 +167,54 @@ router.post("/users/:userId/roles", requireSuperAdmin, async (req, res) => {
     const { userId } = req.params;
     const { role_id, expires_at, notes } = req.body;
 
+    if (parseInt(userId) === req.admin.userId) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot assign admin roles to yourself",
+        code: "SELF_ASSIGNMENT_FORBIDDEN",
+      });
+    }
+
+    const targetUser = await client.query("SELECT id, email, is_active FROM users WHERE id = $1", [
+      userId,
+    ]);
+
+    if (targetUser.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Target user not found",
+        code: "USER_NOT_FOUND",
+      });
+    }
+
+    if (!targetUser.rows[0].is_active) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot assign admin roles to inactive users",
+        code: "USER_INACTIVE",
+      });
+    }
+
+    const targetRole = await client.query(
+      "SELECT id, name, permissions FROM admin_roles WHERE id = $1 AND is_active = true",
+      [role_id]
+    );
+
+    if (targetRole.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Target role not found or inactive",
+        code: "ROLE_NOT_FOUND",
+      });
+    }
+
     await client.query(
-      `
-      INSERT INTO user_admin_roles (user_id, role_id, assigned_by, expires_at, notes)
-      VALUES ($1, $2, $3, $4, $5)
-      ON CONFLICT (user_id, role_id) 
-      DO UPDATE SET 
-        is_active = true,
-        assigned_by = $3,
-        expires_at = $4,
-        notes = $5,
-        assigned_at = NOW()
-    `,
+      `INSERT INTO user_admin_roles (user_id, role_id, assigned_by, expires_at, notes)
+       VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (user_id, role_id) 
+       DO UPDATE SET 
+         is_active = true, assigned_by = $3, expires_at = $4, 
+         notes = $5, assigned_at = NOW()`,
       [userId, role_id, req.admin.userId, expires_at, notes]
     );
 
@@ -454,7 +223,13 @@ router.post("/users/:userId/roles", requireSuperAdmin, async (req, res) => {
       "admin_role_assigned",
       "user",
       parseInt(userId),
-      { role_id, expires_at, notes },
+      {
+        role_id,
+        role_name: targetRole.rows[0].name,
+        target_user_email: targetUser.rows[0].email,
+        expires_at,
+        notes,
+      },
       req.ip,
       req.get("User-Agent")
     );
@@ -462,16 +237,73 @@ router.post("/users/:userId/roles", requireSuperAdmin, async (req, res) => {
     res.json({
       success: true,
       message: "Admin role assigned successfully",
+      data: {
+        user_id: parseInt(userId),
+        role_name: targetRole.rows[0].name,
+        expires_at: expires_at,
+        assigned_by: req.admin.userId,
+      },
     });
   } catch (error) {
     console.error("Role assignment error:", error);
+
+    try {
+      const { userId } = req.params;
+      const { role_id } = req.body;
+
+      await logAdminAction(
+        req.admin?.userId || null,
+        "admin_role_assignment_failed",
+        "user",
+        userId ? parseInt(userId) : null,
+        {
+          role_id: role_id || null,
+          error: error.message || "Unknown error",
+          attempted_target: userId || "unknown",
+        },
+        req.ip || null,
+        req.get("User-Agent") || null,
+        false
+      );
+    } catch (logError) {
+      console.error("Failed to log admin action:", logError);
+    }
+
     res.status(500).json({
       success: false,
       message: "Error assigning admin role",
+      code: "ASSIGNMENT_ERROR",
     });
   } finally {
     client.release();
   }
+  router.get("/analytics", requireAnalytics, async (req, res) => {
+    const client = await pool.connect();
+
+    try {
+      const { start_date, end_date } = req.query;
+
+      const analytics = await client.query(
+        `SELECT * FROM daily_analytics 
+       WHERE date BETWEEN $1 AND $2
+       ORDER BY date DESC`,
+        [start_date || "2024-01-01", end_date || new Date().toISOString().split("T")[0]]
+      );
+
+      res.json({
+        success: true,
+        data: analytics.rows,
+      });
+    } catch (error) {
+      console.error("Analytics fetch error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error fetching analytics",
+      });
+    } finally {
+      client.release();
+    }
+  });
 });
 
 module.exports = router;

@@ -13,17 +13,17 @@ async function healthCheck(environment = "local") {
 
   if (!baseUrl) {
     console.error(`ERROR: Unknown environment: ${environment}`);
-    console.log("Available environments:", Object.keys(ENDPOINTS).join(", "));
+    console.log("INFO: Available environments:", Object.keys(ENDPOINTS).join(", "));
     process.exitCode = 1;
   }
 
-  console.log(`Health check for ${environment}: ${baseUrl}`);
+  console.log(`WORKING: Health check for ${environment}: ${baseUrl}`);
 
   try {
     const response = await makeRequest(`${baseUrl}/health`);
     const data = JSON.parse(response);
 
-    console.log(`SUCCESS: Status: ${data.status}`);
+    console.log(`Status: ${data.status}`);
     console.log(`Uptime: ${data.uptime}`);
     console.log(`Memory: ${data.memory.heapUsed} / ${data.memory.heapTotal}`);
     console.log(`Database: ${data.database.status}`);
@@ -34,22 +34,22 @@ async function healthCheck(environment = "local") {
       console.log(`Error rate: ${data.analytics.errorRate}`);
     }
 
-    console.log("\nTesting endpoints...");
+    console.log("\nWORKING: Testing endpoints");
 
     const endpoints = ["/health", "/api/weather/current?lat=30.2672&lng=-97.7431"];
 
     for (const endpoint of endpoints) {
       try {
         await makeRequest(`${baseUrl}${endpoint}`);
-        console.log(`SUCCESS ${endpoint}`);
+        console.log(`SUCCESS: ${endpoint}`);
       } catch (error) {
-        console.log(`ERROR ${endpoint}: ${error.message}`);
+        console.log(`ERROR: ${endpoint}: ${error.message}`);
       }
     }
 
-    console.log(`\n ${environment} environment is healthy!`);
+    console.log(`\n ${environment} environment is healthy`);
   } catch (error) {
-    console.error(`ERROR Health check failed for ${environment}:`, error.message);
+    console.error(`ERROR: Health check failed for ${environment}:`, error.message);
     process.exitCode = 1;
   }
 }
@@ -77,7 +77,7 @@ function makeRequest(url) {
     req.on("error", reject);
     req.setTimeout(10000, () => {
       req.destroy();
-      reject(new Error("Request timeout"));
+      reject(new Error("ERROR: Request timeout"));
     });
   });
 }

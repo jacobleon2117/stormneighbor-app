@@ -51,11 +51,11 @@ function splitSqlStatements(sql) {
 }
 
 async function setupTestDatabase() {
-  console.log("Setting up test database...");
+  console.log("WORKING: Setting up test database");
 
   if (require.main === module) {
     setupTestDatabase().catch((error) => {
-      console.error("Fatal error:", error.message);
+      console.error("ERROR: Fatal error:", error.message);
       throw error;
     });
   }
@@ -71,9 +71,9 @@ async function setupTestDatabase() {
   let client;
 
   try {
-    console.log("Connecting to database...");
+    console.log("WORKING: Connecting to database");
     client = await pool.connect();
-    console.log("Database connection established");
+    console.log("WORKING: Database connection established");
 
     const timeResult = await client.query("SELECT NOW() as current_time");
     console.log("Database time:", timeResult.rows[0].current_time);
@@ -82,28 +82,28 @@ async function setupTestDatabase() {
     console.log("PostgreSQL version:", versionResult.rows[0].version);
 
     try {
-      console.log("Attempting to enable PostGIS...");
+      console.log("WORKING: Attempting to enable PostGIS");
       await client.query("CREATE EXTENSION IF NOT EXISTS postgis;");
 
       const postgisResult = await client.query("SELECT PostGIS_Version()");
-      console.log("PostGIS enabled - version:", postgisResult.rows[0].postgis_version);
+      console.log("SUCCESS: PostGIS enabled - version:", postgisResult.rows[0].postgis_version);
     } catch (postgisError) {
-      console.log("PostGIS not available (this is OK for testing):", postgisError.message);
+      console.log("INFO: PostGIS not available (OK for testing):", postgisError.message);
     }
 
-    console.log("Reading database schema...");
+    console.log("WORKING: Reading database schema");
     const schemaPath = path.join(__dirname, "..", "schema.sql");
 
     if (!fs.existsSync(schemaPath)) {
-      throw new Error(`Schema file not found at: ${schemaPath}`);
+      throw new Error(`ERROR: Schema file not found at: ${schemaPath}`);
     }
 
     const schema = fs.readFileSync(schemaPath, "utf8");
-    console.log("Schema file size:", schema.length, "characters");
+    console.log("INFO: Schema file size:", schema.length, "characters");
 
     const statements = splitSqlStatements(schema);
 
-    console.log("Executing", statements.length, "database statements...");
+    console.log("WORKING: Executing", statements.length, "database statements...");
 
     for (let i = 0; i < statements.length; i++) {
       const statement = statements[i];
@@ -113,7 +113,7 @@ async function setupTestDatabase() {
             await client.query(statement + ";");
           } catch (postgisErr) {
             if (postgisErr.message.includes("postgis") || postgisErr.message.includes("geometry")) {
-              console.log(`Skipping PostGIS statement ${i + 1} (PostGIS not available)`);
+              console.log(`INFO: Skipping PostGIS statement ${i + 1} (PostGIS not available)`);
               continue;
             }
             throw postgisErr;
@@ -134,28 +134,28 @@ async function setupTestDatabase() {
           continue;
         }
 
-        console.error(`Error in statement ${i + 1}:`, statement.substring(0, 100) + "...");
+        console.error(`ERROR: Error in statement ${i + 1}:`, statement.substring(0, 100) + "...");
         console.error("Error:", statementError.message);
         throw statementError;
       }
     }
 
-    console.log("Database schema setup complete!");
+    console.log("SUCCESS: Database schema setup complete");
 
     await createTestData(client);
 
     await verifyDatabaseSetup(client);
 
-    console.log("Test database setup completed successfully!");
+    console.log("INFO: Test database setup completed successfully");
   } catch (error) {
-    console.error("Test database setup failed:", error.message);
+    console.error("ERROR: Test database setup failed:", error.message);
 
     if (error.code === "ECONNREFUSED") {
-      console.error("Make sure PostgreSQL is running and accessible");
+      console.error("INFO: Make sure PostgreSQL is running and accessible");
     } else if (error.code === "28P01") {
-      console.error("Check your database credentials");
+      console.error("INFO: Check your database credentials");
     } else if (error.code === "3D000") {
-      console.error("Database does not exist - create it first");
+      console.error("INFO: Database does not exist, create it first");
     }
 
     throw error;
@@ -163,23 +163,23 @@ async function setupTestDatabase() {
     if (client) {
       try {
         client.release();
-        console.log("Database connection released");
+        console.log("SUCCESS: Database connection released");
       } catch (releaseError) {
-        console.error("Error releasing connection:", releaseError.message);
+        console.error("ERROR: Error releasing connection:", releaseError.message);
       }
     }
 
     try {
       await pool.end();
-      console.log("Connection pool closed");
+      console.log("WORKING: Connection pool closed");
     } catch (poolError) {
-      console.error("Error closing pool:", poolError.message);
+      console.error("ERROR: Error closing pool:", poolError.message);
     }
   }
 }
 
 async function createTestData(client) {
-  console.log("Creating test data...");
+  console.log("WORKING: Creating test data");
 
   try {
     const hashedPassword = "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewHH6EjT2j8HsWKa";
@@ -199,7 +199,7 @@ async function createTestData(client) {
       [hashedPassword]
     );
 
-    console.log("Test user created");
+    console.log("SUCCESS: Test user created");
 
     await client.query(`
       INSERT INTO posts (
@@ -214,7 +214,7 @@ async function createTestData(client) {
       ON CONFLICT DO NOTHING
     `);
 
-    console.log("Test post created");
+    console.log("SUCCESS: Test post created");
 
     const userCount = await client.query("SELECT COUNT(*) FROM users");
     const postCount = await client.query("SELECT COUNT(*) FROM posts");
@@ -223,12 +223,12 @@ async function createTestData(client) {
       `Test data created: ${userCount.rows[0].count} users, ${postCount.rows[0].count} posts`
     );
   } catch (error) {
-    console.log("Test data creation warning:", error.message);
+    console.log("WARN: Test data creation warning:", error.message);
   }
 }
 
 async function verifyDatabaseSetup(client) {
-  console.log("Verifying database setup...");
+  console.log("WORKING: Verifying database setup");
 
   try {
     const tables = await client.query(`
@@ -240,7 +240,7 @@ async function verifyDatabaseSetup(client) {
     `);
 
     const tableNames = tables.rows.map((row) => row.table_name);
-    console.log("   Tables found:", tableNames.join(", "));
+    console.log("WORKING: Tables found:", tableNames.join(", "));
 
     const expectedTables = ["users", "posts", "comments", "reactions", "weather_alerts"];
     const missingTables = expectedTables.filter((table) => !tableNames.includes(table));
@@ -248,36 +248,36 @@ async function verifyDatabaseSetup(client) {
     if (missingTables.length > 0) {
       console.warn("Missing expected tables:", missingTables.join(", "));
     } else {
-      console.log("All expected tables present");
+      console.log("SUCCESS: All expected tables present");
     }
 
     try {
       await client.query(
         "SELECT get_nearby_posts(30.2672, -97.7431, 'Austin', 'Texas', 10.0, false, 10, 0)"
       );
-      console.log("PostGIS functions working");
+      console.log("SUCCESS: PostGIS functions working");
     } catch (funcError) {
-      console.log("PostGIS functions not available (this is OK for basic testing)");
+      console.log("INFO: PostGIS functions not available (OK for testing)");
     }
 
-    console.log("Database verification complete");
+    console.log("SUCCESS: Database verification complete");
   } catch (error) {
-    console.error("Database verification failed:", error.message);
+    console.error("ERROR: Database verification failed:", error.message);
     throw error;
   }
 }
 
 process.on("SIGINT", async () => {
-  console.log("\nReceived SIGINT, shutting down gracefully...");
+  console.log("\nINFO: Received SIGINT, shutting down gracefully...");
 });
 
 process.on("SIGTERM", async () => {
-  console.log("\nReceived SIGTERM, shutting down gracefully...");
+  console.log("\nINFO: Received SIGTERM, shutting down gracefully...");
 });
 
 if (require.main === module) {
   setupTestDatabase().catch((error) => {
-    console.error("Fatal error:", error.message);
+    console.error("ERROR: Fatal error:", error.message);
     throw error;
   });
 }

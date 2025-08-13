@@ -5,7 +5,7 @@ const { testCloudinaryConnection } = require("../src/config/cloudinary");
 const { testEmailService } = require("../src/services/emailService");
 
 async function runDiagnostics() {
-  console.log("StormNeighbor Backend Diagnostics");
+  console.log("Backend Diagnostics");
   console.log("=====================================\n");
 
   const results = {
@@ -16,7 +16,7 @@ async function runDiagnostics() {
     email: false,
   };
 
-  console.log("Checking Environment Variables...");
+  console.log("WORKING: Checking Environment Variables");
   const requiredVars = [
     "DATABASE_URL",
     "JWT_SECRET",
@@ -37,7 +37,7 @@ async function runDiagnostics() {
     results.environment = true;
   }
 
-  console.log("\n2Testing Database Connection...");
+  console.log("\nWORKING: Testing Database Connection");
   try {
     results.database = await testConnection();
     if (results.database) {
@@ -47,17 +47,17 @@ async function runDiagnostics() {
     console.error("ERROR: Database connection failed:", error.message);
   }
 
-  console.log("\n3Testing PostGIS (optional)...");
+  console.log("\nWORKING: Testing PostGIS (optional)...");
   try {
     results.postgis = await enablePostGIS();
     if (results.postgis) {
       console.log("SUCCESS: PostGIS is available");
     }
   } catch (error) {
-    console.log("INFO: PostGIS not available (this is OK)");
+    console.log("INFO: PostGIS not available (this is OK - Optional)");
   }
 
-  console.log("\n4Testing Cloudinary Connection...");
+  console.log("\nTESTING: Testing Cloudinary Connection");
   try {
     results.cloudinary = await testCloudinaryConnection();
     if (results.cloudinary) {
@@ -67,7 +67,7 @@ async function runDiagnostics() {
     console.error("ERROR: Cloudinary connection failed:", error.message);
   }
 
-  console.log("\n5Testing Email Service...");
+  console.log("\nTESTING: Testing Email Service...");
   try {
     const emailResult = await testEmailService();
     results.email = emailResult.success;
@@ -81,7 +81,7 @@ async function runDiagnostics() {
   }
 
   console.log("\nSUMMARY");
-  console.log("===========");
+  console.log("=====================================");
   console.log(`Environment: ${results.environment ? "SUCCESS:" : "ERROR:"}`);
   console.log(`Database: ${results.database ? "SUCCESS:" : "ERROR:"}`);
   console.log(`PostGIS: ${results.postgis ? "SUCCESS:" : "INFO: Optional"}`);
@@ -92,21 +92,21 @@ async function runDiagnostics() {
   const criticalPassing = criticalServices.every((service) => results[service]);
 
   if (criticalPassing) {
-    console.log("\nAll critical services are working, backend ready");
-    console.log("\nContinue with these steps:");
-    console.log("Run schema setup");
-    console.log("Start server");
-    console.log("Test API endpoints");
+    console.log("\nSUCCESS: All critical services are working, backend ready");
+    console.log("\nContinue with:");
+    console.log("STEP: Run schema setup");
+    console.log("STEP: Start server");
+    console.log("STEP: Test API endpoints");
   } else {
-    console.log("\nWARN: Some critical services need attention before proceeding.");
-    console.log("\nFix failing services, then run script again.");
+    console.log("\nWARN: Some critical services need attention before proceeding");
+    console.log("\nWARN: Fix failing services, then run script again");
   }
 
   return criticalPassing;
 }
 
 async function setupSchema() {
-  console.log("Setting up database schema...");
+  console.log("WORKING: Setting up database schema");
 
   const fs = require("fs");
   const path = require("path");
@@ -116,16 +116,16 @@ async function setupSchema() {
     const schemaPath = path.join(__dirname, "..", "schema.sql");
 
     if (!fs.existsSync(schemaPath)) {
-      throw new Error("Schema file not found at: " + schemaPath);
+      throw new Error("ERROR: Schema file not found at: " + schemaPath);
     }
 
     const schema = fs.readFileSync(schemaPath, "utf8");
     const client = await pool.connect();
 
     try {
-      console.log("Executing schema...");
+      console.log("WORKING: Executing schema");
       await client.query(schema);
-      console.log("SUCCESS: Schema setup completed successfully!");
+      console.log("SUCCESS: Schema setup completed successfully");
 
       const testUser = await client.query(`
         INSERT INTO users (email, password_hash, first_name, last_name, location_city, address_state, email_verified)
@@ -135,9 +135,9 @@ async function setupSchema() {
       `);
 
       if (testUser.rows.length > 0) {
-        console.log("Test user created with ID:", testUser.rows[0].id);
+        console.log("SUCCESS: Test user created with ID:", testUser.rows[0].id);
       } else {
-        console.log("Test user already exists");
+        console.log("INFO: Test user already exists");
       }
     } finally {
       client.release();

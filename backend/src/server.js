@@ -9,9 +9,17 @@ const sessionCleanupJob = require("./jobs/sessionCleanup");
 const pushNotificationService = require("./services/pushNotificationService");
 
 const PORT = process.env.PORT || 3000;
+const HOST = process.env.NODE_ENV === "production" ? "0.0.0.0" : "0.0.0.0";
 
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, HOST, () => {
   console.log(`INFO: Server running on port: ${PORT}`);
+  console.log(`INFO: Server accessible at: http://localhost:${PORT}`);
+
+  if (process.env.NODE_ENV === "development") {
+    console.log(`INFO: Network access: http://192.168.1.89:${PORT}`);
+    console.log(`INFO: Base URL from env: ${process.env.BASE_URL || "Not set"}`);
+  }
+
   console.log(`INFO: Environment: ${process.env.NODE_ENV}`);
   console.log(`INFO: Health check: http://localhost:${PORT}/health`);
 
@@ -84,119 +92,47 @@ const server = app.listen(PORT, () => {
     console.log("     DELETE /cache - Clear cache");
     console.log("   GET  /api/v1/notifications/status - Push notification status");
     console.log("   npm run push:test - Test push notifications");
-    console.log("\n");
   }
 });
 
-const { gracefulShutdown: shutdownDatabase } = require("./config/database");
+const gracefulShutdown = () => {
+  console.log("\nINFO: Received shutdown signal, closing server gracefully...");
 
-let isShuttingDown = false;
-
-const performGracefulShutdown = async (signal) => {
-  if (isShuttingDown) {
-    console.log(`${signal} received but shutdown already in progress`);
-    return;
-  }
-
-  isShuttingDown = true;
-  console.log(`\n${signal} received, shutting down gracefully`);
-  console.log("WORKING: Stopping background jobs");
-
-  try {
-    console.log("INFO: Push notification service shutdown (no cleanup needed)");
-  } catch (error) {
-    console.error("ERROR: Error during push notification shutdown:", error);
-  }
-
-  try {
-    sessionCleanupJob.stop();
-    console.log("INFO: Session cleanup job stopped");
-  } catch (error) {
-    console.error("ERROR: Error stopping background jobs:", error);
-    process.exitCode = 1;
-  }
-
-  try {
-    const { cache } = require("./middleware/cache");
-    if (cache && cache.clearCleanupInterval) {
-      cache.clearCleanupInterval();
-      console.log("INFO: Cache cleanup interval cleared");
+  server.close((err) => {
+    if (err) {
+      console.error("ERROR: Error during server shutdown:", err);
+      process.exitCode = 1;
     }
-  } catch (error) {
-    console.error("ERROR: Error clearing cache interval:", error);
-  }
 
-  try {
-    const securityMiddleware = require("./middleware/security");
-    if (securityMiddleware && securityMiddleware.clearCleanupInterval) {
-      securityMiddleware.clearCleanupInterval();
-      console.log("INFO: Security cleanup interval cleared");
-    }
-  } catch (error) {
-    console.error("ERROR: Error clearing security interval:", error);
-  }
-
-  server.close(async () => {
-    console.log("INFO: Server connections closed");
+    console.log("INFO: Server closed successfully");
 
     try {
-      await shutdownDatabase();
-      console.log("INFO: Process terminated gracefully");
-      process.exitCode = 0;
-
-      setTimeout(() => {
-        console.log("INFO: Force exiting after graceful shutdown completed");
-        process.exitCode = 1;
-      }, 1000);
+      sessionCleanupJob.stop();
+      console.log("INFO: Background jobs stopped");
     } catch (error) {
-      console.error("ERROR: Error during database shutdown:", error);
-      process.exitCode = 1;
-      setTimeout(() => {
-        process.exitCode = 1;
-      }, 1000);
+      console.error("ERROR: Error stopping background jobs:", error);
     }
+
+    process.exitCode = 1;
   });
+
+  setTimeout(() => {
+    console.error("WARN: Forcing server shutdown...");
+    process.exitCode = 1;
+  }, 10000);
 };
 
-process.on("SIGTERM", () => performGracefulShutdown("SIGTERM"));
-process.on("SIGINT", () => performGracefulShutdown("SIGINT"));
+process.on("SIGTERM", gracefulShutdown);
+process.on("SIGINT", gracefulShutdown);
 
-process.on("uncaughtException", async (error) => {
+process.on("uncaughtException", (error) => {
   console.error("ERROR: Uncaught Exception:", error);
-  console.log("ERROR: Shutting down due to uncaught exception");
-
-  if (!isShuttingDown) {
-    isShuttingDown = true;
-    try {
-      sessionCleanupJob.stop();
-      await shutdownDatabase();
-    } catch (jobError) {
-      console.error("ERROR: Error stopping services during crash:", jobError);
-    }
-  }
-
   process.exitCode = 1;
-  throw error;
 });
 
-process.on("unhandledRejection", async (reason, promise) => {
+process.on("unhandledRejection", (reason, promise) => {
   console.error("ERROR: Unhandled Rejection at:", promise, "reason:", reason);
-  console.log("ERROR: Shutting down due to unhandled promise rejection...");
-
-  if (!isShuttingDown) {
-    isShuttingDown = true;
-    try {
-      sessionCleanupJob.stop();
-      await shutdownDatabase();
-    } catch (jobError) {
-      console.error("ERROR: Error stopping services during crash:", jobError);
-    }
-  }
-
-  server.close(() => {
-    process.exitCode = 1;
-    throw new Error(`ERROR: Unhandled promise rejection: ${reason}`);
-  });
+  process.exitCode = 1;
 });
 
-module.exports = { app, server };
+module.exports = server;

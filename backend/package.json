@@ -66,13 +66,18 @@
     "backup:supabase:test": "node scripts/supabase-backup-test.js",
     "backup:supabase:create": "node -e \"require('./src/services/supabaseBackupService').createSQLBackup('manual').then(r=>console.log('Backup created:',r.filename)).catch(console.error)\"",
     "backup:supabase:list": "node -e \"require('./src/services/supabaseBackupService').listBackups().then(b=>console.table(b)).catch(console.error)\"",
+    "push:test": "node scripts/push-notification-test.js",
+    "push:setup": "node scripts/setup-push-notifications.js",
+    "push:status": "node -e \"console.log(require('./src/services/pushNotificationService').getStatus())\"",
+    "push:stats": "node -e \"require('./src/services/pushNotificationService').getNotificationStats().then(console.table).catch(console.error)\"",
+    "push:cleanup": "node -e \"require('./src/services/pushNotificationService').cleanupOldTokens().then(r=>console.log('Cleaned:',r)).catch(console.error)\"",
     "ssl:test": "node scripts/ssl-test.js",
     "ssl:test:config": "node scripts/ssl-test.js config",
     "ssl:test:headers": "node scripts/ssl-test.js headers",
     "ssl:test:redirect": "node scripts/ssl-test.js redirect",
     "ssl:test:cert": "node scripts/ssl-test.js cert",
-    "ssl:audit": "node -e \"require('./src/config/sslConfig').validateConfig().then ? console.log('✅ SSL config valid') : console.log('❌ SSL config issues')\"",
-    "security:audit": "npm run ssl:test && npm run security:check"
+    "ssl:audit": "node -e \"require('./src/config/sslConfig').validateConfig().then(r=>r.valid ? console.log('SUCCESS: SSL config valid') : console.log('ERROR: SSL config issues'))\"",
+    "security:full": "npm run ssl:test && npm run security:check"
   },
   "dependencies": {
     "axios": "^1.11.0",

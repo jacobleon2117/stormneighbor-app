@@ -7,7 +7,7 @@ class SSLSecurityMiddleware {
     this.isStaging = process.env.NODE_ENV === "staging";
     this.forceHTTPS = process.env.FORCE_HTTPS !== "false";
     this.trustedProxies = this.parseTrustedProxies();
-    this.securityHeaders = this.getSecurityHeaders();
+    this.securityHeadersConfig = this.getSecurityHeaders();
   }
 
   parseTrustedProxies() {
@@ -83,13 +83,10 @@ class SSLSecurityMiddleware {
       "Cross-Origin-Embedder-Policy": "require-corp",
       "Cross-Origin-Opener-Policy": "same-origin",
       "Cross-Origin-Resource-Policy": "same-origin",
-
       Server: "StormNeighbor",
-
       "Cache-Control": "no-store, no-cache, must-revalidate, private",
       Pragma: "no-cache",
       Expires: "0",
-
       "X-Download-Options": "noopen",
       "X-DNS-Prefetch-Control": "off",
       "X-Permitted-Cross-Domain-Policies": "none",
@@ -162,7 +159,7 @@ class SSLSecurityMiddleware {
 
   securityHeaders() {
     return (req, res, next) => {
-      Object.entries(this.securityHeaders).forEach(([header, value]) => {
+      Object.entries(this.securityHeadersConfig).forEach(([header, value]) => {
         res.setHeader(header, value);
       });
 
@@ -222,7 +219,7 @@ class SSLSecurityMiddleware {
           frameGuardEnabled: true,
           xssProtectionEnabled: true,
         },
-        headers: Object.keys(this.securityHeaders),
+        headers: Object.keys(this.securityHeadersConfig),
         recommendations: this.getSecurityRecommendations(req),
       };
 

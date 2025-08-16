@@ -1,135 +1,16 @@
 // File: backend/src/routes/upload.js
 const express = require("express");
-const router = express.Router();
 const { auth } = require("../middleware/auth");
-const {
-  profileImageUpload,
-  postImageUpload,
-  commentImageUpload,
-  testCloudinaryConnection,
-} = require("../config/cloudinary");
 const {
   uploadProfileImage,
   uploadPostImage,
   uploadCommentImage,
   deleteImageById,
   getUploadStats,
-} = require("../controllers/upload");
+} = require("../controllers/uploadController");
+const { profileImageUpload, postImageUpload, commentImageUpload } = require("../config/cloudinary");
 
-router.get("/test", async (req, res) => {
-  try {
-    const cloudinaryWorking = await testCloudinaryConnection();
-
-    res.json({
-      success: true,
-      message: "Upload system is working!",
-      data: {
-        cloudinary: {
-          connected: cloudinaryWorking,
-          cloudName: process.env.CLOUDINARY_CLOUD_NAME ? "configured" : "missing",
-          apiKey: process.env.CLOUDINARY_API_KEY ? "configured" : "missing",
-          apiSecret: process.env.CLOUDINARY_API_SECRET ? "configured" : "missing",
-        },
-        endpoints: {
-          profile: "POST /api/upload/profile",
-          post: "POST /api/upload/post/:postId",
-          comment: "POST /api/upload/comment/:commentId",
-          delete: "DELETE /api/upload/image/:publicId",
-          stats: "GET /api/upload/stats",
-        },
-        timestamp: new Date().toISOString(),
-        supportedFormats: ["jpg", "jpeg", "png", "gif", "webp"],
-        limits: {
-          profile: "5MB",
-          post: "10MB",
-          comment: "5MB",
-        },
-      },
-    });
-  } catch (error) {
-    console.error("Upload test error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to test upload system",
-      error: error.message,
-    });
-  }
-});
-
-router.post("/test-upload", profileImageUpload.single("image"), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message: "No image file provided",
-      });
-    }
-
-    res.json({
-      success: true,
-      message: "Test image uploaded successfully!",
-      data: {
-        imageUrl: req.file.path,
-        publicId: req.file.filename,
-        size: req.file.size,
-        format: req.file.format,
-      },
-    });
-  } catch (error) {
-    console.error("Test upload error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server error uploading image",
-      error: error.message,
-    });
-  }
-});
-
-router.get("/profile", auth, async (req, res) => {
-  try {
-    const userId = req.user.userId;
-    const { pool } = require("../config/database");
-    const client = await pool.connect();
-
-    try {
-      const result = await client.query(
-        "SELECT profile_image_url, first_name, last_name FROM users WHERE id = $1",
-        [userId]
-      );
-
-      if (result.rows.length === 0) {
-        return res.status(404).json({
-          success: false,
-          message: "User not found",
-        });
-      }
-
-      const user = result.rows[0];
-
-      res.json({
-        success: true,
-        message: "Profile image retrieved successfully",
-        data: {
-          user: {
-            firstName: user.first_name,
-            lastName: user.last_name,
-            profileImageUrl: user.profile_image_url,
-            hasProfileImage: !!user.profile_image_url,
-          },
-        },
-      });
-    } finally {
-      client.release();
-    }
-  } catch (error) {
-    console.error("Get profile image error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server error getting profile image",
-      error: error.message,
-    });
-  }
-});
+const router = express.Router();
 
 router.post(
   "/profile",

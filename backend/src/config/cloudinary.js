@@ -96,7 +96,7 @@ const profileImageUpload = multer({
     fileSize: 5 * 1024 * 1024,
     files: 1,
   },
-  fileFilter: (req, file, cb) => {
+  fileFilter: (_req, file, cb) => {
     const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
@@ -112,8 +112,8 @@ const postImageUpload = multer({
     fileSize: 10 * 1024 * 1024,
     files: 1,
   },
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
+  fileFilter: (_req, file, cb) => {
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif", "webp"];
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
@@ -128,7 +128,7 @@ const commentImageUpload = multer({
     fileSize: 5 * 1024 * 1024,
     files: 1,
   },
-  fileFilter: (req, file, cb) => {
+  fileFilter: (_req, file, cb) => {
     const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);

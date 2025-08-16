@@ -1,140 +1,111 @@
 // File: backend/src/routes/notifications.js
 const express = require("express");
-const { body, param, query } = require("express-validator");
+const { body, query } = require("express-validator");
 const { auth } = require("../middleware/auth");
+const { adminAuth, requirePermission } = require("../middleware/adminAuth");
 const { handleValidationErrors } = require("../middleware/validation");
 const {
-  registerUserDevice,
-  getUserNotifications,
-  markNotificationRead,
-  markAllNotificationsRead,
-  trackNotificationClick,
-  getNotificationPreferences,
-  updateNotificationPreferences,
+  registerDevice,
+  removeDevice,
+  getUserDevices,
   sendTestNotification,
+  sendTopicNotification,
+  subscribeToTopic,
+  unsubscribeFromTopic,
   getNotificationStats,
-} = require("../controllers/notificationsController");
+  testFirebaseConnection,
+  getServiceStatus,
+} = require("../controllers/pushNotificationController");
 
 const router = express.Router();
 
-const registerDeviceValidation = [
-  body("deviceToken").trim().isLength({ min: 10 }).withMessage("Valid device token is required"),
-  body("deviceType")
+const deviceRegistrationValidation = [
+  body("deviceToken")
+    .isString()
+    .isLength({ min: 140 })
+    .withMessage("Valid device token is required"),
+  body("deviceInfo").optional().isObject().withMessage("Device info must be an object"),
+  body("deviceInfo.platform")
+    .optional()
     .isIn(["ios", "android", "web"])
-    .withMessage("Device type must be ios, android, or web"),
-  body("deviceName")
-    .optional()
-    .trim()
-    .isLength({ max: 100 })
-    .withMessage("Device name must be less than 100 characters"),
-  body("appVersion")
-    .optional()
-    .trim()
-    .matches(/^\d+\.\d+\.\d+$/)
-    .withMessage("App version must be in format x.x.x"),
-];
-
-const updatePreferencesValidation = [
-  body("push_enabled").optional().isBoolean(),
-  body("emergency_alerts").optional().isBoolean(),
-  body("new_messages").optional().isBoolean(),
-  body("post_comments").optional().isBoolean(),
-  body("post_reactions").optional().isBoolean(),
-  body("neighborhood_posts").optional().isBoolean(),
-  body("weather_alerts").optional().isBoolean(),
-  body("community_updates").optional().isBoolean(),
-  body("quiet_hours_enabled").optional().isBoolean(),
-  body("quiet_hours_start")
-    .optional()
-    .matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/),
-  body("quiet_hours_end")
-    .optional()
-    .matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/),
-  body("timezone").optional().isLength({ max: 50 }),
-  body("digest_frequency").optional().isIn(["immediate", "hourly", "daily", "weekly"]),
-  body("max_notifications_per_hour").optional().isInt({ min: 0, max: 100 }),
+    .withMessage("Platform must be ios, android, or web"),
+  body("deviceInfo.version").optional().isString().withMessage("Version must be a string"),
 ];
 
 const testNotificationValidation = [
   body("title")
+    .isString()
+    .isLength({ min: 1, max: 100 })
+    .withMessage("Title is required and must be 1-100 characters"),
+  body("body")
+    .isString()
+    .isLength({ min: 1, max: 255 })
+    .withMessage("Body is required and must be 1-255 characters"),
+  body("data").optional().isObject().withMessage("Data must be an object"),
+  body("targetUserId")
     .optional()
-    .trim()
-    .isLength({ max: 255 })
-    .withMessage("Title must be less than 255 characters"),
-  body("message")
-    .optional()
-    .trim()
-    .isLength({ max: 500 })
-    .withMessage("Message must be less than 500 characters"),
-  body("type")
-    .optional()
-    .isIn(["test", "emergency_alert", "weather_alert", "new_message", "post_comment"])
-    .withMessage("Invalid notification type"),
+    .isInt({ min: 1 })
+    .withMessage("Target user ID must be a positive integer"),
 ];
 
-router.post(
-  "/devices/register",
-  auth,
-  registerDeviceValidation,
-  handleValidationErrors,
-  registerUserDevice
-);
+const topicNotificationValidation = [
+  body("topic")
+    .isString()
+    .matches(/^[a-zA-Z0-9-_.~%]+$/)
+    .withMessage("Topic must contain only valid characters"),
+  body("title")
+    .isString()
+    .isLength({ min: 1, max: 100 })
+    .withMessage("Title is required and must be 1-100 characters"),
+  body("body")
+    .isString()
+    .isLength({ min: 1, max: 255 })
+    .withMessage("Body is required and must be 1-255 characters"),
+  body("data").optional().isObject().withMessage("Data must be an object"),
+];
 
-router.get(
-  "/",
-  auth,
-  [
-    query("limit")
-      .optional()
-      .isInt({ min: 1, max: 100 })
-      .withMessage("Limit must be between 1 and 100"),
-    query("offset").optional().isInt({ min: 0 }).withMessage("Offset must be non-negative"),
-    query("unreadOnly").optional().isBoolean().withMessage("unreadOnly must be a boolean"),
-  ],
-  handleValidationErrors,
-  getUserNotifications
-);
+const topicValidation = [
+  body("topic")
+    .isString()
+    .matches(/^[a-zA-Z0-9-_.~%]+$/)
+    .withMessage("Topic must contain only valid characters"),
+];
 
-router.put(
-  "/:id/read",
-  auth,
-  [param("id").isInt().withMessage("Valid notification ID is required")],
-  handleValidationErrors,
-  markNotificationRead
-);
+router.use(auth);
 
-router.put("/read-all", auth, markAllNotificationsRead);
+router.post("/register", deviceRegistrationValidation, handleValidationErrors, registerDevice);
 
-router.post(
-  "/:id/click",
-  auth,
-  [param("id").isInt().withMessage("Valid notification ID is required")],
-  handleValidationErrors,
-  trackNotificationClick
-);
+router.delete("/register", removeDevice);
 
-router.get("/preferences", auth, getNotificationPreferences);
+router.get("/devices", getUserDevices);
 
-router.put(
-  "/preferences",
-  auth,
-  updatePreferencesValidation,
-  handleValidationErrors,
-  updateNotificationPreferences
-);
+router.post("/subscribe", topicValidation, handleValidationErrors, subscribeToTopic);
+
+router.post("/unsubscribe", topicValidation, handleValidationErrors, unsubscribeFromTopic);
+
+router.get("/status", getServiceStatus);
+
+router.use(adminAuth);
 
 router.post(
   "/test",
-  auth,
+  requirePermission("notifications", "send"),
   testNotificationValidation,
   handleValidationErrors,
   sendTestNotification
 );
 
-// TODO: Add admin middleware
+router.post(
+  "/topic",
+  requirePermission("notifications", "send"),
+  topicNotificationValidation,
+  handleValidationErrors,
+  sendTopicNotification
+);
+
 router.get(
   "/stats",
-  auth,
+  requirePermission("notifications", "read"),
   [
     query("days")
       .optional()
@@ -145,85 +116,6 @@ router.get(
   getNotificationStats
 );
 
-router.get("/test-system", auth, async (req, res) => {
-  try {
-    const { pool } = require("../config/database");
-    const client = await pool.connect();
-
-    try {
-      const tablesResult = await client.query(`
-        SELECT table_name 
-        FROM information_schema.tables 
-        WHERE table_schema = 'public' 
-        AND table_name IN ('notifications', 'user_devices', 'notification_preferences', 'notification_templates')
-        ORDER BY table_name
-      `);
-
-      const tables = tablesResult.rows.map((row) => row.table_name);
-
-      const templatesResult = await client.query(`
-        SELECT COUNT(*) as template_count FROM notification_templates WHERE is_active = true
-      `);
-
-      const devicesResult = await client.query(
-        `
-        SELECT COUNT(*) as device_count FROM user_devices WHERE user_id = $1 AND is_active = true
-      `,
-        [req.user.userId]
-      );
-
-      const notificationsResult = await client.query(
-        `
-        SELECT 
-          COUNT(*) as total_notifications,
-          COUNT(*) FILTER (WHERE is_read = false) as unread_notifications
-        FROM notifications WHERE user_id = $1
-      `,
-        [req.user.userId]
-      );
-
-      res.json({
-        success: true,
-        message: "Notifications system is working!",
-        data: {
-          tables: {
-            found: tables,
-            expected: [
-              "notifications",
-              "user_devices",
-              "notification_preferences",
-              "notification_templates",
-            ],
-            allPresent: tables.length === 4,
-          },
-          templates: {
-            active: parseInt(templatesResult.rows[0].template_count),
-          },
-          userDevices: {
-            active: parseInt(devicesResult.rows[0].device_count),
-          },
-          userNotifications: {
-            total: parseInt(notificationsResult.rows[0].total_notifications),
-            unread: parseInt(notificationsResult.rows[0].unread_notifications),
-          },
-          firebase: {
-            configured: !!(process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_PRIVATE_KEY),
-            projectId: process.env.FIREBASE_PROJECT_ID || "not_configured",
-          },
-          timestamp: new Date().toISOString(),
-        },
-      });
-    } finally {
-      client.release();
-    }
-  } catch (error) {
-    console.error("Notifications test error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Notifications system test failed",
-      error: error.message,
-    });
-  }
-});
+router.get("/test-connection", requirePermission("notifications", "test"), testFirebaseConnection);
 
 module.exports = router;

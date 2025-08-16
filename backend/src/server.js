@@ -6,6 +6,7 @@ validateEnvironment();
 
 const app = require("./app");
 const sessionCleanupJob = require("./jobs/sessionCleanup");
+const pushNotificationService = require("./services/pushNotificationService");
 
 const PORT = process.env.PORT || 3000;
 
@@ -40,68 +41,49 @@ const server = app.listen(PORT, () => {
     console.error("ERROR: Error starting background jobs:", error);
   }
 
+  try {
+    console.log("WORKING: Initializing push notification service");
+    const pushStatus = pushNotificationService.getStatus();
+
+    if (pushStatus.initialized) {
+      console.log("SUCCESS: Push notification service initialized");
+      console.log(`INFO: Firebase Project: ${pushStatus.projectId}`);
+    } else {
+      console.warn("WARN: Push notification service failed to initialize");
+    }
+  } catch (error) {
+    console.error("ERROR: Error initializing push notifications:", error.message);
+  }
+
   console.log("\nINFO: Backend is ready");
   console.log("INFO: Available Endpoints:");
   console.log("\nAuthentication:");
-  console.log(" POST /api/auth/register");
-  console.log(" POST /api/auth/login");
-  console.log(" POST /api/auth/logout");
-  console.log(" POST /api/auth/logout-all");
-  console.log(" POST /api/auth/refresh-token");
-  console.log("   GET  /api/auth/sessions");
-  console.log("     DELETE /api/auth/sessions");
-  console.log("\nProfile:");
-  console.log(" POST /api/auth/change-password");
-  console.log("   GET  /api/auth/profile");
-  console.log("     PUT  /api/auth/profile");
-  console.log("\nEmail:");
-  console.log(" POST /api/auth/forgot-password");
-  console.log(" POST /api/auth/verify-code");
-  console.log(" POST /api/auth/reset-password");
-  console.log(" POST /api/auth/resend-verification");
-  console.log("\nPosts:");
-  console.log(" POST /api/posts");
-  console.log("   GET  /api/posts");
-  console.log("   GET  /api/posts/:id");
-  console.log("\nWeather:");
-  console.log(" GET  /api/weather/current");
-  console.log("\nAlerts:");
-  console.log(" POST /api/alerts");
-  console.log("   GET  /api/alerts");
-  console.log("\nUploads:");
-  console.log(" POST /api/upload/profile");
-  console.log("   GET  /api/upload/profile");
-  console.log("Search:");
-  console.log(" GET  /api/search/posts");
-  console.log(" GET  /api/search/users");
-  console.log("\nNotifications:");
-  console.log(" POST /api/notifications/register-device");
-  console.log("   GET  /api/notifications");
-  console.log("\nAdmin (Authenticated):");
-  console.log(" POST /api/v1/admin/users/:userId/roles");
-  console.log("   PATCH /api/v1/admin/users/:userId/status");
-  console.log("   PATCH /api/v1/admin/moderation/:queueId");
-  console.log("   PATCH /api/v1/admin/settings/:settingKey");
-  console.log("     GET  /api/v1/admin/dashboard");
-  console.log("     GET  /api/v1/admin/users");
-  console.log("     GET  /api/v1/admin/moderation");
-  console.log("     GET  /api/v1/admin/settings");
-  console.log("     GET  /api/v1/admin/analytics");
-  console.log("     GET  /api/v1/admin/roles");
-  console.log("\nINFO:");
-  console.log("Access tokens expire in 15 minutes");
-  console.log("Refresh tokens expire in 7 days");
+  console.log(" POST /api/v1/auth/register");
+  console.log(" POST /api/v1/auth/login");
+  console.log(" POST /api/v1/auth/logout");
+  console.log(" POST /api/v1/auth/logout-all");
+  console.log(" POST /api/v1/auth/refresh-token");
+
+  console.log("\nPush Notifications:");
+  console.log(" POST /api/v1/notifications/register");
+  console.log("  GET /api/v1/notifications/devices");
+  console.log(" POST /api/v1/notifications/subscribe");
+  console.log(" POST /api/v1/notifications/test (admin)");
+
   console.log("Session cleanup runs daily at 2:00 AM UTC");
   console.log("Max 5 active sessions per user");
   console.log("Check /health for system status");
   console.log("Admin access requires special role assignment");
+
   if (process.env.NODE_ENV === "development") {
     console.log("\nDevelopment Tools:");
-    console.log(" POST /api/auth/send-test-email - Send test email");
+    console.log(" POST /api/v1/auth/send-test-email - Send test email");
     console.log("   GET  /analytics - API usage statistics");
     console.log("   GET  /cache/stats - Cache performance");
-    console.log("   GET  /api/auth/test-email - Test email service");
+    console.log("   GET  /api/v1/auth/test-email - Test email service");
     console.log("     DELETE /cache - Clear cache");
+    console.log("   GET  /api/v1/notifications/status - Push notification status");
+    console.log("   npm run push:test - Test push notifications");
     console.log("\n");
   }
 });
@@ -119,6 +101,12 @@ const performGracefulShutdown = async (signal) => {
   isShuttingDown = true;
   console.log(`\n${signal} received, shutting down gracefully`);
   console.log("WORKING: Stopping background jobs");
+
+  try {
+    console.log("INFO: Push notification service shutdown (no cleanup needed)");
+  } catch (error) {
+    console.error("ERROR: Error during push notification shutdown:", error);
+  }
 
   try {
     sessionCleanupJob.stop();

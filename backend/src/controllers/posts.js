@@ -1,11 +1,17 @@
 // File: backend/src/controllers/posts.js
 const { pool } = require("../config/database");
+const {
+  handleDatabaseError: _handleDatabaseError,
+  handleNotFoundError: _handleNotFoundError,
+  handleServerError,
+  createSuccessResponse,
+} = require("../middleware/errorHandler");
 
 const getPosts = async (req, res) => {
   try {
     const { limit = 20, offset = 0, postType, priority, city, state } = req.query;
 
-    const client = await pool.connect();
+    const client = await req.getDbClient();
 
     try {
       let userCity = city;
@@ -121,10 +127,8 @@ const getPosts = async (req, res) => {
         },
       }));
 
-      res.json({
-        success: true,
-        message: "Posts retrieved successfully",
-        data: {
+      res.json(
+        createSuccessResponse("Posts retrieved successfully", {
           posts,
           location: userCity && userState ? { city: userCity, state: userState } : null,
           pagination: {
@@ -132,18 +136,13 @@ const getPosts = async (req, res) => {
             offset: parseInt(offset),
             count: posts.length,
           },
-        },
-      });
+        })
+      );
     } finally {
       client.release();
     }
   } catch (error) {
-    console.error("Get posts error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server error fetching posts",
-      error: process.env.NODE_ENV === "development" ? error.message : undefined,
-    });
+    return handleServerError(error, req, res, "fetching posts");
   }
 };
 

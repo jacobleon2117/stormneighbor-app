@@ -2,6 +2,7 @@
 const express = require("express");
 const { body, query, param } = require("express-validator");
 const { auth } = require("../middleware/auth");
+const { adminAuth } = require("../middleware/adminAuth");
 const { handleValidationErrors } = require("../middleware/validation");
 const { cacheConfigs } = require("../middleware/cache");
 const {
@@ -164,7 +165,8 @@ router.delete(
 
 router.get(
   "/analytics",
-  auth, // TODO: Add admin middleware
+  auth,
+  adminAuth,
   [
     query("city").optional().trim().isLength({ max: 100 }),
     query("state").optional().trim().isLength({ max: 50 }),

@@ -7,6 +7,7 @@ const {
   uploadCommentImage,
   deleteImageById,
   getUploadStats,
+  testUploadSystem,
 } = require("../controllers/uploadController");
 const { profileImageUpload, postImageUpload, commentImageUpload } = require("../config/cloudinary");
 
@@ -76,7 +77,9 @@ router.delete("/image/:publicId", auth, deleteImageById);
 
 router.get("/stats", auth, getUploadStats);
 
-router.use((error, req, res, _next) => {
+router.get("/test", testUploadSystem);
+
+router.use((error, _req, res, _next) => {
   console.error("Upload route error:", error);
 
   if (error.code === "LIMIT_FILE_SIZE") {

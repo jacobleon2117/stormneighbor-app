@@ -500,6 +500,11 @@ router.post(
     body("reason")
       .isIn(["spam", "harassment", "inappropriate", "misinformation", "other"])
       .withMessage("Invalid report reason"),
+    body("description")
+      .optional()
+      .trim()
+      .isLength({ max: 500 })
+      .withMessage("Description must be under 500 characters"),
   ],
   handleValidationErrors,
   async (req, res) => {
@@ -533,7 +538,7 @@ router.post(
       }
 
       const existingReport = await client.query(
-        "SELECT id FROM comment_reports WHERE comment_id = $1 AND reporter_id = $2",
+        "SELECT id FROM comment_reports WHERE comment_id = $1 AND reported_by = $2",
         [commentId, userId]
       );
 
@@ -545,17 +550,20 @@ router.post(
         });
       }
 
-      await client.query(
-        "INSERT INTO comment_reports (comment_id, reporter_id, reason) VALUES ($1, $2, $3)",
-        [commentId, userId, reason]
+      const reportResult = await client.query(
+        "INSERT INTO comment_reports (comment_id, reported_by, report_reason, report_description) VALUES ($1, $2, $3, $4) RETURNING id, created_at",
+        [commentId, userId, reason, req.body.description || null]
       );
 
-      res.json({
+      res.status(201).json({
         success: true,
         message: "Comment reported successfully",
         data: {
+          reportId: reportResult.rows[0].id,
           commentId: parseInt(commentId),
           reason,
+          description: req.body.description || null,
+          createdAt: reportResult.rows[0].created_at,
         },
       });
     } catch (error) {

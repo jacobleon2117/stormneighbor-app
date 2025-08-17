@@ -1,6 +1,21 @@
 // File: backend/src/app.js
 require("dotenv").config();
 
+const EnvironmentValidator = require("./utils/envValidator");
+if (process.env.NODE_ENV !== "test") {
+  const validator = new EnvironmentValidator();
+  const result = validator.validate();
+
+  if (!result.isValid) {
+    console.error("❌ Environment validation failed. Application cannot start.");
+    process.exit(1);
+  }
+
+  if (result.warnings.length > 0 && process.env.NODE_ENV === "production") {
+    console.warn("⚠️  Production environment has configuration warnings. Please review.");
+  }
+}
+
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
@@ -16,6 +31,8 @@ const {
   healthCheck,
 } = require("./middleware/logging");
 const { getCacheStats, clearCache } = require("./middleware/cache");
+const { databaseMiddleware } = require("./middleware/database");
+const { globalErrorHandler } = require("./middleware/errorHandler");
 const { getSecurityConfig } = require("../config/security-environments");
 const securityMiddleware = require("./middleware/security");
 const sslSecurity = require("./middleware/sslSecurity");
@@ -95,6 +112,7 @@ app.use(performanceMonitor);
 app.use(analyticsTracker.middleware);
 
 app.use(sanitizeInput);
+app.use(databaseMiddleware);
 
 app.get("/", (_req, res) => {
   res.json({
@@ -107,6 +125,27 @@ app.get("/", (_req, res) => {
 });
 
 app.get("/health", healthCheck);
+
+app.get("/analytics", (_req, res) => {
+  if (process.env.NODE_ENV === "production") {
+    return res.status(404).json({
+      success: false,
+      message: "Route not found",
+      code: "NOT_FOUND",
+    });
+  }
+
+  const analytics = analyticsTracker.getStats();
+  res.json({
+    success: true,
+    message: "API Analytics",
+    data: {
+      analytics,
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV,
+    },
+  });
+});
 
 app.get("/api/v1/cache/stats", getCacheStats);
 app.post("/api/v1/cache/clear", clearCache);
@@ -153,6 +192,10 @@ try {
   const notificationRoutes = require("./routes/notifications");
   app.use("/api/v1/notifications", notificationRoutes);
 
+  console.log("Loading backup routes...");
+  const backupRoutes = require("./routes/backup");
+  app.use("/api/v1/admin/backups", backupRoutes);
+
   console.log("Loading admin routes...");
   const adminRoutes = require("./routes/admin");
   app.use("/api/v1/admin", adminRoutes);
@@ -169,54 +212,7 @@ if (process.env.NODE_ENV !== "test") {
   app.use(errorLogger);
 }
 
-app.use((err, req, res, _next) => {
-  if (
-    err.message.includes("Invalid JSON") ||
-    err.message.includes("too large") ||
-    err.type === "entity.parse.failed"
-  ) {
-    securityMiddleware.logSecurityEvent(req, "MALFORMED_REQUEST", {
-      error: err.message,
-      type: err.type,
-    });
-  }
-
-  if (process.env.NODE_ENV !== "test") {
-    console.error("Global error handler:", err);
-  }
-
-  if (err.type === "entity.parse.failed") {
-    return res.status(400).json({
-      success: false,
-      message: "Invalid request format",
-      code: "INVALID_REQUEST",
-    });
-  }
-
-  if (err.type === "entity.too.large") {
-    return res.status(413).json({
-      success: false,
-      message: "Request too large",
-      code: "REQUEST_TOO_LARGE",
-    });
-  }
-
-  if (process.env.NODE_ENV === "production") {
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-      code: "INTERNAL_ERROR",
-    });
-  } else {
-    res.status(500).json({
-      success: false,
-      message: err.message,
-      stack: process.env.NODE_ENV === "test" ? undefined : err.stack,
-      requestId: req.requestId,
-      code: "INTERNAL_ERROR",
-    });
-  }
-});
+app.use(globalErrorHandler);
 
 app.use((req, res) => {
   if (

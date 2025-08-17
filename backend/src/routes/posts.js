@@ -88,6 +88,17 @@ const reactionValidation = [
     .withMessage("Invalid reaction type"),
 ];
 
+const reportValidation = [
+  body("reason")
+    .isIn(["spam", "harassment", "inappropriate", "misinformation", "other"])
+    .withMessage("Invalid report reason"),
+  body("description")
+    .optional()
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage("Description must be under 500 characters"),
+];
+
 router.get("/", auth, getPosts);
 
 router.get(
@@ -186,6 +197,82 @@ router.delete(
   [param("commentId").isInt().withMessage("Valid comment ID is required")],
   handleValidationErrors,
   removeCommentReaction
+);
+
+router.post(
+  "/:id/report",
+  auth,
+  [param("id").isInt({ min: 1 }).withMessage("Valid post ID is required"), ...reportValidation],
+  handleValidationErrors,
+  async (req, res) => {
+    const { pool } = require("../config/database");
+    const client = await pool.connect();
+
+    try {
+      const { id: postId } = req.params;
+      const { reason, description } = req.body;
+      const userId = req.user.userId;
+
+      const postCheck = await client.query("SELECT id, user_id FROM posts WHERE id = $1", [postId]);
+
+      if (postCheck.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Post not found",
+          code: "POST_NOT_FOUND",
+        });
+      }
+
+      const post = postCheck.rows[0];
+
+      if (post.user_id === userId) {
+        return res.status(400).json({
+          success: false,
+          message: "Cannot report your own post",
+          code: "SELF_REPORT_ERROR",
+        });
+      }
+
+      const existingReport = await client.query(
+        "SELECT id FROM post_reports WHERE post_id = $1 AND reported_by = $2",
+        [postId, userId]
+      );
+
+      if (existingReport.rows.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: "You have already reported this post",
+          code: "ALREADY_REPORTED",
+        });
+      }
+
+      const reportResult = await client.query(
+        "INSERT INTO post_reports (post_id, reported_by, report_reason, report_description) VALUES ($1, $2, $3, $4) RETURNING id, created_at",
+        [postId, userId, reason, description || null]
+      );
+
+      res.status(201).json({
+        success: true,
+        message: "Post reported successfully",
+        data: {
+          reportId: reportResult.rows[0].id,
+          postId: parseInt(postId),
+          reason,
+          description: description || null,
+          createdAt: reportResult.rows[0].created_at,
+        },
+      });
+    } catch (error) {
+      console.error("Post report error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Server error reporting post",
+        error: process.env.NODE_ENV === "development" ? error.message : undefined,
+      });
+    } finally {
+      client.release();
+    }
+  }
 );
 
 router.get("/test", auth, async (req, res) => {

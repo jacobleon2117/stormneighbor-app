@@ -647,6 +647,78 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION get_alerts_by_location(
+    location_city_param VARCHAR(100),
+    location_state_param VARCHAR(50)
+)
+RETURNS TABLE (
+    id INTEGER,
+    alert_id VARCHAR(255),
+    title VARCHAR(255),
+    description TEXT,
+    severity VARCHAR(20),
+    alert_type VARCHAR(50),
+    source VARCHAR(50),
+    location_city VARCHAR(100),
+    location_state VARCHAR(50),
+    location_county VARCHAR(100),
+    latitude DECIMAL(10, 8),
+    longitude DECIMAL(11, 8),
+    start_time TIMESTAMP WITH TIME ZONE,
+    end_time TIMESTAMP WITH TIME ZONE,
+    is_active BOOLEAN,
+    created_by INTEGER,
+    metadata JSONB,
+    created_at TIMESTAMP WITH TIME ZONE,
+    updated_at TIMESTAMP WITH TIME ZONE
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        wa.id,
+        wa.alert_id,
+        wa.title,
+        wa.description,
+        wa.severity,
+        wa.alert_type,
+        wa.source,
+        wa.location_city,
+        wa.location_state,
+        wa.location_county,
+        wa.latitude,
+        wa.longitude,
+        wa.start_time,
+        wa.end_time,
+        wa.is_active,
+        wa.created_by,
+        wa.metadata,
+        wa.created_at,
+        wa.updated_at
+    FROM weather_alerts wa
+    WHERE wa.is_active = TRUE
+      AND (wa.end_time IS NULL OR wa.end_time > NOW())
+      AND (
+        (LOWER(wa.location_city) = LOWER(location_city_param) AND 
+         LOWER(wa.location_state) = LOWER(location_state_param))
+        OR
+        (wa.location_city IS NULL AND 
+         LOWER(wa.location_state) = LOWER(location_state_param))
+        OR
+        (wa.location_county IS NOT NULL AND 
+         LOWER(wa.location_state) = LOWER(location_state_param))
+      )
+    ORDER BY 
+      CASE wa.severity
+        WHEN 'CRITICAL' THEN 1
+        WHEN 'HIGH' THEN 2
+        WHEN 'MODERATE' THEN 3
+        WHEN 'LOW' THEN 4
+        ELSE 5
+      END,
+      wa.start_time DESC;
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE OR REPLACE FUNCTION cleanup_old_data()
 RETURNS void AS $$
 BEGIN

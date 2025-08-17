@@ -39,7 +39,7 @@ describe("Health Check (Clean)", () => {
     const originalEnv = process.env.NODE_ENV;
     process.env.NODE_ENV = "development";
 
-    const response = await request(server).get("/cache/stats").expect(200);
+    const response = await request(server).get("/api/v1/cache/stats").expect(200);
     expect(response.body).toHaveProperty("success", true);
     expect(response.body).toHaveProperty("data");
     expect(response.body.data).toHaveProperty("cache");

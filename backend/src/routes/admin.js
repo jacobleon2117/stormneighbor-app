@@ -11,6 +11,10 @@ const {
   requireAnalytics,
 } = require("../middleware/adminAuth");
 const { logAdminAction } = require("../utils/adminLogger");
+const { body, param, query } = require("express-validator");
+const { handleValidationErrors } = require("../middleware/validation");
+const { getReports, reviewReport, getReportStats } = require("../controllers/reportsController");
+const weatherAlertService = require("../services/weatherAlertService");
 
 router.use(auth);
 router.use(adminAuth);
@@ -304,6 +308,154 @@ router.post("/users/:userId/roles", requireSuperAdmin, async (req, res) => {
       client.release();
     }
   });
+});
+
+router.get(
+  "/reports",
+  requirePermission("reports", "read"),
+  [
+    query("status")
+      .optional()
+      .isIn(["pending", "approved", "rejected"])
+      .withMessage("Invalid status filter"),
+    query("type").optional().isIn(["post", "comment"]).withMessage("Invalid type filter"),
+    query("limit")
+      .optional()
+      .isInt({ min: 1, max: 100 })
+      .withMessage("Limit must be between 1 and 100"),
+    query("offset")
+      .optional()
+      .isInt({ min: 0 })
+      .withMessage("Offset must be a non-negative integer"),
+  ],
+  handleValidationErrors,
+  getReports
+);
+
+router.put(
+  "/reports/:id",
+  requirePermission("reports", "review"),
+  [
+    param("id").isInt({ min: 1 }).withMessage("Valid report ID is required"),
+    body("action")
+      .isIn(["approved", "rejected", "pending"])
+      .withMessage("Action must be approved, rejected, or pending"),
+    body("reason")
+      .optional()
+      .trim()
+      .isLength({ max: 500 })
+      .withMessage("Reason must be under 500 characters"),
+  ],
+  handleValidationErrors,
+  reviewReport
+);
+
+router.get("/reports/stats", requirePermission("reports", "read"), getReportStats);
+
+router.post("/weather/fetch-alerts", requirePermission("weather", "manage"), async (req, res) => {
+  try {
+    console.log(`Admin ${req.user.userId} triggered manual weather alert fetch`);
+
+    const result = await weatherAlertService.fetchAndStoreAlerts();
+
+    await logAdminAction(
+      req.user.userId,
+      "manual_weather_fetch",
+      "weather_alerts",
+      null,
+      `Fetched ${result.newAlerts} new, ${result.updatedAlerts} updated alerts`
+    );
+
+    res.json({
+      success: true,
+      message: "Weather alerts fetched successfully",
+      data: {
+        newAlerts: result.newAlerts,
+        updatedAlerts: result.updatedAlerts,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  } catch (error) {
+    console.error("Manual weather alert fetch error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch weather alerts",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
+});
+
+router.get("/weather/service-status", requirePermission("weather", "read"), async (req, res) => {
+  try {
+    const status = weatherAlertService.getStatus();
+
+    res.json({
+      success: true,
+      message: "Weather alert service status",
+      data: status,
+    });
+  } catch (error) {
+    console.error("Get weather service status error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to get service status",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
+});
+
+router.post("/weather/service/start", requireSuperAdmin, async (req, res) => {
+  try {
+    await weatherAlertService.start();
+
+    await logAdminAction(
+      req.user.userId,
+      "start_weather_service",
+      "weather_service",
+      null,
+      "Started automated weather alert service"
+    );
+
+    res.json({
+      success: true,
+      message: "Weather alert service started",
+      data: weatherAlertService.getStatus(),
+    });
+  } catch (error) {
+    console.error("Start weather service error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to start weather service",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
+});
+
+router.post("/weather/service/stop", requireSuperAdmin, async (req, res) => {
+  try {
+    weatherAlertService.stop();
+
+    await logAdminAction(
+      req.user.userId,
+      "stop_weather_service",
+      "weather_service",
+      null,
+      "Stopped automated weather alert service"
+    );
+
+    res.json({
+      success: true,
+      message: "Weather alert service stopped",
+      data: weatherAlertService.getStatus(),
+    });
+  } catch (error) {
+    console.error("Stop weather service error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to stop weather service",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
 });
 
 module.exports = router;

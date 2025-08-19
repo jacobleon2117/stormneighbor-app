@@ -520,9 +520,9 @@ const getProfile = async (req, res) => {
             coordinates:
               user.longitude && user.latitude
                 ? {
-                    longitude: parseFloat(user.longitude),
-                    latitude: parseFloat(user.latitude),
-                  }
+                  longitude: parseFloat(user.longitude),
+                  latitude: parseFloat(user.latitude),
+                }
                 : null,
           },
           emailVerified: user.email_verified,
@@ -573,18 +573,19 @@ const updateProfile = async (req, res) => {
         updated_at = NOW()
       `;
 
-      const values = [firstName, lastName, phone, bio, city, state, zipCode, address, userId];
+      const values = [firstName, lastName, phone, bio, city, state, zipCode, address];
 
       if (latitude !== undefined && longitude !== undefined) {
         const lat = parseFloat(latitude);
         const lng = parseFloat(longitude);
 
         if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
-          updateQuery += ", location = ST_SetSRID(ST_MakePoint($10, $11), 4326)";
-          values.splice(-1, 0, lng, lat);
+          updateQuery += ", location = ST_SetSRID(ST_MakePoint($9, $10), 4326)";
+          values.push(lng, lat);
         }
       }
 
+      values.push(userId);
       updateQuery += " WHERE id = $" + values.length + " RETURNING id";
 
       const result = await client.query(updateQuery, values);

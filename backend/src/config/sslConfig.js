@@ -72,11 +72,11 @@ class SSLConfiguration {
 
       ciphers: this.isProduction
         ? [
-            "ECDHE-RSA-AES128-GCM-SHA256",
-            "ECDHE-RSA-AES256-GCM-SHA384",
-            "ECDHE-RSA-AES128-SHA256",
-            "ECDHE-RSA-AES256-SHA384",
-          ].join(":")
+          "ECDHE-RSA-AES128-GCM-SHA256",
+          "ECDHE-RSA-AES256-GCM-SHA384",
+          "ECDHE-RSA-AES128-SHA256",
+          "ECDHE-RSA-AES256-SHA384",
+        ].join(":")
         : null,
 
       honorCipherOrder: this.isProduction,
@@ -152,8 +152,8 @@ class SSLConfiguration {
 
     return {
       ...baseConfig,
-      origin: true,
-      credentials: true,
+      origin: "*",
+      credentials: false,
     };
   }
 

@@ -2,8 +2,8 @@ import axios, { AxiosInstance, AxiosResponse, AxiosError } from "axios";
 import * as SecureStore from "expo-secure-store";
 
 const API_BASE_URL = __DEV__
-  ? "http://localhost:3000/api/v1" // Dev
-  : "https://i'll-add-this-later/api/v1"; // Prod
+  ? "http://192.168.1.89:3000/api/v1"
+  : "https://i'll-add-this-later/api/v1";
 
 const ACCESS_TOKEN_KEY = "access_token";
 const REFRESH_TOKEN_KEY = "refresh_token";
@@ -14,7 +14,7 @@ class ApiService {
   constructor() {
     this.api = axios.create({
       baseURL: API_BASE_URL,
-      timeout: 10000,
+      timeout: 30000,
       headers: {
         "Content-Type": "application/json",
       },

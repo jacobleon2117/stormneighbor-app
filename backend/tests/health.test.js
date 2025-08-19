@@ -1,4 +1,3 @@
-// File: backend/tests/health.test.js
 const request = require("supertest");
 const http = require("http");
 const app = require("../src/app");

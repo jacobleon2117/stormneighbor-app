@@ -1,4 +1,3 @@
-// File: backend/scripts/health-check.js
 const https = require("https");
 const http = require("http");
 

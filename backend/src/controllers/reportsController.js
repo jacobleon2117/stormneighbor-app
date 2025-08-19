@@ -1,4 +1,3 @@
-// File: backend/src/controllers/reportsController.js
 const { pool: _pool } = require("../config/database");
 const {
   handleDatabaseError,
@@ -212,14 +211,34 @@ const reviewReport = async (req, res) => {
 
       const result = await client.query(updateQuery, [action, adminUserId, id]);
 
-      // If approved and it's a serious violation, we might want to take action on the content
-      // For now, we'll just log it
       if (action === "approved") {
         console.log(
           `Report ${id} approved by admin ${adminUserId} for ${reportType} ${reportData[`${reportType}_id`]}`
         );
-        // TODO: Add logic to handle content based on report reason
-        // e.g., hide content, warn user, suspend user, etc.
+
+        const reportDetailsQuery =
+          reportType === "post"
+            ? "SELECT report_reason, reported_by, post_id FROM post_reports WHERE id = $1"
+            : "SELECT reason, reporter_id, comment_id FROM comment_reports WHERE id = $1";
+
+        const reportDetails = await client.query(reportDetailsQuery, [id]);
+
+        if (reportDetails.rows.length > 0) {
+          const reportInfo = reportDetails.rows[0];
+          const reportReason = reportInfo.report_reason || reportInfo.reason;
+          const contentId = reportInfo.post_id || reportInfo.comment_id;
+          const reporterId = reportInfo.reported_by || reportInfo.reporter_id;
+
+          await handleContentModeration(
+            client,
+            reportType,
+            contentId,
+            reportReason,
+            adminUserId,
+            reporterId,
+            id
+          );
+        }
       }
 
       res.json(
@@ -308,8 +327,119 @@ const getReportStats = async (req, res) => {
   }
 };
 
+const handleContentModeration = async (
+  client,
+  contentType,
+  contentId,
+  reason,
+  adminUserId,
+  reporterId,
+  reportId
+) => {
+  try {
+    const actions = [];
+
+    const moderationRules = {
+      spam: {
+        contentAction: "hide",
+        userWarning: true,
+        severity: "medium",
+      },
+      harassment: {
+        contentAction: "hide",
+        userWarning: true,
+        tempSuspension: "24h",
+        severity: "high",
+      },
+      inappropriate: {
+        contentAction: "hide",
+        userWarning: true,
+        severity: "medium",
+      },
+      misinformation: {
+        contentAction: "hide",
+        userWarning: true,
+        severity: "high",
+      },
+      other: {
+        contentAction: "flag",
+        userWarning: false,
+        severity: "low",
+      },
+    };
+
+    const rule = moderationRules[reason] || moderationRules.other;
+
+    if (rule.contentAction === "hide") {
+      const updateQuery =
+        contentType === "post"
+          ? "UPDATE posts SET is_active = false, updated_at = NOW() WHERE id = $1"
+          : "UPDATE comments SET is_active = false, updated_at = NOW() WHERE id = $1";
+
+      await client.query(updateQuery, [contentId]);
+      actions.push("Content hidden");
+
+      console.log(`[MODERATION] ${contentType.toUpperCase()} ${contentId} hidden due to ${reason}`);
+    } else if (rule.contentAction === "flag") {
+      console.log(
+        `[MODERATION] ${contentType.toUpperCase()} ${contentId} flagged for manual review due to ${reason}`
+      );
+      actions.push("Content flagged for review");
+    }
+
+    const ownerQuery =
+      contentType === "post"
+        ? "SELECT user_id FROM posts WHERE id = $1"
+        : "SELECT user_id FROM comments WHERE id = $1";
+
+    const ownerResult = await client.query(ownerQuery, [contentId]);
+
+    if (ownerResult.rows.length > 0) {
+      const contentOwnerId = ownerResult.rows[0].user_id;
+
+      if (rule.userWarning) {
+        console.log(
+          `[MODERATION] User ${contentOwnerId} warned for ${reason} violation in ${contentType} ${contentId}`
+        );
+        actions.push(`User warned for ${reason}`);
+      }
+
+      if (rule.tempSuspension) {
+        console.log(
+          `[MODERATION] User ${contentOwnerId} should be suspended for ${rule.tempSuspension} due to ${reason}`
+        );
+        actions.push(`User flagged for ${rule.tempSuspension} suspension`);
+      }
+    }
+
+    await client.query(
+      `INSERT INTO admin_actions (admin_id, action_type, target_type, target_id, details)
+       VALUES ($1, 'content_moderation', $2, $3, $4)`,
+      [
+        adminUserId,
+        contentType,
+        contentId,
+        JSON.stringify({
+          report_id: reportId,
+          reason: reason,
+          actions: actions,
+          severity: rule.severity,
+          timestamp: new Date().toISOString(),
+        }),
+      ]
+    );
+
+    console.log(
+      `[MODERATION] Actions completed for ${contentType} ${contentId}: ${actions.join(", ")}`
+    );
+  } catch (error) {
+    console.error("Content moderation error:", error);
+  }
+};
+
 module.exports = {
   getReports,
   reviewReport,
   getReportStats,
+  handleContentModeration,
 };

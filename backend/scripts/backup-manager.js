@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-// File: backend/scripts/backup-manager.js
 require("dotenv").config();
 const backupService = require("../src/services/backupService");
 
@@ -295,33 +294,33 @@ async function main() {
 
   try {
     switch (command) {
-      case "create":
-        await createBackup(options);
-        break;
-      case "list":
-        await listBackups();
-        break;
-      case "restore":
-        await restoreBackup(process.argv[3], options);
-        break;
-      case "delete":
-        await deleteBackup(process.argv[3], options);
-        break;
-      case "cleanup":
-        await cleanupBackups();
-        break;
-      case "stats":
-        await showStats();
-        break;
-      case "test":
-        await testBackupSystem();
-        break;
-      case "schedule":
-        await startScheduler();
-        break;
-      default:
-        console.error(`ERROR: Command not implemented: ${command}`);
-        process.exitCode = 1;
+    case "create":
+      await createBackup(options);
+      break;
+    case "list":
+      await listBackups();
+      break;
+    case "restore":
+      await restoreBackup(process.argv[3], options);
+      break;
+    case "delete":
+      await deleteBackup(process.argv[3], options);
+      break;
+    case "cleanup":
+      await cleanupBackups();
+      break;
+    case "stats":
+      await showStats();
+      break;
+    case "test":
+      await testBackupSystem();
+      break;
+    case "schedule":
+      await startScheduler();
+      break;
+    default:
+      console.error(`ERROR: Command not implemented: ${command}`);
+      process.exitCode = 1;
     }
   } catch (error) {
     console.error("ERROR: Operation failed:", error.message);

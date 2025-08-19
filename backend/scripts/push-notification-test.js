@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-// File: backend/scripts/push-notification-test.js
 require("dotenv").config();
 
 async function testPushNotificationSystem() {

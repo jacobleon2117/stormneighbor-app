@@ -1,4 +1,3 @@
-// File: backend/src/jobs/sessionCleanup.js
 const cron = require("node-cron");
 const tokenService = require("../services/tokenService");
 
@@ -10,13 +9,13 @@ class SessionCleanupJob {
   }
 
   start() {
-    console.log("Starting session cleanup job...");
+    console.log("Starting session cleanup job");
 
     this.cronJob = cron.schedule(
       "0 2 * * *",
       async () => {
         if (this.isRunning) {
-          console.log("Session cleanup already running, skipping...");
+          console.log("Session cleanup already running, skipping");
           return;
         }
 
@@ -63,7 +62,7 @@ class SessionCleanupJob {
   }
 
   stop() {
-    console.log("Stopping session cleanup job...");
+    console.log("Stopping session cleanup job");
 
     if (this.startupTimeout) {
       clearTimeout(this.startupTimeout);

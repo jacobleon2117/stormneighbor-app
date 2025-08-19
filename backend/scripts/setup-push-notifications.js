@@ -1,5 +1,3 @@
-// File: backend/scripts/setup-push-notifications.js
-
 require("dotenv").config();
 const { pool } = require("../src/config/database");
 

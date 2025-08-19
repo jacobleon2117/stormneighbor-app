@@ -1,4 +1,3 @@
-// File: backend/src/controllers/weatherController.js
 const axios = require("axios");
 const { pool } = require("../config/database");
 const { validationResult } = require("express-validator");

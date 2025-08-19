@@ -1,4 +1,3 @@
-// File: backend/src/middleware/adminAuth.js
 const { pool } = require("../config/database");
 const { logAdminAction } = require("../utils/adminLogger");
 

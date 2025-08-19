@@ -1,4 +1,3 @@
-// File: backend/src/controllers/posts.js
 const { pool } = require("../config/database");
 const {
   handleDatabaseError: _handleDatabaseError,

@@ -1,4 +1,3 @@
-// File: backend/src/routes/search.js
 const express = require("express");
 const { body, query, param } = require("express-validator");
 const { auth } = require("../middleware/auth");

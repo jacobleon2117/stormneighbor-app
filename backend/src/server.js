@@ -1,4 +1,3 @@
-// File: backend/src/server.js
 require("dotenv").config();
 
 const validateEnvironment = require("./config/validateEnv");
@@ -57,7 +56,7 @@ const server = app.listen(PORT, HOST, () => {
       console.log("SUCCESS: Push notification service initialized");
       console.log(`INFO: Firebase Project: ${pushStatus.projectId}`);
     } else {
-      console.warn("WARN: Push notification service failed to initialize");
+      console.warn("WARNING: Push notification service failed to initialize");
     }
   } catch (error) {
     console.error("ERROR: Error initializing push notifications:", error.message);
@@ -96,7 +95,7 @@ const server = app.listen(PORT, HOST, () => {
 });
 
 const gracefulShutdown = () => {
-  console.log("\nINFO: Received shutdown signal, closing server gracefully...");
+  console.log("\nINFO: Received shutdown signal, closing server gracefully");
 
   server.close((err) => {
     if (err) {
@@ -117,7 +116,7 @@ const gracefulShutdown = () => {
   });
 
   setTimeout(() => {
-    console.error("WARN: Forcing server shutdown...");
+    console.error("WARNING: Forcing server shutdown");
     process.exitCode = 1;
   }, 10000);
 };

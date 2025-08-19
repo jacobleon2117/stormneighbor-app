@@ -1,4 +1,3 @@
-// File: backend/src/middleware/sslSecurity.js
 const crypto = require("crypto");
 
 class SSLSecurityMiddleware {

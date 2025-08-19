@@ -1,4 +1,3 @@
-// File: backend/src/services/backupService.js
 const { spawn } = require("child_process");
 const fs = require("fs").promises;
 const path = require("path");
@@ -191,25 +190,7 @@ class DatabaseBackupService {
   }
 
   async uploadToRemoteStorage(filepath, backupInfo) {
-    // This is a placeholder for remote storage upload
-    // You can implement AWS S3, Google Cloud Storage, etc.
     console.log("Remote upload not configured - implement uploadToRemoteStorage method");
-
-    // Example AWS S3 implementation:
-    /*
-    const AWS = require('aws-sdk');
-    const s3 = new AWS.S3();
-    
-    const fileStream = require('fs').createReadStream(filepath);
-    const uploadParams = {
-      Bucket: process.env.BACKUP_S3_BUCKET,
-      Key: `backups/${backupInfo.filename}`,
-      Body: fileStream
-    };
-    
-    const result = await s3.upload(uploadParams).promise();
-    console.log('Backup uploaded to S3:', result.Location);
-    */
   }
 
   async cleanupOldBackups() {

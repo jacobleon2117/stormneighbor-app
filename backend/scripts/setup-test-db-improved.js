@@ -1,4 +1,3 @@
-// File: backend/scripts/setup-test-db-improved.js
 const { Pool } = require("pg");
 const fs = require("fs");
 const path = require("path");
@@ -223,7 +222,7 @@ async function createTestData(client) {
       `Test data created: ${userCount.rows[0].count} users, ${postCount.rows[0].count} posts`
     );
   } catch (error) {
-    console.log("WARN: Test data creation warning:", error.message);
+    console.log("WARNING: Test data creation warning:", error.message);
   }
 }
 

@@ -1,4 +1,3 @@
-// File: backend/src/middleware/database.js
 const { pool } = require("../config/database");
 
 const dbStats = {

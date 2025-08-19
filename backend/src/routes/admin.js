@@ -1,4 +1,3 @@
-// File: backend/src/routes/admin.js
 const express = require("express");
 const router = express.Router();
 const { pool } = require("../config/database");
@@ -7,7 +6,7 @@ const {
   adminAuth,
   requirePermission,
   requireSuperAdmin,
-  // requireModerator, unused need to add back.
+  requireModerator,
   requireAnalytics,
 } = require("../middleware/adminAuth");
 const { logAdminAction } = require("../utils/adminLogger");
@@ -312,7 +311,7 @@ router.post("/users/:userId/roles", requireSuperAdmin, async (req, res) => {
 
 router.get(
   "/reports",
-  requirePermission("reports", "read"),
+  requireModerator,
   [
     query("status")
       .optional()
@@ -334,7 +333,7 @@ router.get(
 
 router.put(
   "/reports/:id",
-  requirePermission("reports", "review"),
+  requireModerator,
   [
     param("id").isInt({ min: 1 }).withMessage("Valid report ID is required"),
     body("action")

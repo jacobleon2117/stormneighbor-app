@@ -1,4 +1,3 @@
-// File: backend/src/services/tokenService.js
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const { pool } = require("../config/database");
@@ -15,8 +14,8 @@ class TokenService {
 
   /**
    * Generate access token
-   * @param {number} userId 
-   * @param {object} additionalPayload 
+   * @param {number} userId
+   * @param {object} additionalPayload
    * @returns {string}
    */
   generateAccessToken(userId, additionalPayload = {}) {
@@ -51,19 +50,19 @@ class TokenService {
     const userAgent = req.get("User-Agent") || "";
     const acceptLanguage = req.get("Accept-Language") || "";
     const acceptEncoding = req.get("Accept-Encoding") || "";
-    
+
     const fingerprint = crypto
       .createHash("sha256")
       .update(`${userAgent}${acceptLanguage}${acceptEncoding}`)
       .digest("hex");
-    
+
     return fingerprint.substring(0, 32);
   }
 
   /**
    * Validate device fingerprint
-   * @param {string} storedFingerprint 
-   * @param {string} currentFingerprint 
+   * @param {string} storedFingerprint
+   * @param {string} currentFingerprint
    * @param {object} session
    * @returns {object}
    */
@@ -81,13 +80,13 @@ class TokenService {
     }
 
     const similarity = this.calculateFingerprintSimilarity(storedFingerprint, currentFingerprint);
-    
+
     if (similarity > 0.8) {
       return { valid: true, action: "update", reason: "minor_browser_update" };
     }
 
     const sessionAge = Date.now() - new Date(session.created_at).getTime();
-    
+
     if (sessionAge < 60 * 60 * 1000) {
       return { valid: false, action: "revoke", reason: "new_session_fingerprint_mismatch" };
     }
@@ -101,27 +100,27 @@ class TokenService {
 
   /**
    * Calculate similarity
-   * @param {string} fp1 
-   * @param {string} fp2 
+   * @param {string} fp1
+   * @param {string} fp2
    * @returns {number}
    */
   calculateFingerprintSimilarity(fp1, fp2) {
     if (!fp1 || !fp2) return 0;
-    
+
     let matches = 0;
     const length = Math.min(fp1.length, fp2.length);
-    
+
     for (let i = 0; i < length; i++) {
       if (fp1[i] === fp2[i]) matches++;
     }
-    
+
     return matches / Math.max(fp1.length, fp2.length);
   }
 
   /**
    * Log security event for monitoring
-   * @param {string} event 
-   * @param {object} data 
+   * @param {string} event
+   * @param {object} data
    */
   logSecurityEvent(event, data) {
     const logEntry = {
@@ -131,14 +130,14 @@ class TokenService {
     };
 
     console.log(`SECURITY_EVENT: ${JSON.stringify(logEntry)}`);
-    
+
     // In production, I'll need to send this to a security monitoring service
     // e.g., Sentry, DataDog, or your own logging service
   }
 
   /**
    * Create a new user session with refresh token
-   * @param {number} userId 
+   * @param {number} userId
    * @param {object} req
    * @returns {Promise<{accessToken: string, refreshToken: string}>}
    */
@@ -176,7 +175,7 @@ class TokenService {
            )`,
           [userId]
         );
-        
+
         this.logSecurityEvent("session_limit_exceeded", {
           userId,
           action: "removed_oldest_session",
@@ -185,7 +184,7 @@ class TokenService {
       }
 
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-      
+
       await client.query(
         `INSERT INTO user_sessions 
          (user_id, refresh_token, device_info, device_fingerprint, ip_address, user_agent, expires_at)
@@ -222,7 +221,7 @@ class TokenService {
 
   /**
    * Refresh access token using refresh token
-   * @param {string} refreshToken 
+   * @param {string} refreshToken
    * @param {object} req
    * @returns {Promise<{accessToken: string, refreshToken: string}>}
    */
@@ -252,58 +251,58 @@ class TokenService {
       const currentFingerprint = this.generateDeviceFingerprint(req);
 
       const validation = this.validateDeviceFingerprint(
-        session.device_fingerprint, 
-        currentFingerprint, 
+        session.device_fingerprint,
+        currentFingerprint,
         session
       );
 
       switch (validation.action) {
-      case "revoke":
-        await client.query(
-          "UPDATE user_sessions SET is_active = false WHERE refresh_token = $1",
-          [refreshToken]
-        );
-          
-        await client.query("COMMIT");
-          
-        this.logSecurityEvent("session_revoked_security", {
-          userId: session.user_id,
-          reason: validation.reason,
-          storedFingerprint: session.device_fingerprint?.substring(0, 8),
-          currentFingerprint: currentFingerprint.substring(0, 8),
-          ipAddress: req.ip,
-        });
-          
-        throw new Error("Session revoked for security reasons. Please log in again.");
+        case "revoke":
+          await client.query(
+            "UPDATE user_sessions SET is_active = false WHERE refresh_token = $1",
+            [refreshToken]
+          );
 
-      case "flag":
-        this.logSecurityEvent("fingerprint_mismatch_flagged", {
-          userId: session.user_id,
-          reason: validation.reason,
-          storedFingerprint: session.device_fingerprint?.substring(0, 8),
-          currentFingerprint: currentFingerprint.substring(0, 8),
-          ipAddress: req.ip,
-        });
-        break;
+          await client.query("COMMIT");
 
-      case "warn":
-        this.logSecurityEvent("fingerprint_mismatch_warning", {
-          userId: session.user_id,
-          reason: validation.reason,
-          environment: process.env.NODE_ENV,
-        });
-        break;
+          this.logSecurityEvent("session_revoked_security", {
+            userId: session.user_id,
+            reason: validation.reason,
+            storedFingerprint: session.device_fingerprint?.substring(0, 8),
+            currentFingerprint: currentFingerprint.substring(0, 8),
+            ipAddress: req.ip,
+          });
 
-      case "update":
-        this.logSecurityEvent("fingerprint_updated", {
-          userId: session.user_id,
-          reason: validation.reason,
-        });
-        break;
+          throw new Error("Session revoked for security reasons. Please log in again.");
 
-      case "allow":
-      default:
-        break;
+        case "flag":
+          this.logSecurityEvent("fingerprint_mismatch_flagged", {
+            userId: session.user_id,
+            reason: validation.reason,
+            storedFingerprint: session.device_fingerprint?.substring(0, 8),
+            currentFingerprint: currentFingerprint.substring(0, 8),
+            ipAddress: req.ip,
+          });
+          break;
+
+        case "warn":
+          this.logSecurityEvent("fingerprint_mismatch_warning", {
+            userId: session.user_id,
+            reason: validation.reason,
+            environment: process.env.NODE_ENV,
+          });
+          break;
+
+        case "update":
+          this.logSecurityEvent("fingerprint_updated", {
+            userId: session.user_id,
+            reason: validation.reason,
+          });
+          break;
+
+        case "allow":
+        default:
+          break;
       }
 
       const newAccessToken = this.generateAccessToken(session.user_id, {
@@ -321,10 +320,10 @@ class TokenService {
              ip_address = $3
          WHERE refresh_token = $4`,
         [
-          newRefreshToken, 
+          newRefreshToken,
           currentFingerprint,
           req.ip || req.connection?.remoteAddress || req.headers["x-forwarded-for"],
-          refreshToken
+          refreshToken,
         ]
       );
 
@@ -336,9 +335,9 @@ class TokenService {
         ipAddress: req.ip,
       });
 
-      return { 
-        accessToken: newAccessToken, 
-        refreshToken: newRefreshToken 
+      return {
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
       };
     } catch (error) {
       await client.query("ROLLBACK");
@@ -351,7 +350,7 @@ class TokenService {
 
   /**
    * Verify access token
-   * @param {string} token 
+   * @param {string} token
    * @returns {Promise<object>}
    */
   async verifyAccessToken(token) {
@@ -378,7 +377,7 @@ class TokenService {
 
   /**
    * Revoke a specific session
-   * @param {string} refreshToken 
+   * @param {string} refreshToken
    * @returns {Promise<boolean>}
    */
   async revokeSession(refreshToken) {
@@ -408,7 +407,7 @@ class TokenService {
 
   /**
    * Revoke all sessions for a user
-   * @param {number} userId 
+   * @param {number} userId
    * @returns {Promise<number>}
    */
   async revokeAllUserSessions(userId) {
@@ -421,7 +420,7 @@ class TokenService {
       );
 
       const revokedCount = result.rowCount;
-      
+
       this.logSecurityEvent("all_sessions_revoked", {
         userId,
         revokedCount,
@@ -438,7 +437,7 @@ class TokenService {
 
   /**
    * Get active sessions for a user
-   * @param {number} userId 
+   * @param {number} userId
    * @returns {Promise<array>}
    */
   async getUserSessions(userId) {
@@ -454,9 +453,9 @@ class TokenService {
         [userId]
       );
 
-      return result.rows.map(session => {
+      return result.rows.map((session) => {
         const deviceInfo = session.device_info || {};
-        
+
         return {
           id: session.id,
           deviceInfo: {
@@ -503,7 +502,7 @@ class TokenService {
         cleanedUp,
         remaining,
       });
-      
+
       return true;
     } catch (error) {
       console.error("Error cleaning up expired sessions:", error);

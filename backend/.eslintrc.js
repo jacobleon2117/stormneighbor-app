@@ -1,4 +1,3 @@
-// File: backend/.eslintrc.js
 module.exports = {
   env: {
     node: true,

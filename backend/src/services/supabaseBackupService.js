@@ -1,4 +1,3 @@
-// File: backend/src/services/supabaseBackupService.js
 const { Pool } = require("pg");
 const fs = require("fs").promises;
 const path = require("path");

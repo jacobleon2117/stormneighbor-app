@@ -1,4 +1,3 @@
-// File: backend/src/config/validateEnv.js
 require("dotenv").config();
 
 const requiredEnvVars = [
@@ -55,26 +54,26 @@ function validateEnvironment() {
 
   if (process.env.RESEND_API_KEY && !process.env.RESEND_API_KEY.startsWith("re_")) {
     warnings.push(
-      "WARN: RESEND_API_KEY should start with 're_' (please verify this is a valid Resend API key)"
+      "WARNING: RESEND_API_KEY should start with 're_' (please verify this is a valid Resend API key)"
     );
   }
 
   if (process.env.FROM_EMAIL && !process.env.FROM_EMAIL.includes("@")) {
-    warnings.push("WARN: FROM_EMAIL appears to be invalid (should be a valid email address)");
+    warnings.push("WARNING: FROM_EMAIL appears to be invalid (should be a valid email address)");
   }
 
   if (process.env.CLOUDINARY_API_KEY && !/^\d+$/.test(process.env.CLOUDINARY_API_KEY)) {
-    warnings.push("WARN: CLOUDINARY_API_KEY should be numeric (please verify this is correct)");
+    warnings.push("WARNING: CLOUDINARY_API_KEY should be numeric (please verify this is correct)");
   }
 
   if (process.env.JWT_SECRET && process.env.JWT_SECRET.length < 32) {
     warnings.push(
-      "WARN: JWT_SECRET is quite short (consider using a longer secret for better security)"
+      "WARNING: JWT_SECRET is quite short (consider using a longer secret for better security)"
     );
   }
 
   if (process.env.NODE_ENV === "production" && process.env.DATABASE_SSL !== "true") {
-    warnings.push("WARN: DATABASE_SSL should be 'true' in production for security");
+    warnings.push("WARNING: DATABASE_SSL should be 'true' in production for security");
   }
 
   if (process.env.NODE_ENV === "production") {
@@ -97,7 +96,7 @@ function validateEnvironment() {
   }
 
   if (warnings.length > 0) {
-    console.warn("\nWARN: Configuration warnings:");
+    console.warn("\nWARNING: Configuration warnings:");
     warnings.forEach((warning) => console.warn(`   - ${warning}`));
   }
 

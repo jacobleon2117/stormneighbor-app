@@ -1,4 +1,3 @@
-// File: backend/src/utils/adminLogger.js
 const { pool } = require("../config/database");
 
 /**

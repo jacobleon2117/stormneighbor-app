@@ -1,4 +1,3 @@
-// File: backend/src/middleware/auth.js
 const tokenService = require("../services/tokenService");
 const { pool } = require("../config/database");
 

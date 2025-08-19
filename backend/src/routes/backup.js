@@ -1,4 +1,3 @@
-// File: backend/src/routes/backup.js
 const express = require("express");
 const { body, param } = require("express-validator");
 const { auth } = require("../middleware/auth");

@@ -1,5 +1,3 @@
-// File: backend/src/middleware/notificationTriggers.js
-
 const pushNotificationService = require("../services/pushNotificationService");
 const { pool } = require("../config/database");
 

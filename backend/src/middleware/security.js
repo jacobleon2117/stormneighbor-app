@@ -1,4 +1,3 @@
-// File: backend/src/middleware/security.js
 const rateLimit = require("express-rate-limit");
 const { pool } = require("../config/database");
 

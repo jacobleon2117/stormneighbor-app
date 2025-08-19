@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-// File: backend/scripts/ssl-test.js
 require("dotenv").config();
 const https = require("https");
 const http = require("http");
@@ -280,22 +279,22 @@ async function main() {
 
   try {
     switch (command) {
-      case "config":
-        await tester.testSSLConfig();
-        break;
-      case "redirect":
-        await tester.testHTTPSRedirect();
-        break;
-      case "headers":
-        await tester.testSecurityHeaders();
-        break;
-      case "cert":
-        await tester.testCertificateInfo();
-        break;
-      case "all":
-      default:
-        await tester.runAllTests();
-        break;
+    case "config":
+      await tester.testSSLConfig();
+      break;
+    case "redirect":
+      await tester.testHTTPSRedirect();
+      break;
+    case "headers":
+      await tester.testSecurityHeaders();
+      break;
+    case "cert":
+      await tester.testCertificateInfo();
+      break;
+    case "all":
+    default:
+      await tester.runAllTests();
+      break;
     }
   } catch (error) {
     console.error("ERROR: Test failed:", error.message);

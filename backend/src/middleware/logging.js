@@ -1,4 +1,3 @@
-// File: backend/src/middleware/logging.js
 const crypto = require("crypto");
 
 const generateRequestId = () => {

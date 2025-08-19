@@ -1,4 +1,3 @@
-// File: backend/src/database/migrations.js
 const fs = require("fs");
 const path = require("path");
 const { pool } = require("../config/database");
@@ -10,13 +9,15 @@ class DatabaseMigrator {
   }
 
   async initialize() {
-    console.log("🔧 Initializing database migration system...");
+    console.log("WORKING: Initializing database migration system");
 
     await this.createMigrationsTable();
 
     this.currentVersion = await this.getCurrentVersion();
 
-    console.log(`📊 Current database version: ${this.currentVersion || "No migrations applied"}`);
+    console.log(
+      `INFO: Current database version: ${this.currentVersion || "No migrations applied"}`
+    );
   }
 
   async createMigrationsTable() {
@@ -66,7 +67,7 @@ class DatabaseMigrator {
   async getAvailableMigrations() {
     if (!fs.existsSync(this.migrationsPath)) {
       fs.mkdirSync(this.migrationsPath, { recursive: true });
-      console.log(`📁 Created migrations directory: ${this.migrationsPath}`);
+      console.log(`WORKING: Created migrations directory: ${this.migrationsPath}`);
     }
 
     const files = fs
@@ -80,7 +81,7 @@ class DatabaseMigrator {
         if (!match) {
           if (!this.silent) {
             console.warn(
-              `⚠️  Invalid migration file name: ${file} (expected: YYYYMMDDHHMMSS_name.sql)`
+              `WARNING: Invalid migration file name: ${file} (expected: YYYYMMDDHHMMSS_name.sql)`
             );
           }
           return null;
@@ -132,7 +133,7 @@ class DatabaseMigrator {
     const client = await pool.connect();
 
     try {
-      console.log(`🔄 Running migration ${migration.version}: ${migration.name}`);
+      console.log(`WORKING: Running migration ${migration.version}: ${migration.name}`);
 
       const content = fs.readFileSync(migration.fullPath, "utf8");
       const checksum = this.calculateChecksum(content);
@@ -152,7 +153,9 @@ class DatabaseMigrator {
 
       await client.query("COMMIT");
 
-      console.log(`✅ Migration ${migration.version} completed successfully (${executionTime}ms)`);
+      console.log(
+        `SUCCESS: Migration ${migration.version} completed successfully (${executionTime}ms)`
+      );
 
       return { success: true, executionTime };
     } catch (error) {
@@ -174,7 +177,7 @@ class DatabaseMigrator {
         console.error("Failed to record migration failure:", recordError);
       }
 
-      console.error(`❌ Migration ${migration.version} failed:`, error.message);
+      console.error(`ERROR: Migration ${migration.version} failed:`, error.message);
       throw error;
     } finally {
       client.release();
@@ -187,11 +190,11 @@ class DatabaseMigrator {
     const pending = await this.getPendingMigrations();
 
     if (pending.length === 0) {
-      console.log("🎉 Database is up to date! No pending migrations.");
+      console.log("SUCCESS: Database is up to date! No pending migrations.");
       return { applied: 0, skipped: 0 };
     }
 
-    console.log(`📋 Found ${pending.length} pending migration(s)`);
+    console.log(`INFO: Found ${pending.length} pending migration(s)`);
 
     let applied = 0;
     const skipped = 0;
@@ -201,17 +204,17 @@ class DatabaseMigrator {
         await this.runMigration(migration);
         applied++;
       } catch (error) {
-        console.error(`🚫 Migration failed, stopping at ${migration.version}`);
+        console.error(`ERROR: Migration failed, stopping at ${migration.version}`);
         throw error;
       }
     }
 
-    console.log(`🎯 Migration completed: ${applied} applied, ${skipped} skipped`);
+    console.log(`SUCCESS: Migration completed: ${applied} applied, ${skipped} skipped`);
     return { applied, skipped };
   }
 
   async validateMigrations() {
-    console.log("🔍 Validating applied migrations...");
+    console.log("WORKING: Validating applied migrations");
 
     const applied = await this.getAppliedMigrations();
     const available = await this.getAvailableMigrations();
@@ -259,9 +262,9 @@ class DatabaseMigrator {
     }
 
     if (issues.length === 0) {
-      console.log("✅ All migrations validated successfully");
+      console.log("SUCCESS: All migrations validated successfully");
     } else {
-      console.log(`⚠️  Found ${issues.length} validation issue(s):`);
+      console.log(`WARNING: Found ${issues.length} validation issue(s):`);
       issues.forEach((issue) => {
         console.log(`  - ${issue.type}: ${issue.message}`);
       });
@@ -298,8 +301,8 @@ class DatabaseMigrator {
 
     fs.writeFileSync(filepath, template);
 
-    console.log(`📝 Generated migration file: ${filename}`);
-    console.log(`📁 Location: ${filepath}`);
+    console.log(`WORKING: Generated migration file: ${filename}`);
+    console.log(`INFO: Location: ${filepath}`);
 
     return { version, filename, filepath };
   }

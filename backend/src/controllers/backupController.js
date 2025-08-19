@@ -1,4 +1,3 @@
-// File: backend/src/controllers/backupController.js
 const backupService = require("../services/backupService");
 const { validationResult } = require("express-validator");
 

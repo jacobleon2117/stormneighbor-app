@@ -1,4 +1,3 @@
-// File: backend/src/utils/logger.js
 const logger = {
   info: (message, data = null) => {
     const timestamp = new Date().toISOString();

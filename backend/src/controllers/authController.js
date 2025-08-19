@@ -1,4 +1,3 @@
-// File: backend/src/controllers/authController.js
 const bcrypt = require("bcryptjs");
 const { pool } = require("../config/database");
 const { validationResult } = require("express-validator");
@@ -521,9 +520,9 @@ const getProfile = async (req, res) => {
             coordinates:
               user.longitude && user.latitude
                 ? {
-                  longitude: parseFloat(user.longitude),
-                  latitude: parseFloat(user.latitude),
-                }
+                    longitude: parseFloat(user.longitude),
+                    latitude: parseFloat(user.latitude),
+                  }
                 : null,
           },
           emailVerified: user.email_verified,

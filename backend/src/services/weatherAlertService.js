@@ -1,4 +1,3 @@
-// File: backend/src/services/weatherAlertService.js
 const axios = require("axios");
 const { pool } = require("../config/database");
 const pushNotificationService = require("./pushNotificationService");
@@ -18,7 +17,7 @@ class WeatherAlertService {
       return;
     }
 
-    console.log("Starting automated weather alert service...");
+    console.log("Starting automated weather alert service");
     this.isRunning = true;
 
     await this.fetchAndStoreAlerts();
@@ -46,7 +45,7 @@ class WeatherAlertService {
   }
 
   async fetchAndStoreAlerts() {
-    console.log("Fetching weather alerts from NOAA...");
+    console.log("Fetching weather alerts from NOAA");
 
     try {
       const client = await pool.connect();

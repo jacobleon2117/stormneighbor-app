@@ -1,4 +1,3 @@
-// File: backend/src/routes/users.js
 const express = require("express");
 const router = express.Router();
 const { body, param, query } = require("express-validator");

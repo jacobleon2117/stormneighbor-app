@@ -1,4 +1,3 @@
-// File: backend/src/controllers/searchController.js
 const { validationResult } = require("express-validator");
 const SearchService = require("../services/searchService");
 

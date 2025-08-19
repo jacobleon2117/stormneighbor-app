@@ -1,4 +1,3 @@
-// File: backend/src/app.js
 require("dotenv").config();
 
 const EnvironmentValidator = require("./utils/envValidator");
@@ -7,12 +6,12 @@ if (process.env.NODE_ENV !== "test") {
   const result = validator.validate();
 
   if (!result.isValid) {
-    console.error("❌ Environment validation failed. Application cannot start.");
-    process.exit(1);
+    console.error("ERROR: Environment validation failed. Application cannot start.");
+    process.exitCode = 1;
   }
 
   if (result.warnings.length > 0 && process.env.NODE_ENV === "production") {
-    console.warn("⚠️  Production environment has configuration warnings. Please review.");
+    console.warn("WARNING: Production environment has configuration warnings. Please review.");
   }
 }
 

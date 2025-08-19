@@ -1,4 +1,3 @@
-// File: backend/src/services/pushNotificationService.js
 const admin = require("firebase-admin");
 const { pool } = require("../config/database");
 

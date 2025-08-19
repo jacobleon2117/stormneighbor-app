@@ -1,48 +1,47 @@
 #!/usr/bin/env node
-// File: backend/src/scripts/validateEnv.js
 const EnvironmentValidator = require("../utils/envValidator");
 
 function main() {
-  console.log("🚀 Environment Validation Script\n");
+  console.log("Environment Validation Script\n");
 
   const validator = new EnvironmentValidator();
   const result = validator.validate();
 
   if (!result.isValid) {
     console.log(
-      "❌ Environment validation failed. Please fix the errors above before starting the application."
+      "ERROR: Environment validation failed. Please fix the errors above before starting the application."
     );
 
     if (process.argv.includes("--generate-template")) {
-      console.log("\n📝 Generating .env template...");
+      console.log("\nWORKING: Generating .env template");
       const template = validator.generateEnvTemplate();
       const fs = require("fs");
       const path = require("path");
 
       const templatePath = path.join(process.cwd(), ".env.template");
       fs.writeFileSync(templatePath, template);
-      console.log(`✅ Template saved to ${templatePath}`);
+      console.log(`SUCCESS: Template saved to ${templatePath}`);
     }
 
-    process.exit(1);
+    process.exitCode = 1;
   }
 
   if (result.warnings.length > 0) {
     console.log(
-      "⚠️  Environment validation completed with warnings. Application will start but some features may be limited."
+      "WARNING: Environment validation completed with warnings. Application will start but some features may be limited."
     );
   } else {
-    console.log("🎉 Environment validation passed! All systems ready.");
+    console.log("SUCCESS: Environment validation passed");
   }
 
   if (process.argv.includes("--verbose")) {
-    console.log("\n🔍 Configuration Summary:");
+    console.log("\nConfiguration Summary:");
     Object.entries(result.config).forEach(([key, value]) => {
       console.log(`  ${key}: ${validator.maskSensitive(key, value)}`);
     });
   }
 
-  process.exit(0);
+  process.exitCode = 1;
 }
 
 if (process.argv.includes("--help")) {
@@ -66,7 +65,7 @@ Environment Variables Required:
     console.log(`  ${variable.name}: ${variable.description}`);
   });
 
-  process.exit(0);
+  process.exitCode = 1;
 }
 
 if (require.main === module) {

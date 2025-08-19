@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-// File: backend/scripts/supabase-backup-test.js
 require("dotenv").config();
 
 async function testSupabaseBackup() {

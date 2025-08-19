@@ -1,4 +1,3 @@
-// File: backend/tests/setup.js
 process.env.NODE_ENV = "test";
 process.env.JWT_SECRET = "test_jwt_secret_for_testing_only";
 process.env.RESEND_API_KEY = "fake_key_for_testing";
@@ -15,8 +14,51 @@ console.warn = jest.fn();
 
 jest.setTimeout(30000);
 
+let cleanupHandlers = [];
+
+global.registerCleanup = (handler) => {
+  cleanupHandlers.push(handler);
+};
+
 afterEach(() => {
   jest.clearAllTimers();
+  cleanupHandlers.forEach((handler) => {
+    try {
+      handler();
+    } catch (error) {
+      // Silent cleanup errors during testing
+    }
+  });
+});
+
+afterAll(async () => {
+  const cache = require("../src/middleware/cache");
+  const security = require("../src/middleware/security");
+
+  try {
+    if (cache && typeof cache.clearCleanupInterval === "function") {
+      cache.clearCleanupInterval();
+    }
+  } catch (error) {
+    // Silent cleanup errors during testing
+  }
+
+  try {
+    if (security && typeof security.clearCleanupInterval === "function") {
+      security.clearCleanupInterval();
+    }
+  } catch (error) {
+    // Silent cleanup errors during testing
+  }
+
+  cleanupHandlers.forEach((handler) => {
+    try {
+      handler();
+    } catch (error) {
+      // Silent cleanup errors during testing
+    }
+  });
+  cleanupHandlers = [];
 });
 
 global.testHelpers = {

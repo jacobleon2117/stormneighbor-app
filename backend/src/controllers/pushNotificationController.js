@@ -1,4 +1,3 @@
-// File: backend/src/controllers/pushNotificationController.js
 const pushNotificationService = require("../services/pushNotificationService");
 const { validationResult } = require("express-validator");
 

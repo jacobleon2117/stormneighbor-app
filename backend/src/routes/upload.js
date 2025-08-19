@@ -1,4 +1,3 @@
-// File: backend/src/routes/upload.js
 const express = require("express");
 const { auth } = require("../middleware/auth");
 const {

@@ -1,4 +1,3 @@
-// File: backend/src/middleware/errorHandler.js
 const securityMiddleware = require("./security");
 
 const createErrorResponse = (success = false, message, code, error = null, data = null) => {

@@ -1,4 +1,3 @@
-// File: backend/src/controllers/notificationsController.js
 const { pool } = require("../config/database");
 const { validationResult } = require("express-validator");
 const { registerDevice, sendNotificationToUsers } = require("../services/pushNotificationService");

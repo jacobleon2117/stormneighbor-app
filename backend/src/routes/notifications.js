@@ -1,4 +1,3 @@
-// File: backend/src/routes/notifications.js
 const express = require("express");
 const { body, query } = require("express-validator");
 const { auth } = require("../middleware/auth");

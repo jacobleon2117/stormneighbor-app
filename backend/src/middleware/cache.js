@@ -1,4 +1,3 @@
-// File: backend/src/middleware/cache.js
 const crypto = require("crypto");
 class InMemoryCache {
   constructor() {

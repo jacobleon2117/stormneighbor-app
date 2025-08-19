@@ -1,4 +1,3 @@
-// File: backend/src/services/searchService.js
 const { pool } = require("../config/database");
 
 class SearchService {

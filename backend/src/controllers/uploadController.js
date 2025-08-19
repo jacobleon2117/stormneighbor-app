@@ -1,4 +1,3 @@
-// File: backend/src/controllers/uploadController.js
 const { pool } = require("../config/database");
 const { deleteImage, getPublicIdFromUrl } = require("../config/cloudinary");
 

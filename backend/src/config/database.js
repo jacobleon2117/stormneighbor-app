@@ -1,4 +1,3 @@
-// File: backend/src/config/database.js
 const { Pool } = require("pg");
 require("dotenv").config();
 
@@ -87,7 +86,7 @@ const enablePostGIS = async () => {
     console.log("SUCCESS: PostGIS extensions enabled");
     return true;
   } catch (error) {
-    console.warn("WARN: PostGIS not available:", error.message);
+    console.warn("WARNING: PostGIS not available:", error.message);
     console.warn("INFO: This is OK (city/state matching will work without PostGIS)");
     return false;
   } finally {

@@ -1,4 +1,3 @@
-// File: backend/src/utils/envValidator.js
 const fs = require("fs");
 const path = require("path");
 
@@ -123,7 +122,7 @@ class EnvironmentValidator {
     this.silent = silent || process.env.NODE_ENV === "test";
 
     if (!this.silent) {
-      console.log("🔍 Validating environment configuration...\n");
+      console.log("WORKING: Validating environment configuration\n");
     }
 
     this.checkEnvFile();
@@ -152,16 +151,16 @@ class EnvironmentValidator {
 
     if (!fs.existsSync(envPath)) {
       if (process.env.NODE_ENV === "production") {
-        this.errors.push("❌ .env file not found in production environment");
+        this.errors.push("ERROR: .env file not found in production environment");
       } else {
-        this.warnings.push("⚠️  .env file not found (using system environment variables)");
+        this.warnings.push("WORKING: .env file not found (using system environment variables)");
       }
     } else if (!this.silent) {
-      console.log("✅ .env file found");
+      console.log("SUCCESS: .env file found");
     }
 
     if (!fs.existsSync(envExamplePath)) {
-      this.warnings.push("⚠️  .env.example file not found (recommended for documentation)");
+      this.warnings.push("WARNING: .env.example file not found (recommended for documentation)");
     }
   }
 
@@ -169,14 +168,14 @@ class EnvironmentValidator {
     let value = process.env[varName];
 
     if (!value && config.required) {
-      this.errors.push(`❌ Missing required environment variable: ${varName}`);
+      this.errors.push(`ERROR: Missing required environment variable: ${varName}`);
       return;
     }
 
     if (!value && config.default) {
       value = config.default;
       process.env[varName] = value;
-      this.warnings.push(`⚠️  Using default value for ${varName}: ${value}`);
+      this.warnings.push(`WARNING: Using default value for ${varName}: ${value}`);
     }
 
     if (!value) {
@@ -184,13 +183,13 @@ class EnvironmentValidator {
     }
 
     if (config.validator && !config.validator(value)) {
-      this.errors.push(`❌ Invalid ${varName}: ${config.errorMessage}`);
+      this.errors.push(`ERROR: Invalid ${varName}: ${config.errorMessage}`);
       return;
     }
 
     this.config[varName] = value;
     if (!this.silent) {
-      console.log(`✅ ${varName}: ${this.maskSensitive(varName, value)}`);
+      console.log(`SUCCESS: ${varName}: ${this.maskSensitive(varName, value)}`);
     }
   }
 
@@ -199,7 +198,9 @@ class EnvironmentValidator {
     const providedFirebaseVars = firebaseVars.filter((varName) => process.env[varName]);
 
     if (providedFirebaseVars.length > 0 && providedFirebaseVars.length < firebaseVars.length) {
-      this.warnings.push("⚠️  Incomplete Firebase configuration - push notifications may not work");
+      this.warnings.push(
+        "WARNING: Incomplete Firebase configuration - push notifications may not work"
+      );
     }
 
     const cloudinaryVars = ["CLOUDINARY_CLOUD_NAME", "CLOUDINARY_API_KEY", "CLOUDINARY_API_SECRET"];
@@ -209,23 +210,28 @@ class EnvironmentValidator {
       providedCloudinaryVars.length > 0 &&
       providedCloudinaryVars.length < cloudinaryVars.length
     ) {
-      this.warnings.push("⚠️  Incomplete Cloudinary configuration - image uploads may not work");
+      this.warnings.push(
+        "WARNING: Incomplete Cloudinary configuration - image uploads may not work"
+      );
     }
 
     if (process.env.NODE_ENV === "production") {
       if (!process.env.FIREBASE_PROJECT_ID) {
         this.warnings.push(
-          "⚠️  Firebase not configured in production - push notifications disabled"
+          "WARNING: Firebase not configured in production - push notifications disabled"
         );
       }
 
       if (!process.env.CLOUDINARY_CLOUD_NAME) {
-        this.warnings.push("⚠️  Cloudinary not configured in production - image uploads may fail");
+        this.warnings.push(
+          "WARNING: Cloudinary not configured in production - image uploads may fail"
+        );
       }
 
       if (process.env.CORS_ORIGIN === "*") {
         this.warnings.push(
-          "⚠️  CORS_ORIGIN is set to " * " in production - consider restricting to specific domains"
+          "WARNING: CORS_ORIGIN is set to " *
+            " in production - consider restricting to specific domains"
         );
       }
     }
@@ -250,30 +256,32 @@ class EnvironmentValidator {
   }
 
   reportResults() {
-    console.log("\n📊 Environment Validation Results:");
+    console.log("\nWORKING: Environment Validation Results:");
 
     if (this.errors.length === 0) {
-      console.log("✅ Environment configuration is valid!\n");
+      console.log("SUCCESS: Environment configuration is valid!\n");
     } else {
-      console.log(`❌ Environment configuration has ${this.errors.length} error(s):\n`);
+      console.log(`ERROR: Environment configuration has ${this.errors.length} error(s):\n`);
       this.errors.forEach((error) => console.log(`  ${error}`));
       console.log("");
     }
 
     if (this.warnings.length > 0) {
-      console.log(`⚠️  ${this.warnings.length} warning(s):\n`);
+      console.log(`WARNING: ${this.warnings.length} warning(s):\n`);
       this.warnings.forEach((warning) => console.log(`  ${warning}`));
       console.log("");
     }
 
-    console.log(`🔧 Environment: ${process.env.NODE_ENV || "development"}`);
-    console.log(`🚀 Port: ${process.env.PORT || "3000"}`);
-    console.log(`🗄️  Database: ${process.env.DATABASE_URL ? "Configured" : "Not configured"}`);
-    console.log(`🔐 JWT: ${process.env.JWT_SECRET ? "Configured" : "Not configured"}`);
+    console.log(`INFO: Environment: ${process.env.NODE_ENV || "development"}`);
+    console.log(`INFO: Port: ${process.env.PORT || "3000"}`);
+    console.log(`INFO:  Database: ${process.env.DATABASE_URL ? "Configured" : "Not configured"}`);
+    console.log(`INFO: JWT: ${process.env.JWT_SECRET ? "Configured" : "Not configured"}`);
     console.log(
-      `📱 Push Notifications: ${process.env.FIREBASE_PROJECT_ID ? "Enabled" : "Disabled"}`
+      `INFO: Push Notifications: ${process.env.FIREBASE_PROJECT_ID ? "Enabled" : "Disabled"}`
     );
-    console.log(`☁️  Image Uploads: ${process.env.CLOUDINARY_CLOUD_NAME ? "Enabled" : "Disabled"}`);
+    console.log(
+      `INFO: Image Uploads: ${process.env.CLOUDINARY_CLOUD_NAME ? "Enabled" : "Disabled"}`
+    );
     console.log("");
   }
 

@@ -1,4 +1,3 @@
-// File: backend/scripts/test-setup.js
 require("dotenv").config();
 const { testConnection, enablePostGIS } = require("../src/config/database");
 const { testCloudinaryConnection } = require("../src/config/cloudinary");
@@ -98,8 +97,8 @@ async function runDiagnostics() {
     console.log("STEP: Start server");
     console.log("STEP: Test API endpoints");
   } else {
-    console.log("\nWARN: Some critical services need attention before proceeding");
-    console.log("\nWARN: Fix failing services, then run script again");
+    console.log("\nWARNING: Some critical services need attention before proceeding");
+    console.log("\nWARNING: Fix failing services, then run script again");
   }
 
   return criticalPassing;

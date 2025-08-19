@@ -1,4 +1,3 @@
-// File: backend/src/middleware/sanitize.js
 const createDOMPurify = require("isomorphic-dompurify");
 const { JSDOM } = require("jsdom");
 const path = require("path");

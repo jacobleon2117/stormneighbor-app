@@ -1,4 +1,3 @@
-// File: backend/tests/env-validator.test.js
 const EnvironmentValidator = require("../src/utils/envValidator");
 
 describe("Environment Validator", () => {

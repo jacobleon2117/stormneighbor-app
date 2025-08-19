@@ -1,4 +1,3 @@
-// File: backend/src/routes/weather.js
 const express = require("express");
 const { query } = require("express-validator");
 const weatherController = require("../controllers/weatherController");

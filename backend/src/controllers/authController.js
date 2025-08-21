@@ -484,9 +484,8 @@ const getProfile = async (req, res) => {
 
     try {
       const result = await client.query(
-        `SELECT id, email, first_name, last_name, phone, bio, profile_image,
+        `SELECT id, email, first_name, last_name, phone, bio, profile_image_url,
                 location_city, address_state, zip_code, address,
-                ST_X(location) as longitude, ST_Y(location) as latitude,
                 email_verified, notification_preferences, created_at, updated_at
          FROM users WHERE id = $1`,
         [userId]
@@ -511,19 +510,12 @@ const getProfile = async (req, res) => {
           lastName: user.last_name,
           phone: user.phone,
           bio: user.bio,
-          profileImage: user.profile_image,
+          profileImage: user.profile_image_url,
           location: {
             city: user.location_city,
             state: user.address_state,
             zipCode: user.zip_code,
             address: user.address,
-            coordinates:
-              user.longitude && user.latitude
-                ? {
-                  longitude: parseFloat(user.longitude),
-                  latitude: parseFloat(user.latitude),
-                }
-                : null,
           },
           emailVerified: user.email_verified,
           notificationPreferences: user.notification_preferences || {},

@@ -6,6 +6,7 @@ import React, {
   ReactNode,
 } from "react";
 import { apiService } from "../services/api";
+import { NotificationService } from "../services/notifications";
 import { User, AuthResponse } from "../types";
 
 interface AuthState {
@@ -103,6 +104,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (token) {
         const response = await apiService.getProfile();
         dispatch({ type: "AUTH_SUCCESS", payload: response.data });
+
+        try {
+          await NotificationService.registerForPushNotifications();
+        } catch (error) {
+          console.log("Failed to register for push notifications:", error);
+        }
       } else {
         dispatch({ type: "AUTH_LOGOUT" });
       }
@@ -117,6 +124,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       const response = await apiService.login(email, password);
       dispatch({ type: "AUTH_SUCCESS", payload: response.data.user });
+
+      try {
+        await NotificationService.registerForPushNotifications();
+      } catch (error) {
+        console.log("Failed to register for push notifications:", error);
+      }
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || "Login failed";
       dispatch({ type: "AUTH_ERROR", payload: errorMessage });

@@ -8,12 +8,19 @@ import {
   RefreshControl,
   ActivityIndicator,
   Alert,
+  TextInput,
+  TouchableOpacity,
+  Modal,
 } from "react-native";
+import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { Search, MessageSquare, MoreHorizontal } from "lucide-react-native";
 import { PostCard } from "../../components/Posts/PostCard";
 import { useAuth } from "../../hooks/useAuth";
 import { apiService } from "../../services/api";
-import { Post } from "../../types";
+import { Post, SearchFilters } from "../../types";
 import { Colors } from "../../constants/Colors";
+import { Button } from "../../components/UI/Button";
 
 export default function HomeScreen() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -23,6 +30,20 @@ export default function HomeScreen() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchActive, setSearchActive] = useState(false);
+  const [searchResults, setSearchResults] = useState<Post[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [searchFilters, setSearchFilters] = useState<SearchFilters>({
+    types: [],
+    priorities: [],
+    emergencyOnly: false,
+    resolved: "all",
+    sortBy: "date",
+  });
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
   const { user } = useAuth();
 
@@ -136,20 +157,77 @@ export default function HomeScreen() {
   };
 
   const handleComment = (postId: number) => {
-    // TODO: Navigate to post detail screen with comments
-    Alert.alert("Comments", `View comments for post ${postId}`, [
-      { text: "OK" },
-    ]);
+    router.push(`/post/${postId}`);
   };
 
   const handleShare = (postId: number) => {
-    // TODO: Implement sharing functionality
+    // TODO: Implement native sharing functionality
     Alert.alert("Share", `Share post ${postId}`, [{ text: "OK" }]);
   };
 
   const handlePostPress = (postId: number) => {
-    // TODO: Navigate to post detail screen
-    Alert.alert("Post Detail", `View post ${postId}`, [{ text: "OK" }]);
+    router.push(`/post/${postId}`);
+  };
+
+  const handleSearch = async (query: string, filters?: SearchFilters) => {
+    if (
+      !query.trim() &&
+      !filters?.types?.length &&
+      !filters?.priorities?.length
+    ) {
+      setSearchActive(false);
+      setSearchResults([]);
+      return;
+    }
+
+    try {
+      setSearchLoading(true);
+      setSearchActive(true);
+
+      const response = await apiService.searchPosts(query.trim(), {
+        ...searchFilters,
+        ...filters,
+        city: user?.locationCity,
+        state: user?.addressState,
+      });
+
+      if (response.success && response.data) {
+        const results = response.data.posts || response.data;
+        setSearchResults(results);
+
+        if (query.trim()) {
+          setRecentSearches((prev) => {
+            const updated = [
+              query.trim(),
+              ...prev.filter((s) => s !== query.trim()),
+            ].slice(0, 5);
+            return updated;
+          });
+        }
+      }
+    } catch (error: any) {
+      console.error("Search error:", error);
+      Alert.alert("Search Error", "Failed to search posts. Please try again.");
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const handleSearchSubmit = () => {
+    handleSearch(searchQuery, searchFilters);
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery("");
+    setSearchActive(false);
+    setSearchResults([]);
+  };
+
+  const handleFilterChange = (newFilters: SearchFilters) => {
+    setSearchFilters(newFilters);
+    if (searchActive) {
+      handleSearch(searchQuery, newFilters);
+    }
   };
 
   useEffect(() => {
@@ -159,6 +237,18 @@ export default function HomeScreen() {
       setLoading(false);
     }
   }, [user]);
+
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      const delayedSearch = setTimeout(() => {
+        handleSearch(searchQuery, searchFilters);
+      }, 500);
+      return () => clearTimeout(delayedSearch);
+    } else if (searchActive) {
+      setSearchActive(false);
+      setSearchResults([]);
+    }
+  }, [searchQuery]);
 
   const renderPost = ({ item }: { item: Post }) => (
     <PostCard
@@ -171,11 +261,39 @@ export default function HomeScreen() {
   );
 
   const renderHeader = () => (
-    <View style={styles.header}>
-      <Text style={styles.title}>Home</Text>
-      {user && (
-        <Text style={styles.subtitle}>Welcome back, {user.firstName}!</Text>
-      )}
+    <View style={styles.headerContainer}>
+      <View style={styles.headerContent}>
+        <Text style={styles.title}>Home</Text>
+        <View style={styles.headerIcons}>
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={() => {
+              // TODO: Implement search functionality
+              console.log("Search pressed");
+            }}
+          >
+            <Search size={24} color={Colors.text.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={() => {
+              // TODO: Implement messages functionality
+              console.log("Messages pressed");
+            }}
+          >
+            <MessageSquare size={24} color={Colors.text.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={() => {
+              // TODO: Implement more options functionality
+              console.log("More options pressed");
+            }}
+          >
+            <MoreHorizontal size={24} color={Colors.text.primary} />
+          </TouchableOpacity>
+        </View>
+      </View>
     </View>
   );
 
@@ -196,6 +314,175 @@ export default function HomeScreen() {
         <ActivityIndicator size="small" color={Colors.primary[600]} />
         <Text style={styles.loadingText}>Loading more posts...</Text>
       </View>
+    );
+  };
+
+  const renderFiltersModal = () => {
+    const POST_TYPES = [
+      { key: "help_request", label: "Help Request" },
+      { key: "help_offer", label: "Help Offer" },
+      { key: "lost_found", label: "Lost & Found" },
+      { key: "safety_alert", label: "Safety Alert" },
+      { key: "general", label: "General" },
+    ];
+
+    const PRIORITIES = [
+      { key: "low", label: "Low" },
+      { key: "normal", label: "Normal" },
+      { key: "high", label: "High" },
+      { key: "urgent", label: "Urgent" },
+    ];
+
+    const SORT_OPTIONS = [
+      { key: "date", label: "Most Recent" },
+      { key: "relevance", label: "Most Relevant" },
+      { key: "popularity", label: "Most Popular" },
+    ];
+
+    const toggleType = (type: string) => {
+      const currentTypes = searchFilters.types || [];
+      const newTypes = currentTypes.includes(type)
+        ? currentTypes.filter((t) => t !== type)
+        : [...currentTypes, type];
+      setSearchFilters((prev) => ({ ...prev, types: newTypes }));
+    };
+
+    const togglePriority = (priority: string) => {
+      const currentPriorities = searchFilters.priorities || [];
+      const newPriorities = currentPriorities.includes(priority)
+        ? currentPriorities.filter((p) => p !== priority)
+        : [...currentPriorities, priority];
+      setSearchFilters((prev) => ({ ...prev, priorities: newPriorities }));
+    };
+
+    const clearAllFilters = () => {
+      setSearchFilters({
+        types: [],
+        priorities: [],
+        emergencyOnly: false,
+        resolved: "all",
+        sortBy: "date",
+      });
+    };
+
+    return (
+      <Modal
+        visible={showFilters}
+        animationType="slide"
+        presentationStyle="pageSheet"
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setShowFilters(false)}>
+              <Ionicons name="close" size={24} color={Colors.text.primary} />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Search Filters</Text>
+            <TouchableOpacity onPress={clearAllFilters}>
+              <Text style={styles.clearFiltersText}>Clear All</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.modalContent}>
+            <View style={styles.filterSection}>
+              <Text style={styles.filterSectionTitle}>Post Types</Text>
+              <View style={styles.filterOptions}>
+                {POST_TYPES.map((type) => (
+                  <TouchableOpacity
+                    key={type.key}
+                    style={[
+                      styles.filterChip,
+                      (searchFilters.types || []).includes(type.key) &&
+                        styles.filterChipActive,
+                    ]}
+                    onPress={() => toggleType(type.key)}
+                  >
+                    <Text
+                      style={[
+                        styles.filterChipText,
+                        (searchFilters.types || []).includes(type.key) &&
+                          styles.filterChipTextActive,
+                      ]}
+                    >
+                      {type.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            <View style={styles.filterSection}>
+              <Text style={styles.filterSectionTitle}>Priority</Text>
+              <View style={styles.filterOptions}>
+                {PRIORITIES.map((priority) => (
+                  <TouchableOpacity
+                    key={priority.key}
+                    style={[
+                      styles.filterChip,
+                      (searchFilters.priorities || []).includes(priority.key) &&
+                        styles.filterChipActive,
+                    ]}
+                    onPress={() => togglePriority(priority.key)}
+                  >
+                    <Text
+                      style={[
+                        styles.filterChipText,
+                        (searchFilters.priorities || []).includes(
+                          priority.key
+                        ) && styles.filterChipTextActive,
+                      ]}
+                    >
+                      {priority.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            <View style={styles.filterSection}>
+              <Text style={styles.filterSectionTitle}>Sort By</Text>
+              <View style={styles.filterOptions}>
+                {SORT_OPTIONS.map((option) => (
+                  <TouchableOpacity
+                    key={option.key}
+                    style={[
+                      styles.filterChip,
+                      searchFilters.sortBy === option.key &&
+                        styles.filterChipActive,
+                    ]}
+                    onPress={() =>
+                      setSearchFilters((prev) => ({
+                        ...prev,
+                        sortBy: option.key as any,
+                      }))
+                    }
+                  >
+                    <Text
+                      style={[
+                        styles.filterChipText,
+                        searchFilters.sortBy === option.key &&
+                          styles.filterChipTextActive,
+                      ]}
+                    >
+                      {option.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            <View style={styles.modalActions}>
+              <Button
+                title="Apply Filters"
+                onPress={() => {
+                  setShowFilters(false);
+                  handleSearch(searchQuery, searchFilters);
+                }}
+                size="large"
+              />
+            </View>
+          </View>
+        </SafeAreaView>
+      </Modal>
     );
   };
 
@@ -221,29 +508,90 @@ export default function HomeScreen() {
     );
   }
 
+  const currentData = searchActive ? searchResults : posts;
+  const currentLoading = searchActive ? searchLoading : loading;
+
   return (
-    <SafeAreaView style={styles.container}>
-      <FlatList
-        data={posts}
-        renderItem={renderPost}
-        keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={styles.contentContainer}
-        ListHeaderComponent={renderHeader}
-        ListEmptyComponent={renderEmpty}
-        ListFooterComponent={renderFooter}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            colors={[Colors.primary[600]]}
-            tintColor={Colors.primary[600]}
-          />
-        }
-        onEndReached={handleLoadMore}
-        onEndReachedThreshold={0.3}
-        showsVerticalScrollIndicator={false}
-      />
-    </SafeAreaView>
+    <View style={styles.container}>
+      {renderHeader()}
+      <SafeAreaView style={styles.safeContent}>
+        <FlatList
+          data={currentData}
+          renderItem={renderPost}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.contentContainer}
+          ListEmptyComponent={() => {
+            if (searchActive && !searchLoading) {
+              return (
+                <View style={styles.emptyContainer}>
+                  <Ionicons
+                    name="search"
+                    size={64}
+                    color={Colors.neutral[400]}
+                  />
+                  <Text style={styles.emptyTitle}>No results found</Text>
+                  <Text style={styles.emptyMessage}>
+                    Try adjusting your search terms or filters
+                  </Text>
+                  {recentSearches.length > 0 && (
+                    <View style={styles.recentSearches}>
+                      <Text style={styles.recentSearchesTitle}>
+                        Recent Searches:
+                      </Text>
+                      <View style={styles.recentSearchesContainer}>
+                        {recentSearches.map((search, index) => (
+                          <TouchableOpacity
+                            key={index}
+                            style={styles.recentSearchChip}
+                            onPress={() => {
+                              setSearchQuery(search);
+                              handleSearch(search, searchFilters);
+                            }}
+                          >
+                            <Text style={styles.recentSearchText}>
+                              {search}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    </View>
+                  )}
+                </View>
+              );
+            }
+            return renderEmpty();
+          }}
+          ListFooterComponent={() => {
+            if (searchLoading && searchResults.length > 0) {
+              return (
+                <View style={styles.loadingMore}>
+                  <ActivityIndicator size="small" color={Colors.primary[600]} />
+                  <Text style={styles.loadingText}>Searching...</Text>
+                </View>
+              );
+            }
+            return searchActive ? null : renderFooter();
+          }}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={
+                searchActive
+                  ? () => handleSearch(searchQuery, searchFilters)
+                  : handleRefresh
+              }
+              colors={[Colors.primary[600]]}
+              tintColor={Colors.primary[600]}
+            />
+          }
+          onEndReached={searchActive ? undefined : handleLoadMore}
+          onEndReachedThreshold={0.3}
+          showsVerticalScrollIndicator={false}
+        />
+      </SafeAreaView>
+
+      {renderFiltersModal()}
+    </View>
   );
 }
 
@@ -252,22 +600,39 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.surface,
   },
+  safeContent: {
+    flex: 1,
+    backgroundColor: Colors.surface,
+  },
   contentContainer: {
-    padding: 16,
+    paddingHorizontal: 16,
     paddingBottom: 100,
   },
-  header: {
-    marginBottom: 20,
+  headerContainer: {
+    backgroundColor: Colors.background,
+    paddingTop: 60,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  headerContent: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: "bold",
     color: Colors.text.primary,
-    marginBottom: 4,
   },
-  subtitle: {
-    fontSize: 16,
-    color: Colors.text.secondary,
+  headerIcons: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  iconButton: {
+    padding: 8,
   },
   loadingContainer: {
     flex: 1,
@@ -306,17 +671,111 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: Colors.text.primary,
     marginBottom: 8,
+    marginTop: 16,
   },
   emptyMessage: {
     fontSize: 14,
     color: Colors.text.secondary,
     textAlign: "center",
     lineHeight: 20,
+    marginBottom: 24,
+  },
+  recentSearches: {
+    alignSelf: "stretch",
+    alignItems: "center",
+  },
+  recentSearchesTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.text.primary,
+    marginBottom: 12,
+  },
+  recentSearchesContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    justifyContent: "center",
+  },
+  recentSearchChip: {
+    backgroundColor: Colors.primary[50],
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  recentSearchText: {
+    fontSize: 14,
+    color: Colors.primary[700],
+    fontWeight: "500",
   },
   loadingMore: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 20,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: Colors.text.primary,
+  },
+  clearFiltersText: {
+    fontSize: 16,
+    color: Colors.primary[600],
+    fontWeight: "600",
+  },
+  modalContent: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  filterSection: {
+    marginBottom: 24,
+  },
+  filterSectionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: Colors.text.primary,
+    marginBottom: 12,
+  },
+  filterOptions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  filterChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: Colors.neutral[100],
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  filterChipActive: {
+    backgroundColor: Colors.primary[600],
+    borderColor: Colors.primary[600],
+  },
+  filterChipText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: Colors.text.primary,
+  },
+  filterChipTextActive: {
+    color: Colors.text.inverse,
+  },
+  modalActions: {
+    paddingVertical: 24,
   },
 });

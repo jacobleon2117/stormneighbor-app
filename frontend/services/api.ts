@@ -2,7 +2,7 @@ import axios, { AxiosInstance, AxiosResponse, AxiosError } from "axios";
 import * as SecureStore from "expo-secure-store";
 
 const API_BASE_URL = __DEV__
-  ? "http://192.168.1.89:3000/api/v1"
+  ? "http://192.168.1.223:3000/api/v1"
   : "https://i'll-add-this-later/api/v1";
 
 const ACCESS_TOKEN_KEY = "access_token";
@@ -119,13 +119,24 @@ class ApiService {
   }
 
   async login(email: string, password: string) {
-    const response = await this.api.post("/auth/login", { email, password });
-    const { accessToken, refreshToken } = response.data.data;
+    try {
+      console.log("Attempting login for:", email);
+      console.log("API Base URL:", API_BASE_URL);
 
-    await this.setAccessToken(accessToken);
-    await this.setRefreshToken(refreshToken);
+      const response = await this.api.post("/auth/login", { email, password });
+      console.log("Login response received");
 
-    return response.data;
+      const { accessToken, refreshToken } = response.data.data;
+
+      await this.setAccessToken(accessToken);
+      await this.setRefreshToken(refreshToken);
+
+      console.log("Login successful, tokens saved");
+      return response.data;
+    } catch (error) {
+      console.error("Login error in API service:", error);
+      throw error;
+    }
   }
 
   async register(userData: {
@@ -135,8 +146,20 @@ class ApiService {
     lastName: string;
     phone?: string;
   }) {
-    const response = await this.api.post("/auth/register", userData);
-    return response.data;
+    try {
+      console.log("Attempting registration with:", {
+        ...userData,
+        password: "[HIDDEN]",
+      });
+      console.log("API Base URL:", API_BASE_URL);
+
+      const response = await this.api.post("/auth/register", userData);
+      console.log("Registration successful");
+      return response.data;
+    } catch (error) {
+      console.error("Registration error in API service:", error);
+      throw error;
+    }
   }
 
   async logout() {
@@ -202,6 +225,94 @@ class ApiService {
   async searchPosts(query: string, filters?: any) {
     const response = await this.api.get("/search", {
       params: { q: query, ...filters },
+    });
+    return response.data;
+  }
+
+  async getComments(
+    postId: number,
+    params?: {
+      page?: number;
+      limit?: number;
+      parentId?: number;
+    }
+  ) {
+    const response = await this.api.get(`/posts/${postId}/comments`, {
+      params,
+    });
+    return response.data;
+  }
+
+  async createComment(
+    postId: number,
+    commentData: {
+      content: string;
+      parentCommentId?: number;
+      images?: string[];
+    }
+  ) {
+    const response = await this.api.post(
+      `/posts/${postId}/comments`,
+      commentData
+    );
+    return response.data;
+  }
+
+  async updateComment(commentId: number, content: string) {
+    const response = await this.api.put(`/comments/${commentId}`, { content });
+    return response.data;
+  }
+
+  async deleteComment(commentId: number) {
+    const response = await this.api.delete(`/comments/${commentId}`);
+    return response.data;
+  }
+
+  async toggleCommentReaction(
+    commentId: number,
+    reactionType: string = "like"
+  ) {
+    const response = await this.api.post(`/comments/${commentId}/reactions`, {
+      reactionType,
+    });
+    return response.data;
+  }
+
+  async removeCommentReaction(commentId: number) {
+    const response = await this.api.delete(`/comments/${commentId}/reactions`);
+    return response.data;
+  }
+
+  async reportComment(commentId: number, reason: string, details?: string) {
+    const response = await this.api.post(`/comments/${commentId}/report`, {
+      reason,
+      details,
+    });
+    return response.data;
+  }
+
+  async uploadImage(
+    imageUri: string,
+    type: "profile" | "post" | "comment" = "post"
+  ) {
+    const formData = new FormData();
+    formData.append("image", {
+      uri: imageUri,
+      type: "image/jpeg",
+      name: "image.jpg",
+    } as any);
+
+    const endpoint =
+      type === "profile"
+        ? "/upload/profile-image"
+        : type === "comment"
+        ? "/upload/comment-image"
+        : "/upload/post-image";
+
+    const response = await this.api.post(endpoint, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
     });
     return response.data;
   }

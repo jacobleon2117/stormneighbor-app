@@ -11,6 +11,8 @@ import {
   Dimensions,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
+  Button,
 } from "react-native";
 import { router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
@@ -34,6 +36,7 @@ import { Colors } from "../../constants/Colors";
 import { apiService } from "../../services/api";
 import { POST_TYPES, PRIORITIES, CreatePostForm } from "../../types";
 import { useAuth } from "../../hooks/useAuth";
+import { Input } from "../../components/UI/Input";
 
 interface QuickAction {
   id: string;
@@ -45,7 +48,7 @@ interface QuickAction {
   postType: string;
   priority: string;
 }
-
+// need to update Colors.ts i change the colors for the quick actions so i can get the screen to work
 const QUICK_ACTIONS: QuickAction[] = [
   {
     id: "announcement",
@@ -61,9 +64,9 @@ const QUICK_ACTIONS: QuickAction[] = [
     id: "event",
     label: "Create Event",
     icon: Calendar,
-    color: Colors.purple[600],
-    backgroundColor: Colors.purple[50],
-    borderColor: Colors.purple[200],
+    color: Colors.primary[600],
+    backgroundColor: Colors.primary[50],
+    borderColor: Colors.primary[200],
     postType: POST_TYPES.GENERAL,
     priority: PRIORITIES.NORMAL,
   },
@@ -73,7 +76,7 @@ const QUICK_ACTIONS: QuickAction[] = [
     icon: AlertTriangle,
     color: Colors.error[600],
     backgroundColor: Colors.error[50],
-    borderColor: Colors.error[200],
+    borderColor: Colors.error[600],
     postType: POST_TYPES.SAFETY_ALERT,
     priority: PRIORITIES.HIGH,
   },
@@ -81,9 +84,9 @@ const QUICK_ACTIONS: QuickAction[] = [
     id: "weather",
     label: "Weather Alert",
     icon: CloudRain,
-    color: Colors.blue[600],
-    backgroundColor: Colors.blue[50],
-    borderColor: Colors.blue[200],
+    color: Colors.primary[600],
+    backgroundColor: Colors.primary[50],
+    borderColor: Colors.primary[200],
     postType: POST_TYPES.SAFETY_ALERT,
     priority: PRIORITIES.HIGH,
   },
@@ -91,9 +94,9 @@ const QUICK_ACTIONS: QuickAction[] = [
     id: "question",
     label: "Ask Question",
     icon: HelpCircle,
-    color: Colors.green[600],
-    backgroundColor: Colors.green[50],
-    borderColor: Colors.green[200],
+    color: Colors.success[600],
+    backgroundColor: Colors.success[50],
+    borderColor: Colors.success[100],
     postType: POST_TYPES.HELP_REQUEST,
     priority: PRIORITIES.NORMAL,
   },
@@ -101,9 +104,9 @@ const QUICK_ACTIONS: QuickAction[] = [
     id: "help",
     label: "Offer Help",
     icon: HandHeart,
-    color: Colors.orange[600],
-    backgroundColor: Colors.orange[50],
-    borderColor: Colors.orange[200],
+    color: Colors.warning[600],
+    backgroundColor: Colors.warning[50],
+    borderColor: Colors.warning[100],
     postType: POST_TYPES.HELP_OFFER,
     priority: PRIORITIES.NORMAL,
   },

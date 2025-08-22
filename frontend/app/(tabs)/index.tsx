@@ -14,13 +14,13 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { Search, MessageSquare, MoreHorizontal } from "lucide-react-native";
 import { PostCard } from "../../components/Posts/PostCard";
 import { useAuth } from "../../hooks/useAuth";
 import { apiService } from "../../services/api";
 import { Post, SearchFilters } from "../../types";
 import { Colors } from "../../constants/Colors";
 import { Button } from "../../components/UI/Button";
+import { Header } from "../../components/UI/Header";
 
 export default function HomeScreen() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -260,42 +260,20 @@ export default function HomeScreen() {
     />
   );
 
-  const renderHeader = () => (
-    <View style={styles.headerContainer}>
-      <View style={styles.headerContent}>
-        <Text style={styles.title}>Home</Text>
-        <View style={styles.headerIcons}>
-          <TouchableOpacity
-            style={styles.iconButton}
-            onPress={() => {
-              // TODO: Implement search functionality
-              console.log("Search pressed");
-            }}
-          >
-            <Search size={24} color={Colors.text.primary} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.iconButton}
-            onPress={() => {
-              // TODO: Implement messages functionality
-              console.log("Messages pressed");
-            }}
-          >
-            <MessageSquare size={24} color={Colors.text.primary} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.iconButton}
-            onPress={() => {
-              // TODO: Implement more options functionality
-              console.log("More options pressed");
-            }}
-          >
-            <MoreHorizontal size={24} color={Colors.text.primary} />
-          </TouchableOpacity>
-        </View>
-      </View>
-    </View>
-  );
+  const handleSearchPress = () => {
+    // TODO: Implement search functionality
+    console.log("Search pressed");
+  };
+
+  const handleMessagesPress = () => {
+    // TODO: Implement messages functionality
+    console.log("Messages pressed");
+  };
+
+  const handleMorePress = () => {
+    // TODO: Implement more options functionality
+    console.log("More options pressed");
+  };
 
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
@@ -513,7 +491,12 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      {renderHeader()}
+      <Header
+        title="Home"
+        onSearchPress={handleSearchPress}
+        onMessagesPress={handleMessagesPress}
+        onMorePress={handleMorePress}
+      />
       <SafeAreaView style={styles.safeContent}>
         <FlatList
           data={currentData}
@@ -607,32 +590,6 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingHorizontal: 16,
     paddingBottom: 100,
-  },
-  headerContainer: {
-    backgroundColor: Colors.background,
-    paddingTop: 60,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  headerContent: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: Colors.text.primary,
-  },
-  headerIcons: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  iconButton: {
-    padding: 8,
   },
   loadingContainer: {
     flex: 1,

@@ -21,6 +21,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { Colors } from "../../constants/Colors";
 import { apiService } from "../../services/api";
 import { User } from "../../types";
+import { Header } from "../../components/UI/Header";
 
 type EditMode = "personal" | "location" | "notifications" | "security" | null;
 
@@ -728,14 +729,18 @@ export default function ProfileScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.header}>
-          <Text style={styles.title}>Profile</Text>
-        </View>
+    <View style={styles.container}>
+      <Header
+        title="Profile"
+        showSearch={false}
+        showMessages={false}
+        showMore={false}
+      />
+      <SafeAreaView style={styles.safeContent}>
+        <ScrollView
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+        >
 
         {renderProfileHeader()}
 
@@ -792,12 +797,13 @@ export default function ProfileScreen() {
             style={styles.logoutButton}
           />
         </View>
-      </ScrollView>
+        </ScrollView>
+      </SafeAreaView>
 
       {renderPersonalModal()}
       {renderLocationModal()}
       {renderNotificationModal()}
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -806,18 +812,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.surface,
   },
+  safeContent: {
+    flex: 1,
+    backgroundColor: Colors.surface,
+  },
   scrollView: {
     flex: 1,
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: Colors.text.primary,
   },
   profileHeader: {
     backgroundColor: Colors.background,

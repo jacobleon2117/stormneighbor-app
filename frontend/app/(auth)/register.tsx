@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { Link, router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Eye, EyeOff, AlertCircle } from "lucide-react-native";
 import { Input } from "../../components/UI/Input";
 import { Button } from "../../components/UI/Button";
 import { useAuth } from "../../hooks/useAuth";
@@ -108,7 +108,6 @@ export default function RegisterScreen() {
           : undefined,
         password: formData.password,
       });
-      router.replace("/(tabs)");
     } catch (error) {
       console.error("Registration error in component:", error);
     }
@@ -122,16 +121,6 @@ export default function RegisterScreen() {
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.header}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => router.replace("/(auth)/welcome")}
-            >
-              <Ionicons
-                name="arrow-back"
-                size={24}
-                color={Colors.neutral[700]}
-              />
-            </TouchableOpacity>
             <Text style={styles.title}>Create Account</Text>
             <Text style={styles.subtitle}>
               Join your neighborhood community
@@ -197,11 +186,11 @@ export default function RegisterScreen() {
                 style={styles.passwordToggle}
                 onPress={() => setShowPassword(!showPassword)}
               >
-                <Ionicons
-                  name={showPassword ? "eye-off-outline" : "eye-outline"}
-                  size={20}
-                  color={Colors.text.secondary}
-                />
+                {showPassword ? (
+                  <EyeOff size={20} color={Colors.text.secondary} />
+                ) : (
+                  <Eye size={20} color={Colors.text.secondary} />
+                )}
               </TouchableOpacity>
             </View>
 
@@ -221,21 +210,17 @@ export default function RegisterScreen() {
                 style={styles.passwordToggle}
                 onPress={() => setShowConfirmPassword(!showConfirmPassword)}
               >
-                <Ionicons
-                  name={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
-                  size={20}
-                  color={Colors.text.secondary}
-                />
+                {showConfirmPassword ? (
+                  <EyeOff size={20} color={Colors.text.secondary} />
+                ) : (
+                  <Eye size={20} color={Colors.text.secondary} />
+                )}
               </TouchableOpacity>
             </View>
 
             {error && (
               <View style={styles.errorContainer}>
-                <Ionicons
-                  name="alert-circle-outline"
-                  size={16}
-                  color={Colors.error[600]}
-                />
+                <AlertCircle size={16} color={Colors.error[600]} />
                 <Text style={styles.errorText}>{error}</Text>
               </View>
             )}
@@ -280,30 +265,27 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 40,
+    paddingTop: 60,
     paddingBottom: 24,
+    justifyContent: "center",
   },
   header: {
     alignItems: "center",
-    marginBottom: 32,
-  },
-  backButton: {
-    position: "absolute",
-    left: 0,
-    top: 0,
-    padding: 8,
-    zIndex: 1,
+    marginBottom: 40,
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: "bold",
     color: Colors.text.primary,
-    marginBottom: 8,
+    marginBottom: 12,
+    textAlign: "center",
   },
   subtitle: {
     fontSize: 16,
     color: Colors.text.secondary,
     textAlign: "center",
+    lineHeight: 22,
+    paddingHorizontal: 8,
   },
   form: {
     flex: 1,
@@ -323,9 +305,13 @@ const styles = StyleSheet.create({
   },
   passwordToggle: {
     position: "absolute",
-    right: 16,
-    top: 38,
-    padding: 4,
+    right: 12,
+    top: 25,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    width: 40,
+    height: 44,
   },
   errorContainer: {
     flexDirection: "row",

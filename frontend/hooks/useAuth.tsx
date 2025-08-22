@@ -14,6 +14,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  hasLoggedOut: boolean;
 }
 
 interface AuthContextType extends AuthState {
@@ -27,6 +28,7 @@ interface AuthContextType extends AuthState {
   }) => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
+  refreshProfile: () => Promise<void>;
 }
 
 type AuthAction =
@@ -34,6 +36,7 @@ type AuthAction =
   | { type: "AUTH_SUCCESS"; payload: User }
   | { type: "AUTH_ERROR"; payload: string }
   | { type: "AUTH_LOGOUT" }
+  | { type: "AUTH_MANUAL_LOGOUT" }
   | { type: "CLEAR_ERROR" };
 
 const initialState: AuthState = {
@@ -41,6 +44,7 @@ const initialState: AuthState = {
   isAuthenticated: false,
   isLoading: true,
   error: null,
+  hasLoggedOut: false,
 };
 
 function authReducer(state: AuthState, action: AuthAction): AuthState {
@@ -74,6 +78,16 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         isAuthenticated: false,
         isLoading: false,
         error: null,
+        hasLoggedOut: false,
+      };
+    case "AUTH_MANUAL_LOGOUT":
+      return {
+        ...state,
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        error: null,
+        hasLoggedOut: true,
       };
     case "CLEAR_ERROR":
       return {
@@ -102,7 +116,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       const token = await apiService.getAccessToken();
       if (token) {
+        console.log("Token found, fetching user profile");
         const response = await apiService.getProfile();
+        console.log("Initial auth check - profile data:", {
+          locationCity: response.data?.locationCity,
+          latitude: response.data?.latitude,
+          longitude: response.data?.longitude,
+          addressState: response.data?.addressState,
+          hasFullData: !!(
+            response.data?.locationCity ||
+            (response.data?.latitude && response.data?.longitude)
+          ),
+        });
         dispatch({ type: "AUTH_SUCCESS", payload: response.data });
 
         try {
@@ -111,10 +136,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
           console.log("Failed to register for push notifications:", error);
         }
       } else {
+        console.log("No token found, dispatching logout");
         dispatch({ type: "AUTH_LOGOUT" });
       }
     } catch (error) {
-      console.log("No existing authentication found");
+      console.log("No existing authentication found:", error);
       dispatch({ type: "AUTH_LOGOUT" });
     }
   };
@@ -169,12 +195,35 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } catch (error) {
       console.log("Logout error:", error);
     } finally {
-      dispatch({ type: "AUTH_LOGOUT" });
+      dispatch({ type: "AUTH_MANUAL_LOGOUT" });
     }
   };
 
   const clearError = () => {
     dispatch({ type: "CLEAR_ERROR" });
+  };
+
+  const refreshProfile = async () => {
+    try {
+      console.log("Refreshing user profile");
+      const response = await apiService.getProfile();
+      console.log("Profile data received:", {
+        locationCity: response.data?.locationCity,
+        latitude: response.data?.latitude,
+        longitude: response.data?.longitude,
+        addressState: response.data?.addressState,
+        hasLocationData: !!(
+          response.data?.locationCity ||
+          (response.data?.latitude && response.data?.longitude)
+        ),
+      });
+      dispatch({ type: "AUTH_SUCCESS", payload: response.data });
+      console.log("Profile refreshed successfully");
+      return response.data;
+    } catch (error) {
+      console.error("Error refreshing profile:", error);
+      throw error;
+    }
   };
 
   const value: AuthContextType = {
@@ -183,6 +232,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     register,
     logout,
     clearError,
+    refreshProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

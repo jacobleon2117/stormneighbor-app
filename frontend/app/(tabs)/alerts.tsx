@@ -14,13 +14,13 @@ import {
   Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Search, MessageSquare, MoreHorizontal } from "lucide-react-native";
 import { router } from "expo-router";
 import { Colors } from "../../constants/Colors";
 import { apiService } from "../../services/api";
 import { Alert as WeatherAlert, Post } from "../../types";
 import { useAuth } from "../../hooks/useAuth";
 import { Button } from "../../components/UI/Button";
+import { Header } from "../../components/UI/Header";
 
 interface EmergencyTemplate {
   id: string;
@@ -187,6 +187,21 @@ export default function AlertsScreen() {
     setRefreshing(true);
     fetchAlerts(true);
   }, [fetchAlerts]);
+
+  const handleSearchPress = () => {
+    // TODO: Implement search functionality
+    console.log("Search pressed");
+  };
+
+  const handleMessagesPress = () => {
+    // TODO: Implement messages functionality
+    console.log("Messages pressed");
+  };
+
+  const handleMorePress = () => {
+    // TODO: Implement more options functionality
+    console.log("More options pressed");
+  };
 
   const handleCreateAlert = async (template?: EmergencyTemplate) => {
     try {
@@ -398,40 +413,12 @@ export default function AlertsScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerContainer}>
-        <View style={styles.headerContent}>
-          <Text style={styles.title}>Alerts</Text>
-          <View style={styles.headerIcons}>
-            <TouchableOpacity
-              style={styles.iconButton}
-              onPress={() => {
-                // TODO: Implement search functionality
-                console.log("Search pressed");
-              }}
-            >
-              <Search size={24} color={Colors.text.primary} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.iconButton}
-              onPress={() => {
-                // TODO: Implement messages functionality
-                console.log("Messages pressed");
-              }}
-            >
-              <MessageSquare size={24} color={Colors.text.primary} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.iconButton}
-              onPress={() => {
-                // TODO:   more options functionality
-                console.log("More options pressed");
-              }}
-            >
-              <MoreHorizontal size={24} color={Colors.text.primary} />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
+      <Header
+        title="Alerts"
+        onSearchPress={handleSearchPress}
+        onMessagesPress={handleMessagesPress}
+        onMorePress={handleMorePress}
+      />
 
       <SafeAreaView style={styles.safeContent}>
         <ScrollView
@@ -631,14 +618,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.surface,
   },
-  headerContainer: {
-    backgroundColor: Colors.background,
-    paddingTop: 60,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
   contentContainer: {
     paddingBottom: 100,
   },
@@ -648,24 +627,6 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
-  },
-  headerContent: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: Colors.text.primary,
-  },
-  headerIcons: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  iconButton: {
-    padding: 8,
   },
   section: {
     paddingHorizontal: 20,

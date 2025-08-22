@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   View,
   Text,
@@ -6,8 +6,8 @@ import {
   StyleSheet,
   ViewStyle,
   TextInputProps,
-} from 'react-native';
-import { Colors } from '../../constants/Colors';
+} from "react-native";
+import { Colors } from "../../constants/Colors";
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
     color: Colors.text.primary,
     marginBottom: 6,
   },

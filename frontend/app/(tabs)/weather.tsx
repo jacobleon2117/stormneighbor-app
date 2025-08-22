@@ -12,13 +12,37 @@ import {
   Platform,
   Linking,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { Search, MessageSquare, MoreHorizontal } from "lucide-react-native";
+import {
+  MapPin,
+  RefreshCw,
+  Sun,
+  Cloud,
+  CloudRain,
+  Zap,
+  Snowflake,
+  Droplets,
+  Wind,
+  Eye,
+  Gauge,
+  Plus,
+  Minus,
+  AlertTriangle,
+  CheckCircle,
+  AlertOctagon,
+  AlertCircle,
+  Info,
+  Bell,
+  CloudOff,
+  Navigation,
+} from "lucide-react-native";
 import * as Location from "expo-location";
+import MapView, { PROVIDER_DEFAULT } from "react-native-maps";
 import { Colors } from "../../constants/Colors";
 import { apiService } from "../../services/api";
 import { WeatherData, Alert as WeatherAlert } from "../../types";
 import { useAuth } from "../../hooks/useAuth";
+import { Header } from "../../components/UI/Header";
+import WeatherLegend from "../../components/Weather/WeatherLegend";
 
 export default function WeatherScreen() {
   const { user } = useAuth();
@@ -34,6 +58,15 @@ export default function WeatherScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mapRegion, setMapRegion] = useState({
+    latitude: 37.78825,
+    longitude: -122.4324,
+    latitudeDelta: 0.0922,
+    longitudeDelta: 0.0421,
+  });
+  const mapRef = React.useRef<MapView>(null);
+  const [legendVisible, setLegendVisible] = useState(false);
+  const [lastApiCall, setLastApiCall] = useState(0);
 
   const requestLocationPermission = async () => {
     try {
@@ -72,7 +105,16 @@ export default function WeatherScreen() {
     try {
       setLocationLoading(true);
 
+      console.log("Weather screen - user data:", {
+        hasUser: !!user,
+        lat: user?.latitude,
+        lng: user?.longitude,
+        city: user?.locationCity,
+        state: user?.addressState,
+      });
+
       if (user?.latitude && user?.longitude) {
+        console.log("Using saved user location for weather");
         setLocation({
           latitude: user.latitude,
           longitude: user.longitude,
@@ -81,6 +123,8 @@ export default function WeatherScreen() {
         });
         return;
       }
+
+      console.log("No saved location found, requesting GPS permission");
 
       const hasPermission = await requestLocationPermission();
       if (!hasPermission) {
@@ -104,12 +148,18 @@ export default function WeatherScreen() {
         });
 
         const address = reverseGeocode[0];
-        setLocation({
+        const newLocation = {
           latitude: location.coords.latitude,
           longitude: location.coords.longitude,
           city: address?.city || "Unknown City",
           state: address?.region || "Unknown State",
-        });
+        };
+        setLocation(newLocation);
+        setMapRegion((prev) => ({
+          ...prev,
+          latitude: newLocation.latitude,
+          longitude: newLocation.longitude,
+        }));
       } catch (locationError) {
         console.error("Error getting current location:", locationError);
         setLocation({
@@ -134,13 +184,29 @@ export default function WeatherScreen() {
 
   const fetchWeatherData = async (lat: number, lng: number) => {
     try {
+      console.log(`Fetching weather data for coordinates: ${lat}, ${lng}`);
       const weatherResponse = await apiService.getCurrentWeather(lat, lng);
 
+      console.log("Weather API response:", {
+        success: weatherResponse.success,
+        hasData: !!weatherResponse.data,
+        dataKeys: weatherResponse.data
+          ? Object.keys(weatherResponse.data)
+          : null,
+      });
+
       if (weatherResponse.success && weatherResponse.data) {
+        console.log("Setting weather data:", weatherResponse.data);
         setWeather(weatherResponse.data);
+      } else {
+        console.log("Weather API response failed or no data");
       }
     } catch (error: any) {
       console.error("Error fetching weather:", error);
+      console.error("Weather API error details:", {
+        status: error.response?.status,
+        message: error.response?.data?.message || error.message,
+      });
       throw error;
     }
   };
@@ -176,9 +242,20 @@ export default function WeatherScreen() {
   };
 
   const loadWeatherData = async (isRefresh = false) => {
-    if (!location) return;
+    if (!location) {
+      console.log("No location available for weather data");
+      return;
+    }
+
+    const now = Date.now();
+    if (!isRefresh && now - lastApiCall < 10000) {
+      console.log("Throttling weather API call");
+      return;
+    }
 
     try {
+      console.log("Loading weather data for location:", location);
+      setLastApiCall(now);
       if (!isRefresh) setLoading(true);
       setError(null);
 
@@ -191,6 +268,7 @@ export default function WeatherScreen() {
           location.longitude
         ),
       ]);
+      console.log("Weather data loaded successfully");
     } catch (error: any) {
       console.error("Error loading weather data:", error);
       setError(error.response?.data?.message || "Failed to load weather data");
@@ -209,9 +287,78 @@ export default function WeatherScreen() {
     getCurrentLocation();
   };
 
+  const handleSearchPress = () => {
+    // TODO: Implement search functionality
+    console.log("Search pressed");
+  };
+
+  const handleMessagesPress = () => {
+    // TODO: Implement messages functionality
+    console.log("Messages pressed");
+  };
+
+  const handleMorePress = () => {
+    // TODO: Implement more options functionality
+    console.log("More options pressed");
+  };
+
+  const handleZoomIn = () => {
+    if (mapRef.current) {
+      const newRegion = {
+        ...mapRegion,
+        latitudeDelta: mapRegion.latitudeDelta * 0.5,
+        longitudeDelta: mapRegion.longitudeDelta * 0.5,
+      };
+      setMapRegion(newRegion);
+      mapRef.current.animateToRegion(newRegion, 300);
+    }
+  };
+
+  const handleZoomOut = () => {
+    if (mapRef.current) {
+      const newRegion = {
+        ...mapRegion,
+        latitudeDelta: mapRegion.latitudeDelta * 2,
+        longitudeDelta: mapRegion.longitudeDelta * 2,
+      };
+      setMapRegion(newRegion);
+      mapRef.current.animateToRegion(newRegion, 300);
+    }
+  };
+
+  const handleMyLocation = () => {
+    if (mapRef.current && location) {
+      const userRegion = {
+        latitude: location.latitude,
+        longitude: location.longitude,
+        latitudeDelta: 0.0922,
+        longitudeDelta: 0.0421,
+      };
+      setMapRegion(userRegion);
+      mapRef.current.animateToRegion(userRegion, 500);
+    }
+  };
+
+  const handleLayerToggle = (layerId: string, enabled: boolean) => {
+    console.log(`Weather layer ${layerId} ${enabled ? "enabled" : "disabled"}`);
+    // TODO: Implement actual weather layer toggle functionality
+  };
+
+  const handleLegendToggle = () => {
+    setLegendVisible(!legendVisible);
+  };
+
   useEffect(() => {
     getCurrentLocation();
   }, []);
+
+  useEffect(() => {
+    const userHasLocation = user?.latitude && user?.longitude;
+    console.log("User profile changed, has location:", userHasLocation);
+    if (userHasLocation) {
+      getCurrentLocation();
+    }
+  }, [user?.latitude, user?.longitude]);
 
   useEffect(() => {
     if (location) {
@@ -252,19 +399,19 @@ export default function WeatherScreen() {
     }
   };
 
-  const getAlertIcon = (severity: string) => {
-    if (!severity) return "notifications";
+  const getAlertLucideIcon = (severity: string) => {
+    if (!severity) return Bell;
     switch (severity.toUpperCase()) {
       case "CRITICAL":
-        return "warning";
+        return AlertOctagon;
       case "HIGH":
-        return "alert";
+        return AlertTriangle;
       case "MODERATE":
-        return "information-circle";
+        return Info;
       case "LOW":
-        return "notifications";
+        return Bell;
       default:
-        return "notifications";
+        return Bell;
     }
   };
 
@@ -272,87 +419,92 @@ export default function WeatherScreen() {
     return `${Math.round(temp)}°F`;
   };
 
+  const getWeatherLucideIcon = (condition: string) => {
+    const lowerCondition = condition?.toLowerCase() || "";
+    if (lowerCondition.includes("sunny") || lowerCondition.includes("clear")) {
+      return Sun;
+    } else if (lowerCondition.includes("cloud")) {
+      return Cloud;
+    } else if (lowerCondition.includes("rain")) {
+      return CloudRain;
+    } else if (lowerCondition.includes("storm")) {
+      return Zap;
+    } else if (lowerCondition.includes("snow")) {
+      return Snowflake;
+    }
+    return Sun;
+  };
+
   const renderWeatherCard = () => {
     if (!weather) return null;
 
+    const WeatherIcon = getWeatherLucideIcon(
+      weather.current?.shortForecast || weather.condition
+    );
+
     return (
-      <View style={styles.weatherCard}>
-        <View style={styles.weatherHeader}>
+      <View style={styles.compactWeatherCard}>
+        <View style={styles.cardHeader}>
           <View style={styles.locationInfo}>
-            <Ionicons name="location" size={16} color={Colors.text.secondary} />
+            <MapPin size={14} color={Colors.text.secondary} />
             <Text style={styles.locationText}>
               {location?.city}, {location?.state}
             </Text>
           </View>
-          <TouchableOpacity
-            onPress={handleLocationRefresh}
-            disabled={locationLoading}
-            style={styles.refreshButton}
-          >
-            {locationLoading ? (
-              <ActivityIndicator size="small" color={Colors.primary[600]} />
-            ) : (
-              <Ionicons name="refresh" size={16} color={Colors.primary[600]} />
+
+          <View style={styles.headerRight}>
+            {alerts.length > 0 && (
+              <View style={styles.severeBadge}>
+                <AlertTriangle size={12} color={Colors.error[600]} />
+                <Text style={styles.badgeText}>
+                  {alerts.length === 1
+                    ? "Weather Alert"
+                    : `${alerts.length} Alerts`}
+                </Text>
+              </View>
             )}
-          </TouchableOpacity>
+          </View>
         </View>
 
-        <View style={styles.weatherContent}>
-          <View style={styles.mainWeather}>
-            <Ionicons
-              name={getWeatherIcon(weather.condition) as any}
-              size={64}
-              color={
-                Colors.weather[
-                  getWeatherIcon(
-                    weather.condition
-                  ) as keyof typeof Colors.weather
-                ] || Colors.primary[600]
-              }
-            />
-            <View style={styles.temperatureInfo}>
-              <Text style={styles.temperature}>
-                {formatTemperature(weather.temperature)}
-              </Text>
-              <Text style={styles.condition}>{weather.condition}</Text>
-              <Text style={styles.description}>{weather.description}</Text>
-            </View>
+        <View style={styles.mainWeatherRow}>
+          <WeatherIcon size={32} color={Colors.primary[600]} />
+          <View style={styles.temperatureSection}>
+            <Text style={styles.compactTemperature}>
+              {formatTemperature(
+                weather.current?.temperature || weather.temperature
+              )}
+            </Text>
+            <Text style={styles.compactCondition}>
+              {weather.current?.shortForecast || weather.condition}
+            </Text>
           </View>
+        </View>
 
-          <View style={styles.weatherDetails}>
-            <View style={styles.detailRow}>
-              <View style={styles.detailItem}>
-                <Ionicons name="water" size={16} color={Colors.primary[600]} />
-                <Text style={styles.detailLabel}>Humidity</Text>
-                <Text style={styles.detailValue}>{weather.humidity}%</Text>
-              </View>
-              <View style={styles.detailItem}>
-                <Ionicons
-                  name="speedometer"
-                  size={16}
-                  color={Colors.primary[600]}
-                />
-                <Text style={styles.detailLabel}>Wind</Text>
-                <Text style={styles.detailValue}>{weather.windSpeed} mph</Text>
-              </View>
-            </View>
-            <View style={styles.detailRow}>
-              <View style={styles.detailItem}>
-                <Ionicons name="eye" size={16} color={Colors.primary[600]} />
-                <Text style={styles.detailLabel}>Visibility</Text>
-                <Text style={styles.detailValue}>{weather.visibility} mi</Text>
-              </View>
-              <View style={styles.detailItem}>
-                <Ionicons
-                  name="thermometer"
-                  size={16}
-                  color={Colors.primary[600]}
-                />
-                <Text style={styles.detailLabel}>Pressure</Text>
-                <Text style={styles.detailValue}>{weather.pressure} mb</Text>
-              </View>
-            </View>
+        <View style={styles.weatherMetrics}>
+          <View style={styles.metricItem}>
+            <Wind size={16} color={Colors.text.secondary} />
+            <Text style={styles.metricValue}>
+              {weather.current?.windSpeed || weather.windSpeed || "N/A"}
+            </Text>
           </View>
+          <View style={styles.metricItem}>
+            <Navigation size={16} color={Colors.text.secondary} />
+            <Text style={styles.metricValue}>
+              {weather.current?.windDirection || "N/A"}
+            </Text>
+          </View>
+          {weather.humidity && (
+            <View style={styles.metricItem}>
+              <Droplets size={16} color={Colors.text.secondary} />
+              <Text style={styles.metricValue}>{weather.humidity}%</Text>
+            </View>
+          )}
+          {weather.visibility && (
+            <View style={styles.metricItem}>
+              <Eye size={16} color={Colors.text.secondary} />
+              <Text style={styles.metricValue}>{weather.visibility} mi</Text>
+            </View>
+          )}
         </View>
       </View>
     );
@@ -367,49 +519,44 @@ export default function WeatherScreen() {
 
         {alerts.length === 0 ? (
           <View style={styles.noAlertsContainer}>
-            <Ionicons
-              name="checkmark-circle"
-              size={32}
-              color={Colors.success[600]}
-            />
+            <CheckCircle size={32} color={Colors.success[600]} />
             <Text style={styles.noAlertsText}>No active weather alerts</Text>
             <Text style={styles.noAlertsSubtext}>
               We'll notify you if any alerts are issued for your area
             </Text>
           </View>
         ) : (
-          alerts.map((alert) => (
-            <View key={alert.id} style={styles.alertCard}>
-              <View style={styles.alertHeader}>
-                <Ionicons
-                  name={getAlertIcon(alert.severity) as any}
-                  size={20}
-                  color={getAlertColor(alert.severity)}
-                />
-                <Text
-                  style={[
-                    styles.alertSeverity,
-                    { color: getAlertColor(alert.severity) },
-                  ]}
-                >
-                  {alert.severity} ALERT
+          alerts.map((alert) => {
+            const AlertIcon = getAlertLucideIcon(alert.severity);
+            return (
+              <View key={alert.id} style={styles.alertCard}>
+                <View style={styles.alertHeader}>
+                  <AlertIcon size={20} color={getAlertColor(alert.severity)} />
+                  <Text
+                    style={[
+                      styles.alertSeverity,
+                      { color: getAlertColor(alert.severity) },
+                    ]}
+                  >
+                    {alert.severity} ALERT
+                  </Text>
+                </View>
+                <Text style={styles.alertTitle}>{alert.title}</Text>
+                <Text style={styles.alertDescription} numberOfLines={3}>
+                  {alert.description}
                 </Text>
+                {alert.endTime && (
+                  <Text style={styles.alertTime}>
+                    Until {new Date(alert.endTime).toLocaleDateString()} at{" "}
+                    {new Date(alert.endTime).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </Text>
+                )}
               </View>
-              <Text style={styles.alertTitle}>{alert.title}</Text>
-              <Text style={styles.alertDescription} numberOfLines={3}>
-                {alert.description}
-              </Text>
-              {alert.endTime && (
-                <Text style={styles.alertTime}>
-                  Until {new Date(alert.endTime).toLocaleDateString()} at{" "}
-                  {new Date(alert.endTime).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </Text>
-              )}
-            </View>
-          ))
+            );
+          })
         )}
       </View>
     );
@@ -430,11 +577,7 @@ export default function WeatherScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.errorContainer}>
-          <Ionicons
-            name="cloud-offline"
-            size={64}
-            color={Colors.neutral[400]}
-          />
+          <CloudOff size={64} color={Colors.neutral[400]} />
           <Text style={styles.errorTitle}>Weather Unavailable</Text>
           <Text style={styles.errorMessage}>{error}</Text>
           <TouchableOpacity
@@ -450,59 +593,72 @@ export default function WeatherScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerContainer}>
-        <View style={styles.headerContent}>
-          <Text style={styles.title}>Weather</Text>
-          <View style={styles.headerIcons}>
-            <TouchableOpacity
-              style={styles.iconButton}
-              onPress={() => {
-                // TODO: Implement search functionality
-                console.log("Search pressed");
-              }}
+      <Header
+        title="Weather"
+        onSearchPress={handleSearchPress}
+        onMessagesPress={handleMessagesPress}
+        onMorePress={handleMorePress}
+      />
+
+      <View style={styles.mapContainer}>
+        <MapView
+          ref={mapRef}
+          provider={PROVIDER_DEFAULT}
+          style={styles.map}
+          region={mapRegion}
+          onRegionChangeComplete={setMapRegion}
+          showsUserLocation={true}
+          showsMyLocationButton={false}
+          scrollEnabled={true}
+          zoomEnabled={true}
+          rotateEnabled={false}
+          pitchEnabled={false}
+          mapType="standard"
+        />
+
+        <SafeAreaView style={styles.overlayContent} pointerEvents="box-none">
+          <View style={styles.topOverlay} pointerEvents="box-none">
+            <ScrollView
+              style={styles.scrollView}
+              contentContainerStyle={styles.contentContainer}
+              showsVerticalScrollIndicator={false}
+              scrollEnabled={false}
+              pointerEvents="box-none"
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={handleRefresh}
+                  colors={[Colors.primary[600]]}
+                  tintColor={Colors.primary[600]}
+                />
+              }
             >
-              <Search size={24} color={Colors.text.primary} />
+              {renderWeatherCard()}
+            </ScrollView>
+          </View>
+
+          <View style={styles.zoomControls} pointerEvents="box-none">
+            <TouchableOpacity style={styles.zoomButton} onPress={handleZoomIn}>
+              <Plus size={20} color={Colors.text.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.zoomButton} onPress={handleZoomOut}>
+              <Minus size={20} color={Colors.text.primary} />
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.iconButton}
-              onPress={() => {
-                // TODO: Implement messages functionality
-                console.log("Messages pressed");
-              }}
+              style={styles.zoomButton}
+              onPress={handleMyLocation}
             >
-              <MessageSquare size={24} color={Colors.text.primary} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.iconButton}
-              onPress={() => {
-                // TODO: Implement more options functionality
-                console.log("More options pressed");
-              }}
-            >
-              <MoreHorizontal size={24} color={Colors.text.primary} />
+              <Navigation size={20} color={Colors.primary[600]} />
             </TouchableOpacity>
           </View>
-        </View>
-      </View>
 
-      <SafeAreaView style={styles.safeContent}>
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.contentContainer}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              colors={[Colors.primary[600]]}
-              tintColor={Colors.primary[600]}
-            />
-          }
-        >
-          {renderWeatherCard()}
-          {renderAlertsSection()}
-        </ScrollView>
-      </SafeAreaView>
+          <WeatherLegend
+            onLayerToggle={handleLayerToggle}
+            visible={legendVisible}
+            onToggleVisibility={handleLegendToggle}
+          />
+        </SafeAreaView>
+      </View>
     </View>
   );
 }
@@ -512,41 +668,28 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.surface,
   },
-  scrollView: {
+  mapContainer: {
     flex: 1,
+  },
+  map: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  overlayContent: {
+    flex: 1,
+    backgroundColor: "transparent",
+  },
+  topOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1,
+  },
+  scrollView: {
+    flexGrow: 0,
   },
   contentContainer: {
-    paddingBottom: 100,
-  },
-  safeContent: {
-    flex: 1,
-    backgroundColor: Colors.surface,
-  },
-  headerContainer: {
-    backgroundColor: Colors.background,
-    paddingTop: 60,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  headerContent: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: Colors.text.primary,
-  },
-  headerIcons: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  iconButton: {
-    padding: 8,
+    paddingTop: 24,
   },
   weatherCard: {
     backgroundColor: Colors.background,
@@ -735,5 +878,104 @@ const styles = StyleSheet.create({
     color: Colors.text.inverse,
     fontSize: 16,
     fontWeight: "600",
+  },
+  compactWeatherCard: {
+    backgroundColor: Colors.background,
+    marginHorizontal: 24,
+    marginBottom: 16,
+    borderRadius: 12,
+    padding: 16,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 12,
+  },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  severeBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.error[50],
+    borderColor: Colors.error[100],
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    gap: 4,
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: "500",
+    color: Colors.error[600],
+  },
+  mainWeatherRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+    gap: 12,
+  },
+  temperatureSection: {
+    flex: 1,
+  },
+  compactTemperature: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: Colors.text.primary,
+  },
+  compactCondition: {
+    fontSize: 14,
+    color: Colors.text.secondary,
+    marginTop: 2,
+  },
+  weatherMetrics: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  metricItem: {
+    alignItems: "center",
+    gap: 4,
+  },
+  metricValue: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: Colors.text.primary,
+  },
+  zoomControls: {
+    position: "absolute",
+    right: 24,
+    top: 250,
+    gap: 12,
+    zIndex: 10,
+    alignItems: "center",
+  },
+  zoomButton: {
+    backgroundColor: Colors.background,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
 });

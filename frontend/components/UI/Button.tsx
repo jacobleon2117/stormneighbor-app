@@ -1,19 +1,19 @@
-import React from 'react';
-import { 
-  TouchableOpacity, 
-  Text, 
-  StyleSheet, 
+import React from "react";
+import {
+  TouchableOpacity,
+  Text,
+  StyleSheet,
   ActivityIndicator,
   ViewStyle,
   TextStyle,
-} from 'react-native';
-import { Colors } from '../../constants/Colors';
+} from "react-native";
+import { Colors } from "../../constants/Colors";
 
 interface ButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
-  size?: 'small' | 'medium' | 'large';
+  variant?: "primary" | "secondary" | "outline" | "ghost";
+  size?: "small" | "medium" | "large";
   disabled?: boolean;
   loading?: boolean;
   style?: ViewStyle;
@@ -23,8 +23,8 @@ interface ButtonProps {
 export function Button({
   title,
   onPress,
-  variant = 'primary',
-  size = 'medium',
+  variant = "primary",
+  size = "medium",
   disabled = false,
   loading = false,
   style,
@@ -54,9 +54,11 @@ export function Button({
       activeOpacity={0.8}
     >
       {loading ? (
-        <ActivityIndicator 
-          size="small" 
-          color={variant === 'primary' ? Colors.text.inverse : Colors.primary[600]} 
+        <ActivityIndicator
+          size="small"
+          color={
+            variant === "primary" ? Colors.text.inverse : Colors.primary[600]
+          }
         />
       ) : (
         <Text style={textStyles}>{title}</Text>
@@ -67,12 +69,12 @@ export function Button({
 
 const styles = StyleSheet.create({
   button: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: 8,
-    flexDirection: 'row',
+    flexDirection: "row",
   },
-  
+
   primary: {
     backgroundColor: Colors.primary[600],
   },
@@ -80,12 +82,12 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.neutral[100],
   },
   outline: {
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
     borderWidth: 1,
     borderColor: Colors.primary[600],
   },
   ghost: {
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
 
   small: {
@@ -105,8 +107,8 @@ const styles = StyleSheet.create({
   },
 
   text: {
-    fontWeight: '600',
-    textAlign: 'center',
+    fontWeight: "600",
+    textAlign: "center",
   },
   primaryText: {
     color: Colors.text.inverse,

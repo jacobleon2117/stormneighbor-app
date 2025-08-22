@@ -176,6 +176,34 @@ class ApiService {
     return response.data;
   }
 
+  async updateProfile(profileData: {
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    bio?: string;
+    locationCity?: string;
+    addressState?: string;
+    zipCode?: string;
+    address?: string;
+    latitude?: number;
+    longitude?: number;
+    locationRadiusMiles?: number;
+    showCityOnly?: boolean;
+    notificationPreferences?: any;
+  }) {
+    const backendData = {
+      ...profileData,
+      city: profileData.locationCity,
+      state: profileData.addressState,
+    };
+
+    delete backendData.locationCity;
+    delete backendData.addressState;
+
+    const response = await this.api.put("/auth/profile", backendData);
+    return response.data;
+  }
+
   async getPosts(params?: {
     page?: number;
     limit?: number;

@@ -93,9 +93,10 @@ const register = async (req, res) => {
       ];
 
       if (latitude !== undefined && longitude !== undefined) {
-        insertQuery += ", location";
-        valuesClause += ", ST_SetSRID(ST_MakePoint($12, $13), 4326)";
-        values.push(parseFloat(longitude), parseFloat(latitude));
+        insertQuery += ", latitude, longitude, location";
+        valuesClause +=
+          ", $12::DECIMAL(10,8), $13::DECIMAL(11,8), ST_SetSRID(ST_MakePoint($13::DECIMAL(11,8), $12::DECIMAL(10,8)), 4326)";
+        values.push(parseFloat(latitude), parseFloat(longitude));
       }
 
       insertQuery += valuesClause + ") RETURNING id, email, first_name, last_name, created_at";
@@ -486,6 +487,7 @@ const getProfile = async (req, res) => {
       const result = await client.query(
         `SELECT id, email, first_name, last_name, phone, bio, profile_image_url,
                 location_city, address_state, zip_code, address,
+                latitude, longitude,
                 email_verified, notification_preferences, created_at, updated_at
          FROM users WHERE id = $1`,
         [userId]
@@ -511,6 +513,12 @@ const getProfile = async (req, res) => {
           phone: user.phone,
           bio: user.bio,
           profileImage: user.profile_image_url,
+          locationCity: user.location_city,
+          addressState: user.address_state,
+          zipCode: user.zip_code,
+          address: user.address,
+          latitude: user.latitude,
+          longitude: user.longitude,
           location: {
             city: user.location_city,
             state: user.address_state,
@@ -572,8 +580,9 @@ const updateProfile = async (req, res) => {
         const lng = parseFloat(longitude);
 
         if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
-          updateQuery += ", location = ST_SetSRID(ST_MakePoint($9, $10), 4326)";
-          values.push(lng, lat);
+          updateQuery +=
+            ", latitude = $9::DECIMAL(10,8), longitude = $10::DECIMAL(11,8), location = ST_SetSRID(ST_MakePoint($10::DECIMAL(11,8), $9::DECIMAL(10,8)), 4326)";
+          values.push(lat, lng);
         }
       }
 

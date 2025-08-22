@@ -1,5 +1,6 @@
 import { Tabs } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { View } from "react-native";
+import { Home, Cloud, Plus, AlertTriangle, User } from "lucide-react-native";
 
 export default function TabLayout() {
   return (
@@ -9,16 +10,42 @@ export default function TabLayout() {
         tabBarActiveTintColor: "#2563eb",
         tabBarInactiveTintColor: "#64748b",
         tabBarStyle: {
+          position: "absolute",
+          bottom: 34,
           backgroundColor: "#ffffff",
-          borderTopWidth: 1,
-          borderTopColor: "#e2e8f0",
-          paddingBottom: 8,
-          paddingTop: 8,
-          height: 88,
+          borderRadius: 22,
+          paddingBottom: 4,
+          paddingTop: 4,
+          height: 64,
+          marginHorizontal: 32,
+          shadowColor: "#000",
+          shadowOffset: {
+            width: 0,
+            height: 8,
+          },
+          shadowOpacity: 0.1,
+          shadowRadius: 16,
+          elevation: 12,
+          borderTopWidth: 0,
         },
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: 10,
           fontWeight: "500",
+          marginTop: -2,
+          marginBottom: 4,
+        },
+        tabBarItemStyle: {
+          borderRadius: 16,
+          marginHorizontal: 4,
+          paddingVertical: 2,
+          justifyContent: "center",
+          alignItems: "center",
+          flex: 1,
+          height: "100%",
+        },
+        tabBarIconStyle: {
+          marginBottom: 0,
+          marginTop: 4,
         },
       }}
     >
@@ -26,26 +53,33 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Home",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home-outline" size={size} color={color} />
-          ),
+          tabBarIcon: ({ color }) => <Home size={20} color={color} />,
         }}
       />
       <Tabs.Screen
         name="weather"
         options={{
           title: "Weather",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="cloud-outline" size={size} color={color} />
-          ),
+          tabBarIcon: ({ color }) => <Cloud size={20} color={color} />,
         }}
       />
       <Tabs.Screen
         name="create"
         options={{
-          title: "Create",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="add-circle-outline" size={size} color={color} />
+          title: "Post",
+          tabBarIcon: ({ focused, color }) => (
+            <View
+              style={{
+                width: 24,
+                height: 24,
+                borderRadius: 14,
+                backgroundColor: "#2563eb",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <Plus size={18} strokeWidth={2.5} color="#ffffff" />
+            </View>
           ),
         }}
       />
@@ -53,18 +87,14 @@ export default function TabLayout() {
         name="alerts"
         options={{
           title: "Alerts",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="warning-outline" size={size} color={color} />
-          ),
+          tabBarIcon: ({ color }) => <AlertTriangle size={20} color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={size} color={color} />
-          ),
+          tabBarIcon: ({ color }) => <User size={20} color={color} />,
         }}
       />
     </Tabs>

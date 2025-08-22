@@ -86,16 +86,6 @@ export default function ForgotPasswordScreen() {
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.header}>
-            <TouchableOpacity
-              style={styles.backArrowButton}
-              onPress={() => router.replace("/(auth)/login")}
-            >
-              <Ionicons
-                name="arrow-back"
-                size={24}
-                color={Colors.neutral[700]}
-              />
-            </TouchableOpacity>
             <Ionicons
               name="lock-closed-outline"
               size={48}
@@ -167,17 +157,10 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: "center",
-    marginBottom: 40,
-  },
-  backArrowButton: {
-    position: "absolute",
-    left: 0,
-    top: 0,
-    padding: 8,
-    zIndex: 1,
+    marginBottom: 48,
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "bold",
     color: Colors.text.primary,
     marginTop: 16,
@@ -189,6 +172,7 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary,
     textAlign: "center",
     lineHeight: 22,
+    paddingHorizontal: 8,
   },
   form: {
     width: "100%",

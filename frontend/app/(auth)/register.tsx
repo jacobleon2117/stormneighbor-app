@@ -136,7 +136,7 @@ export default function RegisterScreen() {
                 placeholder="John"
                 autoCapitalize="words"
                 error={errors.firstName}
-                containerStyle={[styles.halfWidth, styles.rightMargin]}
+                containerStyle={{ ...styles.halfWidth, ...styles.rightMargin }}
                 required
               />
               <Input
@@ -292,7 +292,6 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: "row",
-    marginBottom: -16,
   },
   halfWidth: {
     flex: 1,

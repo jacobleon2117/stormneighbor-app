@@ -1,5 +1,8 @@
 process.env.NODE_ENV = "test";
 process.env.JWT_SECRET = "test_jwt_secret_for_testing_only";
+process.env.DATABASE_URL =
+  process.env.DATABASE_URL || "postgresql://postgres:password@localhost:5432/stormneighbor_test";
+process.env.DATABASE_SSL = "false";
 process.env.RESEND_API_KEY = "fake_key_for_testing";
 process.env.FROM_EMAIL = "test@example.com";
 process.env.FROM_NAME = "StormNeighbor Test";

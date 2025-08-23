@@ -1,5 +1,6 @@
 export const Colors = {
   primary: {
+    25: "#f0f9ff",
     50: "#eff6ff",
     100: "#dbeafe",
     200: "#bfdbfe",
@@ -26,8 +27,12 @@ export const Colors = {
   },
 
   success: {
+    25: "#f0fdf4",
     50: "#f0fdf4",
     100: "#dcfce7",
+    200: "#bbf7d0",
+    300: "#86efac",
+    400: "#4ade80",
     500: "#22c55e",
     600: "#16a34a",
     700: "#15803d",
@@ -36,14 +41,21 @@ export const Colors = {
   warning: {
     50: "#fffbeb",
     100: "#fef3c7",
+    200: "#fed7aa",
+    300: "#fdba74",
+    400: "#fb923c",
     500: "#f59e0b",
     600: "#d97706",
     700: "#b45309",
   },
 
   error: {
+    25: "#fef2f2",
     50: "#fef2f2",
     100: "#fee2e2",
+    200: "#fecaca",
+    300: "#fca5a5",
+    400: "#f87171",
     500: "#ef4444",
     600: "#dc2626",
     700: "#b91c1c",

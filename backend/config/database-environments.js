@@ -1,4 +1,3 @@
-// File: backend/config/database-environments.js
 const { getConfig } = require("./environments");
 
 function getDatabaseConfig() {

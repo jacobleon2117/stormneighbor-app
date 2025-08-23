@@ -1,9 +1,6 @@
-import axios, { AxiosInstance, AxiosResponse, AxiosError } from "axios";
+import axios, { AxiosInstance, AxiosError } from "axios";
 import * as SecureStore from "expo-secure-store";
-
-const API_BASE_URL = __DEV__
-  ? "http://192.168.1.223:3000/api/v1"
-  : "https://i'll-add-this-later/api/v1";
+import { API_CONFIG } from "../constants/config";
 
 const ACCESS_TOKEN_KEY = "access_token";
 const REFRESH_TOKEN_KEY = "refresh_token";
@@ -13,8 +10,8 @@ class ApiService {
 
   constructor() {
     this.api = axios.create({
-      baseURL: API_BASE_URL,
-      timeout: 30000,
+      baseURL: API_CONFIG.BASE_URL,
+      timeout: API_CONFIG.TIMEOUT,
       headers: {
         "Content-Type": "application/json",
       },
@@ -109,9 +106,12 @@ class ApiService {
       throw new Error("No refresh token available");
     }
 
-    const response = await axios.post(`${API_BASE_URL}/auth/refresh-token`, {
-      refreshToken,
-    });
+    const response = await axios.post(
+      `${API_CONFIG.BASE_URL}/auth/refresh-token`,
+      {
+        refreshToken,
+      }
+    );
 
     const { accessToken, refreshToken: newRefreshToken } = response.data.data;
     await this.setAccessToken(accessToken);
@@ -121,7 +121,7 @@ class ApiService {
   async login(email: string, password: string) {
     try {
       console.log("Attempting login for:", email);
-      console.log("API Base URL:", API_BASE_URL);
+      console.log("API Base URL:", API_CONFIG.BASE_URL);
 
       const response = await this.api.post("/auth/login", { email, password });
       console.log("Login response received");
@@ -151,13 +151,37 @@ class ApiService {
         ...userData,
         password: "[HIDDEN]",
       });
-      console.log("API Base URL:", API_BASE_URL);
+      console.log("API Base URL:", API_CONFIG.BASE_URL);
 
       const response = await this.api.post("/auth/register", userData);
       console.log("Registration successful");
       return response.data;
     } catch (error) {
       console.error("Registration error in API service:", error);
+      throw error;
+    }
+  }
+
+  async forgotPassword(email: string) {
+    try {
+      const response = await this.api.post("/auth/forgot-password", { email });
+      return response.data;
+    } catch (error) {
+      console.error("Forgot password error in API service:", error);
+      throw error;
+    }
+  }
+
+  async resetPassword(email: string, code: string, newPassword: string) {
+    try {
+      const response = await this.api.post("/auth/reset-password", {
+        email,
+        code,
+        newPassword,
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Reset password error in API service:", error);
       throw error;
     }
   }
@@ -202,6 +226,36 @@ class ApiService {
 
     const response = await this.api.put("/auth/profile", backendData);
     return response.data;
+  }
+
+  async updateNotificationPreferences(notificationPreferences: any) {
+    try {
+      const response = await this.api.put("/auth/notification-preferences", {
+        notificationPreferences,
+      });
+      return response.data;
+    } catch (error) {
+      console.error(
+        "Update notification preferences error in API service:",
+        error
+      );
+      throw error;
+    }
+  }
+
+  async registerPushToken(pushToken: string) {
+    try {
+      const response = await this.api.post(
+        "/notifications/register-push-token",
+        {
+          pushToken,
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Register push token error in API service:", error);
+      throw error;
+    }
   }
 
   async getPosts(params?: {
@@ -345,9 +399,40 @@ class ApiService {
     return response.data;
   }
 
+  async getNotifications(params?: {
+    page?: number;
+    limit?: number;
+    unreadOnly?: boolean;
+  }) {
+    const response = await this.api.get("/notifications", { params });
+    return response.data;
+  }
+
+  async markNotificationAsRead(notificationId: number) {
+    const response = await this.api.put(
+      `/notifications/${notificationId}/read`
+    );
+    return response.data;
+  }
+
+  async markAllNotificationsAsRead() {
+    const response = await this.api.put("/notifications/read-all");
+    return response.data;
+  }
+
+  async deleteNotification(notificationId: number) {
+    const response = await this.api.delete(`/notifications/${notificationId}`);
+    return response.data;
+  }
+
+  async getNotificationSettings() {
+    const response = await this.api.get("/notifications/settings");
+    return response.data;
+  }
+
   async healthCheck() {
     const response = await axios.get(
-      `${API_BASE_URL.replace("/api/v1", "")}/health`
+      `${API_CONFIG.BASE_URL.replace("/api/v1", "")}/health`
     );
     return response.data;
   }

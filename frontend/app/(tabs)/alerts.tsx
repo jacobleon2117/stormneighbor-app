@@ -189,18 +189,15 @@ export default function AlertsScreen() {
   }, [fetchAlerts]);
 
   const handleSearchPress = () => {
-    // TODO: Implement search functionality
-    console.log("Search pressed");
+    router.push("/(tabs)/search");
   };
 
   const handleMessagesPress = () => {
-    // TODO: Implement messages functionality
-    console.log("Messages pressed");
+    router.push("/(tabs)/notifications");
   };
 
   const handleMorePress = () => {
-    // TODO: Implement more options functionality
-    console.log("More options pressed");
+    router.push("/(tabs)/profile");
   };
 
   const handleCreateAlert = async (template?: EmergencyTemplate) => {

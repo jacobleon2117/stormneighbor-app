@@ -28,7 +28,7 @@ interface AuthContextType extends AuthState {
   }) => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
-  refreshProfile: () => Promise<void>;
+  refreshProfile: () => Promise<User>;
 }
 
 type AuthAction =

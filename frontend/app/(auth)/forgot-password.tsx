@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Input } from "../../components/UI/Input";
 import { Button } from "../../components/UI/Button";
 import { Colors } from "../../constants/Colors";
+import { apiService } from "../../services/api";
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState("");
@@ -41,11 +42,17 @@ export default function ForgotPasswordScreen() {
     setIsLoading(true);
 
     try {
-      // TODO: Implement forgot password API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      await apiService.forgotPassword(email.trim());
       setEmailSent(true);
     } catch (error: any) {
-      setError("Failed to send reset email. Please try again.");
+      console.error("Forgot password error:", error);
+      if (error?.response?.data?.message) {
+        setError(error.response.data.message);
+      } else if (error?.response?.status === 429) {
+        setError("Too many reset attempts. Please try again later.");
+      } else {
+        setError("Failed to send reset email. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }

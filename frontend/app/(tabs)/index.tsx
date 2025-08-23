@@ -11,7 +11,9 @@ import {
   TextInput,
   TouchableOpacity,
   Modal,
+  Share,
 } from "react-native";
+import * as Clipboard from "expo-clipboard";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { PostCard } from "../../components/Posts/PostCard";
@@ -19,6 +21,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { apiService } from "../../services/api";
 import { Post, SearchFilters } from "../../types";
 import { Colors } from "../../constants/Colors";
+import { URL_CONFIG } from "../../constants/config";
 import { Button } from "../../components/UI/Button";
 import { Header } from "../../components/UI/Header";
 
@@ -161,8 +164,40 @@ export default function HomeScreen() {
   };
 
   const handleShare = (postId: number) => {
-    // TODO: Implement native sharing functionality
-    Alert.alert("Share", `Share post ${postId}`, [{ text: "OK" }]);
+    const shareUrl = `${URL_CONFIG.baseUrl}/post/${postId}`;
+    const shareMessage = `Check out this post on StormNeighbor: ${shareUrl}`;
+    
+    Alert.alert(
+      "Share Post",
+      "How would you like to share this post?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Copy Link",
+          onPress: async () => {
+            try {
+              await Clipboard.setStringAsync(shareUrl);
+              Alert.alert("Success", "Link copied to clipboard!");
+            } catch (error) {
+              Alert.alert("Error", "Failed to copy link");
+            }
+          },
+        },
+        {
+          text: "More Options",
+          onPress: async () => {
+            try {
+              await Share.share({
+                message: shareMessage,
+                url: shareUrl,
+              });
+            } catch (error) {
+              console.error("Error sharing:", error);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handlePostPress = (postId: number) => {
@@ -261,18 +296,15 @@ export default function HomeScreen() {
   );
 
   const handleSearchPress = () => {
-    // TODO: Implement search functionality
-    console.log("Search pressed");
+    router.push("/(tabs)/search");
   };
 
   const handleMessagesPress = () => {
-    // TODO: Implement messages functionality
-    console.log("Messages pressed");
+    router.push("/(tabs)/notifications");
   };
 
   const handleMorePress = () => {
-    // TODO: Implement more options functionality
-    console.log("More options pressed");
+    router.push("/(tabs)/profile");
   };
 
   const renderEmpty = () => (

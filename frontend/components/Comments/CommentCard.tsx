@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -7,11 +7,11 @@ import {
   Image,
   Alert,
   TextInput,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Comment } from '../../types';
-import { Colors } from '../../constants/Colors';
-import { Button } from '../UI/Button';
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { Comment } from "../../types";
+import { Colors } from "../../constants/Colors";
+import { Button } from "../UI/Button";
 
 interface CommentCardProps {
   comment: Comment;
@@ -38,7 +38,7 @@ export function CommentCard({
 }: CommentCardProps) {
   const [showReplyInput, setShowReplyInput] = useState(false);
   const [showEditInput, setShowEditInput] = useState(false);
-  const [replyContent, setReplyContent] = useState('');
+  const [replyContent, setReplyContent] = useState("");
   const [editContent, setEditContent] = useState(comment.content);
   const [imageError, setImageError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -53,7 +53,7 @@ export function CommentCard({
       (now.getTime() - commentDate.getTime()) / 1000
     );
 
-    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 60) return "Just now";
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
     if (diffInSeconds < 86400)
       return `${Math.floor(diffInSeconds / 3600)}h ago`;
@@ -69,10 +69,10 @@ export function CommentCard({
     setIsSubmitting(true);
     try {
       await onReply?.(comment.id, replyContent.trim());
-      setReplyContent('');
+      setReplyContent("");
       setShowReplyInput(false);
     } catch (error) {
-      console.error('Error submitting reply:', error);
+      console.error("Error submitting reply:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -90,7 +90,7 @@ export function CommentCard({
       await onEdit?.(comment.id, editContent.trim());
       setShowEditInput(false);
     } catch (error) {
-      console.error('Error editing comment:', error);
+      console.error("Error editing comment:", error);
       setEditContent(comment.content);
     } finally {
       setIsSubmitting(false);
@@ -99,13 +99,13 @@ export function CommentCard({
 
   const handleDelete = () => {
     Alert.alert(
-      'Delete Comment',
-      'Are you sure you want to delete this comment? This action cannot be undone.',
+      "Delete Comment",
+      "Are you sure you want to delete this comment? This action cannot be undone.",
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: "Cancel", style: "cancel" },
         {
-          text: 'Delete',
-          style: 'destructive',
+          text: "Delete",
+          style: "destructive",
           onPress: () => onDelete?.(comment.id),
         },
       ]
@@ -113,32 +113,30 @@ export function CommentCard({
   };
 
   const handleReport = () => {
-    Alert.alert(
-      'Report Comment',
-      'Why are you reporting this comment?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Spam',
-          onPress: () => onReport?.(comment.id),
-        },
-        {
-          text: 'Harassment',
-          onPress: () => onReport?.(comment.id),
-        },
-        {
-          text: 'Inappropriate Content',
-          onPress: () => onReport?.(comment.id),
-        },
-      ]
-    );
+    Alert.alert("Report Comment", "Why are you reporting this comment?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Spam",
+        onPress: () => onReport?.(comment.id),
+      },
+      {
+        text: "Harassment",
+        onPress: () => onReport?.(comment.id),
+      },
+      {
+        text: "Inappropriate Content",
+        onPress: () => onReport?.(comment.id),
+      },
+    ]);
   };
 
   return (
-    <View style={[
-      styles.container,
-      { marginLeft: depth * 20, borderLeftWidth: depth > 0 ? 2 : 0 },
-    ]}>
+    <View
+      style={[
+        styles.container,
+        { marginLeft: depth * 20, borderLeftWidth: depth > 0 ? 2 : 0 },
+      ]}
+    >
       <View style={styles.header}>
         <View style={styles.userInfo}>
           <View style={styles.avatar}>
@@ -170,25 +168,21 @@ export function CommentCard({
           style={styles.menuButton}
           onPress={() => {
             if (isOwner) {
-              Alert.alert(
-                'Comment Options',
-                'What would you like to do?',
-                [
-                  { text: 'Cancel', style: 'cancel' },
-                  {
-                    text: 'Edit',
-                    onPress: () => {
-                      setEditContent(comment.content);
-                      setShowEditInput(true);
-                    },
+              Alert.alert("Comment Options", "What would you like to do?", [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Edit",
+                  onPress: () => {
+                    setEditContent(comment.content);
+                    setShowEditInput(true);
                   },
-                  {
-                    text: 'Delete',
-                    style: 'destructive',
-                    onPress: handleDelete,
-                  },
-                ]
-              );
+                },
+                {
+                  text: "Delete",
+                  style: "destructive",
+                  onPress: handleDelete,
+                },
+              ]);
             } else {
               handleReport();
             }
@@ -249,7 +243,9 @@ export function CommentCard({
             ))}
             {comment.images.length > 2 && (
               <View style={styles.imageOverlay}>
-                <Text style={styles.imageCount}>+{comment.images.length - 2}</Text>
+                <Text style={styles.imageCount}>
+                  +{comment.images.length - 2}
+                </Text>
               </View>
             )}
           </View>
@@ -262,9 +258,11 @@ export function CommentCard({
           onPress={() => onLike?.(comment.id)}
         >
           <Ionicons
-            name={comment.userReaction ? 'heart' : 'heart-outline'}
+            name={comment.userReaction ? "heart" : "heart-outline"}
             size={16}
-            color={comment.userReaction ? Colors.error[600] : Colors.neutral[600]}
+            color={
+              comment.userReaction ? Colors.error[600] : Colors.neutral[600]
+            }
           />
           <Text
             style={[
@@ -307,7 +305,7 @@ export function CommentCard({
               title="Cancel"
               onPress={() => {
                 setShowReplyInput(false);
-                setReplyContent('');
+                setReplyContent("");
               }}
               variant="ghost"
               size="small"
@@ -353,14 +351,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 8,
   },
   userInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
   },
   avatar: {
@@ -368,8 +366,8 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
     backgroundColor: Colors.neutral[100],
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: 8,
   },
   avatarImage: {
@@ -382,7 +380,7 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.text.primary,
   },
   timestamp: {
@@ -391,7 +389,7 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   editedLabel: {
-    fontStyle: 'italic',
+    fontStyle: "italic",
   },
   menuButton: {
     padding: 4,
@@ -416,19 +414,19 @@ const styles = StyleSheet.create({
     color: Colors.text.primary,
     backgroundColor: Colors.background,
     minHeight: 80,
-    textAlignVertical: 'top',
+    textAlignVertical: "top",
   },
   editActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
+    flexDirection: "row",
+    justifyContent: "flex-end",
     gap: 8,
     marginTop: 8,
   },
   imagesContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
     marginTop: 8,
-    position: 'relative',
+    position: "relative",
   },
   commentImage: {
     width: 60,
@@ -436,7 +434,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   imageOverlay: {
-    position: 'absolute',
+    position: "absolute",
     top: 4,
     right: 4,
     backgroundColor: Colors.neutral[900],
@@ -447,23 +445,23 @@ const styles = StyleSheet.create({
   imageCount: {
     color: Colors.text.inverse,
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   actions: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 16,
   },
   actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 2,
   },
   actionText: {
     fontSize: 12,
     color: Colors.text.secondary,
     marginLeft: 4,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   likedText: {
     color: Colors.error[600],
@@ -483,11 +481,11 @@ const styles = StyleSheet.create({
     color: Colors.text.primary,
     backgroundColor: Colors.background,
     minHeight: 60,
-    textAlignVertical: 'top',
+    textAlignVertical: "top",
   },
   replyActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
+    flexDirection: "row",
+    justifyContent: "flex-end",
     gap: 8,
     marginTop: 8,
   },

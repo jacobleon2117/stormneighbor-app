@@ -1,4 +1,3 @@
-// File: backend/src/config/backup.js
 require("dotenv").config();
 
 const backupConfig = {

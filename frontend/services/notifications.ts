@@ -2,12 +2,15 @@ import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import { Platform } from "react-native";
 import { apiService } from "./api";
+import { PUSH_CONFIG } from "../constants/config";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
@@ -48,7 +51,7 @@ export class NotificationService {
       }
 
       const token = await Notifications.getExpoPushTokenAsync({
-        projectId: "your-project-id", // Replace with actual project ID
+        projectId: PUSH_CONFIG.projectId,
       });
 
       console.log("Expo Push Token:", token.data);

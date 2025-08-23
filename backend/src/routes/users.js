@@ -22,14 +22,21 @@ router.get(
           u.first_name,
           u.last_name,
           u.profile_image_url,
-          up.bio,
-          up.city,
-          up.state,
+          u.bio,
+          u.location_city as city,
+          u.address_state as state,
+          u.phone,
+          u.email,
+          u.location_radius_miles,
+          u.show_city_only,
+          u.latitude,
+          u.longitude,
+          u.email_verified,
           u.created_at,
+          u.updated_at,
           (SELECT COUNT(*) FROM posts WHERE user_id = u.id AND is_active = true) as post_count,
           (SELECT COUNT(*) FROM comments WHERE user_id = u.id AND is_active = true) as comment_count
         FROM users u
-        LEFT JOIN user_profiles up ON u.id = up.user_id
         WHERE u.id = $1 AND u.is_active = true
       `,
         [userId]
@@ -88,11 +95,10 @@ router.get(
           u.first_name,
           u.last_name,
           u.profile_image_url,
-          up.city,
-          up.state,
+          u.location_city as city,
+          u.address_state as state,
           (SELECT COUNT(*) FROM posts WHERE user_id = u.id AND is_active = true) as post_count
         FROM users u
-        LEFT JOIN user_profiles up ON u.id = up.user_id
         WHERE u.is_active = true
       `;
 
@@ -101,7 +107,7 @@ router.get(
 
       if (search) {
         paramCount++;
-        query += ` AND (CONCAT(u.first_name, ' ', u.last_name) ILIKE $${paramCount} OR up.city ILIKE $${paramCount})`;
+        query += ` AND (CONCAT(u.first_name, ' ', u.last_name) ILIKE $${paramCount} OR u.location_city ILIKE $${paramCount})`;
         params.push(`%${search}%`);
       }
 
@@ -113,14 +119,13 @@ router.get(
       let countQuery = `
         SELECT COUNT(*) as total
         FROM users u
-        LEFT JOIN user_profiles up ON u.id = up.user_id
         WHERE u.is_active = true
       `;
 
       const countParams = [];
 
       if (search) {
-        countQuery += " AND (CONCAT(u.first_name, ' ', u.last_name) ILIKE $1 OR up.city ILIKE $1)";
+        countQuery += " AND (CONCAT(u.first_name, ' ', u.last_name) ILIKE $1 OR u.location_city ILIKE $1)";
         countParams.push(`%${search}%`);
       }
 

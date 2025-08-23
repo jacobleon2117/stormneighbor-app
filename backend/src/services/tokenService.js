@@ -257,52 +257,52 @@ class TokenService {
       );
 
       switch (validation.action) {
-        case "revoke":
-          await client.query(
-            "UPDATE user_sessions SET is_active = false WHERE refresh_token = $1",
-            [refreshToken]
-          );
+      case "revoke":
+        await client.query(
+          "UPDATE user_sessions SET is_active = false WHERE refresh_token = $1",
+          [refreshToken]
+        );
 
-          await client.query("COMMIT");
+        await client.query("COMMIT");
 
-          this.logSecurityEvent("session_revoked_security", {
-            userId: session.user_id,
-            reason: validation.reason,
-            storedFingerprint: session.device_fingerprint?.substring(0, 8),
-            currentFingerprint: currentFingerprint.substring(0, 8),
-            ipAddress: req.ip,
-          });
+        this.logSecurityEvent("session_revoked_security", {
+          userId: session.user_id,
+          reason: validation.reason,
+          storedFingerprint: session.device_fingerprint?.substring(0, 8),
+          currentFingerprint: currentFingerprint.substring(0, 8),
+          ipAddress: req.ip,
+        });
 
-          throw new Error("Session revoked for security reasons. Please log in again.");
+        throw new Error("Session revoked for security reasons. Please log in again.");
 
-        case "flag":
-          this.logSecurityEvent("fingerprint_mismatch_flagged", {
-            userId: session.user_id,
-            reason: validation.reason,
-            storedFingerprint: session.device_fingerprint?.substring(0, 8),
-            currentFingerprint: currentFingerprint.substring(0, 8),
-            ipAddress: req.ip,
-          });
-          break;
+      case "flag":
+        this.logSecurityEvent("fingerprint_mismatch_flagged", {
+          userId: session.user_id,
+          reason: validation.reason,
+          storedFingerprint: session.device_fingerprint?.substring(0, 8),
+          currentFingerprint: currentFingerprint.substring(0, 8),
+          ipAddress: req.ip,
+        });
+        break;
 
-        case "warn":
-          this.logSecurityEvent("fingerprint_mismatch_warning", {
-            userId: session.user_id,
-            reason: validation.reason,
-            environment: process.env.NODE_ENV,
-          });
-          break;
+      case "warn":
+        this.logSecurityEvent("fingerprint_mismatch_warning", {
+          userId: session.user_id,
+          reason: validation.reason,
+          environment: process.env.NODE_ENV,
+        });
+        break;
 
-        case "update":
-          this.logSecurityEvent("fingerprint_updated", {
-            userId: session.user_id,
-            reason: validation.reason,
-          });
-          break;
+      case "update":
+        this.logSecurityEvent("fingerprint_updated", {
+          userId: session.user_id,
+          reason: validation.reason,
+        });
+        break;
 
-        case "allow":
-        default:
-          break;
+      case "allow":
+      default:
+        break;
       }
 
       const newAccessToken = this.generateAccessToken(session.user_id, {

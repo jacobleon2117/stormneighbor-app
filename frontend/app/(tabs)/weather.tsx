@@ -43,6 +43,7 @@ import { WeatherData, Alert as WeatherAlert } from "../../types";
 import { useAuth } from "../../hooks/useAuth";
 import { Header } from "../../components/UI/Header";
 import WeatherLegend from "../../components/Weather/WeatherLegend";
+import { router } from "expo-router";
 
 export default function WeatherScreen() {
   const { user } = useAuth();
@@ -67,6 +68,13 @@ export default function WeatherScreen() {
   const mapRef = React.useRef<MapView>(null);
   const [legendVisible, setLegendVisible] = useState(false);
   const [lastApiCall, setLastApiCall] = useState(0);
+  const [weatherLayers, setWeatherLayers] = useState<Record<string, boolean>>({
+    precipitation: false,
+    clouds: false,
+    wind: false,
+    temperature: false,
+    alerts: true,
+  });
 
   const requestLocationPermission = async () => {
     try {
@@ -288,18 +296,15 @@ export default function WeatherScreen() {
   };
 
   const handleSearchPress = () => {
-    // TODO: Implement search functionality
-    console.log("Search pressed");
+    router.push("/(tabs)/search");
   };
 
   const handleMessagesPress = () => {
-    // TODO: Implement messages functionality
-    console.log("Messages pressed");
+    router.push("/(tabs)/notifications");
   };
 
   const handleMorePress = () => {
-    // TODO: Implement more options functionality
-    console.log("More options pressed");
+    router.push("/(tabs)/profile");
   };
 
   const handleZoomIn = () => {
@@ -341,7 +346,10 @@ export default function WeatherScreen() {
 
   const handleLayerToggle = (layerId: string, enabled: boolean) => {
     console.log(`Weather layer ${layerId} ${enabled ? "enabled" : "disabled"}`);
-    // TODO: Implement actual weather layer toggle functionality
+    setWeatherLayers(prev => ({
+      ...prev,
+      [layerId]: enabled,
+    }));
   };
 
   const handleLegendToggle = () => {

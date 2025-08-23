@@ -13,6 +13,7 @@ import {
   Switch,
   ActivityIndicator,
 } from "react-native";
+import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { Button } from "../../components/UI/Button";
@@ -770,22 +771,14 @@ export default function ProfileScreen() {
             "shield-checkmark",
             "Privacy & Security",
             "Account security settings",
-            () =>
-              Alert.alert(
-                "Coming Soon",
-                "Security settings will be available in the next update."
-              )
+            () => router.push("/privacy-security")
           )}
 
           {renderMenuItem(
             "help-circle",
             "Help & Support",
             "FAQs, contact support",
-            () =>
-              Alert.alert(
-                "Help",
-                "For support, please email support@stormneighbor.app"
-              )
+            () => router.push("/help-support")
           )}
         </View>
 

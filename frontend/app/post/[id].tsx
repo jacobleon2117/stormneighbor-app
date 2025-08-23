@@ -7,7 +7,9 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  Share,
 } from "react-native";
+import * as Clipboard from "expo-clipboard";
 import { useLocalSearchParams, router } from "expo-router";
 import { PostCard } from "../../components/Posts/PostCard";
 import { CommentsSection } from "../../components/Comments/CommentsSection";
@@ -15,6 +17,7 @@ import { Colors } from "../../constants/Colors";
 import { apiService } from "../../services/api";
 import { Post } from "../../types";
 import { useAuth } from "../../hooks/useAuth";
+import { URL_CONFIG } from "../../constants/config";
 
 export default function PostDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -95,8 +98,36 @@ export default function PostDetailScreen() {
   };
 
   const handleShare = (postId: number) => {
-    // TODO: Implement native sharing
-    Alert.alert("Share", `Share post ${postId}`, [{ text: "OK" }]);
+    const shareUrl = `${URL_CONFIG.baseUrl}/post/${postId}`;
+    const shareMessage = `Check out this post on StormNeighbor: ${shareUrl}`;
+
+    Alert.alert("Share Post", "How would you like to share this post?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Copy Link",
+        onPress: async () => {
+          try {
+            await Clipboard.setStringAsync(shareUrl);
+            Alert.alert("Success", "Link copied to clipboard!");
+          } catch (error) {
+            Alert.alert("Error", "Failed to copy link");
+          }
+        },
+      },
+      {
+        text: "More Options",
+        onPress: async () => {
+          try {
+            await Share.share({
+              message: shareMessage,
+              url: shareUrl,
+            });
+          } catch (error) {
+            console.error("Error sharing:", error);
+          }
+        },
+      },
+    ]);
   };
 
   const handleCommentCountChange = (count: number) => {

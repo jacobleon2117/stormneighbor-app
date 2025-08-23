@@ -73,7 +73,7 @@ const server = app.listen(PORT, HOST, () => {
 
   console.log("\nPush Notifications:");
   console.log(" POST /api/v1/notifications/register");
-  console.log("  GET /api/v1/notifications/devices");
+  console.log(" GET /api/v1/notifications/devices");
   console.log(" POST /api/v1/notifications/subscribe");
   console.log(" POST /api/v1/notifications/test (admin)");
 
@@ -85,12 +85,12 @@ const server = app.listen(PORT, HOST, () => {
   if (process.env.NODE_ENV === "development") {
     console.log("\nDevelopment Tools:");
     console.log(" POST /api/v1/auth/send-test-email - Send test email");
-    console.log("   GET  /analytics - API usage statistics");
-    console.log("   GET  /cache/stats - Cache performance");
-    console.log("   GET  /api/v1/auth/test-email - Test email service");
-    console.log("     DELETE /cache - Clear cache");
-    console.log("   GET  /api/v1/notifications/status - Push notification status");
-    console.log("   npm run push:test - Test push notifications");
+    console.log(" GET  /analytics - API usage statistics");
+    console.log(" GET  /cache/stats - Cache performance");
+    console.log(" GET  /api/v1/auth/test-email - Test email service");
+    console.log(" DELETE /cache - Clear cache");
+    console.log(" GET  /api/v1/notifications/status - Push notification status");
+    console.log(" npm run push:test - Test push notifications");
   }
 });
 

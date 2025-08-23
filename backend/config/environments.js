@@ -1,4 +1,3 @@
-// File: backend/config/environments.js
 const environments = {
   development: {
     server: {

@@ -91,6 +91,15 @@ export interface WeatherData {
     country: string;
   };
   timestamp: string;
+  current?: {
+    temperature: number;
+    condition: string;
+    description: string;
+    humidity: number;
+    windSpeed: number;
+    windDirection?: string;
+    shortForecast?: string;
+  };
 }
 
 export interface Alert {
@@ -236,3 +245,9 @@ export const REACTION_TYPES = {
   CONCERNED: "concerned" as const,
   ANGRY: "angry" as const,
 };
+
+export type PostType = keyof typeof POST_TYPES;
+export type Priority = keyof typeof PRIORITIES;
+
+export const POST_TYPE_OPTIONS = Object.keys(POST_TYPES) as PostType[];
+export const PRIORITY_OPTIONS = Object.keys(PRIORITIES) as Priority[];

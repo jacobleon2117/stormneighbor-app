@@ -12,7 +12,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Button,
+  Image,
 } from "react-native";
 import { router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
@@ -32,9 +32,10 @@ import {
   AtSign,
 } from "lucide-react-native";
 import { Header } from "../../components/UI/Header";
+import { Button } from "../../components/UI/Button";
 import { Colors } from "../../constants/Colors";
 import { apiService } from "../../services/api";
-import { POST_TYPES, PRIORITIES, CreatePostForm } from "../../types";
+import { POST_TYPES, PRIORITIES, CreatePostForm, PostType, Priority, POST_TYPE_OPTIONS, PRIORITY_OPTIONS } from "../../types";
 import { useAuth } from "../../hooks/useAuth";
 import { Input } from "../../components/UI/Input";
 
@@ -48,7 +49,6 @@ interface QuickAction {
   postType: string;
   priority: string;
 }
-// need to update Colors.ts i change the colors for the quick actions so i can get the screen to work
 const QUICK_ACTIONS: QuickAction[] = [
   {
     id: "announcement",
@@ -288,17 +288,17 @@ export default function CreateScreen() {
     }));
   };
 
-  const selectPostType = (postType: PostType) => {
+  const selectPostType = (postType: string) => {
     setForm((prev) => ({
       ...prev,
-      postType: POST_TYPES[postType],
+      postType: postType as CreatePostForm["postType"],
     }));
   };
 
-  const selectPriority = (priority: Priority) => {
+  const selectPriority = (priority: string) => {
     setForm((prev) => ({
       ...prev,
-      priority: PRIORITIES[priority],
+      priority: priority as CreatePostForm["priority"],
     }));
   };
 
@@ -319,9 +319,14 @@ export default function CreateScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Post Type</Text>
             <View style={styles.postTypeGrid}>
-              {POST_TYPE_OPTIONS.map((option) => {
-                const isSelected =
-                  form.postType === POST_TYPES[option.key as PostType];
+              {[
+                { key: "help_request", label: "Help Request", description: "Ask neighbors for help" },
+                { key: "help_offer", label: "Help Offer", description: "Offer help to neighbors" },
+                { key: "lost_found", label: "Lost & Found", description: "Lost or found items" },
+                { key: "safety_alert", label: "Safety Alert", description: "Safety concerns or alerts" },
+                { key: "general", label: "General", description: "General community posts" },
+              ].map((option) => {
+                const isSelected = form.postType === option.key;
                 return (
                   <TouchableOpacity
                     key={option.key}
@@ -329,7 +334,7 @@ export default function CreateScreen() {
                       styles.postTypeCard,
                       isSelected && styles.postTypeCardSelected,
                     ]}
-                    onPress={() => selectPostType(option.key as PostType)}
+                    onPress={() => selectPostType(option.key)}
                   >
                     <Text
                       style={[
@@ -390,9 +395,13 @@ export default function CreateScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Priority</Text>
             <View style={styles.priorityRow}>
-              {PRIORITY_OPTIONS.map((option) => {
-                const isSelected =
-                  form.priority === PRIORITIES[option.key as Priority];
+              {[
+                { key: "low", label: "Low", color: Colors.success[500] },
+                { key: "normal", label: "Normal", color: Colors.neutral[500] },
+                { key: "high", label: "High", color: Colors.warning[500] },
+                { key: "urgent", label: "Urgent", color: Colors.error[500] },
+              ].map((option) => {
+                const isSelected = form.priority === option.key;
                 return (
                   <TouchableOpacity
                     key={option.key}
@@ -403,7 +412,7 @@ export default function CreateScreen() {
                         backgroundColor: `${option.color}15`,
                       },
                     ]}
-                    onPress={() => selectPriority(option.key as Priority)}
+                    onPress={() => selectPriority(option.key)}
                   >
                     <View
                       style={[

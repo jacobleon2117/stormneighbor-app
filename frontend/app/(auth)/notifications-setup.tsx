@@ -14,6 +14,7 @@ import { Bell, AlertTriangle, Sun, Users, Shield } from "lucide-react-native";
 import * as Notifications from "expo-notifications";
 import { Button } from "../../components/UI/Button";
 import { Colors } from "../../constants/Colors";
+import { apiService } from "../../services/api";
 
 interface NotificationSetting {
   id: string;
@@ -84,9 +85,20 @@ export default function NotificationsSetupScreen() {
 
       setPermissionGranted(true);
       
-      // TODO: Save notification preferences to user profile
-      const enabledSettings = settings.filter(setting => setting.enabled);
-      console.log("Notification settings saved:", enabledSettings);
+      const notificationPreferences = settings.reduce((acc, setting) => {
+        acc[setting.id] = {
+          enabled: setting.enabled,
+          essential: setting.essential || false,
+        };
+        return acc;
+      }, {} as any);
+
+      try {
+        await apiService.updateNotificationPreferences(notificationPreferences);
+        console.log("Notification preferences saved successfully");
+      } catch (error) {
+        console.error("Failed to save notification preferences:", error);
+      }
 
     } catch (error) {
       console.error("Error requesting notification permission:", error);
@@ -104,14 +116,26 @@ export default function NotificationsSetupScreen() {
     ));
   };
 
-  const handleContinue = () => {
-    // TODO: Save settings and navigate to main app
-    console.log("Final notification settings:", settings);
+  const handleContinue = async () => {
+    const notificationPreferences = settings.reduce((acc, setting) => {
+      acc[setting.id] = {
+        enabled: setting.enabled,
+        essential: setting.essential || false,
+      };
+      return acc;
+    }, {} as any);
+
+    try {
+      await apiService.updateNotificationPreferences(notificationPreferences);
+      console.log("Final notification preferences saved successfully");
+    } catch (error) {
+      console.error("Failed to save final notification preferences:", error);
+    }
+    
     router.replace("/(tabs)");
   };
 
   const handleSkip = () => {
-    // Skip notifications and go to main app
     router.replace("/(tabs)");
   };
 

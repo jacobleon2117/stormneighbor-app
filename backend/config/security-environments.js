@@ -1,4 +1,3 @@
-// File: backend/config/security-environments.js
 const { getConfig } = require("./environments");
 
 function getSecurityConfig() {

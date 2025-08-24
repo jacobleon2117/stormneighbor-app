@@ -111,7 +111,7 @@ SET row_security = off;
     }
   }
 
-  async generateCreateTableSQL(tableName, columns) {
+  async generateCreateTableSQL(tableName, _columns) {
     const client = await this.pool.connect();
     try {
       const result = await client.query(

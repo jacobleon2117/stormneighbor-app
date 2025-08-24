@@ -86,7 +86,7 @@ const auth = async (req, res, next) => {
   }
 };
 
-const optionalAuth = async (req, res, next) => {
+const optionalAuth = async (req, _res, next) => {
   try {
     const authHeader = req.header("Authorization");
     

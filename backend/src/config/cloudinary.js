@@ -22,7 +22,7 @@ const testCloudinaryConnection = async () => {
       return false;
     }
 
-    const _result = await cloudinary.api.ping();
+    await cloudinary.api.ping();
     console.log("SUCCESS: Cloudinary connection successful");
     console.log("INFO: Cloudinary account:", process.env.CLOUDINARY_CLOUD_NAME);
     return true;

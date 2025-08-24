@@ -412,9 +412,12 @@ export default function AlertsScreen() {
     <View style={styles.container}>
       <Header
         title="Alerts"
+        showSearch={true}
+        showNotifications={true}
+        showMessages={true}
         onSearchPress={handleSearchPress}
-        onMessagesPress={handleMessagesPress}
-        onMorePress={handleMorePress}
+        onNotificationsPress={() => router.push("/(tabs)/notifications")}
+        onMessagesPress={() => router.push("/(tabs)/messages")}
       />
 
       <SafeAreaView style={styles.safeContent}>

@@ -12,15 +12,18 @@ import {
   MoreHorizontal,
   ArrowLeft,
   X,
+  Bell,
 } from "lucide-react-native";
 import { Colors } from "../../constants/Colors";
 
 interface HeaderProps {
   title: string;
   showSearch?: boolean;
+  showNotifications?: boolean;
   showMessages?: boolean;
   showMore?: boolean;
   onSearchPress?: () => void;
+  onNotificationsPress?: () => void;
   onMessagesPress?: () => void;
   onMorePress?: () => void;
   customRightContent?: React.ReactNode;
@@ -33,10 +36,12 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({
   title,
-  showSearch = true,
-  showMessages = true,
-  showMore = true,
+  showSearch = false,
+  showNotifications = false,
+  showMessages = false,
+  showMore = false,
   onSearchPress,
+  onNotificationsPress,
   onMessagesPress,
   onMorePress,
   customRightContent,
@@ -49,12 +54,12 @@ export const Header: React.FC<HeaderProps> = ({
   const renderLeftContent = () => {
     if (showBackButton && onBackPress) {
       return (
-        <TouchableOpacity style={styles.iconButton} onPress={onBackPress}>
+        <TouchableOpacity style={styles.backButton} onPress={onBackPress}>
           <ArrowLeft size={24} color={Colors.text.primary} />
         </TouchableOpacity>
       );
     }
-    return <View style={styles.iconButton} />;
+    return null;
   };
 
   const renderRightContent = () => {
@@ -75,6 +80,11 @@ export const Header: React.FC<HeaderProps> = ({
         {showSearch && (
           <TouchableOpacity style={styles.iconButton} onPress={onSearchPress}>
             <Search size={24} color={Colors.text.primary} />
+          </TouchableOpacity>
+        )}
+        {showNotifications && (
+          <TouchableOpacity style={styles.iconButton} onPress={onNotificationsPress}>
+            <Bell size={24} color={Colors.text.primary} />
           </TouchableOpacity>
         )}
         {showMessages && (
@@ -106,7 +116,7 @@ export const Header: React.FC<HeaderProps> = ({
 
 const styles = StyleSheet.create({
   headerContainer: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 32,
     paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
@@ -122,7 +132,8 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: Colors.text.primary,
     flex: 1,
-    textAlign: "center",
+    textAlign: "left",
+    marginLeft: 0,
   },
   headerIcons: {
     flexDirection: "row",
@@ -131,5 +142,11 @@ const styles = StyleSheet.create({
   },
   iconButton: {
     padding: 8,
+  },
+  backButton: {
+    paddingTop: 8,
+    paddingBottom: 8,
+    paddingRight: 8,
+    paddingLeft: 0,
   },
 });

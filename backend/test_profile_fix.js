@@ -1,8 +1,6 @@
 #!/usr/bin/env node
 
-const axios = require("axios");
 
-const BASE_URL = process.env.API_BASE_URL || "http://localhost:3000";
 
 async function testProfileEndpoint() {
   console.log("WORKING: Testing Profile Endpoint Location Data Fix\n");

@@ -1,6 +1,7 @@
 import axios, { AxiosInstance, AxiosError } from "axios";
 import * as SecureStore from "expo-secure-store";
 import { API_CONFIG } from "../constants/config";
+import { NotificationPreferences, SearchFilters } from "../types";
 
 const ACCESS_TOKEN_KEY = "access_token";
 const REFRESH_TOKEN_KEY = "refresh_token";
@@ -213,7 +214,7 @@ class ApiService {
     longitude?: number;
     locationRadiusMiles?: number;
     showCityOnly?: boolean;
-    notificationPreferences?: any;
+    notificationPreferences?: NotificationPreferences;
   }) {
     const backendData = {
       ...profileData,
@@ -228,7 +229,7 @@ class ApiService {
     return response.data;
   }
 
-  async updateNotificationPreferences(notificationPreferences: any) {
+  async updateNotificationPreferences(notificationPreferences: NotificationPreferences) {
     try {
       const response = await this.api.put("/auth/notification-preferences", {
         notificationPreferences,
@@ -304,7 +305,7 @@ class ApiService {
     return response.data;
   }
 
-  async searchPosts(query: string, filters?: any) {
+  async searchPosts(query: string, filters?: SearchFilters) {
     const response = await this.api.get("/search", {
       params: { q: query, ...filters },
     });

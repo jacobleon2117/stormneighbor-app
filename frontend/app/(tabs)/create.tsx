@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -7,113 +7,22 @@ import {
   Alert,
   TouchableOpacity,
   TextInput,
-  Keyboard,
-  Dimensions,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   Image,
 } from "react-native";
 import { router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
-import {
-  Camera,
-  Image as ImageIcon,
-  Video,
-  MoreHorizontal,
-  Megaphone,
-  Calendar,
-  AlertTriangle,
-  CloudRain,
-  HelpCircle,
-  HandHeart,
-  Globe,
-  MapPin,
-  AtSign,
-} from "lucide-react-native";
 import { Header } from "../../components/UI/Header";
 import { Button } from "../../components/UI/Button";
 import { Colors } from "../../constants/Colors";
 import { apiService } from "../../services/api";
-import { POST_TYPES, PRIORITIES, CreatePostForm, PostType, Priority, POST_TYPE_OPTIONS, PRIORITY_OPTIONS } from "../../types";
+import { POST_TYPES, PRIORITIES, CreatePostForm } from "../../types";
 import { useAuth } from "../../hooks/useAuth";
 import { Input } from "../../components/UI/Input";
 
-interface QuickAction {
-  id: string;
-  label: string;
-  icon: React.ComponentType<any>;
-  color: string;
-  backgroundColor: string;
-  borderColor: string;
-  postType: string;
-  priority: string;
-}
-const QUICK_ACTIONS: QuickAction[] = [
-  {
-    id: "announcement",
-    label: "Announcement",
-    icon: Megaphone,
-    color: Colors.primary[600],
-    backgroundColor: Colors.primary[50],
-    borderColor: Colors.primary[200],
-    postType: POST_TYPES.GENERAL,
-    priority: PRIORITIES.NORMAL,
-  },
-  {
-    id: "event",
-    label: "Create Event",
-    icon: Calendar,
-    color: Colors.primary[600],
-    backgroundColor: Colors.primary[50],
-    borderColor: Colors.primary[200],
-    postType: POST_TYPES.GENERAL,
-    priority: PRIORITIES.NORMAL,
-  },
-  {
-    id: "safety",
-    label: "Safety Alert",
-    icon: AlertTriangle,
-    color: Colors.error[600],
-    backgroundColor: Colors.error[50],
-    borderColor: Colors.error[600],
-    postType: POST_TYPES.SAFETY_ALERT,
-    priority: PRIORITIES.HIGH,
-  },
-  {
-    id: "weather",
-    label: "Weather Alert",
-    icon: CloudRain,
-    color: Colors.primary[600],
-    backgroundColor: Colors.primary[50],
-    borderColor: Colors.primary[200],
-    postType: POST_TYPES.SAFETY_ALERT,
-    priority: PRIORITIES.HIGH,
-  },
-  {
-    id: "question",
-    label: "Ask Question",
-    icon: HelpCircle,
-    color: Colors.success[600],
-    backgroundColor: Colors.success[50],
-    borderColor: Colors.success[100],
-    postType: POST_TYPES.HELP_REQUEST,
-    priority: PRIORITIES.NORMAL,
-  },
-  {
-    id: "help",
-    label: "Offer Help",
-    icon: HandHeart,
-    color: Colors.warning[600],
-    backgroundColor: Colors.warning[50],
-    borderColor: Colors.warning[100],
-    postType: POST_TYPES.HELP_OFFER,
-    priority: PRIORITIES.NORMAL,
-  },
-];
 
 export default function CreateScreen() {
-  const { user } = useAuth();
+  useAuth();
   const [form, setForm] = useState<CreatePostForm>({
     title: "",
     content: "",
@@ -163,25 +72,25 @@ export default function CreateScreen() {
       const response = await apiService.createPost(postData);
 
       if (response.success) {
-        Alert.alert("Success", "Your post has been created!", [
-          {
-            text: "OK",
-            onPress: () => {
-              setForm({
-                title: "",
-                content: "",
-                postType: POST_TYPES.GENERAL,
-                priority: PRIORITIES.NORMAL,
-                isEmergency: false,
-                images: [],
-                tags: [],
-              });
-              setSelectedImages([]);
-              setTagInput("");
-              router.push("/(tabs)");
-            },
-          },
-        ]);
+        setForm({
+          title: "",
+          content: "",
+          postType: POST_TYPES.GENERAL,
+          priority: PRIORITIES.NORMAL,
+          isEmergency: false,
+          images: [],
+          tags: [],
+        });
+        setSelectedImages([]);
+        setTagInput("");
+        
+        router.push({
+          pathname: "/(tabs)/",
+          params: {
+            newPost: JSON.stringify(response.data),
+            refresh: "true"
+          }
+        });
       }
     } catch (error: any) {
       console.error("Error creating post:", error);
@@ -309,6 +218,8 @@ export default function CreateScreen() {
         showSearch={false}
         showMessages={false}
         showMore={false}
+        showCloseButton={true}
+        onClosePress={() => router.back()}
       />
       <SafeAreaView style={styles.safeContent}>
         <ScrollView

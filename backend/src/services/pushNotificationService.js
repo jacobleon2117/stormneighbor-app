@@ -1,5 +1,6 @@
 const admin = require("firebase-admin");
 const { pool } = require("../config/database");
+const logger = require("../utils/logger");
 
 class PushNotificationService {
   constructor() {
@@ -28,11 +29,11 @@ class PushNotificationService {
           projectId: process.env.FIREBASE_PROJECT_ID,
         });
 
-        console.log("SUCCESS: Firebase Admin SDK initialized successfully");
+        logger.success("Firebase Admin SDK initialized successfully");
         this.initialized = true;
       }
     } catch (error) {
-      console.error("ERROR: Firebase initialization failed:", error.message);
+      logger.error("Firebase initialization failed", error);
       this.initialized = false;
     }
   }
@@ -46,8 +47,7 @@ class PushNotificationService {
       const app = admin.app();
       const projectId = app.options.projectId;
 
-      console.log("SUCCESS: Firebase connection test successful");
-      console.log(`Project ID: ${projectId}`);
+      logger.success("Firebase connection test successful", { projectId });
 
       return {
         success: true,
@@ -55,7 +55,7 @@ class PushNotificationService {
         initialized: this.initialized,
       };
     } catch (error) {
-      console.error("ERROR: Firebase connection test failed:", error.message);
+      logger.error("Firebase connection test failed", error);
       return {
         success: false,
         error: error.message,
@@ -85,7 +85,7 @@ class PushNotificationService {
           [userId, deviceInfo, deviceToken]
         );
 
-        console.log(`Device token updated for user ${userId}`);
+        logger.info(`Device token updated for user ${userId}`);
         return { success: true, action: "updated", tokenId: existingToken.rows[0].id };
       } else {
         const result = await client.query(
@@ -95,11 +95,11 @@ class PushNotificationService {
           [userId, deviceToken, deviceInfo.platform || "unknown", deviceInfo]
         );
 
-        console.log(`New device token registered for user ${userId}`);
+        logger.info(`New device token registered for user ${userId}`);
         return { success: true, action: "created", tokenId: result.rows[0].id };
       }
     } catch (error) {
-      console.error("Device token registration failed:", error);
+      logger.error("Device token registration failed", error);
       throw error;
     } finally {
       client.release();
@@ -133,7 +133,7 @@ class PushNotificationService {
         [deviceToken]
       );
 
-      console.log(`Device token deactivated: ${deviceToken.substring(0, 20)}...`);
+      logger.info(`Device token deactivated: ${deviceToken.substring(0, 20)}...`);
     } finally {
       client.release();
     }
@@ -148,7 +148,7 @@ class PushNotificationService {
       const deviceTokens = await this.getUserDeviceTokens(userId);
 
       if (deviceTokens.length === 0) {
-        console.log(`No active device tokens found for user ${userId}`);
+        logger.warn(`No active device tokens found for user ${userId}`);
         return { success: false, reason: "no_tokens" };
       }
 
@@ -160,7 +160,7 @@ class PushNotificationService {
 
       return result;
     } catch (error) {
-      console.error("Send to user failed:", error);
+      logger.error("Send to user failed", error);
       throw error;
     }
   }
@@ -218,9 +218,7 @@ class PushNotificationService {
 
       const response = await admin.messaging().sendMulticast(message);
 
-      console.log(
-        `Notification sent: ${response.successCount} successful, ${response.failureCount} failed`
-      );
+      logger.info(`Notification sent: ${response.successCount} successful, ${response.failureCount} failed`);
 
       if (response.failureCount > 0) {
         await this.handleFailedTokens(tokens, response.responses);
@@ -233,7 +231,7 @@ class PushNotificationService {
         totalTokens: tokens.length,
       };
     } catch (error) {
-      console.error("Send to tokens failed:", error);
+      logger.error("Send to tokens failed", error);
       throw error;
     }
   }
@@ -280,7 +278,7 @@ class PushNotificationService {
 
       const response = await admin.messaging().send(message);
 
-      console.log(`Topic notification sent to '${topic}': ${response}`);
+      logger.info(`Topic notification sent to '${topic}': ${response}`);
 
       return {
         success: true,
@@ -288,7 +286,7 @@ class PushNotificationService {
         topic,
       };
     } catch (error) {
-      console.error("Send to topic failed:", error);
+      logger.error("Send to topic failed", error);
       throw error;
     }
   }
@@ -301,7 +299,7 @@ class PushNotificationService {
 
       const response = await admin.messaging().subscribeToTopic(tokens, topic);
 
-      console.log(`Subscribed ${response.successCount} tokens to topic '${topic}'`);
+      logger.info(`Subscribed ${response.successCount} tokens to topic '${topic}'`);
 
       return {
         success: true,
@@ -309,7 +307,7 @@ class PushNotificationService {
         failureCount: response.failureCount,
       };
     } catch (error) {
-      console.error("Subscribe to topic failed:", error);
+      logger.error("Subscribe to topic failed", error);
       throw error;
     }
   }

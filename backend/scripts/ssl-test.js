@@ -46,7 +46,7 @@ class SSLTester {
       }
 
       try {
-        const healthResponse = await this.makeRequest(`${this.baseUrl}/health`);
+        await this.makeRequest(`${this.baseUrl}/health`);
         console.log("SUCCESS: Health endpoint accessible");
       } catch (error) {
         console.log("ERROR: Health endpoint failed:", error.message);

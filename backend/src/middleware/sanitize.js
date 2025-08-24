@@ -5,7 +5,7 @@ const path = require("path");
 const window = new JSDOM("").window;
 const DOMPurify = createDOMPurify(window);
 
-const sanitizeInput = (req, res, next) => {
+const sanitizeInput = (req, _res, next) => {
   try {
     if (req.body && typeof req.body === "object") {
       req.body = sanitizeObject(req.body);
@@ -49,7 +49,7 @@ const sanitizeObject = (obj) => {
   return obj;
 };
 
-const sanitizeSensitive = (req, res, next) => {
+const sanitizeSensitive = (req, _res, next) => {
   try {
     const sensitiveFields = ["password", "currentPassword", "newPassword"];
     if (req.body && typeof req.body === "object") {
@@ -73,7 +73,7 @@ const sanitizeSensitive = (req, res, next) => {
   }
 };
 
-const sanitizeFileMetadata = (req, res, next) => {
+const sanitizeFileMetadata = (req, _res, next) => {
   try {
     const cleanFilename = (name) => {
       let sanitized = DOMPurify.sanitize(name, {

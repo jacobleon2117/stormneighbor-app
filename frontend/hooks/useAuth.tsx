@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { apiService } from "../services/api";
 import { NotificationService } from "../services/notifications";
-import { User, AuthResponse } from "../types";
+import { User } from "../types";
 
 interface AuthState {
   user: User | null;
@@ -156,7 +156,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       } catch (error) {
         console.log("Failed to register for push notifications:", error);
       }
-    } catch (error: any) {
+    } catch (error) {
       const errorMessage = error.response?.data?.message || "Login failed";
       dispatch({ type: "AUTH_ERROR", payload: errorMessage });
       throw error;
@@ -176,11 +176,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
         ...userData,
         password: "[HIDDEN]",
       });
-      const response = await apiService.register(userData);
+      await apiService.register(userData);
       console.log("Registration successful, attempting login...");
       await login(userData.email, userData.password);
       console.log("Login after registration successful");
-    } catch (error: any) {
+    } catch (error) {
       console.error("Registration/login error:", error);
       const errorMessage =
         error.response?.data?.message || "Registration failed";

@@ -8,13 +8,12 @@ import {
   RefreshControl,
   ActivityIndicator,
   Alert,
-  TextInput,
   TouchableOpacity,
   Modal,
   Share,
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { PostCard } from "../../components/Posts/PostCard";
 import { useAuth } from "../../hooks/useAuth";
@@ -26,6 +25,7 @@ import { Button } from "../../components/UI/Button";
 import { Header } from "../../components/UI/Header";
 
 export default function HomeScreen() {
+  const params = useLocalSearchParams();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -248,22 +248,8 @@ export default function HomeScreen() {
     }
   };
 
-  const handleSearchSubmit = () => {
-    handleSearch(searchQuery, searchFilters);
-  };
 
-  const handleClearSearch = () => {
-    setSearchQuery("");
-    setSearchActive(false);
-    setSearchResults([]);
-  };
 
-  const handleFilterChange = (newFilters: SearchFilters) => {
-    setSearchFilters(newFilters);
-    if (searchActive) {
-      handleSearch(searchQuery, newFilters);
-    }
-  };
 
   useEffect(() => {
     if (user) {
@@ -284,6 +270,18 @@ export default function HomeScreen() {
       setSearchResults([]);
     }
   }, [searchQuery]);
+
+  useEffect(() => {
+    if (params.newPost && params.refresh) {
+      try {
+        const newPost = JSON.parse(params.newPost as string);
+        setPosts(currentPosts => [newPost, ...currentPosts]);
+        router.setParams({ newPost: undefined, refresh: undefined });
+      } catch (error) {
+        console.error("Error parsing new post:", error);
+      }
+    }
+  }, [params.newPost, params.refresh]);
 
   const renderPost = ({ item }: { item: Post }) => (
     <PostCard
@@ -519,15 +517,17 @@ export default function HomeScreen() {
   }
 
   const currentData = searchActive ? searchResults : posts;
-  const currentLoading = searchActive ? searchLoading : loading;
 
   return (
     <View style={styles.container}>
       <Header
         title="Home"
+        showSearch={true}
+        showNotifications={true}
+        showMessages={true}
         onSearchPress={handleSearchPress}
-        onMessagesPress={handleMessagesPress}
-        onMorePress={handleMorePress}
+        onNotificationsPress={() => router.push("/(tabs)/notifications")}
+        onMessagesPress={() => router.push("/(tabs)/messages")}
       />
       <SafeAreaView style={styles.safeContent}>
         <FlatList
@@ -620,7 +620,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
   },
   contentContainer: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingBottom: 100,
   },
   loadingContainer: {

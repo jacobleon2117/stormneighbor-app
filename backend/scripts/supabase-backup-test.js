@@ -15,7 +15,7 @@ async function testSupabaseBackup() {
     }
 
     console.log("\nWORKING: Creating test backup");
-    const backup = await supabaseBackup.createSQLBackup("test");
+    await supabaseBackup.createSQLBackup("test");
 
     console.log("\nWORKING: Listing backups");
     const backups = await supabaseBackup.listBackups();
@@ -24,7 +24,7 @@ async function testSupabaseBackup() {
     if (backups.length > 0) {
       console.log("\nINFO: Recent backups:");
       backups.slice(0, 3).forEach((backup) => {
-        console.log(`  • ${backup.filename} (${(backup.size / 1024).toFixed(2)} KB)`);
+        console.log(`• ${backup.filename} (${(backup.size / 1024).toFixed(2)} KB)`);
       });
     }
 

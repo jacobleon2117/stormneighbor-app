@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
-  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Post } from "../../types";
@@ -18,8 +17,6 @@ interface PostCardProps {
   onShare?: (postId: number) => void;
   onPress?: (postId: number) => void;
 }
-
-const { width: screenWidth } = Dimensions.get("window");
 
 export function PostCard({
   post,

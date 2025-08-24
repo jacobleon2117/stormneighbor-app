@@ -40,7 +40,7 @@ const createBackup = async (req, res) => {
   }
 };
 
-const listBackups = async (req, res) => {
+const listBackups = async (_req, res) => {
   try {
     const backups = await backupService.listBackups();
     const stats = await backupService.getBackupStats();
@@ -216,7 +216,7 @@ const restoreBackup = async (req, res) => {
   }
 };
 
-const getBackupStats = async (req, res) => {
+const getBackupStats = async (_req, res) => {
   try {
     const stats = await backupService.getBackupStats();
 
@@ -235,7 +235,7 @@ const getBackupStats = async (req, res) => {
   }
 };
 
-const testBackupSystem = async (req, res) => {
+const testBackupSystem = async (_req, res) => {
   try {
     const testBackup = await backupService.createBackup("test", {
       schemaOnly: true,

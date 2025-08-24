@@ -1,6 +1,5 @@
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
-import { Platform } from "react-native";
 import { apiService } from "./api";
 import { PUSH_CONFIG } from "../constants/config";
 
@@ -72,8 +71,8 @@ export class NotificationService {
   static async scheduleLocalNotification(
     title: string,
     body: string,
-    data?: any,
-    trigger?: any
+    data?: Record<string, unknown>,
+    trigger?: Notifications.NotificationTriggerInput
   ): Promise<string> {
     try {
       const notificationId = await Notifications.scheduleNotificationAsync({
@@ -95,7 +94,7 @@ export class NotificationService {
   static async showNotification(
     title: string,
     body: string,
-    data?: any
+    data?: Record<string, unknown>
   ): Promise<void> {
     try {
       await this.scheduleLocalNotification(title, body, data);

@@ -9,7 +9,6 @@ import {
   TextInput,
   Alert,
   Linking,
-  ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";

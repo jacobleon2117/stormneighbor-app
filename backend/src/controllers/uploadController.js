@@ -371,7 +371,7 @@ const getUploadStats = async (req, res) => {
   }
 };
 
-const testUploadSystem = async (req, res) => {
+const testUploadSystem = async (_req, res) => {
   try {
     const { cloudinary } = require("../config/cloudinary");
 

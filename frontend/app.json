@@ -13,17 +13,35 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.stormneighbor.app"
+      "bundleIdentifier": "com.stormneighbor.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app uses camera to take photos for posts",
+        "NSPhotoLibraryUsageDescription": "This app accesses photo library to select images for posts",
+        "NSLocationWhenInUseUsageDescription": "This app uses location to show nearby posts and weather information",
+        "NSUserNotificationsUsageDescription": "This app sends notifications for emergency alerts and important community updates"
+      }
     },
     "android": {
       "package": "com.stormneighbor.app",
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "NOTIFICATIONS",
+        "INTERNET"
+      ]
     },
     "web": {
       "bundler": "metro"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-image-picker",
+      "expo-location",
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true

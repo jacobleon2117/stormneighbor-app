@@ -246,7 +246,7 @@ export default function PrivacySecurityScreen() {
             "Add extra security to your account",
             settings.twoFactorEnabled,
             (value) => updateSettings({ twoFactorEnabled: value }),
-            true // Disabled for now
+            true // Disabled for now (future)
           )}
         </View>
 

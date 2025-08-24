@@ -97,6 +97,24 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <User size={20} color={color} />,
         }}
       />
+      <Tabs.Screen
+        name="search"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="notifications"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="messages"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }

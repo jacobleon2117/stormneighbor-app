@@ -78,7 +78,7 @@ class DatabaseBackupService {
         });
       }
 
-      const result = await this.executePgDump(pgDumpOptions, password);
+      await this.executePgDump(pgDumpOptions, password);
 
       if (this.compressionEnabled) {
         await this.compressBackup(filepath.replace(".gz", ""), filepath);
@@ -173,7 +173,7 @@ class DatabaseBackupService {
     });
   }
 
-  async compressBackup(inputPath, outputPath) {
+  async compressBackup(inputPath, _outputPath) {
     return new Promise((resolve, reject) => {
       const gzip = spawn("gzip", ["-9", inputPath]);
 
@@ -189,7 +189,7 @@ class DatabaseBackupService {
     });
   }
 
-  async uploadToRemoteStorage(filepath, backupInfo) {
+  async uploadToRemoteStorage(_filepath, _backupInfo) {
     console.log("Remote upload not configured - implement uploadToRemoteStorage method");
   }
 
@@ -292,7 +292,7 @@ class DatabaseBackupService {
         pgRestoreOptions.push("--data-only");
       }
 
-      const result = await this.executePgRestore(pgRestoreOptions, password);
+      await this.executePgRestore(pgRestoreOptions, password);
       const duration = Date.now() - startTime;
 
       console.log(`Database restore completed successfully in ${duration}ms`);

@@ -282,7 +282,7 @@ const cacheConfigs = {
   }),
 };
 
-const getCacheStats = (req, res) => {
+const getCacheStats = (_req, res) => {
   const stats = cache.getStats();
 
   res.json({
@@ -310,7 +310,7 @@ const getCacheStats = (req, res) => {
   });
 };
 
-const clearCache = (req, res) => {
+const clearCache = (_req, res) => {
   const sizeBefore = cache.cache.size;
   cache.clear();
 

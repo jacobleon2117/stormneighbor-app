@@ -183,7 +183,7 @@ const getDatabaseStats = () => {
   };
 };
 
-const databaseMiddleware = (req, res, next) => {
+const databaseMiddleware = (req, _res, next) => {
   req.getDbClient = () => getMonitoredClient(req);
   next();
 };

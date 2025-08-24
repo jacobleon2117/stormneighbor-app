@@ -37,6 +37,17 @@ export default function PostDetailScreen() {
     }
   }, [postId]);
 
+  useEffect(() => {
+    if (error && !loading) {
+      Alert.alert("Error", error || "Post not found", [
+        {
+          text: "Go Back",
+          onPress: () => router.back(),
+        },
+      ]);
+    }
+  }, [error, loading]);
+
   const fetchPost = async () => {
     try {
       setLoading(true);
@@ -151,15 +162,6 @@ export default function PostDetailScreen() {
   }
 
   if (error || !post) {
-    React.useEffect(() => {
-      Alert.alert("Error", error || "Post not found", [
-        {
-          text: "Go Back",
-          onPress: () => router.back(),
-        },
-      ]);
-    }, []);
-
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.errorContainer}>

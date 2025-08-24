@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const { pool } = require("../config/database");
+const logger = require("../utils/logger");
 
 class TokenService {
   constructor() {
@@ -129,9 +130,9 @@ class TokenService {
       ...data,
     };
 
-    console.log(`SECURITY_EVENT: ${JSON.stringify(logEntry)}`);
+    logger.warn("SECURITY_EVENT", logEntry);
 
-    // In production, I'll need to send this to a security monitoring service
+    // While in production, I could send it to a security monitoring service
     // e.g., Sentry, DataDog, or your own logging service
   }
 
@@ -212,7 +213,7 @@ class TokenService {
       return { accessToken, refreshToken };
     } catch (error) {
       await client.query("ROLLBACK");
-      console.error("Error creating session:", error);
+      logger.error("Error creating session", error);
       throw error;
     } finally {
       client.release();
@@ -341,7 +342,7 @@ class TokenService {
       };
     } catch (error) {
       await client.query("ROLLBACK");
-      console.error("Error refreshing token:", error);
+      logger.error("Error refreshing token", error);
       throw error;
     } finally {
       client.release();
@@ -398,7 +399,7 @@ class TokenService {
 
       return revoked;
     } catch (error) {
-      console.error("Error revoking session:", error);
+      logger.error("Error revoking session", error);
       throw error;
     } finally {
       client.release();
@@ -428,7 +429,7 @@ class TokenService {
 
       return revokedCount;
     } catch (error) {
-      console.error("Error revoking all user sessions:", error);
+      logger.error("Error revoking all user sessions", error);
       throw error;
     } finally {
       client.release();
@@ -472,7 +473,7 @@ class TokenService {
         };
       });
     } catch (error) {
-      console.error("Error getting user sessions:", error);
+      logger.error("Error getting user sessions", error);
       throw error;
     } finally {
       client.release();
@@ -505,7 +506,7 @@ class TokenService {
 
       return true;
     } catch (error) {
-      console.error("Error cleaning up expired sessions:", error);
+      logger.error("Error cleaning up expired sessions", error);
       throw error;
     } finally {
       client.release();
@@ -546,7 +547,7 @@ class TokenService {
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
-      console.error("Error getting session stats:", error);
+      logger.error("Error getting session stats", error);
       throw error;
     } finally {
       client.release();

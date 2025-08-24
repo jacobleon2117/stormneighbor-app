@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { body, param, query } = require("express-validator");
+const { param, query } = require("express-validator");
 const { auth } = require("../middleware/auth");
 const { handleValidationErrors } = require("../middleware/validation");
 const { pool } = require("../config/database");
@@ -145,7 +145,6 @@ router.get(
 
     try {
       const { city, state } = req.params;
-      const userId = req.user.userId;
 
       const stats = await client.query(
         `

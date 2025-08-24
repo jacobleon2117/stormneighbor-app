@@ -3,6 +3,7 @@ const { pool } = require("../config/database");
 const { validationResult } = require("express-validator");
 const { sendVerificationEmail, sendPasswordResetEmail } = require("../services/emailService");
 const tokenService = require("../services/tokenService");
+const logger = require("../utils/logger");
 
 const generateVerificationCode = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();

@@ -285,7 +285,7 @@ const getNotificationStats = async (req, res) => {
   }
 };
 
-const testFirebaseConnection = async (req, res) => {
+const testFirebaseConnection = async (_req, res) => {
   try {
     const result = await pushNotificationService.testConnection();
 
@@ -304,7 +304,7 @@ const testFirebaseConnection = async (req, res) => {
   }
 };
 
-const getServiceStatus = async (req, res) => {
+const getServiceStatus = async (_req, res) => {
   try {
     const status = pushNotificationService.getStatus();
 

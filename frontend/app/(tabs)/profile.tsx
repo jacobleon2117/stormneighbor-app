@@ -733,8 +733,14 @@ export default function ProfileScreen() {
     <View style={styles.container}>
       <Header
         title="Profile"
-        showSearch={false}
-        showMessages={false}
+        showSearch={true}
+        showNotifications={true}
+        showMessages={true}
+        onSearchPress={() => {
+          Alert.alert("Search Profile", "Search functionality for profile settings coming soon!");
+        }}
+        onNotificationsPress={() => router.push("/(tabs)/notifications")}
+        onMessagesPress={() => router.push("/(tabs)/messages")}
         showMore={false}
       />
       <SafeAreaView style={styles.safeContent}>

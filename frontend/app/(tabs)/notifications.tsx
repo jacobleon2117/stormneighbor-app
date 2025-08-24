@@ -122,7 +122,6 @@ export default function NotificationsScreen() {
     if (notification.relatedPostId) {
       router.push(`/post/${notification.relatedPostId}`);
     } else if (notification.type === "system" || notification.type === "emergency") {
-      // Handle system notifications - could open a system message screen
       Alert.alert(notification.title, notification.message);
     }
   };
@@ -219,9 +218,15 @@ export default function NotificationsScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <Header
         title="Notifications"
+        showBackButton={true}
+        onBackPress={() => router.back()}
+        showSearch={false}
+        showNotifications={false}
+        showMessages={false}
+        showMore={false}
         customRightContent={unreadCount > 0 ? (
           <TouchableOpacity onPress={markAllAsRead}>
             <Text style={{ color: Colors.primary[600], fontSize: 14, fontWeight: "500" }}>
@@ -230,6 +235,7 @@ export default function NotificationsScreen() {
           </TouchableOpacity>
         ) : undefined}
       />
+      <SafeAreaView style={styles.safeContent}>
 
       <View style={styles.filterContainer}>
         <TouchableOpacity
@@ -274,12 +280,17 @@ export default function NotificationsScreen() {
           }
         />
       )}
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  safeContent: {
     flex: 1,
     backgroundColor: Colors.surface,
   },

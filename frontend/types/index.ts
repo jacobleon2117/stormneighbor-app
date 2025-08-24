@@ -1,3 +1,15 @@
+export interface NotificationPreferences {
+  emailNotifications: boolean;
+  pushNotifications: boolean;
+  emergencyAlerts: boolean;
+  communityUpdates: boolean;
+  postReactions: boolean;
+  comments: boolean;
+  quietHoursEnabled: boolean;
+  quietHoursStart?: string;
+  quietHoursEnd?: string;
+}
+
 export interface User {
   id: number;
   email: string;
@@ -16,7 +28,7 @@ export interface User {
   longitude?: number;
   emailVerified: boolean;
   isActive: boolean;
-  notificationPreferences: any;
+  notificationPreferences: NotificationPreferences;
   createdAt: string;
   updatedAt: string;
 }
@@ -111,7 +123,7 @@ export interface Alert {
   startTime?: string;
   endTime?: string;
   isActive: boolean;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
 }
@@ -126,11 +138,11 @@ export interface Notification {
   relatedUserId?: number;
   relatedCommentId?: number;
   isRead: boolean;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
   createdAt: string;
 }
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   message: string;
   data?: T;

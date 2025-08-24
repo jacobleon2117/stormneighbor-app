@@ -333,7 +333,7 @@ const handleContentModeration = async (
   contentId,
   reason,
   adminUserId,
-  reporterId,
+  _reporterId,
   reportId
 ) => {
   try {

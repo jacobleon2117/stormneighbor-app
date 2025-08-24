@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -11,7 +11,6 @@ import {
   Alert,
 } from "react-native";
 import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { Search, Filter, X } from "lucide-react-native";
 import { Header } from "../../components/UI/Header";
 import { PostCard } from "../../components/Posts/PostCard";
@@ -166,15 +165,22 @@ export default function SearchScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <Header
         title="Search"
+        showBackButton={true}
+        onBackPress={() => router.back()}
+        showSearch={false}
+        showNotifications={false}
+        showMessages={false}
+        showMore={false}
         customRightContent={
           <TouchableOpacity onPress={() => setShowFilters(true)}>
             <Filter size={24} color={Colors.text.primary} />
           </TouchableOpacity>
         }
       />
+      <SafeAreaView style={styles.safeContent}>
 
       <View style={styles.searchContainer}>
         <View style={styles.searchBar}>
@@ -316,12 +322,17 @@ export default function SearchScreen() {
           </View>
         </View>
       )}
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  safeContent: {
     flex: 1,
     backgroundColor: Colors.surface,
   },

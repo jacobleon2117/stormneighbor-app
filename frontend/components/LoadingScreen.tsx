@@ -4,11 +4,8 @@ import {
   Text,
   StyleSheet,
   ActivityIndicator,
-  Dimensions,
 } from "react-native";
 import { Colors } from "../constants/Colors";
-
-const { width, height } = Dimensions.get("window");
 
 export function LoadingScreen() {
   return (

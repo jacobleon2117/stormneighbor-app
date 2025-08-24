@@ -157,7 +157,7 @@ class SSLSecurityMiddleware {
   }
 
   securityHeaders() {
-    return (req, res, next) => {
+    return (_req, res, next) => {
       Object.entries(this.securityHeadersConfig).forEach(([header, value]) => {
         res.setHeader(header, value);
       });
@@ -170,7 +170,7 @@ class SSLSecurityMiddleware {
   }
 
   sslHealthCheck() {
-    return (req, res, next) => {
+    return (req, _res, next) => {
       const sslInfo = {
         secure: this.isRequestSecure(req),
         protocol: req.protocol,

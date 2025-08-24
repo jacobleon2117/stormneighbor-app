@@ -14,7 +14,6 @@ import {
 } from "react-native";
 import {
   MapPin,
-  RefreshCw,
   Sun,
   Cloud,
   CloudRain,
@@ -23,13 +22,11 @@ import {
   Droplets,
   Wind,
   Eye,
-  Gauge,
   Plus,
   Minus,
   AlertTriangle,
   CheckCircle,
   AlertOctagon,
-  AlertCircle,
   Info,
   Bell,
   CloudOff,
@@ -603,9 +600,12 @@ export default function WeatherScreen() {
     <View style={styles.container}>
       <Header
         title="Weather"
+        showSearch={true}
+        showNotifications={true}
+        showMessages={true}
         onSearchPress={handleSearchPress}
-        onMessagesPress={handleMessagesPress}
-        onMorePress={handleMorePress}
+        onNotificationsPress={() => router.push("/(tabs)/notifications")}
+        onMessagesPress={() => router.push("/(tabs)/messages")}
       />
 
       <View style={styles.mapContainer}>
@@ -889,7 +889,7 @@ const styles = StyleSheet.create({
   },
   compactWeatherCard: {
     backgroundColor: Colors.background,
-    marginHorizontal: 24,
+    marginHorizontal: 20,
     marginBottom: 16,
     borderRadius: 12,
     padding: 16,
@@ -964,7 +964,7 @@ const styles = StyleSheet.create({
   },
   zoomControls: {
     position: "absolute",
-    right: 24,
+    right: 20,
     top: 250,
     gap: 12,
     zIndex: 10,

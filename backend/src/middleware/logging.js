@@ -79,7 +79,7 @@ const sanitizeLogData = (data) => {
   return sanitized;
 };
 
-const errorLogger = (err, req, res, next) => {
+const errorLogger = (err, req, _res, next) => {
   const requestId = req.requestId || "unknown";
 
   console.error(`[${new Date().toISOString()}] [${requestId}] ERROR:`, {
@@ -178,7 +178,7 @@ const analyticsTracker = (() => {
   };
 })();
 
-const healthCheck = async (req, res) => {
+const healthCheck = async (_req, res) => {
   const memory = process.memoryUsage();
   const uptime = process.uptime();
 

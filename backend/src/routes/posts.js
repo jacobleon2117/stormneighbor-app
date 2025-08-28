@@ -31,7 +31,7 @@ const createPostValidation = [
     .isLength({ min: 1, max: 5000 })
     .withMessage("Content is required and must be under 5000 characters"),
   body("postType")
-    .isIn(["help_request", "help_offer", "lost_found", "safety_alert", "general"])
+    .isIn(["help_request", "help_offer", "lost_found", "safety_alert", "general", "question", "event", "announcement", "weather_alert"])
     .withMessage("Invalid post type"),
   body("priority")
     .optional()

@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: stormneighbor-api
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_SSL
+        value: true
+      - key: CLIENT_URL
+        value: "*"
+      - key: CORS_ORIGIN
+        value: "*"
+      - key: NOAA_API_BASE_URL
+        value: https://api.weather.gov
+    healthCheckPath: /health
+    
+databases:
+  - name: stormneighbor-db
+    databaseName: stormneighbor
+    plan: free

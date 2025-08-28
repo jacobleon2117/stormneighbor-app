@@ -82,14 +82,6 @@ const getPosts = async (req, res) => {
 
       query += ` 
         ORDER BY 
-          CASE WHEN p.is_emergency = true THEN 1 ELSE 2 END,
-          CASE p.priority 
-            WHEN 'urgent' THEN 1 
-            WHEN 'high' THEN 2 
-            WHEN 'normal' THEN 3 
-            WHEN 'low' THEN 4 
-            ELSE 5
-          END,
           p.created_at DESC 
         LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
       `;
@@ -254,6 +246,24 @@ const createPost = async (req, res) => {
       tags = [],
     } = req.body;
 
+    console.log("Create post request body:", req.body);
+
+    if (!content || !content.trim()) {
+      console.log("Content validation failed:", content);
+      return res.status(400).json({
+        success: false,
+        message: "Content is required",
+      });
+    }
+
+    if (!postType) {
+      console.log("PostType validation failed:", postType);
+      return res.status(400).json({
+        success: false,
+        message: "Post type is required",
+      });
+    }
+
     const client = await pool.connect();
 
     try {
@@ -270,7 +280,9 @@ const createPost = async (req, res) => {
       }
 
       const user = userQuery.rows[0];
+      console.log("User location data:", user);
       if (!user.location_city || !user.address_state) {
+        console.log("Missing location data - location_city:", user.location_city, "address_state:", user.address_state);
         return res.status(400).json({
           success: false,
           message: "Please complete your profile with city and state information to create posts",
@@ -328,6 +340,21 @@ const createPost = async (req, res) => {
     }
   } catch (error) {
     console.error("Create post error:", error);
+    console.error("Error details:", {
+      message: error.message,
+      code: error.code,
+      detail: error.detail,
+      constraint: error.constraint
+    });
+    
+    if (error.code === "23514") {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid post data - check constraint violation",
+        error: process.env.NODE_ENV === "development" ? error.message : undefined,
+      });
+    }
+    
     res.status(500).json({
       success: false,
       message: "Server error creating post",

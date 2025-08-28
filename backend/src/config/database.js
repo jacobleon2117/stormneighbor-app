@@ -21,6 +21,7 @@ const getDatabaseConfig = () => {
     connectionTimeoutMillis: isTest ? 5000 : 15000,
     idleTimeoutMillis: isTest ? 10000 : 30000,
     acquireTimeoutMillis: isTest ? 10000 : 60000,
+    family: 4, // Force IPv4 connections
   };
 
   return poolConfig;

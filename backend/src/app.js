@@ -195,6 +195,10 @@ try {
   const messageRoutes = require("./routes/messages");
   app.use("/api/v1/messages", messageRoutes);
 
+  console.log("Loading feedback routes...");
+  const feedbackRoutes = require("./routes/feedback");
+  app.use("/api/v1/feedback", feedbackRoutes);
+
   console.log("Loading backup routes...");
   const backupRoutes = require("./routes/backup");
   app.use("/api/v1/admin/backups", backupRoutes);

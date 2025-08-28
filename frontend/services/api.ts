@@ -539,6 +539,11 @@ class ApiService {
     return response.data;
   }
 
+  async submitUserFeedback(feedbackData: any) {
+    const response = await this.api.post("/feedback", feedbackData);
+    return response.data;
+  }
+
   async healthCheck() {
     const response = await axios.get(
       `${API_CONFIG.BASE_URL.replace("/api/v1", "")}/health`

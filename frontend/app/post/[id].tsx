@@ -200,7 +200,7 @@ export default function PostDetailScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.primary[600]} />
+          <ActivityIndicator size="large" color={Colors.primary[500]} />
         </View>
       </SafeAreaView>
     );

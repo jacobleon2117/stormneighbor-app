@@ -14,6 +14,8 @@ import {
   ScrollView,
   Modal,
   TouchableWithoutFeedback,
+  ActivityIndicator,
+  Animated,
 } from "react-native";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from "expo-router";
@@ -66,13 +68,17 @@ export default function CreateScreen() {
   const [privacyLevel, setPrivacyLevel] = useState<'public' | 'neighbors' | 'friends'>('neighbors');
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [showDiscardModal, setShowDiscardModal] = useState(false);
+  const [postStatus, setPostStatus] = useState<'idle' | 'posting' | 'success'>('idle');
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const scaleAnim = React.useRef(new Animated.Value(0)).current;
 
   const quickActions = [
     { 
       id: 'announcement', 
       label: 'Announcement', 
       icon: Megaphone, 
-      color: Colors.primary[600],
+      color: Colors.primary[500],
       bgColor: Colors.primary[50]
     },
     { 
@@ -180,6 +186,13 @@ export default function CreateScreen() {
 
     try {
       setIsPosting(true);
+      setPostStatus('posting');
+      
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
 
       const selectedQuickAction = quickActions.find(a => a.id === selectedAction);
       
@@ -202,28 +215,42 @@ export default function CreateScreen() {
       const response = await apiService.createPost(postData);
 
       if (response.success) {
-        Alert.alert(
-          "Post Created!", 
-          "Your post has been shared with the community.",
-          [
-            {
-              text: "OK",
-              onPress: () => {
-                setPostText('');
-                setSelectedAction(null);
-                setSelectedImages([]);
-                setShowQuickActions(true);
-                
-                router.replace("/(tabs)");
-              }
-            }
-          ]
-        );
+        setPostStatus('success');
+        
+        Animated.sequence([
+          Animated.timing(scaleAnim, {
+            toValue: 1,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+          Animated.delay(1500),
+          Animated.timing(fadeAnim, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          })
+        ]).start(() => {
+          setPostText('');
+          setSelectedAction(null);
+          setSelectedImages([]);
+          setShowQuickActions(true);
+          setPostStatus('idle');
+          scaleAnim.setValue(0);
+          fadeAnim.setValue(0);
+          
+          router.replace("/(tabs)");
+        });
       } else {
         throw new Error(response.message || "Failed to create post");
       }
     } catch (error: any) {
       console.error("Error creating post:", error);
+      setPostStatus('idle');
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
       Alert.alert(
         "Error", 
         error.response?.data?.message || error.message || "Failed to create post. Please try again."
@@ -244,7 +271,9 @@ export default function CreateScreen() {
       case 'create_event':
         return 'event';
       case 'weather_alert':
-        return 'safety_alert';
+        return 'weather_alert';
+      case 'announcement':
+        return 'announcement';
       default:
         return 'general';
     }
@@ -286,6 +315,10 @@ export default function CreateScreen() {
         const imageUris = result.assets.map(asset => asset.uri);
         setSelectedImages(prev => [...prev, ...imageUris].slice(0, 5));
       }
+      
+      setTimeout(() => {
+        textInputRef.current?.focus();
+      }, 100);
     } catch (error) {
       console.error('Error selecting images:', error);
       Alert.alert('Error', 'Failed to select images from gallery.');
@@ -311,6 +344,10 @@ export default function CreateScreen() {
         const newImage = result.assets[0].uri;
         setSelectedImages(prev => [...prev, newImage].slice(0, 5));
       }
+      
+      setTimeout(() => {
+        textInputRef.current?.focus();
+      }, 100);
     } catch (error) {
       console.error('Error taking photo:', error);
       Alert.alert('Error', 'Failed to take photo.');
@@ -343,6 +380,25 @@ export default function CreateScreen() {
     }
   };
 
+  const handleClosePress = () => {
+    const hasContent = postText.trim() || selectedImages.length > 0 || selectedAction;
+    
+    if (hasContent) {
+      setShowDiscardModal(true);
+    } else {
+      router.back();
+    }
+  };
+
+  const handleDiscardPost = () => {
+    setPostText('');
+    setSelectedAction(null);
+    setSelectedImages([]);
+    setShowQuickActions(true);
+    setShowDiscardModal(false);
+    router.back();
+  };
+
   return (
     <View style={styles.container}>
       <Header
@@ -351,177 +407,242 @@ export default function CreateScreen() {
         showMessages={false}
         showMore={false}
         showCloseButton={true}
-        onClosePress={() => router.back()}
+        onClosePress={handleClosePress}
       />
-      
-      <KeyboardAvoidingView 
-        style={styles.keyboardAvoidingView} 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoidingView}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       >
         <SafeAreaView style={styles.safeContent}>
-        <TouchableWithoutFeedback onPress={() => {
-          if (isTyping) {
-            Keyboard.dismiss();
-          }
-        }}>
-        <View style={styles.content}>
-          <View style={styles.topButtonRow}>
-            <View style={styles.leftButtons}>
-              <TouchableOpacity style={styles.locationButton} onPress={handleLocationPress}>
-                <MapPin size={16} color={Colors.text.secondary} />
-                <Text style={styles.buttonText} numberOfLines={1}>
-                  {selectedLocation.name.length > 12 ? selectedLocation.name.substring(0, 12) + '...' : selectedLocation.name}
-                </Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity style={styles.privacyButton} onPress={handlePrivacyPress}>
-                {React.createElement(getPrivacyIcon(), { size: 16, color: Colors.text.secondary })}
-                <Text style={styles.buttonText}>{getPrivacyLabel()}</Text>
-              </TouchableOpacity>
-            </View>
-            
-            <TouchableOpacity 
-              style={[
-                styles.postButton,
-                (!postText.trim() || isPosting) && styles.postButtonDisabled
-              ]}
-              onPress={handleCreatePost}
-              disabled={!postText.trim() || isPosting}
-            >
-              <Text style={[
-                styles.postButtonText,
-                (!postText.trim() || isPosting) && styles.postButtonTextDisabled
-              ]}>
-                Post
-              </Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableWithoutFeedback
+            onPress={() => {
+              if (isTyping) {
+                Keyboard.dismiss();
+              }
+            }}
+          >
+            <View style={styles.content}>
+              <View style={styles.topButtonRow}>
+                <View style={styles.leftButtons}>
+                  <TouchableOpacity
+                    style={styles.locationButton}
+                    onPress={handleLocationPress}
+                  >
+                    <MapPin size={16} color={Colors.text.secondary} />
+                    <Text style={styles.buttonText} numberOfLines={1}>
+                      {selectedLocation.name.length > 12
+                        ? selectedLocation.name.substring(0, 12) + "..."
+                        : selectedLocation.name}
+                    </Text>
+                  </TouchableOpacity>
 
-          {selectedAction && (
-            <View style={styles.selectedActionBadgeRow}>
-              <View style={styles.selectedActionBadge}>
-                {(() => {
-                  const action = quickActions.find(a => a.id === selectedAction);
-                  if (!action) return null;
-                  const IconComponent = action.icon;
-                  return (
-                    <>
-                      <IconComponent size={14} color={action.color} />
-                      <Text style={[styles.badgeText, { color: action.color }]}>
-                        {action.label}
-                      </Text>
-                      <TouchableOpacity 
-                        style={styles.removeBadgeButton}
-                        onPress={removeSelectedAction}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      >
-                        <X size={14} color={Colors.text.secondary} />
-                      </TouchableOpacity>
-                    </>
-                  );
-                })()}
+                  <TouchableOpacity
+                    style={styles.privacyButton}
+                    onPress={handlePrivacyPress}
+                  >
+                    {React.createElement(getPrivacyIcon(), {
+                      size: 16,
+                      color: Colors.text.secondary,
+                    })}
+                    <Text style={styles.buttonText}>{getPrivacyLabel()}</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity
+                  style={[
+                    styles.postButton,
+                    (!postText.trim() || isPosting) &&
+                      styles.postButtonDisabled,
+                  ]}
+                  onPress={handleCreatePost}
+                  disabled={!postText.trim() || isPosting}
+                >
+                  <Text
+                    style={[
+                      styles.postButtonText,
+                      (!postText.trim() || isPosting) &&
+                        styles.postButtonTextDisabled,
+                    ]}
+                  >
+                    Post
+                  </Text>
+                </TouchableOpacity>
               </View>
-            </View>
-          )}
 
-          <View style={styles.contentArea}>
-            <View style={styles.textInputContainer}>
-              <TextInput
-                ref={textInputRef}
-                style={styles.textInput}
-                multiline
-                placeholder="What's happening in your neighborhood?"
-                placeholderTextColor={Colors.text.disabled}
-                value={postText}
-                onChangeText={setPostText}
-                onFocus={handleTextInputFocus}
-                onBlur={handleTextInputBlur}
-              />
-            </View>
-
-            {selectedImages.length > 0 && (
-              <View style={styles.selectedImagesContainer}>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imagesScrollView}>
-                  {selectedImages.map((imageUri, index) => (
-                    <View key={index} style={styles.selectedImageWrapper}>
-                      <Image source={{ uri: imageUri }} style={styles.selectedImage} />
-                      <TouchableOpacity
-                        style={styles.removeImageButton}
-                        onPress={() => setSelectedImages(prev => prev.filter((_, i) => i !== index))}
-                      >
-                        <X size={16} color={Colors.text.inverse} />
-                      </TouchableOpacity>
+              <View style={styles.contentArea}>
+                <View style={styles.textInputContainer}>
+                  {selectedAction && (
+                    <View style={styles.selectedActionInline}>
+                      {(() => {
+                        const action = quickActions.find(
+                          (a) => a.id === selectedAction
+                        );
+                        if (!action) return null;
+                        const IconComponent = action.icon;
+                        return (
+                          <>
+                            <IconComponent size={16} color={action.color} />
+                            <Text
+                              style={[
+                                styles.inlineBadgeText,
+                                { color: action.color },
+                              ]}
+                            >
+                              {action.label}
+                            </Text>
+                            <TouchableOpacity
+                              style={styles.removeInlineBadgeButton}
+                              onPress={removeSelectedAction}
+                              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            >
+                              <X size={14} color={Colors.text.secondary} />
+                            </TouchableOpacity>
+                          </>
+                        );
+                      })()}
                     </View>
-                  ))}
-                </ScrollView>
+                  )}
+                  <TextInput
+                    ref={textInputRef}
+                    style={[
+                      styles.textInput,
+                      selectedAction && styles.textInputWithBadge,
+                    ]}
+                    multiline
+                    placeholder="What's happening in your neighborhood?"
+                    placeholderTextColor={Colors.text.disabled}
+                    value={postText}
+                    onChangeText={setPostText}
+                    onFocus={handleTextInputFocus}
+                    onBlur={handleTextInputBlur}
+                  />
+                </View>
               </View>
-            )}
-          </View>
-
-
-        </View>
-        </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
         </SafeAreaView>
       </KeyboardAvoidingView>
 
-      <View style={[
-        styles.mediaButtonsContainer, 
-        { 
-          bottom: showQuickActions ? 300 : (keyboardHeight > 0 ? keyboardHeight : 40)
-        }
-      ]}>
+      {selectedImages.length > 0 && (
+        <View
+          style={[
+            styles.selectedImagesFloating,
+            {
+              bottom: showQuickActions
+                ? 372
+                : keyboardHeight > 0
+                ? keyboardHeight + 72
+                : 112,
+            },
+          ]}
+        >
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.imagesScrollView}
+          >
+            {selectedImages.map((imageUri, index) => (
+              <View key={index} style={styles.selectedImageWrapper}>
+                <Image
+                  source={{ uri: imageUri }}
+                  style={styles.selectedImage}
+                />
+                <TouchableOpacity
+                  style={styles.removeImageButton}
+                  onPress={() =>
+                    setSelectedImages((prev) =>
+                      prev.filter((_, i) => i !== index)
+                    )
+                  }
+                >
+                  <X size={16} color={Colors.text.inverse} />
+                </TouchableOpacity>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+
+      <View
+        style={[
+          styles.mediaButtonsContainer,
+          {
+            bottom: showQuickActions
+              ? 300
+              : keyboardHeight > 0
+              ? keyboardHeight
+              : 40,
+          },
+        ]}
+      >
         <View style={styles.mediaButtons}>
           <View style={styles.leftMediaButtons}>
-            <TouchableOpacity style={styles.mediaButton} onPress={handleGalleryPress}>
+            <TouchableOpacity
+              style={styles.mediaButton}
+              onPress={handleGalleryPress}
+            >
               <Gallery size={20} color={Colors.text.secondary} />
             </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.mediaButton} onPress={handleCameraPress}>
+
+            <TouchableOpacity
+              style={styles.mediaButton}
+              onPress={handleCameraPress}
+            >
               <Camera size={20} color={Colors.text.secondary} />
             </TouchableOpacity>
           </View>
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={styles.moreButton}
             onPress={toggleQuickActions}
           >
             <MoreHorizontal size={20} color={Colors.text.secondary} />
             <Text style={styles.moreButtonText}>
-              {showQuickActions ? 'Less' : 'More'}
+              {showQuickActions ? "Less" : "More"}
             </Text>
           </TouchableOpacity>
         </View>
       </View>
 
       {showQuickActions && (
-        <View style={[styles.quickActionsSection, { paddingBottom: insets.bottom + 20 }]}>
+        <View
+          style={[
+            styles.quickActionsSection,
+            { paddingBottom: insets.bottom + 20 },
+          ]}
+        >
           <Text style={styles.quickActionsHeader}>Quick Actions</Text>
           <View style={styles.quickActionsList}>
             {quickActions.map((action) => {
               const IconComponent = action.icon;
               const isSelected = selectedAction === action.id;
-              
+
               return (
                 <TouchableOpacity
                   key={action.id}
                   style={[
                     styles.quickActionPill,
                     { backgroundColor: action.bgColor },
-                    isSelected && { 
+                    isSelected && {
                       backgroundColor: action.color,
-                    }
+                    },
                   ]}
                   onPress={() => selectQuickAction(action.id)}
                 >
-                  <IconComponent 
-                    size={20} 
-                    color={isSelected ? Colors.text.inverse : action.color} 
+                  <IconComponent
+                    size={20}
+                    color={isSelected ? Colors.text.inverse : action.color}
                   />
-                  <Text style={[
-                    styles.quickActionPillText, 
-                    { color: isSelected ? Colors.text.inverse : action.color }
-                  ]}>
+                  <Text
+                    style={[
+                      styles.quickActionPillText,
+                      {
+                        color: isSelected ? Colors.text.inverse : action.color,
+                      },
+                    ]}
+                  >
                     {action.label}
                   </Text>
                 </TouchableOpacity>
@@ -544,7 +665,7 @@ export default function CreateScreen() {
             </TouchableOpacity>
             <Text style={styles.modalTitle}>Select Location</Text>
             <TouchableOpacity onPress={() => setShowLocationModal(false)}>
-              <Check size={24} color={Colors.primary[600]} />
+              <Check size={24} color={Colors.primary[500]} />
             </TouchableOpacity>
           </View>
 
@@ -552,48 +673,78 @@ export default function CreateScreen() {
             <TouchableOpacity
               style={[
                 styles.locationOption,
-                selectedLocation.useCurrentLocation && styles.locationOptionSelected
+                selectedLocation.useCurrentLocation &&
+                  styles.locationOptionSelected,
               ]}
-              onPress={() => setSelectedLocation({
-                name: user?.locationCity ? `${user.locationCity}, ${user.addressState}` : "Current Location",
-                latitude: user?.latitude,
-                longitude: user?.longitude,
-                useCurrentLocation: true
-              })}
+              onPress={() =>
+                setSelectedLocation({
+                  name: user?.locationCity
+                    ? `${user.locationCity}, ${user.addressState}`
+                    : "Current Location",
+                  latitude: user?.latitude,
+                  longitude: user?.longitude,
+                  useCurrentLocation: true,
+                })
+              }
             >
-              <MapPin size={20} color={selectedLocation.useCurrentLocation ? Colors.primary[600] : Colors.text.secondary} />
+              <MapPin
+                size={20}
+                color={
+                  selectedLocation.useCurrentLocation
+                    ? Colors.primary[500]
+                    : Colors.text.secondary
+                }
+              />
               <View style={styles.locationOptionText}>
-                <Text style={[
-                  styles.locationOptionTitle,
-                  selectedLocation.useCurrentLocation && styles.locationOptionTitleSelected
-                ]}>
+                <Text
+                  style={[
+                    styles.locationOptionTitle,
+                    selectedLocation.useCurrentLocation &&
+                      styles.locationOptionTitleSelected,
+                  ]}
+                >
                   Current Location
                 </Text>
                 <Text style={styles.locationOptionSubtitle}>
-                  {user?.locationCity ? `${user.locationCity}, ${user.addressState}` : "Using your current location"}
+                  {user?.locationCity
+                    ? `${user.locationCity}, ${user.addressState}`
+                    : "Using your current location"}
                 </Text>
               </View>
               {selectedLocation.useCurrentLocation && (
-                <Check size={20} color={Colors.primary[600]} />
+                <Check size={20} color={Colors.primary[500]} />
               )}
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[
                 styles.locationOption,
-                !selectedLocation.useCurrentLocation && styles.locationOptionSelected
+                !selectedLocation.useCurrentLocation &&
+                  styles.locationOptionSelected,
               ]}
-              onPress={() => setSelectedLocation({
-                name: "Custom Location",
-                useCurrentLocation: false
-              })}
+              onPress={() =>
+                setSelectedLocation({
+                  name: "Custom Location",
+                  useCurrentLocation: false,
+                })
+              }
             >
-              <MapPin size={20} color={!selectedLocation.useCurrentLocation ? Colors.primary[600] : Colors.text.secondary} />
+              <MapPin
+                size={20}
+                color={
+                  !selectedLocation.useCurrentLocation
+                    ? Colors.primary[500]
+                    : Colors.text.secondary
+                }
+              />
               <View style={styles.locationOptionText}>
-                <Text style={[
-                  styles.locationOptionTitle,
-                  !selectedLocation.useCurrentLocation && styles.locationOptionTitleSelected
-                ]}>
+                <Text
+                  style={[
+                    styles.locationOptionTitle,
+                    !selectedLocation.useCurrentLocation &&
+                      styles.locationOptionTitleSelected,
+                  ]}
+                >
                   Custom Location
                 </Text>
                 <Text style={styles.locationOptionSubtitle}>
@@ -601,7 +752,7 @@ export default function CreateScreen() {
                 </Text>
               </View>
               {!selectedLocation.useCurrentLocation && (
-                <Check size={20} color={Colors.primary[600]} />
+                <Check size={20} color={Colors.primary[500]} />
               )}
             </TouchableOpacity>
           </ScrollView>
@@ -621,7 +772,7 @@ export default function CreateScreen() {
             </TouchableOpacity>
             <Text style={styles.modalTitle}>Who can see this?</Text>
             <TouchableOpacity onPress={() => setShowPrivacyModal(false)}>
-              <Check size={24} color={Colors.primary[600]} />
+              <Check size={24} color={Colors.primary[500]} />
             </TouchableOpacity>
           </View>
 
@@ -629,77 +780,166 @@ export default function CreateScreen() {
             <TouchableOpacity
               style={[
                 styles.privacyOption,
-                privacyLevel === 'public' && styles.privacyOptionSelected
+                privacyLevel === "public" && styles.privacyOptionSelected,
               ]}
-              onPress={() => setPrivacyLevel('public')}
+              onPress={() => setPrivacyLevel("public")}
             >
-              <Globe size={20} color={privacyLevel === 'public' ? Colors.primary[600] : Colors.text.secondary} />
+              <Globe
+                size={20}
+                color={
+                  privacyLevel === "public"
+                    ? Colors.primary[500]
+                    : Colors.text.secondary
+                }
+              />
               <View style={styles.privacyOptionText}>
-                <Text style={[
-                  styles.privacyOptionTitle,
-                  privacyLevel === 'public' && styles.privacyOptionTitleSelected
-                ]}>
+                <Text
+                  style={[
+                    styles.privacyOptionTitle,
+                    privacyLevel === "public" &&
+                      styles.privacyOptionTitleSelected,
+                  ]}
+                >
                   Public
                 </Text>
                 <Text style={styles.privacyOptionSubtitle}>
                   Anyone can see this post
                 </Text>
               </View>
-              {privacyLevel === 'public' && (
-                <Check size={20} color={Colors.primary[600]} />
+              {privacyLevel === "public" && (
+                <Check size={20} color={Colors.primary[500]} />
               )}
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[
                 styles.privacyOption,
-                privacyLevel === 'neighbors' && styles.privacyOptionSelected
+                privacyLevel === "neighbors" && styles.privacyOptionSelected,
               ]}
-              onPress={() => setPrivacyLevel('neighbors')}
+              onPress={() => setPrivacyLevel("neighbors")}
             >
-              <Users size={20} color={privacyLevel === 'neighbors' ? Colors.primary[600] : Colors.text.secondary} />
+              <Users
+                size={20}
+                color={
+                  privacyLevel === "neighbors"
+                    ? Colors.primary[500]
+                    : Colors.text.secondary
+                }
+              />
               <View style={styles.privacyOptionText}>
-                <Text style={[
-                  styles.privacyOptionTitle,
-                  privacyLevel === 'neighbors' && styles.privacyOptionTitleSelected
-                ]}>
+                <Text
+                  style={[
+                    styles.privacyOptionTitle,
+                    privacyLevel === "neighbors" &&
+                      styles.privacyOptionTitleSelected,
+                  ]}
+                >
                   Neighbors
                 </Text>
                 <Text style={styles.privacyOptionSubtitle}>
                   Only people in your neighborhood can see this
                 </Text>
               </View>
-              {privacyLevel === 'neighbors' && (
-                <Check size={20} color={Colors.primary[600]} />
+              {privacyLevel === "neighbors" && (
+                <Check size={20} color={Colors.primary[500]} />
               )}
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[
                 styles.privacyOption,
-                privacyLevel === 'friends' && styles.privacyOptionSelected
+                privacyLevel === "friends" && styles.privacyOptionSelected,
               ]}
-              onPress={() => setPrivacyLevel('friends')}
+              onPress={() => setPrivacyLevel("friends")}
             >
-              <UserCheck size={20} color={privacyLevel === 'friends' ? Colors.primary[600] : Colors.text.secondary} />
+              <UserCheck
+                size={20}
+                color={
+                  privacyLevel === "friends"
+                    ? Colors.primary[500]
+                    : Colors.text.secondary
+                }
+              />
               <View style={styles.privacyOptionText}>
-                <Text style={[
-                  styles.privacyOptionTitle,
-                  privacyLevel === 'friends' && styles.privacyOptionTitleSelected
-                ]}>
+                <Text
+                  style={[
+                    styles.privacyOptionTitle,
+                    privacyLevel === "friends" &&
+                      styles.privacyOptionTitleSelected,
+                  ]}
+                >
                   Friends Only
                 </Text>
                 <Text style={styles.privacyOptionSubtitle}>
                   Only your friends can see this post
                 </Text>
               </View>
-              {privacyLevel === 'friends' && (
-                <Check size={20} color={Colors.primary[600]} />
+              {privacyLevel === "friends" && (
+                <Check size={20} color={Colors.primary[500]} />
               )}
             </TouchableOpacity>
           </ScrollView>
         </SafeAreaView>
       </Modal>
+
+      <Modal
+        visible={showDiscardModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowDiscardModal(false)}
+      >
+        <View style={styles.discardOverlay}>
+          <View style={styles.discardModal}>
+            <Text style={styles.discardTitle}>Discard post?</Text>
+            <Text style={styles.discardMessage}>
+              If you go back now, you'll lose your post.
+            </Text>
+
+            <View style={styles.discardButtons}>
+              <TouchableOpacity
+                style={styles.discardButtonSecondary}
+                onPress={() => setShowDiscardModal(false)}
+              >
+                <Text style={styles.discardButtonSecondaryText}>
+                  Keep editing
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.discardButtonPrimary}
+                onPress={handleDiscardPost}
+              >
+                <Text style={styles.discardButtonPrimaryText}>Discard</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {postStatus !== "idle" && (
+        <Animated.View style={[styles.loadingOverlay, { opacity: fadeAnim }]}>
+          <View style={styles.loadingContent}>
+            {postStatus === "posting" ? (
+              <>
+                <ActivityIndicator size="large" color={Colors.primary[500]} />
+                <Text style={styles.loadingText}>Posting...</Text>
+              </>
+            ) : (
+              <Animated.View
+                style={[
+                  styles.successContainer,
+                  { transform: [{ scale: scaleAnim }] },
+                ]}
+              >
+                <View style={styles.successCircle}>
+                  <Check size={32} color={Colors.text.inverse} />
+                </View>
+                <Text style={styles.successText}>Post Created!</Text>
+              </Animated.View>
+            )}
+          </View>
+        </Animated.View>
+      )}
     </View>
   );
 }
@@ -760,7 +1000,7 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary,
   },
   postButton: {
-    backgroundColor: Colors.primary[600],
+    backgroundColor: Colors.primary[500],
     paddingHorizontal: 24,
     paddingVertical: 10,
     borderRadius: 8,
@@ -814,6 +1054,30 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     padding: 0,
   },
+  textInputWithBadge: {
+    marginTop: 8,
+  },
+  selectedActionInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: Colors.background,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    gap: 6,
+    marginBottom: 4,
+  },
+  inlineBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  removeInlineBadgeButton: {
+    marginLeft: 2,
+    padding: 2,
+  },
   badgeText: {
     fontSize: 12,
     fontWeight: '600',
@@ -829,8 +1093,6 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 20,
     backgroundColor: Colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
     zIndex: 10,
   },
   mediaButtons: {
@@ -879,8 +1141,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 16,
     paddingTop: 20,
     paddingHorizontal: 20,
-    borderTopWidth: 1,
-    borderColor: Colors.border,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -920,7 +1180,20 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   selectedImagesContainer: {
-    marginTop: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    backgroundColor: Colors.surface,
+  },
+  selectedImagesFloating: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: Colors.surface,
+    zIndex: 5,
   },
   imagesScrollView: {
     maxHeight: 100,
@@ -937,8 +1210,8 @@ const styles = StyleSheet.create({
   },
   removeImageButton: {
     position: 'absolute',
-    top: -8,
-    right: -8,
+    top: -6,
+    right: -6,
     width: 24,
     height: 24,
     borderRadius: 12,
@@ -950,6 +1223,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 4,
+    zIndex: 10,
   },
   modalContainer: {
     flex: 1,
@@ -995,7 +1269,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   locationOptionTitleSelected: {
-    color: Colors.primary[600],
+    color: Colors.primary[500],
   },
   locationOptionSubtitle: {
     fontSize: 14,
@@ -1023,10 +1297,118 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   privacyOptionTitleSelected: {
-    color: Colors.primary[600],
+    color: Colors.primary[500],
   },
   privacyOptionSubtitle: {
     fontSize: 14,
     color: Colors.text.secondary,
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  loadingContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.text.inverse,
+    marginTop: 16,
+  },
+  successContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  successCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: Colors.success[600],
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  successText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.text.inverse,
+    marginTop: 16,
+  },
+  discardOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  discardModal: {
+    backgroundColor: Colors.background,
+    borderRadius: 16,
+    paddingVertical: 24,
+    paddingHorizontal: 24,
+    width: '100%',
+    maxWidth: 340,
+    alignItems: 'center',
+  },
+  discardTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: Colors.text.primary,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  discardMessage: {
+    fontSize: 16,
+    color: Colors.text.secondary,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  discardButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  discardButtonSecondary: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: Colors.neutral[100],
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  discardButtonSecondaryText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.text.primary,
+  },
+  discardButtonPrimary: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: Colors.error[600],
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  discardButtonPrimaryText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.text.inverse,
   },
 });

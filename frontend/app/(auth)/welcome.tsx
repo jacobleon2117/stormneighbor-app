@@ -5,13 +5,9 @@ import {
   StyleSheet,
   SafeAreaView,
   TouchableOpacity,
-  Dimensions,
   ImageBackground,
 } from "react-native";
 import { router } from "expo-router";
-import { Colors } from "../../constants/Colors";
-
-const { width, height } = Dimensions.get("window");
 
 export default function WelcomeScreen() {
   const handleGetStarted = () => {
@@ -36,7 +32,7 @@ export default function WelcomeScreen() {
 
         <View style={styles.brandSection}>
           <Text style={styles.appName}>StormNeighbor</Text>
-          <Text style={styles.tagline}>Your community connection hub</Text>
+          <Text style={styles.tagline}>Get real-time, local severe weather alerts and updates from your community.</Text>
         </View>
 
         <View style={styles.actionSection}>

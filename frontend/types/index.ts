@@ -49,6 +49,10 @@ export interface User {
   locationPreferences?: LocationPreferences;
   emailVerified: boolean;
   isActive: boolean;
+  isTestingUser?: boolean;
+  apiRateLimit?: number;
+  dailyApiCalls?: number;
+  lastApiReset?: string;
   notificationPreferences: NotificationPreferences;
   createdAt: string;
   updatedAt: string;
@@ -318,6 +322,20 @@ export const REACTION_TYPES = {
   CONCERNED: "concerned" as const,
   ANGRY: "angry" as const,
 };
+
+export interface UserFeedback {
+  id?: number;
+  userId: number;
+  feedbackType: "bug_report" | "feature_request" | "general_feedback" | "ui_ux_feedback";
+  title: string;
+  description: string;
+  priority: "low" | "normal" | "high";
+  status?: "new" | "in_review" | "addressed" | "closed";
+  appVersion?: string;
+  deviceInfo?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
 
 export type PostType = keyof typeof POST_TYPES;
 export type Priority = keyof typeof PRIORITIES;

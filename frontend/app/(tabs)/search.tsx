@@ -166,164 +166,166 @@ export default function SearchScreen() {
     </View>
   );
 
+  const handleGoBack = () => {
+    router.back();
+  };
+
   return (
     <View style={styles.container}>
       <Header
         title="Search"
         showBackButton={true}
-        onBackPress={() => router.back()}
+        onBackPress={handleGoBack}
         showSearch={false}
         showNotifications={false}
         showMessages={false}
         showMore={false}
-        customRightContent={
-          <TouchableOpacity onPress={() => setShowFilters(true)}>
-            <Filter size={24} color={Colors.text.primary} />
-          </TouchableOpacity>
-        }
       />
-      <SafeAreaView style={styles.safeContent}>
-
-      <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <Search size={20} color={Colors.text.disabled} style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            onSubmitEditing={() => handleSearch(searchQuery)}
-            placeholder="Search posts, requests, updates..."
-            placeholderTextColor={Colors.text.disabled}
-            returnKeyType="search"
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
-              <X size={20} color={Colors.text.disabled} />
+      
+      <SafeAreaView style={{ flex: 1 }}>
+        <View style={styles.searchContainer}>
+          <View style={styles.searchBar}>
+            <Search size={20} color={Colors.text.disabled} style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              onSubmitEditing={() => handleSearch(searchQuery)}
+              placeholder="Search posts, requests, updates..."
+              placeholderTextColor={Colors.text.disabled}
+              returnKeyType="search"
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
+                <X size={20} color={Colors.text.disabled} />
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity onPress={() => setShowFilters(true)} style={styles.filterButton}>
+              <Filter size={20} color={Colors.text.secondary} />
             </TouchableOpacity>
-          )}
-        </View>
-      </View>
-
-      {(searchFilters.types?.length || searchFilters.priorities?.length) ? (
-        <View style={styles.activeFilters}>
-          <Text style={styles.activeFiltersLabel}>Active filters:</Text>
-          <View style={styles.filterChips}>
-            {searchFilters.types?.map(type => (
-              <TouchableOpacity
-                key={type}
-                style={styles.activeFilterChip}
-                onPress={() => toggleType(type)}
-              >
-                <Text style={styles.activeFilterChipText}>
-                  {POST_TYPES.find(t => t.key === type)?.label}
-                </Text>
-                <X size={14} color={Colors.text.inverse} />
-              </TouchableOpacity>
-            ))}
-            {searchFilters.priorities?.map(priority => (
-              <TouchableOpacity
-                key={priority}
-                style={styles.activeFilterChip}
-                onPress={() => togglePriority(priority)}
-              >
-                <Text style={styles.activeFilterChipText}>
-                  {PRIORITIES.find(p => p.key === priority)?.label}
-                </Text>
-                <X size={14} color={Colors.text.inverse} />
-              </TouchableOpacity>
-            ))}
           </View>
         </View>
-      ) : null}
 
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.primary[600]} />
-          <Text style={styles.loadingText}>Searching...</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={searchResults}
-          renderItem={renderPost}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.listContainer}
-          ListEmptyComponent={renderEmptyState}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
-
-      {showFilters && (
-        <View style={styles.filtersModal}>
-          <View style={styles.modalOverlay} />
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Filters</Text>
-              <TouchableOpacity onPress={() => setShowFilters(false)}>
-                <X size={24} color={Colors.text.primary} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.filterSection}>
-              <Text style={styles.filterSectionTitle}>Post Types</Text>
-              <View style={styles.filterOptions}>
-                {POST_TYPES.map((type) => (
-                  <TouchableOpacity
-                    key={type.key}
-                    style={[
-                      styles.filterChip,
-                      searchFilters.types?.includes(type.key) && styles.filterChipActive,
-                    ]}
-                    onPress={() => toggleType(type.key)}
-                  >
-                    <Text
-                      style={[
-                        styles.filterChipText,
-                        searchFilters.types?.includes(type.key) && styles.filterChipTextActive,
-                      ]}
-                    >
-                      {type.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            <View style={styles.filterSection}>
-              <Text style={styles.filterSectionTitle}>Priority</Text>
-              <View style={styles.filterOptions}>
-                {PRIORITIES.map((priority) => (
-                  <TouchableOpacity
-                    key={priority.key}
-                    style={[
-                      styles.filterChip,
-                      searchFilters.priorities?.includes(priority.key) && styles.filterChipActive,
-                    ]}
-                    onPress={() => togglePriority(priority.key)}
-                  >
-                    <Text
-                      style={[
-                        styles.filterChipText,
-                        searchFilters.priorities?.includes(priority.key) && styles.filterChipTextActive,
-                      ]}
-                    >
-                      {priority.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={styles.clearAllButton}
-                onPress={clearAllFilters}
-              >
-                <Text style={styles.clearAllButtonText}>Clear All</Text>
-              </TouchableOpacity>
+        {(searchFilters.types?.length || searchFilters.priorities?.length) ? (
+          <View style={styles.activeFilters}>
+            <Text style={styles.activeFiltersLabel}>Active filters:</Text>
+            <View style={styles.filterChips}>
+              {searchFilters.types?.map(type => (
+                <TouchableOpacity
+                  key={type}
+                  style={styles.activeFilterChip}
+                  onPress={() => toggleType(type)}
+                >
+                  <Text style={styles.activeFilterChipText}>
+                    {POST_TYPES.find(t => t.key === type)?.label}
+                  </Text>
+                  <X size={14} color={Colors.text.inverse} />
+                </TouchableOpacity>
+              ))}
+              {searchFilters.priorities?.map(priority => (
+                <TouchableOpacity
+                  key={priority}
+                  style={styles.activeFilterChip}
+                  onPress={() => togglePriority(priority)}
+                >
+                  <Text style={styles.activeFilterChipText}>
+                    {PRIORITIES.find(p => p.key === priority)?.label}
+                  </Text>
+                  <X size={14} color={Colors.text.inverse} />
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
-        </View>
-      )}
+        ) : null}
+
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={Colors.primary[500]} />
+            <Text style={styles.loadingText}>Searching...</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={searchResults}
+            renderItem={renderPost}
+            keyExtractor={(item) => item.id.toString()}
+            contentContainerStyle={styles.listContainer}
+            ListEmptyComponent={renderEmptyState}
+            showsVerticalScrollIndicator={false}
+          />
+        )}
+
+        {showFilters && (
+          <View style={styles.filtersModal}>
+            <View style={styles.modalOverlay} />
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Filters</Text>
+                <TouchableOpacity onPress={() => setShowFilters(false)}>
+                  <X size={24} color={Colors.text.primary} />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.filterSection}>
+                <Text style={styles.filterSectionTitle}>Post Types</Text>
+                <View style={styles.filterOptions}>
+                  {POST_TYPES.map((type) => (
+                    <TouchableOpacity
+                      key={type.key}
+                      style={[
+                        styles.filterChip,
+                        searchFilters.types?.includes(type.key) && styles.filterChipActive,
+                      ]}
+                      onPress={() => toggleType(type.key)}
+                    >
+                      <Text
+                        style={[
+                          styles.filterChipText,
+                          searchFilters.types?.includes(type.key) && styles.filterChipTextActive,
+                        ]}
+                      >
+                        {type.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              <View style={styles.filterSection}>
+                <Text style={styles.filterSectionTitle}>Priority</Text>
+                <View style={styles.filterOptions}>
+                  {PRIORITIES.map((priority) => (
+                    <TouchableOpacity
+                      key={priority.key}
+                      style={[
+                        styles.filterChip,
+                        searchFilters.priorities?.includes(priority.key) && styles.filterChipActive,
+                      ]}
+                      onPress={() => togglePriority(priority.key)}
+                    >
+                      <Text
+                        style={[
+                          styles.filterChipText,
+                          searchFilters.priorities?.includes(priority.key) && styles.filterChipTextActive,
+                        ]}
+                      >
+                        {priority.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={styles.clearAllButton}
+                  onPress={clearAllFilters}
+                >
+                  <Text style={styles.clearAllButtonText}>Clear All</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        )}
       </SafeAreaView>
     </View>
   );
@@ -366,6 +368,10 @@ const styles = StyleSheet.create({
     padding: 4,
     marginLeft: 8,
   },
+  filterButton: {
+    padding: 4,
+    marginLeft: 8,
+  },
   activeFilters: {
     paddingHorizontal: 20,
     paddingVertical: 12,
@@ -386,7 +392,7 @@ const styles = StyleSheet.create({
   activeFilterChip: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.primary[600],
+    backgroundColor: Colors.primary[500],
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
@@ -495,8 +501,8 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
   },
   filterChipActive: {
-    backgroundColor: Colors.primary[600],
-    borderColor: Colors.primary[600],
+    backgroundColor: Colors.primary[500],
+    borderColor: Colors.primary[500],
   },
   filterChipText: {
     fontSize: 14,
@@ -517,7 +523,7 @@ const styles = StyleSheet.create({
   },
   clearAllButtonText: {
     fontSize: 16,
-    color: Colors.primary[600],
+    color: Colors.primary[500],
     fontWeight: "500",
   },
 });

@@ -14,10 +14,9 @@ export function LoadingScreen() {
         <Text style={styles.title}>StormNeighbor</Text>
         <ActivityIndicator
           size="large"
-          color={Colors.primary[600]}
+          color={Colors.primary[500]}
           style={styles.spinner}
         />
-        <Text style={styles.subtitle}>Loading your community...</Text>
       </View>
     </View>
   );

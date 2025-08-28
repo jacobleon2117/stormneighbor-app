@@ -143,7 +143,7 @@ export default function PrivacySecurityScreen() {
         value={value}
         onValueChange={onToggle}
         trackColor={{ false: Colors.neutral[200], true: Colors.primary[200] }}
-        thumbColor={value ? Colors.primary[600] : Colors.neutral[400]}
+        thumbColor={value ? Colors.primary[500] : Colors.neutral[400]}
         disabled={disabled || saving}
       />
     </View>
@@ -219,7 +219,7 @@ export default function PrivacySecurityScreen() {
       <SafeAreaView style={styles.container}>
         <Header title="Privacy & Security" showBackButton />
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.primary[600]} />
+          <ActivityIndicator size="large" color={Colors.primary[500]} />
           <Text style={styles.loadingText}>Loading settings...</Text>
         </View>
       </SafeAreaView>
@@ -311,7 +311,7 @@ export default function PrivacySecurityScreen() {
 
       {saving && (
         <View style={styles.savingOverlay}>
-          <ActivityIndicator size="small" color={Colors.primary[600]} />
+          <ActivityIndicator size="small" color={Colors.primary[500]} />
           <Text style={styles.savingText}>Saving...</Text>
         </View>
       )}

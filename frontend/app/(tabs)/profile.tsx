@@ -24,7 +24,7 @@ import { apiService } from "../../services/api";
 import TempNotificationService from "../../services/tempNotifications";
 import { User } from "../../types";
 import { Header } from "../../components/UI/Header";
-import { TestTube, CheckCircle, XCircle } from "lucide-react-native";
+import { TestTube, CheckCircle, XCircle, MessageSquare } from "lucide-react-native";
 
 type EditMode = "personal" | "location" | "notifications" | "security" | null;
 
@@ -311,7 +311,7 @@ export default function ProfileScreen() {
         </View>
         {loading && (
           <View style={styles.loadingOverlay}>
-            <ActivityIndicator size="small" color={Colors.primary[600]} />
+            <ActivityIndicator size="small" color={Colors.primary[500]} />
           </View>
         )}
       </TouchableOpacity>
@@ -344,9 +344,9 @@ export default function ProfileScreen() {
     <TouchableOpacity style={styles.menuItem} onPress={onPress}>
       <View style={styles.menuIcon}>
         {typeof icon === 'string' ? (
-          <Ionicons name={icon as any} size={24} color={Colors.primary[600]} />
+          <Ionicons name={icon as any} size={24} color={Colors.primary[500]} />
         ) : (
-          React.createElement(icon, { size: 24, color: Colors.primary[600], ...iconProps })
+          React.createElement(icon, { size: 24, color: Colors.primary[500], ...iconProps })
         )}
       </View>
       <View style={styles.menuContent}>
@@ -546,7 +546,7 @@ export default function ProfileScreen() {
               }}
               thumbColor={
                 locationForm.showCityOnly
-                  ? Colors.primary[600]
+                  ? Colors.primary[500]
                   : Colors.neutral[500]
               }
             />
@@ -613,7 +613,7 @@ export default function ProfileScreen() {
               }}
               thumbColor={
                 notificationPrefs.pushNotifications
-                  ? Colors.primary[600]
+                  ? Colors.primary[500]
                   : Colors.neutral[500]
               }
             />
@@ -640,7 +640,7 @@ export default function ProfileScreen() {
               }}
               thumbColor={
                 notificationPrefs.emailNotifications
-                  ? Colors.primary[600]
+                  ? Colors.primary[500]
                   : Colors.neutral[500]
               }
             />
@@ -688,7 +688,7 @@ export default function ProfileScreen() {
               }}
               thumbColor={
                 notificationPrefs.weatherAlerts
-                  ? Colors.primary[600]
+                  ? Colors.primary[500]
                   : Colors.neutral[500]
               }
             />
@@ -712,7 +712,7 @@ export default function ProfileScreen() {
               }}
               thumbColor={
                 notificationPrefs.communityUpdates
-                  ? Colors.primary[600]
+                  ? Colors.primary[500]
                   : Colors.neutral[500]
               }
             />
@@ -797,6 +797,13 @@ export default function ProfileScreen() {
             () => router.push("/help-support")
           )}
 
+          {renderMenuItem(
+            MessageSquare,
+            "App Feedback",
+            "Share your thoughts to help improve the app",
+            () => router.push("/user-feedback")
+          )}
+
           {__DEV__ && renderMenuItem(
             TestTube,
             "Test Notification",
@@ -876,7 +883,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: Colors.primary[600],
+    backgroundColor: Colors.primary[500],
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 3,

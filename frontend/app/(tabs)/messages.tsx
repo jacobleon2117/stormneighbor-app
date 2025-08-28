@@ -12,7 +12,7 @@ import {
   Alert,
 } from "react-native";
 import { router } from "expo-router";
-import { MessageCircle, Send } from "lucide-react-native";
+import { MessageCircle } from "lucide-react-native";
 import { Header } from "../../components/UI/Header";
 import { Colors } from "../../constants/Colors";
 import { apiService } from "../../services/api";
@@ -136,7 +136,7 @@ export default function MessagesScreen() {
               >
                 {isFromCurrentUser && "You: "}
                 {item.lastMessage.messageType === "image"
-                  ? "📷 Image"
+                  ? "Image"
                   : item.lastMessage.content}
               </Text>
             )}
@@ -160,80 +160,91 @@ export default function MessagesScreen() {
     </View>
   );
 
+  const handleGoBack = () => {
+    router.back();
+  };
+
   if (loading && conversations.length === 0) {
     return (
-      <SafeAreaView style={styles.container}>
+      <View style={styles.container}>
         <Header
           title="Messages"
           showBackButton={true}
-          onBackPress={() => router.back()}
-          backgroundColor={Colors.background}
+          onBackPress={handleGoBack}
         />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.primary[600]} />
-          <Text style={styles.loadingText}>Loading messages...</Text>
-        </View>
-      </SafeAreaView>
+        <SafeAreaView style={{ flex: 1 }}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={Colors.primary[500]} />
+            <Text style={styles.loadingText}>Loading messages...</Text>
+          </View>
+        </SafeAreaView>
+      </View>
     );
   }
 
   if (error && conversations.length === 0) {
     return (
-      <SafeAreaView style={styles.container}>
+      <View style={styles.container}>
         <Header
           title="Messages"
           showBackButton={true}
-          onBackPress={() => router.back()}
-          backgroundColor={Colors.background}
+          onBackPress={handleGoBack}
         />
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorTitle}>Unable to load messages</Text>
-          <Text style={styles.errorMessage}>{error}</Text>
-          <TouchableOpacity
-            style={styles.retryButton}
-            onPress={() => fetchConversations()}
-          >
-            <Text style={styles.retryButtonText}>Try Again</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
+        <SafeAreaView style={{ flex: 1 }}>
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorTitle}>Unable to load messages</Text>
+            <Text style={styles.errorMessage}>{error}</Text>
+            <TouchableOpacity
+              style={styles.retryButton}
+              onPress={() => fetchConversations()}
+            >
+              <Text style={styles.retryButtonText}>Try Again</Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <Header
         title="Messages"
         showBackButton={true}
-        onBackPress={() => router.back()}
-        backgroundColor={Colors.background}
+        onBackPress={handleGoBack}
       />
       
-      <FlatList
-        data={conversations}
-        renderItem={renderConversation}
-        keyExtractor={(item) => item.id.toString()}
-        ListEmptyComponent={renderEmpty}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            colors={[Colors.primary[600]]}
-            tintColor={Colors.primary[600]}
-          />
-        }
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.listContainer,
-          conversations.length === 0 && styles.listEmpty,
-        ]}
-      />
-    </SafeAreaView>
+      <SafeAreaView style={{ flex: 1 }}>
+        <FlatList
+          data={conversations}
+          renderItem={renderConversation}
+          keyExtractor={(item) => item.id.toString()}
+          ListEmptyComponent={renderEmpty}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              colors={[Colors.primary[500]]}
+              tintColor={Colors.primary[500]}
+            />
+          }
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            styles.listContainer,
+            conversations.length === 0 && styles.listEmpty,
+          ]}
+        />
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    backgroundColor: Colors.surface,
+  },
+  safeContent: {
     flex: 1,
     backgroundColor: Colors.surface,
   },
@@ -274,7 +285,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   retryButton: {
-    backgroundColor: Colors.primary[600],
+    backgroundColor: Colors.primary[500],
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
@@ -370,7 +381,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: Colors.primary[600],
+    backgroundColor: Colors.primary[500],
   },
   emptyState: {
     alignItems: "center",

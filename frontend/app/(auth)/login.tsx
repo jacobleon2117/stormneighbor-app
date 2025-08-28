@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,8 @@ import {
 } from "react-native";
 import { Link, router } from "expo-router";
 import { Eye, EyeOff, AlertCircle } from "lucide-react-native";
+import * as LocalAuthentication from "expo-local-authentication";
+import * as SecureStore from "expo-secure-store";
 import { Input } from "../../components/UI/Input";
 import { Button } from "../../components/UI/Button";
 import { useAuth } from "../../hooks/useAuth";
@@ -23,8 +25,81 @@ export default function LoginScreen() {
   const [errors, setErrors] = useState<{ email?: string; password?: string }>(
     {}
   );
+  const [biometricType, setBiometricType] = useState<string | null>(null);
+  const [isAutoLoggingIn, setIsAutoLoggingIn] = useState(false);
 
   const { login, isLoading, error, clearError } = useAuth();
+
+  useEffect(() => {
+    checkBiometricAndAutoLogin();
+  }, []);
+
+  useEffect(() => {
+    const checkAutoFillAndLogin = async () => {
+      if (email && password && biometricType && !isAutoLoggingIn && !isLoading) {
+        setTimeout(async () => {
+          try {
+            setIsAutoLoggingIn(true);
+            await login(email.trim().toLowerCase(), password);
+            router.replace("/(tabs)");
+          } catch (error) {
+            console.log('Auto-login from auto-fill failed:', error);
+            setIsAutoLoggingIn(false);
+          }
+        }, 500);
+      }
+    };
+
+    checkAutoFillAndLogin();
+  }, [email, password, biometricType, isAutoLoggingIn, isLoading]);
+
+  const checkBiometricAndAutoLogin = async () => {
+    try {
+      if (!LocalAuthentication) {
+        console.log('LocalAuthentication not available');
+        return;
+      }
+
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+      const supportedTypes = await LocalAuthentication.supportedAuthenticationTypesAsync();
+      
+      if (hasHardware && isEnrolled && supportedTypes.length > 0) {
+        if (supportedTypes.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) {
+          setBiometricType('Face ID');
+        } else if (supportedTypes.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) {
+          setBiometricType('Touch ID');
+        }
+        
+        const storedEmail = await SecureStore.getItemAsync('biometric_email');
+        const storedPassword = await SecureStore.getItemAsync('biometric_password');
+        
+        if (storedEmail && storedPassword) {
+          const result = await LocalAuthentication.authenticateAsync({
+            promptMessage: `Use ${biometricType || 'biometrics'} to sign in`,
+            cancelLabel: 'Cancel',
+            disableDeviceFallback: true,
+          });
+          
+          if (result.success) {
+            setEmail(storedEmail);
+            setPassword(storedPassword);
+            setIsAutoLoggingIn(true);
+            
+            try {
+              await login(storedEmail.trim().toLowerCase(), storedPassword);
+              router.replace("/(tabs)");
+            } catch (error) {
+              console.log('Auto-login failed:', error);
+              setIsAutoLoggingIn(false);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.log('Biometric check error:', error);
+    }
+  };
 
   const validateForm = (): boolean => {
     const newErrors: { email?: string; password?: string } = {};
@@ -52,6 +127,16 @@ export default function LoginScreen() {
 
     try {
       await login(email.trim().toLowerCase(), password);
+      
+      if (biometricType) {
+        try {
+          await SecureStore.setItemAsync('biometric_email', email.trim().toLowerCase());
+          await SecureStore.setItemAsync('biometric_password', password);
+        } catch (error) {
+          console.log('Failed to store biometric credentials:', error);
+        }
+      }
+      
       router.replace("/(tabs)");
     } catch (error) {}
   };
@@ -113,9 +198,9 @@ export default function LoginScreen() {
             )}
 
             <Button
-              title="Sign In"
+              title={isAutoLoggingIn ? `Signing in with ${biometricType || 'biometrics'}...` : "Sign In"}
               onPress={handleLogin}
-              loading={isLoading}
+              loading={isLoading || isAutoLoggingIn}
               style={styles.loginButton}
             />
 
@@ -153,9 +238,8 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 60,
+    paddingTop: 80,
     paddingBottom: 24,
-    justifyContent: "center",
   },
   header: {
     alignItems: "center",

@@ -823,7 +823,7 @@ export default function WeatherScreen() {
           </View>
 
           <View style={styles.topRight}>
-            <WeatherIcon size={32} color={Colors.primary[600]} />
+            <WeatherIcon size={32} color={Colors.primary[500]} />
             <Text style={styles.compactCondition}>
               {weather.current?.shortForecast || weather.condition}
             </Text>
@@ -834,49 +834,24 @@ export default function WeatherScreen() {
         </View>
 
         <View style={styles.bottomRow}>
-          <View style={styles.bottomLeft}>
-            <View style={styles.metricsGrid}>
-              <View style={styles.metricItem}>
-                <View style={styles.metricContent}>
-                  <Wind size={14} color={Colors.text.secondary} />
-                  <Text style={styles.metricValue}>
-                    {weather.current?.windSpeed || weather.windSpeed || "N/A"}
-                  </Text>
-                </View>
-                <Text style={styles.metricLabel}>Wind</Text>
+          <View style={styles.alertsContainer}>
+            {alerts.length > 0 ? (
+              <View style={styles.alertBox}>
+                <AlertTriangle size={18} color={Colors.error[600]} />
+                {alerts.length > 1 && (
+                  <View style={styles.alertCounter}>
+                    <Text style={styles.alertCounterText}>{alerts.length}</Text>
+                  </View>
+                )}
               </View>
-              <View style={styles.metricItem}>
-                <View style={styles.metricContent}>
-                  <Droplets size={14} color={Colors.text.secondary} />
-                  <Text style={styles.metricValue}>
-                    {weather.humidity || "N/A"}%
-                  </Text>
-                </View>
-                <Text style={styles.metricLabel}>Humidity</Text>
+            ) : (
+              <View style={styles.noAlertBox}>
+                <CheckCircle size={18} color={Colors.success[600]} />
               </View>
-            </View>
-          </View>
-
-          <View style={styles.bottomRight}>
-            <View style={styles.alertsContainer}>
-              {alerts.length > 0 ? (
-                <View style={styles.alertBox}>
-                  <AlertTriangle size={18} color={Colors.error[600]} />
-                  {alerts.length > 1 && (
-                    <View style={styles.alertCounter}>
-                      <Text style={styles.alertCounterText}>{alerts.length}</Text>
-                    </View>
-                  )}
-                </View>
-              ) : (
-                <View style={styles.noAlertBox}>
-                  <CheckCircle size={18} color={Colors.success[600]} />
-                </View>
-              )}
-              <Text style={styles.alertLabel}>
-                {alerts.length > 0 ? "Alerts" : "No Alerts"}
-              </Text>
-            </View>
+            )}
+            <Text style={styles.alertLabel}>
+              {alerts.length > 0 ? "Alerts" : "No Alerts"}
+            </Text>
           </View>
         </View>
       </View>
@@ -888,7 +863,7 @@ export default function WeatherScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.primary[600]} />
+          <ActivityIndicator size="large" color={Colors.primary[500]} />
           <Text style={styles.loadingText}>Loading weather data...</Text>
         </View>
       </SafeAreaView>
@@ -1024,11 +999,6 @@ export default function WeatherScreen() {
           {(weatherLayers.safety_alerts || weatherLayers.community_alerts || weatherLayers.help_needed) && communityAlerts.map((alert) => {
             if (!alert.latitude || !alert.longitude) return null;
             
-            // Create a privacy-safe location by:
-            // Rounding to ~2-3 decimal places (roughly 100m-1km accuracy)
-            // Adding small random offset to avoid exact location
-            // Different handling based on alert type
-            
             const getPrivacySafeLocation = (lat: number, lng: number, alertType: string) => {
               let precision = 2;
               
@@ -1133,8 +1103,8 @@ export default function WeatherScreen() {
                 <RefreshControl
                   refreshing={refreshing}
                   onRefresh={handleRefresh}
-                  colors={[Colors.primary[600]]}
-                  tintColor={Colors.primary[600]}
+                  colors={[Colors.primary[500]]}
+                  tintColor={Colors.primary[500]}
                 />
               }
             >
@@ -1220,7 +1190,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   locationText: {
-    marginLeft: 6,
     fontSize: 14,
     color: Colors.text.secondary,
     fontWeight: "500",
@@ -1404,7 +1373,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   retryButton: {
-    backgroundColor: Colors.primary[600],
+    backgroundColor: Colors.primary[500],
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
@@ -1790,7 +1759,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalButtonPrimary: {
-    backgroundColor: Colors.primary[600],
+    backgroundColor: Colors.primary[500],
   },
   modalButtonText: {
     fontSize: 16,

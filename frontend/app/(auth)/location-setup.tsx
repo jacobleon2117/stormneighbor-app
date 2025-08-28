@@ -167,7 +167,7 @@ export default function LocationSetupScreen() {
       <View style={styles.content}>
         <View style={styles.header}>
           <View style={styles.iconContainer}>
-            <MapPin size={48} color={Colors.primary[600]} />
+            <MapPin size={48} color={Colors.primary[500]} />
           </View>
           <Text style={styles.title}>Set Your Location</Text>
           <Text style={styles.subtitle}>
@@ -185,7 +185,7 @@ export default function LocationSetupScreen() {
                 disabled={isLoading}
               >
                 <View style={styles.optionIcon}>
-                  <Navigation size={24} color={Colors.primary[600]} />
+                  <Navigation size={24} color={Colors.primary[500]} />
                 </View>
                 <View style={styles.optionContent}>
                   <Text style={styles.optionTitle}>Use Current Location</Text>
@@ -194,7 +194,7 @@ export default function LocationSetupScreen() {
                   </Text>
                 </View>
                 {isLoading ? (
-                  <ActivityIndicator size="small" color={Colors.primary[600]} />
+                  <ActivityIndicator size="small" color={Colors.primary[500]} />
                 ) : (
                   <ChevronRight size={20} color={Colors.text.secondary} />
                 )}
@@ -394,7 +394,7 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   backButtonText: {
-    color: Colors.primary[600],
+    color: Colors.primary[500],
     fontSize: 14,
     fontWeight: "500",
   },

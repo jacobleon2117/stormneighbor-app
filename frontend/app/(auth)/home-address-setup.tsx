@@ -145,7 +145,7 @@ export default function HomeAddressSetupScreen() {
         disabled={isLoading}
       >
         <View style={styles.optionIcon}>
-          <Navigation size={24} color={Colors.primary[600]} />
+          <Navigation size={24} color={Colors.primary[500]} />
         </View>
         <View style={styles.optionContent}>
           <Text style={styles.optionTitle}>Use Current Location</Text>
@@ -154,7 +154,7 @@ export default function HomeAddressSetupScreen() {
           </Text>
         </View>
         {isLoading && method === 'current' ? (
-          <ActivityIndicator size="small" color={Colors.primary[600]} />
+          <ActivityIndicator size="small" color={Colors.primary[500]} />
         ) : (
           <Text style={styles.optionArrow}>→</Text>
         )}
@@ -261,7 +261,7 @@ export default function HomeAddressSetupScreen() {
       <View style={styles.content}>
         <View style={styles.header}>
           <View style={styles.iconContainer}>
-            <Home size={48} color={Colors.primary[600]} />
+            <Home size={48} color={Colors.primary[500]} />
           </View>
           <Text style={styles.title}>Set Your Home Address</Text>
           <Text style={styles.subtitle}>
@@ -413,7 +413,7 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   backButtonText: {
-    color: Colors.primary[600],
+    color: Colors.primary[500],
     fontSize: 14,
     fontWeight: "500",
   },

@@ -373,7 +373,7 @@ export default function HomeScreen() {
 
     return (
       <View style={styles.loadingMore}>
-        <ActivityIndicator size="small" color={Colors.primary[600]} />
+        <ActivityIndicator size="small" color={Colors.primary[500]} />
         <Text style={styles.loadingText}>Loading more posts...</Text>
       </View>
     );
@@ -552,7 +552,7 @@ export default function HomeScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.primary[600]} />
+          <ActivityIndicator size="large" color={Colors.primary[500]} />
           <Text style={styles.loadingText}>Loading posts...</Text>
         </View>
       </SafeAreaView>
@@ -633,7 +633,7 @@ export default function HomeScreen() {
             if (searchLoading && searchResults.length > 0) {
               return (
                 <View style={styles.loadingMore}>
-                  <ActivityIndicator size="small" color={Colors.primary[600]} />
+                  <ActivityIndicator size="small" color={Colors.primary[500]} />
                   <Text style={styles.loadingText}>Searching...</Text>
                 </View>
               );
@@ -648,8 +648,8 @@ export default function HomeScreen() {
                   ? () => handleSearch(searchQuery, searchFilters)
                   : handleRefresh
               }
-              colors={[Colors.primary[600]]}
-              tintColor={Colors.primary[600]}
+              colors={[Colors.primary[500]]}
+              tintColor={Colors.primary[500]}
             />
           }
           onEndReached={searchActive ? undefined : handleLoadMore}
@@ -776,7 +776,7 @@ const styles = StyleSheet.create({
   },
   clearFiltersText: {
     fontSize: 16,
-    color: Colors.primary[600],
+    color: Colors.primary[500],
     fontWeight: "600",
   },
   modalContent: {
@@ -807,8 +807,8 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
   },
   filterChipActive: {
-    backgroundColor: Colors.primary[600],
-    borderColor: Colors.primary[600],
+    backgroundColor: Colors.primary[500],
+    borderColor: Colors.primary[500],
   },
   filterChipText: {
     fontSize: 14,

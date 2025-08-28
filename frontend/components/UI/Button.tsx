@@ -57,7 +57,7 @@ export function Button({
         <ActivityIndicator
           size="small"
           color={
-            variant === "primary" ? Colors.text.inverse : Colors.primary[600]
+            variant === "primary" ? Colors.text.inverse : Colors.primary[500]
           }
         />
       ) : (

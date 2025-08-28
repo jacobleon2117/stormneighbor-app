@@ -379,7 +379,7 @@ export function CommentsSection({
 
     return (
       <View style={styles.loadingMore}>
-        <ActivityIndicator size="small" color={Colors.primary[600]} />
+        <ActivityIndicator size="small" color={Colors.primary[500]} />
         <Text style={styles.loadingText}>Loading more comments...</Text>
       </View>
     );
@@ -388,7 +388,7 @@ export function CommentsSection({
   if (loading && comments.length === 0) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={Colors.primary[600]} />
+        <ActivityIndicator size="large" color={Colors.primary[500]} />
         <Text style={styles.loadingText}>Loading comments...</Text>
       </View>
     );

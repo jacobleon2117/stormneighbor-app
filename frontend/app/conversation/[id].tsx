@@ -232,7 +232,7 @@ export default function ConversationScreen() {
           <Text style={styles.headerTitle}>{userName || "Conversation"}</Text>
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.primary[600]} />
+          <ActivityIndicator size="large" color={Colors.primary[500]} />
           <Text style={styles.loadingText}>Loading messages...</Text>
         </View>
       </SafeAreaView>
@@ -415,7 +415,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   sentBubble: {
-    backgroundColor: Colors.primary[600],
+    backgroundColor: Colors.primary[500],
     borderBottomRightRadius: 4,
   },
   receivedBubble: {
@@ -477,7 +477,7 @@ const styles = StyleSheet.create({
     paddingRight: 12,
   },
   sendButton: {
-    backgroundColor: Colors.primary[600],
+    backgroundColor: Colors.primary[500],
     width: 36,
     height: 36,
     borderRadius: 18,

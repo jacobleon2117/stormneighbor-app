@@ -11,6 +11,7 @@ import {
   TouchableWithoutFeedback,
   PanResponder,
   Animated,
+  ScrollView,
 } from "react-native";
 import { 
   HelpCircle, 
@@ -26,8 +27,15 @@ import {
   EyeOff,
   UserX,
   UserMinus,
+  UserPlus,
   Info,
-  X
+  Calendar,
+  Megaphone,
+  CloudRain,
+  ArrowLeft,
+  VolumeX,
+  RotateCcw,
+  Trash2
 } from "lucide-react-native";
 import { Post } from "../../types";
 import { Colors } from "../../constants/Colors";
@@ -39,12 +47,14 @@ interface PostCardProps {
   onLike?: (postId: number) => void;
   onComment?: (postId: number) => void;
   onShare?: (postId: number) => void;
-  onPress?: (postId: number) => void;
   onMessage?: (userId: number, userName: string) => void;
   onReport?: (postId: number) => void;
   onBlock?: (userId: number) => void;
   onUnfollow?: (userId: number) => void;
   onHide?: (postId: number) => void;
+  onFollow?: (userId: number) => void;
+  onMute?: (userId: number) => void;
+  onDelete?: (postId: number) => void;
   currentUserId?: number;
   isFollowing?: boolean;
 }
@@ -54,7 +64,6 @@ export function PostCard({
   onLike,
   onComment,
   onShare,
-  onPress,
   onMessage,
   onReport,
   onBlock,
@@ -62,19 +71,28 @@ export function PostCard({
   onHide,
   currentUserId,
   isFollowing = false,
+  onFollow,
+  onMute,
+  onDelete,
 }: PostCardProps) {
   const [imageError, setImageError] = useState(false);
   const [showMoreModal, setShowMoreModal] = useState(false);
   const [showCommentModal, setShowCommentModal] = useState(false);
+  const [showHideModal, setShowHideModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  // Animation values for swipe to dismiss
   const commentModalY = React.useRef(new Animated.Value(0)).current;
   const moreModalY = React.useRef(new Animated.Value(0)).current;
+  const hideModalY = React.useRef(new Animated.Value(0)).current;
+  const reportModalY = React.useRef(new Animated.Value(0)).current;
+  const shareModalY = React.useRef(new Animated.Value(0)).current;
 
-  // Create pan responder for comment modal
   const commentPanResponder = PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
     onMoveShouldSetPanResponder: (evt, gestureState) => {
-      return Math.abs(gestureState.dy) > 10;
+      return gestureState.dy > 5;
     },
     onPanResponderMove: (evt, gestureState) => {
       if (gestureState.dy > 0) {
@@ -82,30 +100,32 @@ export function PostCard({
       }
     },
     onPanResponderRelease: (evt, gestureState) => {
-      if (gestureState.dy > 100) {
-        // Close modal if dragged down more than 100px
+      if (gestureState.dy > 60 || gestureState.vy > 0.5) {
         Animated.timing(commentModalY, {
           toValue: screenHeight,
-          duration: 300,
+          duration: 250,
           useNativeDriver: true,
         }).start(() => {
           setShowCommentModal(false);
-          commentModalY.setValue(0);
+          setTimeout(() => {
+            commentModalY.setValue(0);
+          }, 100);
         });
       } else {
-        // Spring back to original position
         Animated.spring(commentModalY, {
           toValue: 0,
+          tension: 120,
+          friction: 8,
           useNativeDriver: true,
         }).start();
       }
     },
   });
 
-  // Create pan responder for more modal
   const morePanResponder = PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
     onMoveShouldSetPanResponder: (evt, gestureState) => {
-      return Math.abs(gestureState.dy) > 10;
+      return gestureState.dy > 5;
     },
     onPanResponderMove: (evt, gestureState) => {
       if (gestureState.dy > 0) {
@@ -113,20 +133,121 @@ export function PostCard({
       }
     },
     onPanResponderRelease: (evt, gestureState) => {
-      if (gestureState.dy > 100) {
-        // Close modal if dragged down more than 100px
+      if (gestureState.dy > 60 || gestureState.vy > 0.5) {
         Animated.timing(moreModalY, {
           toValue: screenHeight,
-          duration: 300,
+          duration: 250,
           useNativeDriver: true,
         }).start(() => {
           setShowMoreModal(false);
-          moreModalY.setValue(0);
+          setTimeout(() => {
+            moreModalY.setValue(0);
+          }, 100);
         });
       } else {
-        // Spring back to original position
         Animated.spring(moreModalY, {
           toValue: 0,
+          tension: 120,
+          friction: 8,
+          useNativeDriver: true,
+        }).start();
+      }
+    },
+  });
+
+  const hidePanResponder = PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: (evt, gestureState) => {
+      return gestureState.dy > 5;
+    },
+    onPanResponderMove: (evt, gestureState) => {
+      if (gestureState.dy > 0) {
+        hideModalY.setValue(gestureState.dy);
+      }
+    },
+    onPanResponderRelease: (evt, gestureState) => {
+      if (gestureState.dy > 60 || gestureState.vy > 0.5) {
+        Animated.timing(hideModalY, {
+          toValue: screenHeight,
+          duration: 250,
+          useNativeDriver: true,
+        }).start(() => {
+          setShowHideModal(false);
+          setTimeout(() => {
+            hideModalY.setValue(0);
+          }, 100);
+        });
+      } else {
+        Animated.spring(hideModalY, {
+          toValue: 0,
+          tension: 120,
+          friction: 8,
+          useNativeDriver: true,
+        }).start();
+      }
+    },
+  });
+
+  const reportPanResponder = PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: (evt, gestureState) => {
+      return gestureState.dy > 5;
+    },
+    onPanResponderMove: (evt, gestureState) => {
+      if (gestureState.dy > 0) {
+        reportModalY.setValue(gestureState.dy);
+      }
+    },
+    onPanResponderRelease: (evt, gestureState) => {
+      if (gestureState.dy > 60 || gestureState.vy > 0.5) {
+        Animated.timing(reportModalY, {
+          toValue: screenHeight,
+          duration: 250,
+          useNativeDriver: true,
+        }).start(() => {
+          setShowReportModal(false);
+          setTimeout(() => {
+            reportModalY.setValue(0);
+          }, 100);
+        });
+      } else {
+        Animated.spring(reportModalY, {
+          toValue: 0,
+          tension: 120,
+          friction: 8,
+          useNativeDriver: true,
+        }).start();
+      }
+    },
+  });
+
+  const sharePanResponder = PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: (evt, gestureState) => {
+      return gestureState.dy > 5;
+    },
+    onPanResponderMove: (evt, gestureState) => {
+      if (gestureState.dy > 0) {
+        shareModalY.setValue(gestureState.dy);
+      }
+    },
+    onPanResponderRelease: (evt, gestureState) => {
+      if (gestureState.dy > 60 || gestureState.vy > 0.5) {
+        Animated.timing(shareModalY, {
+          toValue: screenHeight,
+          duration: 250,
+          useNativeDriver: true,
+        }).start(() => {
+          setShowShareModal(false);
+          setTimeout(() => {
+            shareModalY.setValue(0);
+          }, 100);
+        });
+      } else {
+        Animated.spring(shareModalY, {
+          toValue: 0,
+          tension: 120,
+          friction: 8,
           useNativeDriver: true,
         }).start();
       }
@@ -143,6 +264,14 @@ export function PostCard({
         return AlertTriangle;
       case "lost_found":
         return Search;
+      case "question":
+        return HelpCircle;
+      case "event":
+        return Calendar;
+      case "announcement":
+        return Megaphone;
+      case "weather_alert":
+        return CloudRain;
       default:
         return MessageCircle;
     }
@@ -158,6 +287,14 @@ export function PostCard({
         return Colors.error[600];
       case "lost_found":
         return Colors.primary[600];
+      case "question":
+        return Colors.neutral[600];
+      case "event":
+        return Colors.purple[600];
+      case "announcement":
+        return Colors.primary[600];
+      case "weather_alert":
+        return Colors.warning[600];
       default:
         return Colors.neutral[600];
     }
@@ -182,17 +319,43 @@ export function PostCard({
   };
 
   const formatPostType = (type: string): string => {
+    if (type === "help_offer") {
+      return "Offering Help";
+    }
+    if (type === "question") {
+      return "Question";
+    }
+    if (type === "event") {
+      return "Event";
+    }
+    if (type === "announcement") {
+      return "Announcement";
+    }
+    if (type === "weather_alert") {
+      return "Weather Alert";
+    }
     return type
       .split("_")
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" ");
   };
 
+  const handleBackToMore = () => {
+    setShowHideModal(false);
+    setShowReportModal(false);
+    setShowMoreModal(true);
+  };
+
+  const closeAllModals = () => {
+    setShowMoreModal(false);
+    setShowHideModal(false);
+    setShowReportModal(false);
+    setShowShareModal(false);
+  };
+
   return (
-    <TouchableOpacity
+    <View
       style={styles.card}
-      onPress={() => onPress?.(post.id)}
-      activeOpacity={0.7}
     >
       <View style={styles.header}>
         <View style={styles.userInfo}>
@@ -247,14 +410,13 @@ export function PostCard({
         </View>
 
         <View style={styles.badges}>
-          {post.isEmergency && (
+          {post.isEmergency && post.postType !== "safety_alert" && (
             <View style={[styles.badge, styles.emergencyBadge]}>
               <AlertTriangle size={12} color={Colors.error[700]} />
               <Text style={styles.emergencyText}>EMERGENCY</Text>
             </View>
           )}
-          {/* Only show alert type badge if it's from create post screen alert options */}
-          {(post.postType === "safety_alert" || post.postType === "help_request" || post.postType === "help_offer") && (
+          {(post.postType === "safety_alert" || post.postType === "help_request" || post.postType === "help_offer" || post.postType === "question" || post.postType === "event" || post.postType === "announcement" || post.postType === "weather_alert") && (
             <View
               style={[
                 styles.badge,
@@ -336,7 +498,7 @@ export function PostCard({
 
           <TouchableOpacity
             style={styles.actionButton}
-            onPress={() => onShare?.(post.id)}
+            onPress={() => setShowShareModal(true)}
           >
             <Share
               size={20}
@@ -357,135 +519,501 @@ export function PostCard({
         </TouchableOpacity>
       </View>
 
-      {/* Comment Modal */}
       <Modal
         visible={showCommentModal}
         animationType="slide"
         transparent={true}
-        onRequestClose={() => setShowCommentModal(false)}
+        onRequestClose={() => {
+          setShowCommentModal(false);
+          commentModalY.setValue(0);
+        }}
       >
-        <View style={styles.modalOverlayTransparent}>
-          <Animated.View 
-            style={[
-              styles.modalContainer, 
-              { height: screenHeight * 0.6 },
-              { transform: [{ translateY: commentModalY }] }
-            ]}
-            {...commentPanResponder.panHandlers}
-          >
-            <TouchableOpacity 
-              style={styles.modalHandle} 
-              onPress={() => setShowCommentModal(false)}
-              activeOpacity={0.7}
-            />
-            <View style={styles.modalHeader}>
-              <TouchableOpacity onPress={() => setShowCommentModal(false)}>
-                <X size={24} color={Colors.text.primary} />
-              </TouchableOpacity>
-              <Text style={styles.modalTitle}>Comments</Text>
-              <View style={{ width: 24 }} />
-            </View>
-            <View style={styles.modalContent}>
-              <Text style={styles.placeholderText}>Comments coming soon...</Text>
-            </View>
-          </Animated.View>
-        </View>
+        <TouchableWithoutFeedback onPress={() => setShowCommentModal(false)}>
+          <View style={styles.modalOverlayTransparent}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <Animated.View 
+                style={[
+                  styles.modalContainer, 
+                  { height: screenHeight * 0.5 },
+                  { transform: [{ translateY: commentModalY }] }
+                ]}
+              >
+                <View 
+                  style={styles.modalHeaderContainer}
+                  {...commentPanResponder.panHandlers}
+                >
+                  <View style={styles.modalHandleContainer}>
+                    <View style={styles.modalHandle} />
+                  </View>
+                  <View style={styles.modalHeaderCentered}>
+                    <Text style={styles.modalTitle}>Comments</Text>
+                  </View>
+                </View>
+                <ScrollView 
+                  style={styles.modalContent}
+                  showsVerticalScrollIndicator={false}
+                >
+                </ScrollView>
+              </Animated.View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
       </Modal>
 
-      {/* More Options Modal */}
       <Modal
         visible={showMoreModal}
         animationType="slide"
         transparent={true}
-        onRequestClose={() => setShowMoreModal(false)}
+        onRequestClose={() => {
+          setShowMoreModal(false);
+          moreModalY.setValue(0);
+        }}
       >
-        <View style={styles.modalOverlayTransparent}>
-          <Animated.View 
-            style={[
-              styles.modalContainer, 
-              { height: screenHeight * 0.5 },
-              { transform: [{ translateY: moreModalY }] }
-            ]}
-            {...morePanResponder.panHandlers}
-          >
-            <TouchableOpacity 
-              style={styles.modalHandle} 
-              onPress={() => setShowMoreModal(false)}
-              activeOpacity={0.7}
-            />
-            <View style={styles.modalHeader}>
-              <TouchableOpacity onPress={() => setShowMoreModal(false)}>
-                <X size={24} color={Colors.text.primary} />
-              </TouchableOpacity>
-              <Text style={styles.modalTitle}>More Options</Text>
-              <View style={{ width: 24 }} />
-            </View>
-            <View style={styles.modalContent}>
-              <TouchableOpacity 
-                style={styles.modalOption}
-                onPress={() => {
-                  setShowMoreModal(false);
-                  onReport?.(post.id);
-                }}
+        <TouchableWithoutFeedback onPress={() => setShowMoreModal(false)}>
+          <View style={styles.modalOverlayTransparent}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <Animated.View 
+                style={[
+                  styles.modalContainer, 
+                  { height: screenHeight * 0.5 },
+                  { transform: [{ translateY: moreModalY }] }
+                ]}
               >
-                <Flag size={20} color={Colors.error[600]} />
-                <Text style={[styles.modalOptionText, { color: Colors.error[600] }]}>Report Post</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity 
-                style={styles.modalOption}
-                onPress={() => {
-                  setShowMoreModal(false);
-                  onHide?.(post.id);
-                }}
-              >
-                <EyeOff size={20} color={Colors.neutral[600]} />
-                <Text style={styles.modalOptionText}>Hide Post</Text>
-              </TouchableOpacity>
-
-              {currentUserId !== post.userId && (
-                <>
-                  <TouchableOpacity 
-                    style={styles.modalOption}
-                    onPress={() => {
-                      setShowMoreModal(false);
-                      onBlock?.(post.userId);
-                    }}
-                  >
-                    <UserX size={20} color={Colors.error[600]} />
-                    <Text style={[styles.modalOptionText, { color: Colors.error[600] }]}>Block User</Text>
-                  </TouchableOpacity>
-
-                  {isFollowing && (
+                <View 
+                  style={styles.modalHeaderContainer}
+                  {...morePanResponder.panHandlers}
+                >
+                  <View style={styles.modalHandleContainer}>
+                    <View style={styles.modalHandle} />
+                  </View>
+                  <View style={styles.modalHeaderCentered}>
+                    <Text style={styles.modalTitle}>More Options</Text>
+                  </View>
+                </View>
+                <ScrollView 
+                  style={styles.modalContent}
+                  showsVerticalScrollIndicator={false}
+                >
+                  {currentUserId !== post.userId && (
                     <TouchableOpacity 
-                      style={styles.modalOption}
+                      style={styles.modalOptionNoBorder}
                       onPress={() => {
                         setShowMoreModal(false);
-                        onUnfollow?.(post.userId);
+                        if (isFollowing) {
+                          onUnfollow?.(post.userId);
+                        } else {
+                          onFollow?.(post.userId);
+                        }
                       }}
                     >
-                      <UserMinus size={20} color={Colors.warning[600]} />
-                      <Text style={[styles.modalOptionText, { color: Colors.warning[600] }]}>Unfollow User</Text>
+                      {isFollowing ? (
+                        <UserMinus size={20} color={Colors.warning[600]} />
+                      ) : (
+                        <UserPlus size={20} color={Colors.primary[600]} />
+                      )}
+                      <Text style={[styles.modalOptionText, isFollowing ? { color: Colors.warning[600] } : { color: Colors.primary[600] }]}>
+                        {isFollowing ? 'Unfollow' : 'Follow'}
+                      </Text>
                     </TouchableOpacity>
                   )}
 
                   <TouchableOpacity 
-                    style={styles.modalOption}
+                    style={styles.modalOptionNoBorder}
                     onPress={() => {
                       setShowMoreModal(false);
-                      // Navigate to user profile or about
+                      setShowHideModal(true);
                     }}
                   >
-                    <Info size={20} color={Colors.neutral[600]} />
-                    <Text style={styles.modalOptionText}>About This Account</Text>
+                    <EyeOff size={20} color={Colors.neutral[600]} />
+                    <Text style={styles.modalOptionText}>Hide</Text>
                   </TouchableOpacity>
-                </>
-              )}
+
+                  <TouchableOpacity 
+                    style={styles.modalOptionNoBorder}
+                    onPress={() => {
+                      setShowMoreModal(false);
+                      setShowReportModal(true);
+                    }}
+                  >
+                    <Flag size={20} color={Colors.error[600]} />
+                    <Text style={[styles.modalOptionText, { color: Colors.error[600] }]}>Report</Text>
+                  </TouchableOpacity>
+
+                  {currentUserId !== post.userId && (
+                    <TouchableOpacity 
+                      style={styles.modalOptionNoBorder}
+                      onPress={() => {
+                        setShowMoreModal(false);
+                        onBlock?.(post.userId);
+                      }}
+                    >
+                      <UserX size={20} color={Colors.error[600]} />
+                      <Text style={[styles.modalOptionText, { color: Colors.error[600] }]}>Block User</Text>
+                    </TouchableOpacity>
+                  )}
+
+                  {currentUserId === post.userId && (
+                    <TouchableOpacity 
+                      style={styles.modalOptionNoBorder}
+                      onPress={() => {
+                        setShowMoreModal(false);
+                        setShowDeleteModal(true);
+                      }}
+                    >
+                      <Trash2 size={20} color={Colors.error[600]} />
+                      <Text style={[styles.modalOptionText, { color: Colors.error[600] }]}>Delete Post</Text>
+                    </TouchableOpacity>
+                  )}
+            </ScrollView>
+              </Animated.View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
+      <Modal
+        visible={showHideModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => {
+          setShowHideModal(false);
+          hideModalY.setValue(0);
+        }}
+      >
+        <TouchableWithoutFeedback onPress={() => setShowHideModal(false)}>
+          <View style={styles.modalOverlayTransparent}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <Animated.View 
+                style={[
+                  styles.modalContainer, 
+                  { height: screenHeight * 0.4 },
+                  { transform: [{ translateY: hideModalY }] }
+                ]}
+              >
+                <View 
+                  style={styles.modalHeaderContainer}
+                  {...hidePanResponder.panHandlers}
+                >
+                  <View style={styles.modalHandleContainer}>
+                    <View style={styles.modalHandle} />
+                  </View>
+                  <View style={styles.modalHeader}>
+                    <TouchableOpacity 
+                      style={styles.backButton}
+                      onPress={handleBackToMore}
+                    >
+                      <ArrowLeft size={20} color={Colors.text.primary} />
+                    </TouchableOpacity>
+                    <Text style={styles.modalTitle}>Hide Post</Text>
+                    <View style={styles.backButton} />
+                  </View>
+                </View>
+                <ScrollView 
+                  style={styles.modalContent}
+                  showsVerticalScrollIndicator={false}
+                >
+                  <TouchableOpacity 
+                    style={styles.modalOption}
+                    onPress={() => {
+                      setShowHideModal(false);
+                      setShowReportModal(true);
+                    }}
+                  >
+                    <Flag size={20} color={Colors.error[600]} />
+                    <Text style={styles.modalOptionText}>Report this post</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    style={styles.modalOption}
+                    onPress={() => {
+                      setShowHideModal(false);
+                      onMute?.(post.userId);
+                    }}
+                  >
+                    <VolumeX size={20} color={Colors.neutral[600]} />
+                    <Text style={styles.modalOptionText}>Mute {post.firstName} {post.lastName}</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    style={styles.modalOption}
+                    onPress={() => setShowHideModal(false)}
+                  >
+                    <RotateCcw size={20} color={Colors.neutral[600]} />
+                    <Text style={styles.modalOptionText}>Undo</Text>
+                  </TouchableOpacity>
+                </ScrollView>
+              </Animated.View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
+      <Modal
+        visible={showReportModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => {
+          setShowReportModal(false);
+          reportModalY.setValue(0);
+        }}
+      >
+        <TouchableWithoutFeedback onPress={() => setShowReportModal(false)}>
+          <View style={styles.modalOverlayTransparent}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <Animated.View 
+                style={[
+                  styles.modalContainer, 
+                  { height: screenHeight * 0.7 },
+                  { transform: [{ translateY: reportModalY }] }
+                ]}
+              >
+                <View 
+                  style={styles.modalHeaderContainer}
+                  {...reportPanResponder.panHandlers}
+                >
+                  <View style={styles.modalHandleContainer}>
+                    <View style={styles.modalHandle} />
+                  </View>
+                  <View style={styles.modalHeader}>
+                    <TouchableOpacity 
+                      style={styles.backButton}
+                      onPress={handleBackToMore}
+                    >
+                      <ArrowLeft size={20} color={Colors.text.primary} />
+                    </TouchableOpacity>
+                    <Text style={styles.modalTitle}>Report Post</Text>
+                    <View style={styles.backButton} />
+                  </View>
+                </View>
+                <ScrollView 
+                  style={styles.modalContent}
+                  showsVerticalScrollIndicator={false}
+                >
+                  <TouchableOpacity 
+                    style={styles.modalOption}
+                    onPress={() => {
+                      setShowReportModal(false);
+                      onReport?.(post.id);
+                    }}
+                  >
+                    <Text style={styles.modalOptionText}>I just don't like it</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    style={styles.modalOption}
+                    onPress={() => {
+                      setShowReportModal(false);
+                      onReport?.(post.id);
+                    }}
+                  >
+                    <Text style={styles.modalOptionText}>Bullying or unwanted content</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    style={styles.modalOption}
+                    onPress={() => {
+                      setShowReportModal(false);
+                      onReport?.(post.id);
+                    }}
+                  >
+                    <Text style={styles.modalOptionText}>Suicide, self injury or eating disorders</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    style={styles.modalOption}
+                    onPress={() => {
+                      setShowReportModal(false);
+                      onReport?.(post.id);
+                    }}
+                  >
+                    <Text style={styles.modalOptionText}>Violence, hate or exploitation</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    style={styles.modalOption}
+                    onPress={() => {
+                      setShowReportModal(false);
+                      onReport?.(post.id);
+                    }}
+                  >
+                    <Text style={styles.modalOptionText}>Selling or promoting restricted items</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    style={styles.modalOption}
+                    onPress={() => {
+                      setShowReportModal(false);
+                      onReport?.(post.id);
+                    }}
+                  >
+                    <Text style={styles.modalOptionText}>Nudity or sexual activity</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    style={styles.modalOption}
+                    onPress={() => {
+                      setShowReportModal(false);
+                      onReport?.(post.id);
+                    }}
+                  >
+                    <Text style={styles.modalOptionText}>Scam, fraud or spam</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    style={styles.modalOption}
+                    onPress={() => {
+                      setShowReportModal(false);
+                      onReport?.(post.id);
+                    }}
+                  >
+                    <Text style={styles.modalOptionText}>Intellectual property</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    style={styles.modalOption}
+                    onPress={() => {
+                      setShowReportModal(false);
+                      onReport?.(post.id);
+                    }}
+                  >
+                    <Text style={styles.modalOptionText}>I want to request a community note</Text>
+                  </TouchableOpacity>
+                </ScrollView>
+              </Animated.View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
+      <Modal
+        visible={showShareModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => {
+          setShowShareModal(false);
+          shareModalY.setValue(0);
+        }}
+      >
+        <TouchableWithoutFeedback onPress={() => setShowShareModal(false)}>
+          <View style={styles.modalOverlayTransparent}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <Animated.View 
+                style={[
+                  styles.modalContainer, 
+                  { height: screenHeight * 0.5 },
+                  { transform: [{ translateY: shareModalY }] }
+                ]}
+              >
+                <View 
+                  style={styles.modalHeaderContainer}
+                  {...sharePanResponder.panHandlers}
+                >
+                  <View style={styles.modalHandleContainer}>
+                    <View style={styles.modalHandle} />
+                  </View>
+                  <View style={styles.modalHeaderCentered}>
+                    <Text style={styles.modalTitle}>Share</Text>
+                  </View>
+                </View>
+                <View style={styles.shareModalContent}>
+                  <View style={styles.followersSection}>
+                    <Text style={styles.sectionTitle}>Send to</Text>
+                    <ScrollView 
+                      style={styles.followersScrollContainer}
+                      showsVerticalScrollIndicator={true}
+                      nestedScrollEnabled={true}
+                    >
+                      <View style={styles.followersGrid}>
+                      </View>
+                    </ScrollView>
+                  </View>
+                  
+                  <View style={styles.shareOptionsSection}>
+                    <Text style={styles.sectionTitle}>More Options</Text>
+                    <ScrollView 
+                      horizontal 
+                      style={styles.shareOptionsContainer}
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={styles.shareOptionsContent}
+                    >
+                      <TouchableOpacity style={styles.shareOption}>
+                        <View style={styles.shareOptionIcon}>
+                          <MessageCircle size={24} color={Colors.primary[600]} />
+                        </View>
+                        <Text style={styles.shareOptionText}>Messages</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity style={styles.shareOption}>
+                        <View style={styles.shareOptionIcon}>
+                          <Share size={24} color={Colors.neutral[600]} />
+                        </View>
+                        <Text style={styles.shareOptionText}>Copy Link</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity style={styles.shareOption}>
+                        <View style={styles.shareOptionIcon}>
+                          <Share size={24} color={Colors.warning[600]} />
+                        </View>
+                        <Text style={styles.shareOptionText}>Snapchat</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity style={styles.shareOption}>
+                        <View style={styles.shareOptionIcon}>
+                          <Share size={24} color={Colors.purple[600]} />
+                        </View>
+                        <Text style={styles.shareOptionText}>Instagram</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity style={styles.shareOption}>
+                        <View style={styles.shareOptionIcon}>
+                          <Share size={24} color={Colors.primary[600]} />
+                        </View>
+                        <Text style={styles.shareOptionText}>More</Text>
+                      </TouchableOpacity>
+                    </ScrollView>
+                  </View>
+                </View>
+              </Animated.View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
+      <Modal
+        visible={showDeleteModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowDeleteModal(false)}
+      >
+        <View style={styles.deleteOverlay}>
+          <View style={styles.deleteModal}>
+            <Text style={styles.deleteTitle}>Delete post?</Text>
+            <Text style={styles.deleteMessage}>
+              This can't be undone and it will be removed from your profile and the timeline.
+            </Text>
+            
+            <View style={styles.deleteButtons}>
+              <TouchableOpacity
+                style={styles.deleteButtonSecondary}
+                onPress={() => setShowDeleteModal(false)}
+              >
+                <Text style={styles.deleteButtonSecondaryText}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={styles.deleteButtonPrimary}
+                onPress={() => {
+                  setShowDeleteModal(false);
+                  onDelete?.(post.id);
+                }}
+              >
+                <Text style={styles.deleteButtonPrimaryText}>Delete</Text>
+              </TouchableOpacity>
             </View>
-          </Animated.View>
+          </View>
         </View>
       </Modal>
-    </TouchableOpacity>
+    </View>
   );
 }
 
@@ -697,14 +1225,19 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
+  modalHeaderContainer: {
+    backgroundColor: 'transparent',
+    minHeight: 60,
+  },
+  modalHandleContainer: {
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
   modalHandle: {
     width: 40,
     height: 4,
     backgroundColor: Colors.neutral[300],
     borderRadius: 2,
-    alignSelf: 'center',
-    marginTop: 8,
-    marginBottom: 8,
   },
   modalHeader: {
     flexDirection: "row",
@@ -715,6 +1248,21 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
+  modalHeaderCentered: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  backButton: {
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   modalTitle: {
     fontSize: 18,
     fontWeight: "600",
@@ -724,6 +1272,10 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 40,
   },
+  shareModalContent: {
+    flex: 1,
+    flexDirection: 'column',
+  },
   modalOption: {
     flexDirection: "row",
     alignItems: "center",
@@ -731,6 +1283,13 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
+    gap: 12,
+  },
+  modalOptionNoBorder: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     gap: 12,
   },
   modalOptionText: {
@@ -743,5 +1302,140 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary,
     textAlign: "center",
     marginTop: 40,
+  },
+  followersSection: {
+    flex: 1,
+    paddingTop: 20,
+    paddingBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.text.primary,
+    marginBottom: 12,
+    paddingHorizontal: 20,
+  },
+  followersScrollContainer: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  followersGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
+    gap: 12,
+  },
+  followerItem: {
+    width: '30%',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  followerAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: Colors.neutral[100],
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+  },
+  followerName: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: Colors.text.primary,
+    textAlign: 'center',
+  },
+  shareOptionsSection: {
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    paddingTop: 12,
+    paddingBottom: 34,
+  },
+  shareOptionsContainer: {
+    paddingHorizontal: 20,
+  },
+  shareOptionsContent: {
+    paddingRight: 20,
+    gap: 16,
+  },
+  shareOption: {
+    alignItems: 'center',
+    width: 80,
+  },
+  shareOptionIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: Colors.neutral[100],
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+  },
+  shareOptionText: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: Colors.text.primary,
+    textAlign: 'center',
+  },
+  deleteOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  deleteModal: {
+    backgroundColor: Colors.background,
+    borderRadius: 16,
+    paddingVertical: 24,
+    paddingHorizontal: 24,
+    width: '100%',
+    maxWidth: 340,
+    alignItems: 'center',
+  },
+  deleteTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: Colors.text.primary,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  deleteMessage: {
+    fontSize: 16,
+    color: Colors.text.secondary,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  deleteButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  deleteButtonSecondary: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: Colors.neutral[100],
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  deleteButtonSecondaryText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.text.primary,
+  },
+  deleteButtonPrimary: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: Colors.error[600],
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  deleteButtonPrimaryText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.text.inverse,
   },
 });

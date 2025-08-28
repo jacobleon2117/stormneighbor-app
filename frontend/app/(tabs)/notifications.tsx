@@ -11,8 +11,7 @@ import {
   RefreshControl,
 } from "react-native";
 import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { Bell, BellOff, CheckCircle, AlertCircle, MessageSquare, Users } from "lucide-react-native";
+import { Bell, BellOff, CheckCircle, AlertCircle, MessageSquare, Users, Trash2 } from "lucide-react-native";
 import { Header } from "../../components/UI/Header";
 import { Colors } from "../../constants/Colors";
 import { apiService } from "../../services/api";
@@ -193,7 +192,7 @@ export default function NotificationsScreen() {
             );
           }}
         >
-          <Ionicons name="trash-outline" size={16} color={Colors.text.disabled} />
+          <Trash2 size={16} color={Colors.text.disabled} />
         </TouchableOpacity>
       </TouchableOpacity>
     );
@@ -217,69 +216,75 @@ export default function NotificationsScreen() {
     </View>
   );
 
+  const handleGoBack = () => {
+    router.back();
+  };
+
   return (
     <View style={styles.container}>
       <Header
         title="Notifications"
         showBackButton={true}
-        onBackPress={() => router.back()}
+        onBackPress={handleGoBack}
         showSearch={false}
         showNotifications={false}
         showMessages={false}
         showMore={false}
-        customRightContent={unreadCount > 0 ? (
-          <TouchableOpacity onPress={markAllAsRead}>
-            <Text style={{ color: Colors.primary[600], fontSize: 14, fontWeight: "500" }}>
-              Mark all read
+      />
+      
+      <SafeAreaView style={{ flex: 1 }}>
+        <View style={styles.filterContainer}>
+          <TouchableOpacity
+            style={[styles.filterTab, filter === "all" && styles.activeFilterTab]}
+            onPress={() => setFilter("all")}
+          >
+            <Text style={[styles.filterTabText, filter === "all" && styles.activeFilterTabText]}>
+              All
             </Text>
           </TouchableOpacity>
-        ) : undefined}
-      />
-      <SafeAreaView style={styles.safeContent}>
-
-      <View style={styles.filterContainer}>
-        <TouchableOpacity
-          style={[styles.filterTab, filter === "all" && styles.activeFilterTab]}
-          onPress={() => setFilter("all")}
-        >
-          <Text style={[styles.filterTabText, filter === "all" && styles.activeFilterTabText]}>
-            All
-          </Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity
-          style={[styles.filterTab, filter === "unread" && styles.activeFilterTab]}
-          onPress={() => setFilter("unread")}
-        >
-          <Text style={[styles.filterTabText, filter === "unread" && styles.activeFilterTabText]}>
-            Unread {unreadCount > 0 && `(${unreadCount})`}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.primary[600]} />
-          <Text style={styles.loadingText}>Loading notifications...</Text>
+          
+          <TouchableOpacity
+            style={[styles.filterTab, filter === "unread" && styles.activeFilterTab]}
+            onPress={() => setFilter("unread")}
+          >
+            <Text style={[styles.filterTabText, filter === "unread" && styles.activeFilterTabText]}>
+              Unread {unreadCount > 0 && `(${unreadCount})`}
+            </Text>
+          </TouchableOpacity>
+          
+          {unreadCount > 0 && (
+            <TouchableOpacity
+              style={styles.markAllReadButton}
+              onPress={markAllAsRead}
+            >
+              <Text style={styles.markAllReadText}>Mark all read</Text>
+            </TouchableOpacity>
+          )}
         </View>
-      ) : (
-        <FlatList
-          data={filteredNotifications}
-          renderItem={renderNotification}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.listContainer}
-          ListEmptyComponent={renderEmptyState}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={[Colors.primary[600]]}
-              tintColor={Colors.primary[600]}
-            />
-          }
-        />
-      )}
+
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={Colors.primary[500]} />
+            <Text style={styles.loadingText}>Loading notifications...</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={filteredNotifications}
+            renderItem={renderNotification}
+            keyExtractor={(item) => item.id.toString()}
+            contentContainerStyle={styles.listContainer}
+            ListEmptyComponent={renderEmptyState}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={[Colors.primary[500]]}
+                tintColor={Colors.primary[500]}
+              />
+            }
+          />
+        )}
       </SafeAreaView>
     </View>
   );
@@ -318,7 +323,18 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary,
   },
   activeFilterTabText: {
-    color: Colors.primary[600],
+    color: Colors.primary[500],
+  },
+  markAllReadButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  markAllReadText: {
+    fontSize: 12,
+    color: Colors.primary[500],
+    fontWeight: "500",
   },
   listContainer: {
     padding: 20,
@@ -364,7 +380,7 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: Colors.primary[600],
+    backgroundColor: Colors.primary[500],
     borderWidth: 2,
     borderColor: Colors.background,
   },

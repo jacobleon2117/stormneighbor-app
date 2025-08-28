@@ -30,8 +30,8 @@ const getDevBaseUrl = () => {
 
 export const API_CONFIG = {
   BASE_URL: ENV.isDevelopment
-    ? getDevBaseUrl()
-    : "https://api.stormneighbor.app/api/v1",
+    ? "https://stormneighbor-api.onrender.com/api/v1"  // Temporarily force production URL for testing
+    : "https://stormneighbor-api.onrender.com/api/v1",
   TIMEOUT: 30000,
 } as const;
 

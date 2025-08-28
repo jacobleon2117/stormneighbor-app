@@ -132,7 +132,7 @@ export default function WeatherLegend({
         bounces={false}
         scrollEventThrottle={16}
       >
-        {layers.map(renderLayer)}
+        {layers.map((layer) => renderLayer(layer))}
       </ScrollView>
     </View>
   );

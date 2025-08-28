@@ -11,6 +11,7 @@ const getDatabaseConfig = () => {
   if (isProduction || isStaging || process.env.DATABASE_SSL === "true") {
     sslConfig = {
       rejectUnauthorized: false,
+      require: true,
     };
   }
 

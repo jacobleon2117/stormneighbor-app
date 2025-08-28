@@ -18,13 +18,13 @@ const getPosts = async (req, res) => {
 
       if (!userCity || !userState) {
         const userResult = await client.query(
-          "SELECT location_city, address_state FROM users WHERE id = $1",
+          "SELECT home_city, home_state, location_city, address_state FROM users WHERE id = $1",
           [req.user.userId]
         );
 
         if (userResult.rows.length > 0) {
-          userCity = userCity || userResult.rows[0].location_city;
-          userState = userState || userResult.rows[0].address_state;
+          userCity = userCity || userResult.rows[0].home_city || userResult.rows[0].location_city;
+          userState = userState || userResult.rows[0].home_state || userResult.rows[0].address_state;
         }
       }
 

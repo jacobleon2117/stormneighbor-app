@@ -59,6 +59,8 @@ export default function SearchScreen() {
       const response = await apiService.searchPosts(query.trim(), {
         ...searchFilters,
         ...filters,
+        city: user?.homeCity || user?.locationCity,
+        state: user?.homeState || user?.addressState,
       });
 
       if (response.success && response.data) {
@@ -330,7 +332,7 @@ export default function SearchScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.surface,
   },
   safeContent: {
     flex: 1,
@@ -339,7 +341,7 @@ const styles = StyleSheet.create({
   searchContainer: {
     paddingHorizontal: 20,
     paddingBottom: 16,
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
@@ -367,7 +369,7 @@ const styles = StyleSheet.create({
   activeFilters: {
     paddingHorizontal: 20,
     paddingVertical: 12,
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
@@ -447,7 +449,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalContent: {
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.surface,
     marginTop: 100,
     marginHorizontal: 20,
     borderRadius: 16,

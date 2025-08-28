@@ -1,14 +1,37 @@
 import Constants from "expo-constants";
+import { Platform } from "react-native";
 
 export const ENV = {
   isDevelopment: __DEV__,
   isProduction: !__DEV__,
 } as const;
 
+const getDevBaseUrl = () => {
+  // Try to detect LAN IP from Metro bundler
+  const debuggerHost = Constants.expoConfig?.hostUri || Constants.manifest2?.extra?.expoClient?.hostUri;
+
+  let lanIp: string | null = null;
+
+  if (debuggerHost) {
+    // e.g. "192.168.1.89:19000"
+    lanIp = debuggerHost.split(":")[0];
+  }
+
+  if (Platform.OS === "ios" && Constants.appOwnership !== "expo") {
+    // iOS simulator → localhost works
+    return "http://127.0.0.1:3000/api/v1";
+  }
+
+  // Default to LAN IP if available, else fallback
+  return lanIp
+    ? `http://${lanIp}:3000/api/v1`
+    : "http://127.0.0.1:3000/api/v1"; // safe fallback
+};
+
 export const API_CONFIG = {
   BASE_URL: ENV.isDevelopment
-    ? "http://localhost:3000/api/v1"
-    : "https://api.stormneighbor.app/api/v1", // Have to replace with actual production URL
+    ? getDevBaseUrl()
+    : "https://api.stormneighbor.app/api/v1",
   TIMEOUT: 30000,
 } as const;
 
@@ -19,7 +42,7 @@ export const APP_CONFIG = {
 } as const;
 
 export const PUSH_CONFIG = {
-  projectId: Constants.expoConfig?.extra?.eas?.projectId || "stormneighbor-app", // Need to replace with actual project ID
+  projectId: Constants.expoConfig?.extra?.eas?.projectId || "stormneighbor-app",
 } as const;
 
 export const FEATURES = {
@@ -27,6 +50,13 @@ export const FEATURES = {
   enableLocationServices: true,
   enableImageUploads: true,
   enableRealTimeUpdates: true,
+} as const;
+
+export const WEATHER_CONFIG = {
+  OPENWEATHER_API_KEY:
+    Constants.expoConfig?.extra?.openWeatherApiKey ||
+    process.env.EXPO_PUBLIC_OPENWEATHER_API_KEY ||
+    "",
 } as const;
 
 export const URL_CONFIG = {

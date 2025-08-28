@@ -151,6 +151,51 @@ export default function PostDetailScreen() {
     });
   };
 
+  const handleMessage = async (userId: number, userName: string) => {
+    try {
+      const conversationsResponse = await apiService.getConversations();
+      if (conversationsResponse.success && conversationsResponse.data) {
+        const existingConversation = conversationsResponse.data.conversations.find(
+          (conv: any) => conv.otherUser.id === userId
+        );
+        
+        if (existingConversation) {
+          router.push({
+            pathname: "/conversation/[id]" as any,
+            params: {
+              id: existingConversation.id,
+              userName: userName,
+              userImage: existingConversation.otherUser.profileImageUrl || "",
+            },
+          });
+          return;
+        }
+      }
+    } catch (error) {
+      console.error("Error checking conversations:", error);
+    }
+
+    Alert.alert(
+      "Start Conversation",
+      `Send a message to ${userName}?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Send Message",
+          onPress: () => {
+            router.push({
+              pathname: "/conversation/new" as any,
+              params: {
+                recipientId: userId,
+                recipientName: userName,
+              },
+            });
+          },
+        },
+      ]
+    );
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -183,6 +228,8 @@ export default function PostDetailScreen() {
             onLike={handleLike}
             onShare={handleShare}
             onPress={() => {}}
+            onMessage={handleMessage}
+            currentUserId={user?.id}
           />
         </ScrollView>
 

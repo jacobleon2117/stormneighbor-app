@@ -1,214 +1,346 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   StyleSheet,
   SafeAreaView,
-  Alert,
   TouchableOpacity,
   TextInput,
-  ScrollView,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  Alert,
   Image,
+  ScrollView,
+  Modal,
+  TouchableWithoutFeedback,
 } from "react-native";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from "expo-router";
-import * as ImagePicker from "expo-image-picker";
 import { Header } from "../../components/UI/Header";
-import { Button } from "../../components/UI/Button";
 import { Colors } from "../../constants/Colors";
-import { apiService } from "../../services/api";
-import { POST_TYPES, PRIORITIES, CreatePostForm } from "../../types";
 import { useAuth } from "../../hooks/useAuth";
-import { Input } from "../../components/UI/Input";
+import { apiService } from "../../services/api";
+import * as ImagePicker from "expo-image-picker";
+import { 
+  MapPin, 
+  Camera, 
+  Image as Gallery, 
+  MoreHorizontal,
+  Megaphone,
+  Heart,
+  CloudRain,
+  AlertTriangle,
+  HelpCircle,
+  Calendar,
+  X,
+  Check,
+  Globe,
+  Users,
+  UserCheck
+} from "lucide-react-native";
 
 
 export default function CreateScreen() {
-  useAuth();
-  const [form, setForm] = useState<CreatePostForm>({
-    title: "",
-    content: "",
-    postType: POST_TYPES.GENERAL,
-    priority: PRIORITIES.NORMAL,
-    isEmergency: false,
-    images: [],
-    tags: [],
-  });
-  const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
+  const insets = useSafeAreaInsets();
+  const textInputRef = React.useRef<TextInput>(null);
+  const [postText, setPostText] = useState('');
+  const [showQuickActions, setShowQuickActions] = useState(true);
+  const [selectedAction, setSelectedAction] = useState<string | null>(null);
+  const [isTyping, setIsTyping] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [isPosting, setIsPosting] = useState(false);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState("");
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [selectedLocation, setSelectedLocation] = useState<{
+    name: string;
+    latitude?: number;
+    longitude?: number;
+    useCurrentLocation: boolean;
+  }>({
+    name: user?.locationCity ? `${user.locationCity}, ${user.addressState}` : "Current Location",
+    latitude: user?.latitude,
+    longitude: user?.longitude,
+    useCurrentLocation: true
+  });
+  const [privacyLevel, setPrivacyLevel] = useState<'public' | 'neighbors' | 'friends'>('neighbors');
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
 
-  const validateForm = (): boolean => {
-    const newErrors: { [key: string]: string } = {};
+  const quickActions = [
+    { 
+      id: 'announcement', 
+      label: 'Announcement', 
+      icon: Megaphone, 
+      color: Colors.primary[600],
+      bgColor: Colors.primary[50]
+    },
+    { 
+      id: 'offer_help', 
+      label: 'Offer Help', 
+      icon: Heart, 
+      color: Colors.success[600],
+      bgColor: Colors.success[50]
+    },
+    { 
+      id: 'weather_alert', 
+      label: 'Weather Alert', 
+      icon: CloudRain, 
+      color: Colors.warning[600],
+      bgColor: Colors.warning[50]
+    },
+    { 
+      id: 'safety_alert', 
+      label: 'Safety Alert', 
+      icon: AlertTriangle, 
+      color: Colors.error[600],
+      bgColor: Colors.error[50]
+    },
+    { 
+      id: 'ask_question', 
+      label: 'Ask Question', 
+      icon: HelpCircle, 
+      color: Colors.neutral[600],
+      bgColor: Colors.neutral[50]
+    },
+    { 
+      id: 'create_event', 
+      label: 'Create Event', 
+      icon: Calendar, 
+      color: Colors.purple[600],
+      bgColor: Colors.purple[50]
+    },
+  ];
 
-    if (!form.content.trim()) {
-      newErrors.content = "Content is required";
+  useEffect(() => {
+    const keyboardWillShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        setKeyboardHeight(e.endCoordinates.height);
+      }
+    );
+    const keyboardWillHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+      }
+    );
+
+    return () => {
+      keyboardWillHideListener.remove();
+      keyboardWillShowListener.remove();
+    };
+  }, []);
+
+  const handleTextInputFocus = () => {
+    setIsTyping(true);
+    setShowQuickActions(false);
+  };
+
+  const handleTextInputBlur = () => {
+    setIsTyping(false);
+  };
+
+  const toggleQuickActions = () => {
+    if (showQuickActions) {
+      setShowQuickActions(false);
+      setTimeout(() => {
+        textInputRef.current?.focus();
+      }, 100);
+    } else {
+      if (isTyping) {
+        Keyboard.dismiss();
+      }
+      setShowQuickActions(true);
     }
+  };
 
-    if (form.content.length > 2000) {
-      newErrors.content = "Content must be less than 2000 characters";
+  const selectQuickAction = (actionId: string) => {
+    if (selectedAction === actionId) {
+      setSelectedAction(null);
+    } else {
+      setSelectedAction(actionId);
     }
+  };
 
-    if (form.title && form.title.length > 200) {
-      newErrors.title = "Title must be less than 200 characters";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  const removeSelectedAction = () => {
+    setSelectedAction(null);
   };
 
   const handleCreatePost = async () => {
-    if (!validateForm()) {
+    if (!postText.trim()) {
+      Alert.alert("Error", "Please enter some text for your post.");
       return;
     }
 
-    setLoading(true);
+    if (!user) {
+      Alert.alert("Error", "Please log in to create a post.");
+      return;
+    }
+
     try {
+      setIsPosting(true);
+
+      const selectedQuickAction = quickActions.find(a => a.id === selectedAction);
+      
       const postData = {
-        ...form,
-        title: form.title || undefined,
+        content: postText.trim(),
+        postType: getPostTypeFromAction(selectedAction),
+        priority: getPriorityFromAction(selectedAction),
+        isEmergency: selectedAction === 'safety_alert',
+        tags: selectedAction ? [selectedAction] : [],
         images: selectedImages,
+        // TODO: Backend doesn't support these fields yet, will add later
+        // latitude: selectedLocation.latitude,
+        // longitude: selectedLocation.longitude,
+        // locationName: selectedLocation.name,
+        // privacy: privacyLevel,
       };
+
+      console.log('Creating post:', postData);
 
       const response = await apiService.createPost(postData);
 
       if (response.success) {
-        setForm({
-          title: "",
-          content: "",
-          postType: POST_TYPES.GENERAL,
-          priority: PRIORITIES.NORMAL,
-          isEmergency: false,
-          images: [],
-          tags: [],
-        });
-        setSelectedImages([]);
-        setTagInput("");
-        
-        router.push({
-          pathname: "/(tabs)/",
-          params: {
-            newPost: JSON.stringify(response.data),
-            refresh: "true"
-          }
-        });
+        Alert.alert(
+          "Post Created!", 
+          "Your post has been shared with the community.",
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                setPostText('');
+                setSelectedAction(null);
+                setSelectedImages([]);
+                setShowQuickActions(true);
+                
+                router.replace("/(tabs)");
+              }
+            }
+          ]
+        );
+      } else {
+        throw new Error(response.message || "Failed to create post");
       }
     } catch (error: any) {
       console.error("Error creating post:", error);
       Alert.alert(
-        "Error",
-        error.response?.data?.message ||
-          "Failed to create post. Please try again."
+        "Error", 
+        error.response?.data?.message || error.message || "Failed to create post. Please try again."
       );
     } finally {
-      setLoading(false);
+      setIsPosting(false);
     }
   };
 
-  const pickImage = async () => {
-    try {
-      const { status } =
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
+  const getPostTypeFromAction = (actionId: string | null): string => {
+    switch (actionId) {
+      case 'safety_alert':
+        return 'safety_alert';
+      case 'offer_help':
+        return 'help_offer';
+      case 'ask_question':
+        return 'question';
+      case 'create_event':
+        return 'event';
+      case 'weather_alert':
+        return 'safety_alert';
+      default:
+        return 'general';
+    }
+  };
 
-      if (status !== "granted") {
-        Alert.alert(
-          "Permission Required",
-          "Please grant access to your photos to upload images."
-        );
+  const getPriorityFromAction = (actionId: string | null): string => {
+    switch (actionId) {
+      case 'safety_alert':
+      case 'weather_alert':
+        return 'urgent';
+      case 'offer_help':
+      case 'ask_question':
+        return 'high';
+      case 'create_event':
+        return 'normal';
+      case 'announcement':
+        return 'high';
+      default:
+        return 'normal';
+    }
+  };
+
+  const handleGalleryPress = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Please allow access to your photo library to select images.');
         return;
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.8,
         allowsMultipleSelection: true,
-        selectionLimit: 5 - selectedImages.length,
+        quality: 0.7,
+        aspect: [1, 1],
       });
 
       if (!result.canceled && result.assets) {
-        const newImages = result.assets
-          .map((asset) => asset.uri)
-          .slice(0, 5 - selectedImages.length);
-        setSelectedImages((prev) => [...prev, ...newImages]);
+        const imageUris = result.assets.map(asset => asset.uri);
+        setSelectedImages(prev => [...prev, ...imageUris].slice(0, 5));
       }
     } catch (error) {
-      console.error("Error picking images:", error);
-      Alert.alert("Error", "Failed to pick images. Please try again.");
+      console.error('Error selecting images:', error);
+      Alert.alert('Error', 'Failed to select images from gallery.');
     }
   };
 
-  const takePhoto = async () => {
+  const handleCameraPress = async () => {
     try {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
-
-      if (status !== "granted") {
-        Alert.alert(
-          "Permission Required",
-          "Please grant camera access to take photos."
-        );
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Please allow camera access to take photos.');
         return;
       }
 
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        quality: 0.7,
+        aspect: [1, 1],
         allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.8,
       });
 
       if (!result.canceled && result.assets && result.assets[0]) {
-        if (selectedImages.length < 5) {
-          setSelectedImages((prev) => [...prev, result.assets[0].uri]);
-        } else {
-          Alert.alert(
-            "Limit Reached",
-            "You can only add up to 5 images per post."
-          );
-        }
+        const newImage = result.assets[0].uri;
+        setSelectedImages(prev => [...prev, newImage].slice(0, 5));
       }
     } catch (error) {
-      console.error("Error taking photo:", error);
-      Alert.alert("Error", "Failed to take photo. Please try again.");
+      console.error('Error taking photo:', error);
+      Alert.alert('Error', 'Failed to take photo.');
     }
   };
 
-  const removeImage = (index: number) => {
-    setSelectedImages((prev) => prev.filter((_, i) => i !== index));
+  const handleLocationPress = () => {
+    setShowLocationModal(true);
   };
 
-  const addTag = () => {
-    if (tagInput.trim() && form.tags.length < 10) {
-      const newTag = tagInput.trim().toLowerCase();
-      if (!form.tags.includes(newTag)) {
-        setForm((prev) => ({
-          ...prev,
-          tags: [...prev.tags, newTag],
-        }));
-      }
-      setTagInput("");
+  const handlePrivacyPress = () => {
+    setShowPrivacyModal(true);
+  };
+
+  const getPrivacyIcon = () => {
+    switch (privacyLevel) {
+      case 'public': return Globe;
+      case 'neighbors': return Users;
+      case 'friends': return UserCheck;
+      default: return Users;
     }
   };
 
-  const removeTag = (tagToRemove: string) => {
-    setForm((prev) => ({
-      ...prev,
-      tags: prev.tags.filter((tag) => tag !== tagToRemove),
-    }));
-  };
-
-  const selectPostType = (postType: string) => {
-    setForm((prev) => ({
-      ...prev,
-      postType: postType as CreatePostForm["postType"],
-    }));
-  };
-
-  const selectPriority = (priority: string) => {
-    setForm((prev) => ({
-      ...prev,
-      priority: priority as CreatePostForm["priority"],
-    }));
+  const getPrivacyLabel = () => {
+    switch (privacyLevel) {
+      case 'public': return 'Public';
+      case 'neighbors': return 'Neighbors';
+      case 'friends': return 'Friends';
+      default: return 'Neighbors';
+    }
   };
 
   return (
@@ -221,247 +353,353 @@ export default function CreateScreen() {
         showCloseButton={true}
         onClosePress={() => router.back()}
       />
-      <SafeAreaView style={styles.safeContent}>
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.contentContainer}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Post Type</Text>
-            <View style={styles.postTypeGrid}>
-              {[
-                { key: "help_request", label: "Help Request", description: "Ask neighbors for help" },
-                { key: "help_offer", label: "Help Offer", description: "Offer help to neighbors" },
-                { key: "lost_found", label: "Lost & Found", description: "Lost or found items" },
-                { key: "safety_alert", label: "Safety Alert", description: "Safety concerns or alerts" },
-                { key: "general", label: "General", description: "General community posts" },
-              ].map((option) => {
-                const isSelected = form.postType === option.key;
-                return (
-                  <TouchableOpacity
-                    key={option.key}
-                    style={[
-                      styles.postTypeCard,
-                      isSelected && styles.postTypeCardSelected,
-                    ]}
-                    onPress={() => selectPostType(option.key)}
-                  >
-                    <Text
-                      style={[
-                        styles.postTypeLabel,
-                        isSelected && styles.postTypeLabelSelected,
-                      ]}
-                    >
-                      {option.label}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.postTypeDescription,
-                        isSelected && styles.postTypeDescriptionSelected,
-                      ]}
-                    >
-                      {option.description}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
-
-          <View style={styles.section}>
-            <Input
-              label="Title (Optional)"
-              value={form.title}
-              onChangeText={(title) => setForm((prev) => ({ ...prev, title }))}
-              placeholder="Enter a title for your post..."
-              error={errors.title}
-              maxLength={200}
-            />
-          </View>
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Content *</Text>
-            <TextInput
-              style={[styles.contentInput, errors.content && styles.inputError]}
-              value={form.content}
-              onChangeText={(content) =>
-                setForm((prev) => ({ ...prev, content }))
-              }
-              placeholder="What's happening in your neighborhood?"
-              placeholderTextColor={Colors.text.disabled}
-              multiline
-              numberOfLines={6}
-              textAlignVertical="top"
-              maxLength={2000}
-            />
-            <Text style={styles.characterCount}>
-              {form.content.length}/2000
-            </Text>
-            {errors.content && (
-              <Text style={styles.errorText}>{errors.content}</Text>
-            )}
-          </View>
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Priority</Text>
-            <View style={styles.priorityRow}>
-              {[
-                { key: "low", label: "Low", color: Colors.success[500] },
-                { key: "normal", label: "Normal", color: Colors.neutral[500] },
-                { key: "high", label: "High", color: Colors.warning[500] },
-                { key: "urgent", label: "Urgent", color: Colors.error[500] },
-              ].map((option) => {
-                const isSelected = form.priority === option.key;
-                return (
-                  <TouchableOpacity
-                    key={option.key}
-                    style={[
-                      styles.priorityOption,
-                      isSelected && {
-                        borderColor: option.color,
-                        backgroundColor: `${option.color}15`,
-                      },
-                    ]}
-                    onPress={() => selectPriority(option.key)}
-                  >
-                    <View
-                      style={[
-                        styles.priorityDot,
-                        { backgroundColor: option.color },
-                      ]}
-                    />
-                    <Text
-                      style={[
-                        styles.priorityLabel,
-                        isSelected && { color: option.color },
-                      ]}
-                    >
-                      {option.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
-
-          <View style={styles.section}>
-            <TouchableOpacity
-              style={styles.emergencyToggle}
-              onPress={() =>
-                setForm((prev) => ({ ...prev, isEmergency: !prev.isEmergency }))
-              }
-            >
-              <View
-                style={[
-                  styles.checkbox,
-                  form.isEmergency && styles.checkboxChecked,
-                ]}
-              >
-                {form.isEmergency && <Text style={styles.checkmark}>✓</Text>}
-              </View>
-              <View style={styles.emergencyInfo}>
-                <Text style={styles.emergencyLabel}>This is an emergency</Text>
-                <Text style={styles.emergencyDescription}>
-                  Emergency posts are prioritized and sent as push notifications
+      
+      <KeyboardAvoidingView 
+        style={styles.keyboardAvoidingView} 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      >
+        <SafeAreaView style={styles.safeContent}>
+        <TouchableWithoutFeedback onPress={() => {
+          if (isTyping) {
+            Keyboard.dismiss();
+          }
+        }}>
+        <View style={styles.content}>
+          <View style={styles.topButtonRow}>
+            <View style={styles.leftButtons}>
+              <TouchableOpacity style={styles.locationButton} onPress={handleLocationPress}>
+                <MapPin size={16} color={Colors.text.secondary} />
+                <Text style={styles.buttonText} numberOfLines={1}>
+                  {selectedLocation.name.length > 12 ? selectedLocation.name.substring(0, 12) + '...' : selectedLocation.name}
                 </Text>
-              </View>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.privacyButton} onPress={handlePrivacyPress}>
+                {React.createElement(getPrivacyIcon(), { size: 16, color: Colors.text.secondary })}
+                <Text style={styles.buttonText}>{getPrivacyLabel()}</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <TouchableOpacity 
+              style={[
+                styles.postButton,
+                (!postText.trim() || isPosting) && styles.postButtonDisabled
+              ]}
+              onPress={handleCreatePost}
+              disabled={!postText.trim() || isPosting}
+            >
+              <Text style={[
+                styles.postButtonText,
+                (!postText.trim() || isPosting) && styles.postButtonTextDisabled
+              ]}>
+                Post
+              </Text>
             </TouchableOpacity>
           </View>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>
-              Images ({selectedImages.length}/5)
-            </Text>
-            <View style={styles.imageActions}>
-              <Button
-                title="Take Photo"
-                onPress={takePhoto}
-                variant="outline"
-                size="small"
-                style={styles.imageButton}
-              />
-              <Button
-                title="Choose Photos"
-                onPress={pickImage}
-                variant="outline"
-                size="small"
-                style={styles.imageButton}
-              />
-            </View>
-            {selectedImages.length > 0 && (
-              <View style={styles.imagePreview}>
-                {selectedImages.map((uri, index) => (
-                  <View key={index} style={styles.imageContainer}>
-                    <Image source={{ uri }} style={styles.previewImage} />
-                    <TouchableOpacity
-                      style={styles.removeImageButton}
-                      onPress={() => removeImage(index)}
-                    >
-                      <Text style={styles.removeImageText}>✕</Text>
-                    </TouchableOpacity>
-                  </View>
-                ))}
+          {selectedAction && (
+            <View style={styles.selectedActionBadgeRow}>
+              <View style={styles.selectedActionBadge}>
+                {(() => {
+                  const action = quickActions.find(a => a.id === selectedAction);
+                  if (!action) return null;
+                  const IconComponent = action.icon;
+                  return (
+                    <>
+                      <IconComponent size={14} color={action.color} />
+                      <Text style={[styles.badgeText, { color: action.color }]}>
+                        {action.label}
+                      </Text>
+                      <TouchableOpacity 
+                        style={styles.removeBadgeButton}
+                        onPress={removeSelectedAction}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <X size={14} color={Colors.text.secondary} />
+                      </TouchableOpacity>
+                    </>
+                  );
+                })()}
               </View>
-            )}
-          </View>
+            </View>
+          )}
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>
-              Tags ({form.tags.length}/10)
-            </Text>
-            <View style={styles.tagInput}>
+          <View style={styles.contentArea}>
+            <View style={styles.textInputContainer}>
               <TextInput
-                style={styles.tagInputField}
-                value={tagInput}
-                onChangeText={setTagInput}
-                placeholder="Add a tag..."
+                ref={textInputRef}
+                style={styles.textInput}
+                multiline
+                placeholder="What's happening in your neighborhood?"
                 placeholderTextColor={Colors.text.disabled}
-                onSubmitEditing={addTag}
-                maxLength={30}
-              />
-              <Button
-                title="Add"
-                onPress={addTag}
-                size="small"
-                disabled={!tagInput.trim() || form.tags.length >= 10}
+                value={postText}
+                onChangeText={setPostText}
+                onFocus={handleTextInputFocus}
+                onBlur={handleTextInputBlur}
               />
             </View>
-            {form.tags.length > 0 && (
-              <View style={styles.tagContainer}>
-                {form.tags.map((tag, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={styles.tag}
-                    onPress={() => removeTag(tag)}
-                  >
-                    <Text style={styles.tagText}>#{tag}</Text>
-                    <Text style={styles.tagRemove}>✕</Text>
-                  </TouchableOpacity>
-                ))}
+
+            {selectedImages.length > 0 && (
+              <View style={styles.selectedImagesContainer}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imagesScrollView}>
+                  {selectedImages.map((imageUri, index) => (
+                    <View key={index} style={styles.selectedImageWrapper}>
+                      <Image source={{ uri: imageUri }} style={styles.selectedImage} />
+                      <TouchableOpacity
+                        style={styles.removeImageButton}
+                        onPress={() => setSelectedImages(prev => prev.filter((_, i) => i !== index))}
+                      >
+                        <X size={16} color={Colors.text.inverse} />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </ScrollView>
               </View>
             )}
           </View>
 
-          <View style={styles.actions}>
-            <Button
-              title="Cancel"
-              onPress={() => router.back()}
-              variant="outline"
-              size="large"
-              style={styles.actionButton}
-            />
-            <Button
-              title="Create Post"
-              onPress={handleCreatePost}
-              loading={loading}
-              disabled={!form.content.trim()}
-              size="large"
-              style={styles.actionButton}
-            />
+
+        </View>
+        </TouchableWithoutFeedback>
+        </SafeAreaView>
+      </KeyboardAvoidingView>
+
+      <View style={[
+        styles.mediaButtonsContainer, 
+        { 
+          bottom: showQuickActions ? 300 : (keyboardHeight > 0 ? keyboardHeight : 40)
+        }
+      ]}>
+        <View style={styles.mediaButtons}>
+          <View style={styles.leftMediaButtons}>
+            <TouchableOpacity style={styles.mediaButton} onPress={handleGalleryPress}>
+              <Gallery size={20} color={Colors.text.secondary} />
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.mediaButton} onPress={handleCameraPress}>
+              <Camera size={20} color={Colors.text.secondary} />
+            </TouchableOpacity>
           </View>
-        </ScrollView>
-      </SafeAreaView>
+          
+          <TouchableOpacity 
+            style={styles.moreButton}
+            onPress={toggleQuickActions}
+          >
+            <MoreHorizontal size={20} color={Colors.text.secondary} />
+            <Text style={styles.moreButtonText}>
+              {showQuickActions ? 'Less' : 'More'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {showQuickActions && (
+        <View style={[styles.quickActionsSection, { paddingBottom: insets.bottom + 20 }]}>
+          <Text style={styles.quickActionsHeader}>Quick Actions</Text>
+          <View style={styles.quickActionsList}>
+            {quickActions.map((action) => {
+              const IconComponent = action.icon;
+              const isSelected = selectedAction === action.id;
+              
+              return (
+                <TouchableOpacity
+                  key={action.id}
+                  style={[
+                    styles.quickActionPill,
+                    { backgroundColor: action.bgColor },
+                    isSelected && { 
+                      backgroundColor: action.color,
+                    }
+                  ]}
+                  onPress={() => selectQuickAction(action.id)}
+                >
+                  <IconComponent 
+                    size={20} 
+                    color={isSelected ? Colors.text.inverse : action.color} 
+                  />
+                  <Text style={[
+                    styles.quickActionPillText, 
+                    { color: isSelected ? Colors.text.inverse : action.color }
+                  ]}>
+                    {action.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+      )}
+
+      <Modal
+        visible={showLocationModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowLocationModal(false)}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setShowLocationModal(false)}>
+              <X size={24} color={Colors.text.primary} />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Select Location</Text>
+            <TouchableOpacity onPress={() => setShowLocationModal(false)}>
+              <Check size={24} color={Colors.primary[600]} />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.modalContent}>
+            <TouchableOpacity
+              style={[
+                styles.locationOption,
+                selectedLocation.useCurrentLocation && styles.locationOptionSelected
+              ]}
+              onPress={() => setSelectedLocation({
+                name: user?.locationCity ? `${user.locationCity}, ${user.addressState}` : "Current Location",
+                latitude: user?.latitude,
+                longitude: user?.longitude,
+                useCurrentLocation: true
+              })}
+            >
+              <MapPin size={20} color={selectedLocation.useCurrentLocation ? Colors.primary[600] : Colors.text.secondary} />
+              <View style={styles.locationOptionText}>
+                <Text style={[
+                  styles.locationOptionTitle,
+                  selectedLocation.useCurrentLocation && styles.locationOptionTitleSelected
+                ]}>
+                  Current Location
+                </Text>
+                <Text style={styles.locationOptionSubtitle}>
+                  {user?.locationCity ? `${user.locationCity}, ${user.addressState}` : "Using your current location"}
+                </Text>
+              </View>
+              {selectedLocation.useCurrentLocation && (
+                <Check size={20} color={Colors.primary[600]} />
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.locationOption,
+                !selectedLocation.useCurrentLocation && styles.locationOptionSelected
+              ]}
+              onPress={() => setSelectedLocation({
+                name: "Custom Location",
+                useCurrentLocation: false
+              })}
+            >
+              <MapPin size={20} color={!selectedLocation.useCurrentLocation ? Colors.primary[600] : Colors.text.secondary} />
+              <View style={styles.locationOptionText}>
+                <Text style={[
+                  styles.locationOptionTitle,
+                  !selectedLocation.useCurrentLocation && styles.locationOptionTitleSelected
+                ]}>
+                  Custom Location
+                </Text>
+                <Text style={styles.locationOptionSubtitle}>
+                  Choose a different location (feature coming soon)
+                </Text>
+              </View>
+              {!selectedLocation.useCurrentLocation && (
+                <Check size={20} color={Colors.primary[600]} />
+              )}
+            </TouchableOpacity>
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
+
+      <Modal
+        visible={showPrivacyModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowPrivacyModal(false)}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setShowPrivacyModal(false)}>
+              <X size={24} color={Colors.text.primary} />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Who can see this?</Text>
+            <TouchableOpacity onPress={() => setShowPrivacyModal(false)}>
+              <Check size={24} color={Colors.primary[600]} />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.modalContent}>
+            <TouchableOpacity
+              style={[
+                styles.privacyOption,
+                privacyLevel === 'public' && styles.privacyOptionSelected
+              ]}
+              onPress={() => setPrivacyLevel('public')}
+            >
+              <Globe size={20} color={privacyLevel === 'public' ? Colors.primary[600] : Colors.text.secondary} />
+              <View style={styles.privacyOptionText}>
+                <Text style={[
+                  styles.privacyOptionTitle,
+                  privacyLevel === 'public' && styles.privacyOptionTitleSelected
+                ]}>
+                  Public
+                </Text>
+                <Text style={styles.privacyOptionSubtitle}>
+                  Anyone can see this post
+                </Text>
+              </View>
+              {privacyLevel === 'public' && (
+                <Check size={20} color={Colors.primary[600]} />
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.privacyOption,
+                privacyLevel === 'neighbors' && styles.privacyOptionSelected
+              ]}
+              onPress={() => setPrivacyLevel('neighbors')}
+            >
+              <Users size={20} color={privacyLevel === 'neighbors' ? Colors.primary[600] : Colors.text.secondary} />
+              <View style={styles.privacyOptionText}>
+                <Text style={[
+                  styles.privacyOptionTitle,
+                  privacyLevel === 'neighbors' && styles.privacyOptionTitleSelected
+                ]}>
+                  Neighbors
+                </Text>
+                <Text style={styles.privacyOptionSubtitle}>
+                  Only people in your neighborhood can see this
+                </Text>
+              </View>
+              {privacyLevel === 'neighbors' && (
+                <Check size={20} color={Colors.primary[600]} />
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.privacyOption,
+                privacyLevel === 'friends' && styles.privacyOptionSelected
+              ]}
+              onPress={() => setPrivacyLevel('friends')}
+            >
+              <UserCheck size={20} color={privacyLevel === 'friends' ? Colors.primary[600] : Colors.text.secondary} />
+              <View style={styles.privacyOptionText}>
+                <Text style={[
+                  styles.privacyOptionTitle,
+                  privacyLevel === 'friends' && styles.privacyOptionTitleSelected
+                ]}>
+                  Friends Only
+                </Text>
+                <Text style={styles.privacyOptionSubtitle}>
+                  Only your friends can see this post
+                </Text>
+              </View>
+              {privacyLevel === 'friends' && (
+                <Check size={20} color={Colors.primary[600]} />
+              )}
+            </TouchableOpacity>
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
     </View>
   );
 }
@@ -471,236 +709,324 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.surface,
   },
+  keyboardAvoidingView: {
+    flex: 1,
+  },
   safeContent: {
     flex: 1,
     backgroundColor: Colors.surface,
   },
-  scrollView: {
+  content: {
     flex: 1,
+    paddingHorizontal: 20,
+    justifyContent: 'space-between',
   },
-  contentContainer: {
-    padding: 20,
-    paddingBottom: 100,
+  topButtonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 16,
+    paddingBottom: 12,
   },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.text.primary,
-    marginBottom: 12,
-  },
-  postTypeGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-  },
-  postTypeCard: {
-    flex: 1,
-    minWidth: "45%",
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    borderRadius: 12,
-    padding: 16,
-    backgroundColor: Colors.background,
-  },
-  postTypeCardSelected: {
-    borderColor: Colors.primary[600],
-    backgroundColor: Colors.primary[50],
-  },
-  postTypeLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: Colors.text.primary,
-    marginBottom: 4,
-  },
-  postTypeLabelSelected: {
-    color: Colors.primary[700],
-  },
-  postTypeDescription: {
-    fontSize: 12,
-    color: Colors.text.secondary,
-    lineHeight: 16,
-  },
-  postTypeDescriptionSelected: {
-    color: Colors.primary[600],
-  },
-  contentInput: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 8,
-    padding: 16,
-    fontSize: 16,
-    color: Colors.text.primary,
-    backgroundColor: Colors.background,
-    minHeight: 120,
-  },
-  inputError: {
-    borderColor: Colors.error[600],
-  },
-  characterCount: {
-    fontSize: 12,
-    color: Colors.text.secondary,
-    textAlign: "right",
-    marginTop: 4,
-  },
-  errorText: {
-    fontSize: 12,
-    color: Colors.error[600],
-    marginTop: 4,
-  },
-  priorityRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+  leftButtons: {
+    flexDirection: 'row',
     gap: 8,
   },
-  priorityOption: {
-    flexDirection: "row",
-    alignItems: "center",
+  locationButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 20,
     backgroundColor: Colors.background,
-  },
-  priorityDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
-  },
-  priorityLabel: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: Colors.text.primary,
-  },
-  emergencyToggle: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    padding: 16,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: Colors.border,
+    gap: 6,
+  },
+  privacyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: Colors.background,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    gap: 6,
+  },
+  buttonText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: Colors.text.secondary,
+  },
+  postButton: {
+    backgroundColor: Colors.primary[600],
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  postButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.text.inverse,
+  },
+  postButtonDisabled: {
+    backgroundColor: Colors.neutral[300],
+    opacity: 0.6,
+  },
+  postButtonTextDisabled: {
+    color: Colors.neutral[500],
+  },
+  contentArea: {
+    flex: 1,
+  },
+  selectedActionBadgeRow: {
+    paddingVertical: 8,
+    alignItems: 'flex-end',
+  },
+  selectedActionBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: Colors.background,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    gap: 6,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  textInputContainer: {
+    flex: 1,
+  },
+  textInput: {
+    fontSize: 16,
+    color: Colors.text.primary,
+    lineHeight: 22,
+    minHeight: 120,
+    textAlignVertical: 'top',
+    padding: 0,
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  removeBadgeButton: {
+    marginLeft: 4,
+    padding: 2,
+  },
+  mediaButtonsContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    backgroundColor: Colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    zIndex: 10,
+  },
+  mediaButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  leftMediaButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  mediaButton: {
+    width: 40,
+    height: 40,
     borderRadius: 8,
     backgroundColor: Colors.background,
-  },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: Colors.border,
-    borderRadius: 4,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  moreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     backgroundColor: Colors.background,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    gap: 6,
   },
-  checkboxChecked: {
-    backgroundColor: Colors.emergency[600],
-    borderColor: Colors.emergency[600],
-  },
-  checkmark: {
-    color: Colors.text.inverse,
-    fontSize: 12,
-    fontWeight: "bold",
-  },
-  emergencyInfo: {
-    flex: 1,
-  },
-  emergencyLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.text.primary,
-    marginBottom: 2,
-  },
-  emergencyDescription: {
+  moreButtonText: {
     fontSize: 14,
+    fontWeight: '500',
     color: Colors.text.secondary,
-    lineHeight: 20,
   },
-  imageActions: {
-    flexDirection: "row",
+  quickActionsSection: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: Colors.background,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingTop: 20,
+    paddingHorizontal: 20,
+    borderTopWidth: 1,
+    borderColor: Colors.border,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -4,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  quickActionsHeader: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.text.primary,
+    marginBottom: 16,
+    textAlign: 'left',
+  },
+  quickActionsList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 12,
+    justifyContent: 'space-between',
   },
-  imageButton: {
-    flex: 1,
+  quickActionPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 25,
+    gap: 8,
+    marginBottom: 12,
+    width: '48%',
+    minHeight: 44,
   },
-  imagePreview: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-    marginTop: 16,
+  quickActionPillText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
-  imageContainer: {
-    position: "relative",
+  selectedImagesContainer: {
+    marginTop: 12,
   },
-  previewImage: {
+  imagesScrollView: {
+    maxHeight: 100,
+  },
+  selectedImageWrapper: {
+    position: 'relative',
+    marginRight: 8,
+  },
+  selectedImage: {
     width: 80,
     height: 80,
     borderRadius: 8,
+    backgroundColor: Colors.neutral[100],
   },
   removeImageButton: {
-    position: "absolute",
+    position: 'absolute',
     top: -8,
     right: -8,
     width: 24,
     height: 24,
     borderRadius: 12,
     backgroundColor: Colors.error[600],
-    alignItems: "center",
-    justifyContent: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
-  removeImageText: {
-    color: Colors.text.inverse,
-    fontSize: 12,
-    fontWeight: "bold",
-  },
-  tagInput: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  tagInputField: {
+  modalContainer: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    fontSize: 14,
-    color: Colors.text.primary,
     backgroundColor: Colors.background,
   },
-  tagContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginTop: 12,
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
   },
-  tag: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    backgroundColor: Colors.primary[100],
-    borderRadius: 12,
-    gap: 4,
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.text.primary,
   },
-  tagText: {
-    fontSize: 12,
-    color: Colors.primary[700],
-    fontWeight: "500",
+  modalContent: {
+    flex: 1,
+    paddingTop: 20,
   },
-  tagRemove: {
-    fontSize: 10,
+  locationOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  locationOptionSelected: {
+    backgroundColor: Colors.primary[50],
+  },
+  locationOptionText: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  locationOptionTitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: Colors.text.primary,
+    marginBottom: 4,
+  },
+  locationOptionTitleSelected: {
     color: Colors.primary[600],
   },
-  actions: {
-    flexDirection: "row",
-    gap: 16,
-    marginTop: 20,
+  locationOptionSubtitle: {
+    fontSize: 14,
+    color: Colors.text.secondary,
   },
-  actionButton: {
+  privacyOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  privacyOptionSelected: {
+    backgroundColor: Colors.primary[50],
+  },
+  privacyOptionText: {
     flex: 1,
+    marginLeft: 12,
+  },
+  privacyOptionTitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: Colors.text.primary,
+    marginBottom: 4,
+  },
+  privacyOptionTitleSelected: {
+    color: Colors.primary[600],
+  },
+  privacyOptionSubtitle: {
+    fontSize: 14,
+    color: Colors.text.secondary,
   },
 });

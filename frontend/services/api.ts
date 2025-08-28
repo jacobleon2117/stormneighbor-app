@@ -212,9 +212,17 @@ class ApiService {
     address?: string;
     latitude?: number;
     longitude?: number;
+    homeCity?: string | null;
+    homeState?: string | null;
+    homeZipCode?: string | null;
+    homeAddress?: string | null;
+    homeLatitude?: number;
+    homeLongitude?: number;
     locationRadiusMiles?: number;
     showCityOnly?: boolean;
     notificationPreferences?: NotificationPreferences;
+    locationPreferences?: any;
+    locationPermissions?: any;
   }) {
     const backendData = {
       ...profileData,
@@ -267,6 +275,26 @@ class ApiService {
     state?: string;
   }) {
     const response = await this.api.get("/posts", { params });
+    
+    if (response.data.success && response.data.data?.posts) {
+      const transformedPosts = response.data.data.posts.map((post: any) => ({
+        ...post,
+        firstName: post.user?.firstName,
+        lastName: post.user?.lastName,
+        profileImageUrl: post.user?.profileImageUrl,
+        userId: post.user?.id || post.userId,
+        user: post.user
+      }));
+      
+      return {
+        ...response.data,
+        data: {
+          ...response.data.data,
+          posts: transformedPosts
+        }
+      };
+    }
+    
     return response.data;
   }
 
@@ -371,6 +399,86 @@ class ApiService {
       reason,
       details,
     });
+    return response.data;
+  }
+
+  async togglePostReaction(postId: number, reactionType: string = "like") {
+    const response = await this.api.post(`/posts/${postId}/reactions`, {
+      reactionType,
+    });
+    return response.data;
+  }
+
+  async removePostReaction(postId: number) {
+    const response = await this.api.delete(`/posts/${postId}/reactions`);
+    return response.data;
+  }
+
+  async sharePost(postId: number) {
+    const response = await this.api.get(`/posts/${postId}`);
+    return response.data;
+  }
+
+  async reportPost(postId: number, reason: string, description?: string) {
+    const response = await this.api.post(`/posts/${postId}/report`, {
+      reason,
+      description,
+    });
+    return response.data;
+  }
+
+  async getConversations(params?: {
+    page?: number;
+    limit?: number;
+  }) {
+    const response = await this.api.get("/messages/conversations", { params });
+    return response.data;
+  }
+
+  async createConversation(recipientId: number, initialMessage: string) {
+    const response = await this.api.post("/messages/conversations", {
+      recipientId,
+      initialMessage,
+    });
+    return response.data;
+  }
+
+  async getMessages(
+    conversationId: number,
+    params?: {
+      page?: number;
+      limit?: number;
+    }
+  ) {
+    const response = await this.api.get(
+      `/messages/conversations/${conversationId}/messages`,
+      { params }
+    );
+    return response.data;
+  }
+
+  async sendMessage(
+    conversationId: number,
+    messageData: {
+      content: string;
+      messageType?: string;
+      images?: string[];
+    }
+  ) {
+    const response = await this.api.post(
+      `/messages/conversations/${conversationId}/messages`,
+      messageData
+    );
+    return response.data;
+  }
+
+  async markMessageAsRead(messageId: number) {
+    const response = await this.api.put(`/messages/messages/${messageId}/read`);
+    return response.data;
+  }
+
+  async getUnreadMessageCount() {
+    const response = await this.api.get("/messages/unread-count");
     return response.data;
   }
 

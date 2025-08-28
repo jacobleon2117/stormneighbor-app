@@ -191,6 +191,10 @@ try {
   const notificationRoutes = require("./routes/notifications");
   app.use("/api/v1/notifications", notificationRoutes);
 
+  console.log("Loading message routes...");
+  const messageRoutes = require("./routes/messages");
+  app.use("/api/v1/messages", messageRoutes);
+
   console.log("Loading backup routes...");
   const backupRoutes = require("./routes/backup");
   app.use("/api/v1/admin/backups", backupRoutes);

@@ -67,6 +67,7 @@ export default function TabLayout() {
         name="create"
         options={{
           title: "Post",
+          tabBarStyle: { display: 'none' },
           tabBarIcon: ({ focused, color }) => (
             <View
               style={{

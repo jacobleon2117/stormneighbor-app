@@ -12,26 +12,34 @@ function RootLayoutContent() {
   useEffect(() => {
     if (!isLoading) {
       if (isAuthenticated) {
-        const hasGPSLocation = user?.latitude && user?.longitude;
-        const hasCityLocation = user?.locationCity;
-        const needsOnboarding = !hasGPSLocation && !hasCityLocation;
+        const hasHomeLocation = user?.homeCity && user?.homeState;
+        const hasLegacyLocation = user?.locationCity && user?.addressState;
+        const hasLocationPreferences = user?.locationPreferences && Object.keys(user.locationPreferences).length > 0;
+        
+        const needsLocationOnboarding = !hasHomeLocation && !hasLegacyLocation;
+        const needsPermissionsOnboarding = !hasLocationPreferences;
 
         console.log("Onboarding check:", {
+          homeCity: user?.homeCity,
+          homeState: user?.homeState,
           locationCity: user?.locationCity,
-          latitude: user?.latitude,
-          longitude: user?.longitude,
           addressState: user?.addressState,
-          hasGPSLocation,
-          hasCityLocation,
-          needsOnboarding,
-          user: user ? "User object exists" : "No user object",
+          locationPreferences: user?.locationPreferences,
+          hasHomeLocation,
+          hasLegacyLocation,
+          hasLocationPreferences,
+          needsLocationOnboarding,
+          needsPermissionsOnboarding,
         });
 
-        if (needsOnboarding) {
-          console.log("Redirecting to location setup - missing location data");
-          router.replace("/(auth)/location-setup");
+        if (needsPermissionsOnboarding) {
+          console.log("Redirecting to location permissions setup");
+          router.replace("/(auth)/location-permissions");
+        } else if (needsLocationOnboarding) {
+          console.log("Redirecting to home address setup");
+          router.replace("/(auth)/home-address-setup");
         } else {
-          console.log("Location data found, going to main app");
+          console.log("Location onboarding complete, going to main app");
           router.replace("/(tabs)");
         }
       } else {

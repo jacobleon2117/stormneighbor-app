@@ -489,6 +489,9 @@ const getProfile = async (req, res) => {
         `SELECT id, email, first_name, last_name, phone, bio, profile_image_url,
                 location_city, address_state, zip_code, address,
                 latitude, longitude,
+                home_city, home_state, home_zip_code, home_address,
+                home_latitude, home_longitude,
+                location_preferences, location_permissions,
                 email_verified, notification_preferences, created_at, updated_at
          FROM users WHERE id = $1`,
         [userId]
@@ -520,6 +523,14 @@ const getProfile = async (req, res) => {
           address: user.address,
           latitude: user.latitude,
           longitude: user.longitude,
+          homeCity: user.home_city,
+          homeState: user.home_state,
+          homeZipCode: user.home_zip_code,
+          homeAddress: user.home_address,
+          homeLatitude: user.home_latitude,
+          homeLongitude: user.home_longitude,
+          locationPreferences: user.location_preferences || {},
+          locationPermissions: user.location_permissions || {},
           location: {
             city: user.location_city,
             state: user.address_state,
@@ -555,8 +566,27 @@ const updateProfile = async (req, res) => {
     }
 
     const userId = req.user.userId;
-    const { firstName, lastName, phone, bio, latitude, longitude, address, city, state, zipCode } =
-      req.body;
+    const { 
+      firstName, 
+      lastName, 
+      phone, 
+      bio, 
+      latitude, 
+      longitude, 
+      address, 
+      city, 
+      state, 
+      zipCode,
+      homeCity,
+      homeState,
+      homeZipCode,
+      homeAddress,
+      homeLatitude,
+      homeLongitude,
+      locationPreferences,
+      locationPermissions,
+      notificationPreferences
+    } = req.body;
 
     const client = await pool.connect();
 
@@ -571,24 +601,72 @@ const updateProfile = async (req, res) => {
         address_state = COALESCE($6, address_state),
         zip_code = COALESCE($7, zip_code),
         address = COALESCE($8, address),
+        home_city = COALESCE($9, home_city),
+        home_state = COALESCE($10, home_state),
+        home_zip_code = COALESCE($11, home_zip_code),
+        home_address = COALESCE($12, home_address),
         updated_at = NOW()
       `;
 
-      const values = [firstName, lastName, phone, bio, city, state, zipCode, address];
+      const values = [
+        firstName, 
+        lastName, 
+        phone, 
+        bio, 
+        city, 
+        state, 
+        zipCode, 
+        address,
+        homeCity,
+        homeState,
+        homeZipCode,
+        homeAddress
+      ];
 
+      let valueIndex = values.length + 1;
+      
       if (latitude !== undefined && longitude !== undefined) {
         const lat = parseFloat(latitude);
         const lng = parseFloat(longitude);
 
         if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
-          updateQuery +=
-            ", latitude = $9::DECIMAL(10,8), longitude = $10::DECIMAL(11,8), location = ST_SetSRID(ST_MakePoint($10::DECIMAL(11,8), $9::DECIMAL(10,8)), 4326)";
+          updateQuery += `, latitude = $${valueIndex}::DECIMAL(10,8), longitude = $${valueIndex + 1}::DECIMAL(11,8), location = ST_SetSRID(ST_MakePoint($${valueIndex + 1}::DECIMAL(11,8), $${valueIndex}::DECIMAL(10,8)), 4326)`;
           values.push(lat, lng);
+          valueIndex += 2;
         }
+      }
+      
+      if (homeLatitude !== undefined && homeLongitude !== undefined) {
+        const lat = parseFloat(homeLatitude);
+        const lng = parseFloat(homeLongitude);
+
+        if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+          updateQuery += `, home_latitude = $${valueIndex}::DECIMAL(10,8), home_longitude = $${valueIndex + 1}::DECIMAL(11,8)`;
+          values.push(lat, lng);
+          valueIndex += 2;
+        }
+      }
+      
+      if (locationPreferences !== undefined) {
+        updateQuery += `, location_preferences = $${valueIndex}::jsonb`;
+        values.push(JSON.stringify(locationPreferences));
+        valueIndex += 1;
+      }
+      
+      if (locationPermissions !== undefined) {
+        updateQuery += `, location_permissions = $${valueIndex}::jsonb`;
+        values.push(JSON.stringify(locationPermissions));
+        valueIndex += 1;
+      }
+      
+      if (notificationPreferences !== undefined) {
+        updateQuery += `, notification_preferences = $${valueIndex}::jsonb`;
+        values.push(JSON.stringify(notificationPreferences));
+        valueIndex += 1;
       }
 
       values.push(userId);
-      updateQuery += " WHERE id = $" + values.length + " RETURNING id";
+      updateQuery += ` WHERE id = $${values.length} RETURNING id`;
 
       const result = await client.query(updateQuery, values);
 

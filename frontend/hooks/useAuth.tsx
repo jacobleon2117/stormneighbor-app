@@ -157,7 +157,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         console.log("Failed to register for push notifications:", error);
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || "Login failed";
+      const errorMessage = (error as any).response?.data?.message || "Login failed";
       dispatch({ type: "AUTH_ERROR", payload: errorMessage });
       throw error;
     }
@@ -183,7 +183,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } catch (error) {
       console.error("Registration/login error:", error);
       const errorMessage =
-        error.response?.data?.message || "Registration failed";
+        (error as any).response?.data?.message || "Registration failed";
       dispatch({ type: "AUTH_ERROR", payload: errorMessage });
       throw error;
     }

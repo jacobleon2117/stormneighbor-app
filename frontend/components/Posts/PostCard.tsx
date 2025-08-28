@@ -5,10 +5,34 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
+  Modal,
+  SafeAreaView,
+  Dimensions,
+  TouchableWithoutFeedback,
+  PanResponder,
+  Animated,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { 
+  HelpCircle, 
+  Heart, 
+  AlertTriangle, 
+  Search, 
+  MessageCircle, 
+  User, 
+  MapPin, 
+  Share,
+  MoreHorizontal,
+  Flag,
+  EyeOff,
+  UserX,
+  UserMinus,
+  Info,
+  X
+} from "lucide-react-native";
 import { Post } from "../../types";
 import { Colors } from "../../constants/Colors";
+
+const { height: screenHeight } = Dimensions.get('window');
 
 interface PostCardProps {
   post: Post;
@@ -16,6 +40,13 @@ interface PostCardProps {
   onComment?: (postId: number) => void;
   onShare?: (postId: number) => void;
   onPress?: (postId: number) => void;
+  onMessage?: (userId: number, userName: string) => void;
+  onReport?: (postId: number) => void;
+  onBlock?: (userId: number) => void;
+  onUnfollow?: (userId: number) => void;
+  onHide?: (postId: number) => void;
+  currentUserId?: number;
+  isFollowing?: boolean;
 }
 
 export function PostCard({
@@ -24,21 +55,96 @@ export function PostCard({
   onComment,
   onShare,
   onPress,
+  onMessage,
+  onReport,
+  onBlock,
+  onUnfollow,
+  onHide,
+  currentUserId,
+  isFollowing = false,
 }: PostCardProps) {
   const [imageError, setImageError] = useState(false);
+  const [showMoreModal, setShowMoreModal] = useState(false);
+  const [showCommentModal, setShowCommentModal] = useState(false);
+
+  // Animation values for swipe to dismiss
+  const commentModalY = React.useRef(new Animated.Value(0)).current;
+  const moreModalY = React.useRef(new Animated.Value(0)).current;
+
+  // Create pan responder for comment modal
+  const commentPanResponder = PanResponder.create({
+    onMoveShouldSetPanResponder: (evt, gestureState) => {
+      return Math.abs(gestureState.dy) > 10;
+    },
+    onPanResponderMove: (evt, gestureState) => {
+      if (gestureState.dy > 0) {
+        commentModalY.setValue(gestureState.dy);
+      }
+    },
+    onPanResponderRelease: (evt, gestureState) => {
+      if (gestureState.dy > 100) {
+        // Close modal if dragged down more than 100px
+        Animated.timing(commentModalY, {
+          toValue: screenHeight,
+          duration: 300,
+          useNativeDriver: true,
+        }).start(() => {
+          setShowCommentModal(false);
+          commentModalY.setValue(0);
+        });
+      } else {
+        // Spring back to original position
+        Animated.spring(commentModalY, {
+          toValue: 0,
+          useNativeDriver: true,
+        }).start();
+      }
+    },
+  });
+
+  // Create pan responder for more modal
+  const morePanResponder = PanResponder.create({
+    onMoveShouldSetPanResponder: (evt, gestureState) => {
+      return Math.abs(gestureState.dy) > 10;
+    },
+    onPanResponderMove: (evt, gestureState) => {
+      if (gestureState.dy > 0) {
+        moreModalY.setValue(gestureState.dy);
+      }
+    },
+    onPanResponderRelease: (evt, gestureState) => {
+      if (gestureState.dy > 100) {
+        // Close modal if dragged down more than 100px
+        Animated.timing(moreModalY, {
+          toValue: screenHeight,
+          duration: 300,
+          useNativeDriver: true,
+        }).start(() => {
+          setShowMoreModal(false);
+          moreModalY.setValue(0);
+        });
+      } else {
+        // Spring back to original position
+        Animated.spring(moreModalY, {
+          toValue: 0,
+          useNativeDriver: true,
+        }).start();
+      }
+    },
+  });
 
   const getPostTypeIcon = (type: string) => {
     switch (type) {
       case "help_request":
-        return "help-circle-outline";
+        return HelpCircle;
       case "help_offer":
-        return "heart-outline";
+        return Heart;
       case "safety_alert":
-        return "warning-outline";
+        return AlertTriangle;
       case "lost_found":
-        return "search-outline";
+        return Search;
       default:
-        return "chatbubble-outline";
+        return MessageCircle;
     }
   };
 
@@ -57,20 +163,6 @@ export function PostCard({
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "urgent":
-        return Colors.error[600];
-      case "high":
-        return Colors.warning[600];
-      case "normal":
-        return Colors.primary[600];
-      case "low":
-        return Colors.neutral[500];
-      default:
-        return Colors.neutral[500];
-    }
-  };
 
   const formatTimeAgo = (dateString: string): string => {
     const now = new Date();
@@ -112,14 +204,28 @@ export function PostCard({
                 onError={() => setImageError(true)}
               />
             ) : (
-              <Ionicons name="person" size={20} color={Colors.neutral[600]} />
+              <User size={20} color={Colors.neutral[600]} />
             )}
           </View>
 
           <View style={styles.userDetails}>
-            <Text style={styles.userName}>
-              {post.firstName} {post.lastName}
-            </Text>
+            <View style={styles.userNameRow}>
+              <Text style={styles.userName}>
+                {post.firstName} {post.lastName}
+              </Text>
+              {onMessage && currentUserId && post.userId !== currentUserId && (
+                <TouchableOpacity
+                  style={styles.messageButton}
+                  onPress={() => onMessage(post.userId, `${post.firstName} ${post.lastName}`)}
+                >
+                  <MessageCircle
+                    size={16}
+                    color={Colors.primary[600]}
+                  />
+                  <Text style={styles.messageButtonText}>Message</Text>
+                </TouchableOpacity>
+              )}
+            </View>
             <View style={styles.metaRow}>
               <Text style={styles.timestamp}>
                 {formatTimeAgo(post.createdAt)}
@@ -127,8 +233,7 @@ export function PostCard({
               {post.locationCity && (
                 <>
                   <Text style={styles.dot}>•</Text>
-                  <Ionicons
-                    name="location-outline"
+                  <MapPin
                     size={12}
                     color={Colors.neutral[500]}
                   />
@@ -144,31 +249,32 @@ export function PostCard({
         <View style={styles.badges}>
           {post.isEmergency && (
             <View style={[styles.badge, styles.emergencyBadge]}>
-              <Ionicons name="warning" size={12} color={Colors.error[700]} />
+              <AlertTriangle size={12} color={Colors.error[700]} />
               <Text style={styles.emergencyText}>EMERGENCY</Text>
             </View>
           )}
-
-          <View
-            style={[
-              styles.badge,
-              { borderColor: getPostTypeColor(post.postType) },
-            ]}
-          >
-            <Ionicons
-              name={getPostTypeIcon(post.postType) as any}
-              size={12}
-              color={getPostTypeColor(post.postType)}
-            />
-            <Text
+          {/* Only show alert type badge if it's from create post screen alert options */}
+          {(post.postType === "safety_alert" || post.postType === "help_request" || post.postType === "help_offer") && (
+            <View
               style={[
-                styles.badgeText,
-                { color: getPostTypeColor(post.postType) },
+                styles.badge,
+                { borderColor: getPostTypeColor(post.postType) },
               ]}
             >
-              {formatPostType(post.postType)}
-            </Text>
-          </View>
+              {React.createElement(getPostTypeIcon(post.postType), {
+                size: 12,
+                color: getPostTypeColor(post.postType)
+              })}
+              <Text
+                style={[
+                  styles.badgeText,
+                  { color: getPostTypeColor(post.postType) },
+                ]}
+              >
+                {formatPostType(post.postType)}
+              </Text>
+            </View>
+          )}
         </View>
       </View>
 
@@ -198,77 +304,187 @@ export function PostCard({
         </View>
       )}
 
-      {post.tags && post.tags.length > 0 && (
-        <View style={styles.tagsContainer}>
-          {post.tags.slice(0, 3).map((tag, index) => (
-            <View key={index} style={styles.tag}>
-              <Text style={styles.tagText}>#{tag}</Text>
-            </View>
-          ))}
-          {post.tags.length > 3 && (
-            <Text style={styles.moreTags}>+{post.tags.length - 3} more</Text>
-          )}
-        </View>
-      )}
 
       <View style={styles.actions}>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => onLike?.(post.id)}
-        >
-          <Ionicons
-            name={post.userReaction ? "heart" : "heart-outline"}
-            size={20}
-            color={post.userReaction ? Colors.error[600] : Colors.neutral[600]}
-          />
-          <Text
-            style={[styles.actionText, post.userReaction && styles.likedText]}
+        <View style={styles.leftActions}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => onLike?.(post.id)}
           >
-            {post.likeCount || 0}
-          </Text>
-        </TouchableOpacity>
+            <Heart
+              size={20}
+              color={post.userReaction ? Colors.error[600] : Colors.neutral[600]}
+              fill={post.userReaction ? Colors.error[600] : "none"}
+            />
+            <Text
+              style={[styles.actionText, post.userReaction && styles.likedText]}
+            >
+              {post.likeCount || 0}
+            </Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => onComment?.(post.id)}
-        >
-          <Ionicons
-            name="chatbubble-outline"
-            size={20}
-            color={Colors.neutral[600]}
-          />
-          <Text style={styles.actionText}>{post.commentCount || 0}</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => onShare?.(post.id)}
-        >
-          <Ionicons
-            name="share-outline"
-            size={20}
-            color={Colors.neutral[600]}
-          />
-          <Text style={styles.actionText}>Share</Text>
-        </TouchableOpacity>
-
-        <View style={styles.priorityContainer}>
-          <View
-            style={[
-              styles.priorityDot,
-              { backgroundColor: getPriorityColor(post.priority) },
-            ]}
-          />
-          <Text
-            style={[
-              styles.priorityText,
-              { color: getPriorityColor(post.priority) },
-            ]}
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => setShowCommentModal(true)}
           >
-            {post.priority.charAt(0).toUpperCase() + post.priority.slice(1)}
-          </Text>
+            <MessageCircle
+              size={20}
+              color={Colors.neutral[600]}
+            />
+            <Text style={styles.actionText}>{post.commentCount || 0}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => onShare?.(post.id)}
+          >
+            <Share
+              size={20}
+              color={Colors.neutral[600]}
+            />
+            <Text style={styles.actionText}>Share</Text>
+          </TouchableOpacity>
         </View>
+
+        <TouchableOpacity
+          style={styles.moreButton}
+          onPress={() => setShowMoreModal(true)}
+        >
+          <MoreHorizontal
+            size={20}
+            color={Colors.neutral[600]}
+          />
+        </TouchableOpacity>
       </View>
+
+      {/* Comment Modal */}
+      <Modal
+        visible={showCommentModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowCommentModal(false)}
+      >
+        <View style={styles.modalOverlayTransparent}>
+          <Animated.View 
+            style={[
+              styles.modalContainer, 
+              { height: screenHeight * 0.6 },
+              { transform: [{ translateY: commentModalY }] }
+            ]}
+            {...commentPanResponder.panHandlers}
+          >
+            <TouchableOpacity 
+              style={styles.modalHandle} 
+              onPress={() => setShowCommentModal(false)}
+              activeOpacity={0.7}
+            />
+            <View style={styles.modalHeader}>
+              <TouchableOpacity onPress={() => setShowCommentModal(false)}>
+                <X size={24} color={Colors.text.primary} />
+              </TouchableOpacity>
+              <Text style={styles.modalTitle}>Comments</Text>
+              <View style={{ width: 24 }} />
+            </View>
+            <View style={styles.modalContent}>
+              <Text style={styles.placeholderText}>Comments coming soon...</Text>
+            </View>
+          </Animated.View>
+        </View>
+      </Modal>
+
+      {/* More Options Modal */}
+      <Modal
+        visible={showMoreModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowMoreModal(false)}
+      >
+        <View style={styles.modalOverlayTransparent}>
+          <Animated.View 
+            style={[
+              styles.modalContainer, 
+              { height: screenHeight * 0.5 },
+              { transform: [{ translateY: moreModalY }] }
+            ]}
+            {...morePanResponder.panHandlers}
+          >
+            <TouchableOpacity 
+              style={styles.modalHandle} 
+              onPress={() => setShowMoreModal(false)}
+              activeOpacity={0.7}
+            />
+            <View style={styles.modalHeader}>
+              <TouchableOpacity onPress={() => setShowMoreModal(false)}>
+                <X size={24} color={Colors.text.primary} />
+              </TouchableOpacity>
+              <Text style={styles.modalTitle}>More Options</Text>
+              <View style={{ width: 24 }} />
+            </View>
+            <View style={styles.modalContent}>
+              <TouchableOpacity 
+                style={styles.modalOption}
+                onPress={() => {
+                  setShowMoreModal(false);
+                  onReport?.(post.id);
+                }}
+              >
+                <Flag size={20} color={Colors.error[600]} />
+                <Text style={[styles.modalOptionText, { color: Colors.error[600] }]}>Report Post</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={styles.modalOption}
+                onPress={() => {
+                  setShowMoreModal(false);
+                  onHide?.(post.id);
+                }}
+              >
+                <EyeOff size={20} color={Colors.neutral[600]} />
+                <Text style={styles.modalOptionText}>Hide Post</Text>
+              </TouchableOpacity>
+
+              {currentUserId !== post.userId && (
+                <>
+                  <TouchableOpacity 
+                    style={styles.modalOption}
+                    onPress={() => {
+                      setShowMoreModal(false);
+                      onBlock?.(post.userId);
+                    }}
+                  >
+                    <UserX size={20} color={Colors.error[600]} />
+                    <Text style={[styles.modalOptionText, { color: Colors.error[600] }]}>Block User</Text>
+                  </TouchableOpacity>
+
+                  {isFollowing && (
+                    <TouchableOpacity 
+                      style={styles.modalOption}
+                      onPress={() => {
+                        setShowMoreModal(false);
+                        onUnfollow?.(post.userId);
+                      }}
+                    >
+                      <UserMinus size={20} color={Colors.warning[600]} />
+                      <Text style={[styles.modalOptionText, { color: Colors.warning[600] }]}>Unfollow User</Text>
+                    </TouchableOpacity>
+                  )}
+
+                  <TouchableOpacity 
+                    style={styles.modalOption}
+                    onPress={() => {
+                      setShowMoreModal(false);
+                      // Navigate to user profile or about
+                    }}
+                  >
+                    <Info size={20} color={Colors.neutral[600]} />
+                    <Text style={styles.modalOptionText}>About This Account</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+            </View>
+          </Animated.View>
+        </View>
+      </Modal>
     </TouchableOpacity>
   );
 }
@@ -278,7 +494,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
     borderRadius: 12,
     padding: 16,
-    marginBottom: 12,
+    marginBottom: 16,
     borderWidth: 1,
     borderColor: Colors.border,
     shadowColor: Colors.neutral[900],
@@ -286,6 +502,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 3,
+    minHeight: 140,
   },
   header: {
     flexDirection: "row",
@@ -315,11 +532,33 @@ const styles = StyleSheet.create({
   userDetails: {
     flex: 1,
   },
+  userNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 2,
+  },
   userName: {
     fontSize: 14,
     fontWeight: "600",
     color: Colors.text.primary,
-    marginBottom: 2,
+    flex: 1,
+  },
+  messageButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.primary[50],
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.primary[200],
+  },
+  messageButtonText: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: Colors.primary[700],
+    marginLeft: 4,
   },
   metaRow: {
     flexDirection: "row",
@@ -384,10 +623,12 @@ const styles = StyleSheet.create({
   imagesContainer: {
     position: "relative",
     marginBottom: 12,
+    borderRadius: 8,
+    overflow: "hidden",
   },
   postImage: {
     width: "100%",
-    height: 200,
+    height: 180,
     borderRadius: 8,
   },
   imageOverlay: {
@@ -404,30 +645,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
   },
-  tagsContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    marginBottom: 12,
-    alignItems: "center",
-  },
-  tag: {
-    backgroundColor: Colors.primary[50],
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    marginRight: 6,
-    marginBottom: 4,
-  },
-  tagText: {
-    fontSize: 12,
-    color: Colors.primary[700],
-    fontWeight: "500",
-  },
-  moreTags: {
-    fontSize: 12,
-    color: Colors.text.secondary,
-    fontStyle: "italic",
-  },
   actions: {
     flexDirection: "row",
     alignItems: "center",
@@ -435,6 +652,11 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: Colors.border,
     paddingTop: 12,
+  },
+  leftActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
   },
   actionButton: {
     flexDirection: "row",
@@ -450,19 +672,76 @@ const styles = StyleSheet.create({
   likedText: {
     color: Colors.error[600],
   },
-  priorityContainer: {
+  moreButton: {
+    padding: 4,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalOverlayTransparent: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  modalContainer: {
+    backgroundColor: Colors.background,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -4,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: Colors.neutral[300],
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: Colors.text.primary,
+  },
+  modalContent: {
+    paddingTop: 20,
+    paddingBottom: 40,
+  },
+  modalOption: {
     flexDirection: "row",
     alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    gap: 12,
   },
-  priorityDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
+  modalOptionText: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: Colors.text.primary,
   },
-  priorityText: {
-    fontSize: 12,
-    fontWeight: "600",
-    textTransform: "uppercase",
+  placeholderText: {
+    fontSize: 16,
+    color: Colors.text.secondary,
+    textAlign: "center",
+    marginTop: 40,
   },
 });

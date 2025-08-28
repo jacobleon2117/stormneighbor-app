@@ -21,8 +21,10 @@ import { Input } from "../../components/UI/Input";
 import { useAuth } from "../../hooks/useAuth";
 import { Colors } from "../../constants/Colors";
 import { apiService } from "../../services/api";
+import TempNotificationService from "../../services/tempNotifications";
 import { User } from "../../types";
 import { Header } from "../../components/UI/Header";
+import { TestTube, CheckCircle, XCircle } from "lucide-react-native";
 
 type EditMode = "personal" | "location" | "notifications" | "security" | null;
 
@@ -47,11 +49,12 @@ interface NotificationPreferences {
   emailNotifications: boolean;
   pushNotifications: boolean;
   emergencyAlerts: boolean;
-  weatherAlerts: boolean;
   communityUpdates: boolean;
-  quietHours: boolean;
-  quietStart: string;
-  quietEnd: string;
+  postReactions: boolean;
+  comments: boolean;
+  quietHoursEnabled: boolean;
+  quietHoursStart?: string;
+  quietHoursEnd?: string;
 }
 
 export default function ProfileScreen() {
@@ -79,14 +82,15 @@ export default function ProfileScreen() {
 
   const [notificationPrefs, setNotificationPrefs] =
     useState<NotificationPreferences>({
-      emailNotifications: user?.notificationPreferences?.email || true,
-      pushNotifications: user?.notificationPreferences?.push || true,
-      emergencyAlerts: user?.notificationPreferences?.emergency || true,
-      weatherAlerts: user?.notificationPreferences?.weather || true,
-      communityUpdates: user?.notificationPreferences?.community || false,
-      quietHours: user?.notificationPreferences?.quietHours || false,
-      quietStart: user?.notificationPreferences?.quietStart || "22:00",
-      quietEnd: user?.notificationPreferences?.quietEnd || "07:00",
+      emailNotifications: user?.notificationPreferences?.emailNotifications || true,
+      pushNotifications: user?.notificationPreferences?.pushNotifications || true,
+      emergencyAlerts: user?.notificationPreferences?.emergencyAlerts || true,
+      communityUpdates: user?.notificationPreferences?.communityUpdates || false,
+      postReactions: user?.notificationPreferences?.postReactions || false,
+      comments: user?.notificationPreferences?.comments || false,
+      quietHoursEnabled: user?.notificationPreferences?.quietHoursEnabled || false,
+      quietHoursStart: user?.notificationPreferences?.quietHoursStart || "22:00",
+      quietHoursEnd: user?.notificationPreferences?.quietHoursEnd || "07:00",
     });
 
   useEffect(() => {
@@ -109,14 +113,15 @@ export default function ProfileScreen() {
       });
 
       setNotificationPrefs({
-        emailNotifications: user.notificationPreferences?.email ?? true,
-        pushNotifications: user.notificationPreferences?.push ?? true,
-        emergencyAlerts: user.notificationPreferences?.emergency ?? true,
-        weatherAlerts: user.notificationPreferences?.weather ?? true,
-        communityUpdates: user.notificationPreferences?.community ?? false,
-        quietHours: user.notificationPreferences?.quietHours ?? false,
-        quietStart: user.notificationPreferences?.quietStart || "22:00",
-        quietEnd: user.notificationPreferences?.quietEnd || "07:00",
+        emailNotifications: user.notificationPreferences?.emailNotifications ?? true,
+        pushNotifications: user.notificationPreferences?.pushNotifications ?? true,
+        emergencyAlerts: user.notificationPreferences?.emergencyAlerts ?? true,
+        communityUpdates: user.notificationPreferences?.communityUpdates ?? false,
+        postReactions: user.notificationPreferences?.postReactions ?? false,
+        comments: user.notificationPreferences?.comments ?? false,
+        quietHoursEnabled: user.notificationPreferences?.quietHoursEnabled ?? false,
+        quietHoursStart: user.notificationPreferences?.quietHoursStart || "22:00",
+        quietHoursEnd: user.notificationPreferences?.quietHoursEnd || "07:00",
       });
     }
   }, [user]);
@@ -329,15 +334,20 @@ export default function ProfileScreen() {
   );
 
   const renderMenuItem = (
-    icon: string,
+    icon: string | React.ComponentType<any>,
     title: string,
     subtitle: string,
     onPress: () => void,
-    rightElement?: React.ReactNode
+    rightElement?: React.ReactNode,
+    iconProps?: any
   ) => (
     <TouchableOpacity style={styles.menuItem} onPress={onPress}>
       <View style={styles.menuIcon}>
-        <Ionicons name={icon as any} size={24} color={Colors.primary[600]} />
+        {typeof icon === 'string' ? (
+          <Ionicons name={icon as any} size={24} color={Colors.primary[600]} />
+        ) : (
+          React.createElement(icon, { size: 24, color: Colors.primary[600], ...iconProps })
+        )}
       </View>
       <View style={styles.menuContent}>
         <Text style={styles.menuTitle}>{title}</Text>
@@ -785,6 +795,21 @@ export default function ProfileScreen() {
             "Help & Support",
             "FAQs, contact support",
             () => router.push("/help-support")
+          )}
+
+          {__DEV__ && renderMenuItem(
+            TestTube,
+            "Test Notification",
+            "Test local notifications (temp Firebase fix)",
+            async () => {
+              const success = await TempNotificationService.sendTestNotification();
+              Alert.alert(
+                success ? "Test Sent!" : "Test Failed", 
+                success 
+                  ? "Check your notification bar! This is how alerts will appear." 
+                  : "Make sure you've enabled notifications for this app."
+              );
+            }
           )}
         </View>
 

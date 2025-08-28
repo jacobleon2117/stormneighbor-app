@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { router, useLocalSearchParams } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Search, X } from "lucide-react-native";
 import { PostCard } from "../../components/Posts/PostCard";
 import { useAuth } from "../../hooks/useAuth";
 import { apiService } from "../../services/api";
@@ -62,6 +62,8 @@ export default function HomeScreen() {
       const response = await apiService.getPosts({
         page: pageNum,
         limit: 20,
+        city: user?.homeCity || user?.locationCity,
+        state: user?.homeState || user?.addressState,
       });
 
       if (response.success && response.data) {
@@ -204,6 +206,51 @@ export default function HomeScreen() {
     router.push(`/post/${postId}`);
   };
 
+  const handleMessage = async (userId: number, userName: string) => {
+    try {
+      const conversationsResponse = await apiService.getConversations();
+      if (conversationsResponse.success && conversationsResponse.data) {
+        const existingConversation = conversationsResponse.data.conversations.find(
+          (conv: any) => conv.otherUser.id === userId
+        );
+        
+        if (existingConversation) {
+          router.push({
+            pathname: "/conversation/[id]" as any,
+            params: {
+              id: existingConversation.id,
+              userName: userName,
+              userImage: existingConversation.otherUser.profileImageUrl || "",
+            },
+          });
+          return;
+        }
+      }
+    } catch (error) {
+      console.error("Error checking conversations:", error);
+    }
+
+    Alert.alert(
+      "Start Conversation",
+      `Send a message to ${userName}?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Send Message",
+          onPress: () => {
+            router.push({
+              pathname: "/conversation/new" as any,
+              params: {
+                recipientId: userId,
+                recipientName: userName,
+              },
+            });
+          },
+        },
+      ]
+    );
+  };
+
   const handleSearch = async (query: string, filters?: SearchFilters) => {
     if (
       !query.trim() &&
@@ -222,8 +269,8 @@ export default function HomeScreen() {
       const response = await apiService.searchPosts(query.trim(), {
         ...searchFilters,
         ...filters,
-        city: user?.locationCity,
-        state: user?.addressState,
+        city: user?.homeCity || user?.locationCity,
+        state: user?.homeState || user?.addressState,
       });
 
       if (response.success && response.data) {
@@ -290,6 +337,13 @@ export default function HomeScreen() {
       onComment={handleComment}
       onShare={handleShare}
       onPress={handlePostPress}
+      onMessage={handleMessage}
+      onReport={(postId) => console.log('Report post:', postId)}
+      onBlock={(userId) => console.log('Block user:', userId)}
+      onUnfollow={(userId) => console.log('Unfollow user:', userId)}
+      onHide={(postId) => console.log('Hide post:', postId)}
+      currentUserId={user?.id}
+      isFollowing={false} // TODO: Implement following logic
     />
   );
 
@@ -382,7 +436,7 @@ export default function HomeScreen() {
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={() => setShowFilters(false)}>
-              <Ionicons name="close" size={24} color={Colors.text.primary} />
+              <X size={24} color={Colors.text.primary} />
             </TouchableOpacity>
             <Text style={styles.modalTitle}>Search Filters</Text>
             <TouchableOpacity onPress={clearAllFilters}>
@@ -539,8 +593,7 @@ export default function HomeScreen() {
             if (searchActive && !searchLoading) {
               return (
                 <View style={styles.emptyContainer}>
-                  <Ionicons
-                    name="search"
+                  <Search
                     size={64}
                     color={Colors.neutral[400]}
                   />
@@ -620,6 +673,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
   },
   contentContainer: {
+    paddingTop: 20,
     paddingHorizontal: 20,
     paddingBottom: 100,
   },

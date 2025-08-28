@@ -55,7 +55,7 @@ export const Header: React.FC<HeaderProps> = ({
     if (showBackButton && onBackPress) {
       return (
         <TouchableOpacity style={styles.backButton} onPress={onBackPress}>
-          <ArrowLeft size={24} color={Colors.text.primary} />
+          <ArrowLeft size={22} color={Colors.text.primary} />
         </TouchableOpacity>
       );
     }
@@ -66,7 +66,7 @@ export const Header: React.FC<HeaderProps> = ({
     if (showCloseButton && onClosePress) {
       return (
         <TouchableOpacity style={styles.iconButton} onPress={onClosePress}>
-          <X size={24} color={Colors.text.primary} />
+          <X size={22} color={Colors.text.primary} />
         </TouchableOpacity>
       );
     }
@@ -79,22 +79,22 @@ export const Header: React.FC<HeaderProps> = ({
       <View style={styles.headerIcons}>
         {showSearch && (
           <TouchableOpacity style={styles.iconButton} onPress={onSearchPress}>
-            <Search size={24} color={Colors.text.primary} />
+            <Search size={22} color={Colors.text.primary} />
           </TouchableOpacity>
         )}
         {showNotifications && (
           <TouchableOpacity style={styles.iconButton} onPress={onNotificationsPress}>
-            <Bell size={24} color={Colors.text.primary} />
+            <Bell size={22} color={Colors.text.primary} />
           </TouchableOpacity>
         )}
         {showMessages && (
           <TouchableOpacity style={styles.iconButton} onPress={onMessagesPress}>
-            <MessageCircle size={24} color={Colors.text.primary} />
+            <MessageCircle size={22} color={Colors.text.primary} />
           </TouchableOpacity>
         )}
         {showMore && (
           <TouchableOpacity style={styles.iconButton} onPress={onMorePress}>
-            <MoreHorizontal size={24} color={Colors.text.primary} />
+            <MoreHorizontal size={22} color={Colors.text.primary} />
           </TouchableOpacity>
         )}
       </View>
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   title: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "bold",
     color: Colors.text.primary,
     flex: 1,

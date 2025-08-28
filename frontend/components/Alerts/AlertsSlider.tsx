@@ -11,45 +11,30 @@ import { Colors } from "../../constants/Colors";
 import { ALERT_COLORS } from "../../constants/AlertColors";
 
 const { width: screenWidth } = Dimensions.get('window');
-const PILL_WIDTH = 80;
+const PILL_WIDTH = 100;
 const PILL_MARGIN = 12;
-const LEFT_PADDING = 32;
+const LEFT_PADDING = 20;
 
-interface WeatherLayer {
+interface AlertFilter {
   id: string;
   name: string;
   color: string;
 }
 
-interface WeatherLegendProps {
-  onLayerToggle: (layerId: string, enabled: boolean) => void;
-  weatherLayers: Record<string, boolean>;
+interface AlertsSliderProps {
+  onFilterChange: (filterId: string) => void;
+  activeFilter: string;
 }
 
-export default function WeatherLegend({
-  onLayerToggle,
-  weatherLayers,
-}: WeatherLegendProps) {
-  const layers: WeatherLayer[] = [
+export default function AlertsSlider({
+  onFilterChange,
+  activeFilter,
+}: AlertsSliderProps) {
+  const filters: AlertFilter[] = [
     {
-      id: "precipitation",
-      name: "Rain",
-      color: "#3b82f6",
-    },
-    {
-      id: "clouds",
-      name: "Clouds",
-      color: "#6b7280",
-    },
-    {
-      id: "wind",
-      name: "Wind",
-      color: "#10b981",
-    },
-    {
-      id: "temperature",
-      name: "Temp",
-      color: "#f59e0b",
+      id: "all",
+      name: "All",
+      color: Colors.primary[600],
     },
     {
       id: "severe_weather",
@@ -76,12 +61,25 @@ export default function WeatherLegend({
       name: "Help",
       color: ALERT_COLORS.help_needed,
     },
+    {
+      id: "events",
+      name: "Events",
+      color: ALERT_COLORS.events,
+    },
+    {
+      id: "questions",
+      name: "Questions",
+      color: ALERT_COLORS.questions,
+    },
+    {
+      id: "announcements",
+      name: "News",
+      color: ALERT_COLORS.announcements,
+    },
   ];
 
-  const toggleLayer = (layerId: string) => {
-    const currentState = weatherLayers[layerId] || false;
-    console.log(`WeatherLegend: Toggling ${layerId} from ${currentState} to ${!currentState}`);
-    onLayerToggle(layerId, !currentState);
+  const handleFilterPress = (filterId: string) => {
+    onFilterChange(filterId);
   };
 
   const getLighterColor = (color: string, opacity: number = 0.3) => {
@@ -92,30 +90,29 @@ export default function WeatherLegend({
     return `rgba(${r}, ${g}, ${b}, ${opacity})`;
   };
 
-  const renderLayer = (layer: WeatherLayer) => {
-    const isEnabled = weatherLayers[layer.id] || false;
-    const lightBorderColor = getLighterColor(layer.color, 0.4);
-    const mediumBorderColor = getLighterColor(layer.color, 0.7);
+  const renderFilter = (filter: AlertFilter) => {
+    const isActive = activeFilter === filter.id;
+    const lightBorderColor = getLighterColor(filter.color, 0.4);
 
     return (
       <TouchableOpacity
-        key={layer.id}
+        key={filter.id}
         style={[
-          styles.layerPill,
-          { borderColor: isEnabled ? layer.color : lightBorderColor },
-          isEnabled && [styles.layerPillActive, { backgroundColor: layer.color }],
+          styles.filterPill,
+          { borderColor: isActive ? filter.color : lightBorderColor },
+          isActive && [styles.filterPillActive, { backgroundColor: filter.color }],
         ]}
-        onPress={() => toggleLayer(layer.id)}
+        onPress={() => handleFilterPress(filter.id)}
         activeOpacity={0.7}
       >
         <Text
           style={[
-            styles.layerText,
-            !isEnabled && { color: mediumBorderColor },
-            isEnabled && styles.layerTextActive,
+            styles.filterText,
+            !isActive && { color: filter.color },
+            isActive && styles.filterTextActive,
           ]}
         >
-          {layer.name}
+          {filter.name}
         </Text>
       </TouchableOpacity>
     );
@@ -132,7 +129,7 @@ export default function WeatherLegend({
         bounces={false}
         scrollEventThrottle={16}
       >
-        {layers.map(renderLayer)}
+        {filters.map(renderFilter)}
       </ScrollView>
     </View>
   );
@@ -140,12 +137,9 @@ export default function WeatherLegend({
 
 const styles = StyleSheet.create({
   container: {
-    position: "absolute",
-    bottom: 110,
-    left: 0,
-    right: 0,
-    height: 50,
-    backgroundColor: 'transparent',
+    backgroundColor: Colors.surface,
+    paddingVertical: 16,
+    minHeight: 70,
   },
   scrollView: {
     flex: 1,
@@ -154,39 +148,37 @@ const styles = StyleSheet.create({
     paddingLeft: LEFT_PADDING,
     paddingRight: LEFT_PADDING,
     alignItems: 'center',
-    height: 50,
   },
-  layerPill: {
+  filterPill: {
     backgroundColor: Colors.background,
-    borderRadius: 16,
+    borderRadius: 20,
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 10,
     marginRight: PILL_MARGIN,
     minWidth: PILL_WIDTH,
     borderWidth: 2,
-    shadowColor: "#000",
+    shadowColor: Colors.neutral[900],
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 1,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  layerPillActive: {
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 5,
-    borderWidth: 2,
+  filterPillActive: {
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
   },
-  layerText: {
-    fontSize: 13,
+  filterText: {
+    fontSize: 14,
     fontWeight: "600",
-    color: Colors.text.secondary,
+    textAlign: 'center',
   },
-  layerTextActive: {
-    color: Colors.background,
+  filterTextActive: {
+    color: Colors.text.inverse,
   },
 });

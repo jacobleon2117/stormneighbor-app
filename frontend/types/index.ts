@@ -10,6 +10,19 @@ export interface NotificationPreferences {
   quietHoursEnd?: string;
 }
 
+export interface LocationPermissions {
+  foreground: 'granted' | 'denied' | 'undetermined';
+  background: 'granted' | 'denied' | 'undetermined';
+  lastUpdated?: string;
+}
+
+export interface LocationPreferences {
+  useCurrentLocationForWeather: boolean;
+  useCurrentLocationForAlerts: boolean;
+  allowBackgroundLocation: boolean;
+  shareLocationInPosts: boolean;
+}
+
 export interface User {
   id: number;
   email: string;
@@ -18,14 +31,22 @@ export interface User {
   phone?: string;
   profileImageUrl?: string;
   bio?: string;
+  homeCity?: string | null;
+  homeState?: string | null;
+  homeZipCode?: string | null;
+  homeAddress?: string | null;
+  homeLatitude?: number;
+  homeLongitude?: number;
+  locationRadiusMiles?: number;
+  showCityOnly: boolean;
   locationCity?: string;
   addressState?: string;
   zipCode?: string;
   address?: string;
-  locationRadiusMiles?: number;
-  showCityOnly: boolean;
   latitude?: number;
   longitude?: number;
+  locationPermissions?: LocationPermissions;
+  locationPreferences?: LocationPreferences;
   emailVerified: boolean;
   isActive: boolean;
   notificationPreferences: NotificationPreferences;
@@ -137,9 +158,49 @@ export interface Notification {
   relatedPostId?: number;
   relatedUserId?: number;
   relatedCommentId?: number;
+  relatedConversationId?: number;
   isRead: boolean;
   metadata?: Record<string, unknown>;
   createdAt: string;
+}
+
+export interface Message {
+  id: number;
+  conversationId: number;
+  senderId: number;
+  recipientId: number;
+  content: string;
+  messageType: "text" | "image";
+  images: string[];
+  isRead: boolean;
+  readAt?: string;
+  isEdited: boolean;
+  editedAt?: string;
+  createdAt: string;
+  sender?: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    profileImageUrl?: string;
+  };
+}
+
+export interface Conversation {
+  id: number;
+  lastMessageAt: string;
+  unreadCount: number;
+  otherUser: {
+    id: number;
+    firstName: string;
+    lastName: string;
+    profileImageUrl?: string;
+  };
+  lastMessage?: {
+    content: string;
+    senderId: number;
+    messageType: string;
+    createdAt: string;
+  };
 }
 
 export interface ApiResponse<T = unknown> {

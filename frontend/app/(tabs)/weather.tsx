@@ -114,8 +114,8 @@ export default function WeatherScreen() {
         user?.homeLatitude && user?.homeLongitude
           ? { latitude: user.homeLatitude, longitude: user.homeLongitude }
           : user?.latitude && user?.longitude
-          ? { latitude: user.latitude, longitude: user.longitude }
-          : undefined;
+            ? { latitude: user.latitude, longitude: user.longitude }
+            : undefined;
 
       const bestLocation = locationService.getBestLocationFor(
         "weather",

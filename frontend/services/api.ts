@@ -475,8 +475,8 @@ class ApiService {
       type === "profile"
         ? "/upload/profile-image"
         : type === "comment"
-        ? "/upload/comment-image"
-        : "/upload/post-image";
+          ? "/upload/comment-image"
+          : "/upload/post-image";
 
     const response = await this.api.post(endpoint, formData, {
       headers: {

@@ -355,12 +355,12 @@ export function PostCard({
                 showMoreModal
                   ? setShowMoreModal
                   : showHideModal
-                  ? setShowHideModal
-                  : showReportModal
-                  ? setShowReportModal
-                  : showShareModal
-                  ? setShowShareModal
-                  : undefined
+                    ? setShowHideModal
+                    : showReportModal
+                      ? setShowReportModal
+                      : showShareModal
+                        ? setShowShareModal
+                        : undefined
               )
             }
           >
@@ -376,12 +376,12 @@ export function PostCard({
                 showMoreModal
                   ? setShowMoreModal
                   : showHideModal
-                  ? setShowHideModal
-                  : showReportModal
-                  ? setShowReportModal
-                  : showShareModal
-                  ? setShowShareModal
-                  : undefined
+                    ? setShowHideModal
+                    : showReportModal
+                      ? setShowReportModal
+                      : showShareModal
+                        ? setShowShareModal
+                        : undefined
               )
             }
           >
@@ -398,12 +398,12 @@ export function PostCard({
               showMoreModal
                 ? setShowMoreModal
                 : showHideModal
-                ? setShowHideModal
-                : showReportModal
-                ? setShowReportModal
-                : showShareModal
-                ? setShowShareModal
-                : undefined
+                  ? setShowHideModal
+                  : showReportModal
+                    ? setShowReportModal
+                    : showShareModal
+                      ? setShowShareModal
+                      : undefined
             )
           }
         >

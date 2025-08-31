@@ -26,11 +26,11 @@ class NotificationTriggers {
           );
 
           const results = await pushNotificationService.sendWeatherAlert(userIds, alertData);
-          logger.info(`Weather alert sent: ${results.filter((r); => r.success).length} successful`);
+          logger.info("Weather alert sent: ${results.filter((r); => r.success).length} successful");
 
           return results;
         } else {
-          logger.info(`No users found in ${alertData.city}, ${alertData.state} for weather alert`);
+          logger.info("No users found in ${alertData.city}, ${alertData.state} for weather alert");
           return [];
         }
       } finally {
@@ -48,12 +48,12 @@ class NotificationTriggers {
 
       try {
         const result = await client.query(
-          `SELECT DISTINCT u.id 
-           FROM users u 
-           JOIN user_devices ud ON u.id = ud.user_id 
-           JOIN notification_preferences np ON u.id = np.user_id
-           WHERE u.location_city = $1 
-           AND u.location_state = $2 
+          `SELECT DISTINCT u.id
+          FROM users u
+          JOIN user_devices ud ON u.id = ud.user_id
+          JOIN notification_preferences np ON u.id = np.user_id
+          WHERE u.location_city = $1
+           AND u.location_state = $2
            AND u.id != $3
            AND ud.is_active = true
            AND np.notification_type = 'new_posts'
@@ -64,11 +64,11 @@ class NotificationTriggers {
         const userIds = result.rows.map((row) => row.id);
 
         if (userIds.length > 0) {
-          logger.info(`Sending new post notification to ${userIds.length} users`);
+          logger.info("Sending new post notification to ${userIds.length} users");
 
           const results = await pushNotificationService.sendPostNotification(userIds, postData);
           logger.info(
-            `New post notification sent: ${results.filter((r) => r.success).length} successful`
+            "New post notification sent: ${results.filter((r) => r.success).length} successful"
           );
 
           return results;
@@ -106,8 +106,9 @@ class NotificationTriggers {
         }
 
         const prefResult = await client.query(
-          `SELECT enabled FROM notification_preferences 
-           WHERE user_id = $1 AND notification_type = 'comments'`,
+          `SELECT enabled 
+          FROM notification_preferences 
+          WHERE user_id = $1 AND notification_type = 'comments'`,
           [postAuthorId]
         );
 
@@ -132,7 +133,7 @@ class NotificationTriggers {
           authorId: commentData.user_id,
         };
 
-        logger.info(`Sending comment notification to user ${postAuthorId}`);
+        logger.info("Sending comment notification to user ${postAuthorId}");
 
         const result = await pushNotificationService.sendCommentNotification(
           postAuthorId,
@@ -156,11 +157,11 @@ class NotificationTriggers {
 
       try {
         const result = await client.query(
-          `SELECT DISTINCT u.id 
-           FROM users u 
-           JOIN user_devices ud ON u.id = ud.user_id 
-           WHERE u.location_state = $1 
-           AND ud.is_active = true`,
+          `SELECT DISTINCT u.id
+          FROM users u
+          JOIN user_devices ud ON u.id = ud.user_id
+          WHERE u.location_state = $1
+          AND ud.is_active = true`,
           [emergencyData.state]
         );
 
@@ -168,7 +169,7 @@ class NotificationTriggers {
 
         if (userIds.length > 0) {
           logger.info(
-            `Sending emergency notification to ${userIds.length} users in ${emergencyData.state}`
+            "Sending emergency notification to ${userIds.length} users in ${emergencyData.state}"
           );
 
           const results = await pushNotificationService.sendEmergencyNotification(
@@ -176,12 +177,12 @@ class NotificationTriggers {
             emergencyData
           );
           logger.info(
-            `Emergency notification sent: ${results.filter((r) => r.success).length} successful`
+            "Emergency notification sent: ${results.filter((r) => r.success).length} successful"
           );
 
           return results;
         } else {
-          logger.info(`No users found in ${emergencyData.state} for emergency notification`);
+          logger.info("No users found in ${emergencyData.state} for emergency notification");
           return [];
         }
       } finally {

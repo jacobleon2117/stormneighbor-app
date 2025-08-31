@@ -270,8 +270,8 @@ export default function HomeAddressSetupScreen() {
           {addressSet
             ? renderSuccess()
             : method === "manual"
-            ? renderManualForm()
-            : renderMethodSelection()}
+              ? renderManualForm()
+              : renderMethodSelection()}
         </View>
 
         <View style={styles.footer}>

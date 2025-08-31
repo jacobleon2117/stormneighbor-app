@@ -201,7 +201,7 @@ class SupabaseBackupService {
       logger.info("SUCCESS: Database connection successful");
       logger.info(`Database: ${result.rows[0].current_database}`);
       logger.info(`User: ${result.rows[0].current_user}`);
-      logger.info(`Version: ${result.rows[0].version.split(" ");.slice(0, 2).join(" ")}`);
+      logger.info(`Version: ${result.rows[0].version.split(" ").slice(0, 2).join(" ")}`);
 
       return true;
     } catch (error) {

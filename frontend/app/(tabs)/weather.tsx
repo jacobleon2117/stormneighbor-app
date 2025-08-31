@@ -823,12 +823,16 @@ export default function WeatherScreen() {
           </View>
 
           <View style={styles.topRight}>
-            <WeatherIcon size={32} color={Colors.primary[500]} />
-            <Text style={styles.compactCondition}>
+            <WeatherIcon size={28} color={Colors.primary[500]} />
+            <Text style={styles.compactCondition} numberOfLines={2} ellipsizeMode="tail">
               {weather.current?.shortForecast || weather.condition}
             </Text>
             <Text style={styles.highLowText}>
-              H: {weather.current?.temperatureHigh || "N/A"}° L: {weather.current?.temperatureLow || "N/A"}°
+              {weather.forecast && weather.forecast.length > 0 ? (
+                `H: ${weather.forecast.find(p => p.isDaytime)?.temperature || "N/A"}° L: ${weather.forecast.find(p => !p.isDaytime)?.temperature || "N/A"}°`
+              ) : (
+                "H: N/A° L: N/A°"
+              )}
             </Text>
           </View>
         </View>
@@ -1410,6 +1414,8 @@ const styles = StyleSheet.create({
   },
   topRight: {
     alignItems: "flex-end",
+    flex: 1,
+    maxWidth: 150,
   },
   bottomRow: {
     flexDirection: "row",
@@ -1488,9 +1494,11 @@ const styles = StyleSheet.create({
     color: Colors.text.primary,
   },
   compactCondition: {
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.text.secondary,
     marginTop: 2,
+    textAlign: "right",
+    lineHeight: 18,
   },
   weatherMetrics: {
     flexDirection: "row",

@@ -583,8 +583,7 @@ export default function HomeScreen() {
         onNotificationsPress={() => router.push("/(tabs)/notifications")}
         onMessagesPress={() => router.push("/(tabs)/messages")}
       />
-      <SafeAreaView style={styles.safeContent}>
-        <FlatList
+      <FlatList
           data={currentData}
           renderItem={renderPost}
           keyExtractor={(item) => item.id.toString()}
@@ -656,7 +655,6 @@ export default function HomeScreen() {
           onEndReachedThreshold={0.3}
           showsVerticalScrollIndicator={false}
         />
-      </SafeAreaView>
 
       {renderFiltersModal()}
     </View>
@@ -675,7 +673,7 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingTop: 20,
     paddingHorizontal: 20,
-    paddingBottom: 100,
+    paddingBottom: 20,
   },
   loadingContainer: {
     flex: 1,

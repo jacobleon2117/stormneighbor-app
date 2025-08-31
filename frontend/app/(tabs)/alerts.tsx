@@ -25,7 +25,6 @@ interface Alert {
 export default function AlertsScreen() {
   const [activeFilter, setActiveFilter] = useState("all");
 
-  // Sample alert data
   const sampleAlerts: Alert[] = [
     {
       id: "1",

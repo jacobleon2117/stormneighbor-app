@@ -232,60 +232,8 @@ export default function NotificationsScreen() {
         showMore={false}
       />
       
-      <SafeAreaView style={{ flex: 1 }}>
-        <View style={styles.filterContainer}>
-          <TouchableOpacity
-            style={[styles.filterTab, filter === "all" && styles.activeFilterTab]}
-            onPress={() => setFilter("all")}
-          >
-            <Text style={[styles.filterTabText, filter === "all" && styles.activeFilterTabText]}>
-              All
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={[styles.filterTab, filter === "unread" && styles.activeFilterTab]}
-            onPress={() => setFilter("unread")}
-          >
-            <Text style={[styles.filterTabText, filter === "unread" && styles.activeFilterTabText]}>
-              Unread {unreadCount > 0 && `(${unreadCount})`}
-            </Text>
-          </TouchableOpacity>
-          
-          {unreadCount > 0 && (
-            <TouchableOpacity
-              style={styles.markAllReadButton}
-              onPress={markAllAsRead}
-            >
-              <Text style={styles.markAllReadText}>Mark all read</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={Colors.primary[500]} />
-            <Text style={styles.loadingText}>Loading notifications...</Text>
-          </View>
-        ) : (
-          <FlatList
-            data={filteredNotifications}
-            renderItem={renderNotification}
-            keyExtractor={(item) => item.id.toString()}
-            contentContainerStyle={styles.listContainer}
-            ListEmptyComponent={renderEmptyState}
-            showsVerticalScrollIndicator={false}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                colors={[Colors.primary[500]]}
-                tintColor={Colors.primary[500]}
-              />
-            }
-          />
-        )}
-      </SafeAreaView>
+      <View style={{ flex: 1 }}>
+      </View>
     </View>
   );
 }

@@ -1,7 +1,5 @@
 #!/usr/bin/env node
 
-
-
 async function testProfileEndpoint() {
   console.log("WORKING: Testing Profile Endpoint Location Data Fix\n");
 

@@ -132,7 +132,7 @@ class TokenService {
 
     logger.warn("SECURITY_EVENT", logEntry);
 
-    // While in production, I could send it to a security monitoring service
+    // While in production, I could send it to a security monitoring service (need to implement this)
     // e.g., Sentry, DataDog, or your own logging service
   }
 

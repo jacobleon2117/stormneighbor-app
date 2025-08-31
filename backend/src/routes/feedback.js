@@ -13,7 +13,6 @@ const {
   getFeedbackStats,
 } = require("../controllers/feedback");
 
-// Validation middleware
 const createFeedbackValidation = [
   body("feedbackType")
     .isIn(["bug_report", "feature_request", "general_feedback", "ui_ux_feedback"])
@@ -57,27 +56,16 @@ const getFeedbackValidation = [
   query("sortOrder").optional().isIn(["asc", "desc"]).withMessage("Invalid sort order"),
 ];
 
-// Routes
-
-// POST /api/v1/feedback - Create new feedback (authenticated users only)
 router.post("/", auth, createFeedbackValidation, handleValidationErrors, createFeedback);
 
-// GET /api/v1/feedback/me - Get current user's feedback
 router.get("/me", auth, getFeedbackValidation, handleValidationErrors, getUserFeedback);
 
-// DELETE /api/v1/feedback/:id - Delete user's own feedback
 router.delete("/:id", auth, [param("id").isInt().withMessage("Invalid feedback ID")], handleValidationErrors, deleteFeedback);
 
-// Admin routes (these would need admin middleware when implemented)
-// For now, we'll leave them as authenticated routes, but you should add admin middleware later
-
-// GET /api/v1/feedback - Get all feedback (admin only)
 router.get("/", auth, getFeedbackValidation, handleValidationErrors, getAllFeedback);
 
-// GET /api/v1/feedback/stats - Get feedback statistics (admin only)
 router.get("/stats", auth, getFeedbackStats);
 
-// PUT /api/v1/feedback/:id/status - Update feedback status (admin only)
 router.put("/:id/status", auth, updateFeedbackStatusValidation, handleValidationErrors, updateFeedbackStatus);
 
 module.exports = router;

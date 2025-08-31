@@ -142,12 +142,14 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.wrapper}>
+      <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
+          <View style={styles.contentContainer}>
           <View style={styles.header}>
             <Text style={styles.title}>Welcome Back</Text>
             <Text style={styles.subtitle}>
@@ -188,6 +190,14 @@ export default function LoginScreen() {
                   <Eye size={20} color={Colors.text.secondary} />
                 )}
               </TouchableOpacity>
+              
+              <Link href="/(auth)/forgot-password" asChild>
+                <TouchableOpacity style={styles.forgotPassword}>
+                  <Text style={styles.forgotPasswordText}>
+                    Forgot your password?
+                  </Text>
+                </TouchableOpacity>
+              </Link>
             </View>
 
             {error && (
@@ -204,15 +214,25 @@ export default function LoginScreen() {
               style={styles.loginButton}
             />
 
-            <Link href="/(auth)/forgot-password" asChild>
-              <TouchableOpacity style={styles.forgotPassword}>
-                <Text style={styles.forgotPasswordText}>
-                  Forgot your password?
-                </Text>
+            <View style={styles.dividerContainer}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>Or login with</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <View style={styles.socialButtonsRow}>
+              <TouchableOpacity style={[styles.socialButton, styles.socialButtonHalf]}>
+                <Text style={styles.socialButtonText}>🔍 Google</Text>
               </TouchableOpacity>
-            </Link>
+
+              <TouchableOpacity style={[styles.socialButton, styles.socialButtonHalf]}>
+                <Text style={styles.socialButtonText}>🍎 Apple</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
+          </View>
+          
           <View style={styles.footer}>
             <Text style={styles.footerText}>Don't have an account? </Text>
             <Link href="/(auth)/register" asChild>
@@ -223,27 +243,38 @@ export default function LoginScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  wrapper: {
     flex: 1,
     backgroundColor: Colors.background,
   },
+  container: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
   keyboardView: {
     flex: 1,
+    backgroundColor: 'transparent',
   },
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 80,
-    paddingBottom: 24,
+    paddingTop: 40,
+    paddingBottom: 20,
+    justifyContent: 'space-between',
+  },
+  contentContainer: {
+    flex: 1,
+    justifyContent: 'center',
   },
   header: {
     alignItems: "center",
-    marginBottom: 48,
+    marginBottom: 20,
   },
   title: {
     fontSize: 32,
@@ -260,7 +291,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   form: {
-    flex: 1,
+    flex: 0,
   },
   passwordContainer: {
     position: "relative",
@@ -291,11 +322,12 @@ const styles = StyleSheet.create({
   },
   loginButton: {
     marginTop: 8,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   forgotPassword: {
-    alignSelf: "center",
+    alignSelf: "flex-end",
     padding: 8,
+    marginTop: 8,
   },
   forgotPasswordText: {
     color: Colors.primary[600],
@@ -306,7 +338,44 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 24,
+    marginTop: 12,
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 16,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.border,
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    fontSize: 14,
+    color: Colors.text.secondary,
+  },
+  socialButtonsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 8,
+  },
+  socialButton: {
+    height: 48,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'white',
+  },
+  socialButtonHalf: {
+    flex: 1,
+  },
+  socialButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: Colors.text.primary,
   },
   footerText: {
     color: Colors.text.secondary,

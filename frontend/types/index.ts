@@ -137,6 +137,15 @@ export interface WeatherData {
     windDirection?: string;
     shortForecast?: string;
   };
+  forecast?: Array<{
+    name: string;
+    temperature: number;
+    temperatureUnit: string;
+    shortForecast: string;
+    windSpeed: string;
+    windDirection: string;
+    isDaytime: boolean;
+  }>;
 }
 
 export interface Alert {

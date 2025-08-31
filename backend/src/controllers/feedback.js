@@ -7,7 +7,6 @@ const {
 } = require("../middleware/errorHandler");
 const feedbackLogger = require("../utils/feedbackLogger");
 
-// Create new feedback
 exports.createFeedback = async (req, res) => {
   try {
     const {
@@ -21,7 +20,6 @@ exports.createFeedback = async (req, res) => {
 
     const userId = req.user.id;
 
-    // Validate required fields
     if (!feedbackType || !title || !description) {
       return res.status(400).json({
         success: false,
@@ -29,7 +27,6 @@ exports.createFeedback = async (req, res) => {
       });
     }
 
-    // Log feedback to files (JSON and Markdown)
     const loggedFeedback = await feedbackLogger.logFeedback({
       userId,
       feedbackType,
@@ -49,7 +46,6 @@ exports.createFeedback = async (req, res) => {
       timestamp: loggedFeedback.submittedAt,
     });
 
-    // Return success response
     res.status(201).json({
       success: true,
       message: "Feedback submitted successfully",
@@ -76,12 +72,10 @@ exports.createFeedback = async (req, res) => {
   }
 };
 
-// Get user's own feedback (placeholder)
 exports.getUserFeedback = async (req, res) => {
   try {
     const userId = req.user.id;
     
-    // Return empty array for now
     res.json({
       success: true,
       data: {
@@ -104,10 +98,8 @@ exports.getUserFeedback = async (req, res) => {
   }
 };
 
-// Get all feedback (admin only - placeholder)
 exports.getAllFeedback = async (req, res) => {
   try {
-    // Return empty array for now
     res.json({
       success: true,
       data: {
@@ -130,7 +122,6 @@ exports.getAllFeedback = async (req, res) => {
   }
 };
 
-// Update feedback status (admin only - placeholder)
 exports.updateFeedbackStatus = async (req, res) => {
   try {
     const { id } = req.params;
@@ -151,7 +142,6 @@ exports.updateFeedbackStatus = async (req, res) => {
   }
 };
 
-// Delete feedback (placeholder)
 exports.deleteFeedback = async (req, res) => {
   try {
     const { id } = req.params;
@@ -170,7 +160,6 @@ exports.deleteFeedback = async (req, res) => {
   }
 };
 
-// Get feedback statistics (admin only - placeholder)
 exports.getFeedbackStats = async (req, res) => {
   try {
     res.json({

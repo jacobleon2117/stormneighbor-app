@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,15 +8,27 @@ import {
 import { Colors } from "../constants/Colors";
 
 export function LoadingScreen() {
+  const [showSpinner, setShowSpinner] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowSpinner(true);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <View style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>StormNeighbor</Text>
-        <ActivityIndicator
-          size="large"
-          color={Colors.primary[500]}
-          style={styles.spinner}
-        />
+        {showSpinner && (
+          <ActivityIndicator
+            size="large"
+            color={Colors.primary[500]}
+            style={styles.spinner}
+          />
+        )}
       </View>
     </View>
   );

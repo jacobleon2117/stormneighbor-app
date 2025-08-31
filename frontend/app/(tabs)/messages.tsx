@@ -164,47 +164,6 @@ export default function MessagesScreen() {
     router.back();
   };
 
-  if (loading && conversations.length === 0) {
-    return (
-      <View style={styles.container}>
-        <Header
-          title="Messages"
-          showBackButton={true}
-          onBackPress={handleGoBack}
-        />
-        <SafeAreaView style={{ flex: 1 }}>
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={Colors.primary[500]} />
-            <Text style={styles.loadingText}>Loading messages...</Text>
-          </View>
-        </SafeAreaView>
-      </View>
-    );
-  }
-
-  if (error && conversations.length === 0) {
-    return (
-      <View style={styles.container}>
-        <Header
-          title="Messages"
-          showBackButton={true}
-          onBackPress={handleGoBack}
-        />
-        <SafeAreaView style={{ flex: 1 }}>
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorTitle}>Unable to load messages</Text>
-            <Text style={styles.errorMessage}>{error}</Text>
-            <TouchableOpacity
-              style={styles.retryButton}
-              onPress={() => fetchConversations()}
-            >
-              <Text style={styles.retryButtonText}>Try Again</Text>
-            </TouchableOpacity>
-          </View>
-        </SafeAreaView>
-      </View>
-    );
-  }
 
   return (
     <View style={styles.container}>
@@ -214,27 +173,8 @@ export default function MessagesScreen() {
         onBackPress={handleGoBack}
       />
       
-      <SafeAreaView style={{ flex: 1 }}>
-        <FlatList
-          data={conversations}
-          renderItem={renderConversation}
-          keyExtractor={(item) => item.id.toString()}
-          ListEmptyComponent={renderEmpty}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              colors={[Colors.primary[500]]}
-              tintColor={Colors.primary[500]}
-            />
-          }
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={[
-            styles.listContainer,
-            conversations.length === 0 && styles.listEmpty,
-          ]}
-        />
-      </SafeAreaView>
+      <View style={{ flex: 1 }}>
+      </View>
     </View>
   );
 }

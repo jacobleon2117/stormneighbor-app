@@ -753,11 +753,10 @@ export default function ProfileScreen() {
         onMessagesPress={() => router.push("/(tabs)/messages")}
         showMore={false}
       />
-      <SafeAreaView style={styles.safeContent}>
-        <ScrollView
-          style={styles.scrollView}
-          showsVerticalScrollIndicator={false}
-        >
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
 
         {renderProfileHeader()}
 
@@ -828,8 +827,7 @@ export default function ProfileScreen() {
             style={styles.logoutButton}
           />
         </View>
-        </ScrollView>
-      </SafeAreaView>
+      </ScrollView>
 
       {renderPersonalModal()}
       {renderLocationModal()}
@@ -957,7 +955,7 @@ const styles = StyleSheet.create({
   },
   dangerZone: {
     paddingHorizontal: 20,
-    paddingVertical: 40,
+    paddingVertical: 20,
   },
   logoutButton: {
     alignSelf: "center",

@@ -90,7 +90,7 @@ export default function UserFeedbackScreen() {
         title: title.trim(),
         description: description.trim(),
         priority: selectedPriority,
-        appVersion: "1.0.0", // You can get this from app.json or package.json
+        appVersion: "1.0.0",
         deviceInfo: `${Platform.OS} ${Platform.Version}`,
       };
 

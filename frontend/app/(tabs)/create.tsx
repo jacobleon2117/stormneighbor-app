@@ -185,6 +185,7 @@ export default function CreateScreen() {
     }
 
     try {
+      Keyboard.dismiss();
       setIsPosting(true);
       setPostStatus('posting');
       

@@ -82,12 +82,29 @@ export function PostCard({
   const [showReportModal, setShowReportModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  
+  // Track if any modal is currently open
+  const isAnyModalOpen = showCommentModal || showMoreModal || showHideModal || showReportModal || showShareModal || showDeleteModal;
+  
+  // Helper to safely open a modal (only if no other modal is open)
+  const openModalSafely = (modalSetter: (value: boolean) => void) => {
+    if (!isAnyModalOpen) {
+      modalSetter(true);
+    }
+  };
+  
+  // Helper to close modal immediately
+  const closeModalImmediately = (modalSetter: (value: boolean) => void, animatedValue: Animated.Value) => {
+    modalSetter(false);
+    animatedValue.setValue(0);
+  };
 
   const commentModalY = React.useRef(new Animated.Value(0)).current;
   const moreModalY = React.useRef(new Animated.Value(0)).current;
   const hideModalY = React.useRef(new Animated.Value(0)).current;
   const reportModalY = React.useRef(new Animated.Value(0)).current;
   const shareModalY = React.useRef(new Animated.Value(0)).current;
+
 
   const commentPanResponder = PanResponder.create({
     onStartShouldSetPanResponder: () => true,
@@ -109,7 +126,7 @@ export function PostCard({
           setShowCommentModal(false);
           setTimeout(() => {
             commentModalY.setValue(0);
-          }, 100);
+          }, 50);
         });
       } else {
         Animated.spring(commentModalY, {
@@ -142,7 +159,7 @@ export function PostCard({
           setShowMoreModal(false);
           setTimeout(() => {
             moreModalY.setValue(0);
-          }, 100);
+          }, 50);
         });
       } else {
         Animated.spring(moreModalY, {
@@ -175,7 +192,7 @@ export function PostCard({
           setShowHideModal(false);
           setTimeout(() => {
             hideModalY.setValue(0);
-          }, 100);
+          }, 50);
         });
       } else {
         Animated.spring(hideModalY, {
@@ -208,7 +225,7 @@ export function PostCard({
           setShowReportModal(false);
           setTimeout(() => {
             reportModalY.setValue(0);
-          }, 100);
+          }, 50);
         });
       } else {
         Animated.spring(reportModalY, {
@@ -241,7 +258,7 @@ export function PostCard({
           setShowShareModal(false);
           setTimeout(() => {
             shareModalY.setValue(0);
-          }, 100);
+          }, 50);
         });
       } else {
         Animated.spring(shareModalY, {
@@ -341,16 +358,16 @@ export function PostCard({
   };
 
   const handleBackToMore = () => {
-    setShowHideModal(false);
-    setShowReportModal(false);
+    closeModalImmediately(setShowHideModal, hideModalY);
+    closeModalImmediately(setShowReportModal, reportModalY);
     setShowMoreModal(true);
   };
 
   const closeAllModals = () => {
-    setShowMoreModal(false);
-    setShowHideModal(false);
-    setShowReportModal(false);
-    setShowShareModal(false);
+    closeModalImmediately(setShowMoreModal, moreModalY);
+    closeModalImmediately(setShowHideModal, hideModalY);
+    closeModalImmediately(setShowReportModal, reportModalY);
+    closeModalImmediately(setShowShareModal, shareModalY);
   };
 
   return (
@@ -456,7 +473,7 @@ export function PostCard({
           <Image
             source={{ uri: post.images[0] }}
             style={styles.postImage}
-            resizeMode="cover"
+            resizeMode="contain"
           />
           {post.images.length > 1 && (
             <View style={styles.imageOverlay}>
@@ -487,7 +504,7 @@ export function PostCard({
 
           <TouchableOpacity
             style={styles.actionButton}
-            onPress={() => setShowCommentModal(true)}
+            onPress={() => openModalSafely(setShowCommentModal)}
           >
             <MessageCircle
               size={20}
@@ -498,7 +515,7 @@ export function PostCard({
 
           <TouchableOpacity
             style={styles.actionButton}
-            onPress={() => setShowShareModal(true)}
+            onPress={() => openModalSafely(setShowShareModal)}
           >
             <Share
               size={20}
@@ -510,7 +527,7 @@ export function PostCard({
 
         <TouchableOpacity
           style={styles.moreButton}
-          onPress={() => setShowMoreModal(true)}
+          onPress={() => openModalSafely(setShowMoreModal)}
         >
           <MoreHorizontal
             size={20}
@@ -523,12 +540,9 @@ export function PostCard({
         visible={showCommentModal}
         animationType="slide"
         transparent={true}
-        onRequestClose={() => {
-          setShowCommentModal(false);
-          commentModalY.setValue(0);
-        }}
+        onRequestClose={() => closeModalImmediately(setShowCommentModal, commentModalY)}
       >
-        <TouchableWithoutFeedback onPress={() => setShowCommentModal(false)}>
+        <TouchableWithoutFeedback onPress={() => closeModalImmediately(setShowCommentModal, commentModalY)}>
           <View style={styles.modalOverlayTransparent}>
             <TouchableWithoutFeedback onPress={() => {}}>
               <Animated.View 
@@ -564,12 +578,9 @@ export function PostCard({
         visible={showMoreModal}
         animationType="slide"
         transparent={true}
-        onRequestClose={() => {
-          setShowMoreModal(false);
-          moreModalY.setValue(0);
-        }}
+        onRequestClose={() => closeModalImmediately(setShowMoreModal, moreModalY)}
       >
-        <TouchableWithoutFeedback onPress={() => setShowMoreModal(false)}>
+        <TouchableWithoutFeedback onPress={() => closeModalImmediately(setShowMoreModal, moreModalY)}>
           <View style={styles.modalOverlayTransparent}>
             <TouchableWithoutFeedback onPress={() => {}}>
               <Animated.View 
@@ -620,7 +631,7 @@ export function PostCard({
                   <TouchableOpacity 
                     style={styles.modalOptionNoBorder}
                     onPress={() => {
-                      setShowMoreModal(false);
+                      closeModalImmediately(setShowMoreModal, moreModalY);
                       setShowHideModal(true);
                     }}
                   >
@@ -631,7 +642,7 @@ export function PostCard({
                   <TouchableOpacity 
                     style={styles.modalOptionNoBorder}
                     onPress={() => {
-                      setShowMoreModal(false);
+                      closeModalImmediately(setShowMoreModal, moreModalY);
                       setShowReportModal(true);
                     }}
                   >
@@ -675,18 +686,15 @@ export function PostCard({
         visible={showHideModal}
         animationType="slide"
         transparent={true}
-        onRequestClose={() => {
-          setShowHideModal(false);
-          hideModalY.setValue(0);
-        }}
+        onRequestClose={() => closeModalImmediately(setShowHideModal, hideModalY)}
       >
-        <TouchableWithoutFeedback onPress={() => setShowHideModal(false)}>
+        <TouchableWithoutFeedback onPress={() => closeModalImmediately(setShowHideModal, hideModalY)}>
           <View style={styles.modalOverlayTransparent}>
             <TouchableWithoutFeedback onPress={() => {}}>
               <Animated.View 
                 style={[
                   styles.modalContainer, 
-                  { height: screenHeight * 0.4 },
+                  { height: screenHeight * 0.5 },
                   { transform: [{ translateY: hideModalY }] }
                 ]}
               >
@@ -715,7 +723,7 @@ export function PostCard({
                   <TouchableOpacity 
                     style={styles.modalOption}
                     onPress={() => {
-                      setShowHideModal(false);
+                      closeModalImmediately(setShowHideModal, hideModalY);
                       setShowReportModal(true);
                     }}
                   >
@@ -752,18 +760,15 @@ export function PostCard({
         visible={showReportModal}
         animationType="slide"
         transparent={true}
-        onRequestClose={() => {
-          setShowReportModal(false);
-          reportModalY.setValue(0);
-        }}
+        onRequestClose={() => closeModalImmediately(setShowReportModal, reportModalY)}
       >
-        <TouchableWithoutFeedback onPress={() => setShowReportModal(false)}>
+        <TouchableWithoutFeedback onPress={() => closeModalImmediately(setShowReportModal, reportModalY)}>
           <View style={styles.modalOverlayTransparent}>
             <TouchableWithoutFeedback onPress={() => {}}>
               <Animated.View 
                 style={[
                   styles.modalContainer, 
-                  { height: screenHeight * 0.7 },
+                  { height: screenHeight * 0.5 },
                   { transform: [{ translateY: reportModalY }] }
                 ]}
               >
@@ -889,12 +894,9 @@ export function PostCard({
         visible={showShareModal}
         animationType="slide"
         transparent={true}
-        onRequestClose={() => {
-          setShowShareModal(false);
-          shareModalY.setValue(0);
-        }}
+        onRequestClose={() => closeModalImmediately(setShowShareModal, shareModalY)}
       >
-        <TouchableWithoutFeedback onPress={() => setShowShareModal(false)}>
+        <TouchableWithoutFeedback onPress={() => closeModalImmediately(setShowShareModal, shareModalY)}>
           <View style={styles.modalOverlayTransparent}>
             <TouchableWithoutFeedback onPress={() => {}}>
               <Animated.View 
@@ -1151,12 +1153,15 @@ const styles = StyleSheet.create({
   imagesContainer: {
     position: "relative",
     marginBottom: 12,
-    borderRadius: 8,
+    marginHorizontal: -16,
+    borderRadius: 0,
     overflow: "hidden",
   },
   postImage: {
     width: "100%",
-    height: 180,
+    height: undefined,
+    aspectRatio: 1.5,
+    maxHeight: 300,
     borderRadius: 8,
   },
   imageOverlay: {

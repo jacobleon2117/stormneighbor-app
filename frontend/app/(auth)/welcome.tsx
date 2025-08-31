@@ -6,6 +6,7 @@ import {
   SafeAreaView,
   TouchableOpacity,
   ImageBackground,
+  Dimensions,
 } from "react-native";
 import { router } from "expo-router";
 
@@ -19,28 +20,25 @@ export default function WelcomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <View style={styles.imageSection}>
-          <ImageBackground
-            source={require("../../assets/bg-img.png")}
-            style={styles.backgroundImage}
-            resizeMode="contain"
-            imageStyle={styles.backgroundImageStyle}
-          />
-        </View>
-
-        <View style={styles.brandSection}>
+    <ImageBackground
+      source={require("../../assets/welcome-screen-bg.png")}
+      style={styles.backgroundImage}
+      resizeMode="cover"
+    >
+      <View style={styles.container}>
+        <SafeAreaView style={styles.safeArea}>
+          <View style={styles.spacer} />
+        </SafeAreaView>
+        
+        <View style={styles.bottomContainer}>
           <Text style={styles.appName}>StormNeighbor</Text>
           <Text style={styles.tagline}>Get real-time, local severe weather alerts and updates from your community.</Text>
-        </View>
-
-        <View style={styles.actionSection}>
+          
           <TouchableOpacity
             style={styles.primaryButton}
             onPress={handleGetStarted}
           >
-            <Text style={styles.primaryButtonText}>Let's get started</Text>
+            <Text style={styles.primaryButtonText}>Sign Up</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -48,33 +46,42 @@ export default function WelcomeScreen() {
             onPress={handleHaveAccount}
           >
             <Text style={styles.secondaryButtonText}>
-              I already have an account
+              Login
             </Text>
           </TouchableOpacity>
         </View>
       </View>
-    </SafeAreaView>
+    </ImageBackground>
   );
 }
 
+const { height: screenHeight } = Dimensions.get('window');
+
 const styles = StyleSheet.create({
+  backgroundImage: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFF",
+    backgroundColor: 'transparent',
   },
-  content: {
+  safeArea: {
     flex: 1,
+  },
+  spacer: {
+    flex: 1,
+  },
+  bottomContainer: {
+    backgroundColor: 'white',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     paddingHorizontal: 24,
-    justifyContent: "center",
-    paddingBottom: 50,
-  },
-  imageSection: {
-    height: 200,
-    marginBottom: 20,
-  },
-  brandSection: {
-    alignItems: "center",
-    marginBottom: 60,
+    paddingTop: 48,
+    paddingBottom: 68,
+    alignItems: 'center',
+    maxHeight: screenHeight * 0.65,
   },
   appName: {
     fontSize: 32,
@@ -87,18 +94,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#1F2937",
     textAlign: "center",
-    marginBottom: 40,
-  },
-  backgroundImage: {
-    width: "100%",
-    height: "100%",
-  },
-  backgroundImageStyle: {
-    width: "100%",
-    height: "100%",
-  },
-  actionSection: {
-    gap: 16,
+    marginBottom: 44,
+    lineHeight: 22,
   },
   primaryButton: {
     backgroundColor: "#3B82F6",
@@ -114,6 +111,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 3,
+    width: '100%',
+    marginBottom: 16,
   },
   primaryButtonText: {
     color: "#FFFFFF",
@@ -128,6 +127,7 @@ const styles = StyleSheet.create({
     borderColor: "#3B82F6",
     justifyContent: "center",
     alignItems: "center",
+    width: '100%',
   },
   secondaryButtonText: {
     color: "#1F2937",

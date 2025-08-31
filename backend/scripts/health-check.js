@@ -3,8 +3,8 @@ const http = require("http");
 
 const ENDPOINTS = {
   local: "http://localhost:3000",
-  staging: "https://stormneighbor-backend-staging.up.railway.app",
-  production: "https://stormneighbor-backend-production.up.railway.app",
+  staging: "https://stormneighbor-api-staging.onrender.com",
+  production: "https://stormneighbor-api.onrender.com",
 };
 
 async function healthCheck(environment = "local") {

@@ -7,61 +7,57 @@ export const ENV = {
 } as const;
 
 const getDevBaseUrl = () => {
-  // Try to detect LAN IP from Metro bundler
   const debuggerHost = Constants.expoConfig?.hostUri || Constants.manifest2?.extra?.expoClient?.hostUri;
 
   let lanIp: string | null = null;
 
   if (debuggerHost) {
-    // e.g. "192.168.1.89:19000"
     lanIp = debuggerHost.split(":")[0];
   }
 
   if (Platform.OS === "ios" && Constants.appOwnership !== "expo") {
-    // iOS simulator → localhost works
     return "http://127.0.0.1:3000/api/v1";
   }
 
-  // Default to LAN IP if available, else fallback
   return lanIp
     ? `http://${lanIp}:3000/api/v1`
-    : "http://127.0.0.1:3000/api/v1"; // safe fallback
+    : "http://127.0.0.1:3000/api/v1";
 };
 
 export const API_CONFIG = {
-  BASE_URL: ENV.isDevelopment
-    ? "https://stormneighbor-api.onrender.com/api/v1"  // Temporarily force production URL for testing
-    : "https://stormneighbor-api.onrender.com/api/v1",
-  TIMEOUT: 30000,
+  BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL || (ENV.isDevelopment
+    ? getDevBaseUrl()
+    : "https://stormneighbor-api.onrender.com/api/v1"),
+  TIMEOUT: parseInt(process.env.EXPO_PUBLIC_API_TIMEOUT || "30000", 10),
 } as const;
 
 export const APP_CONFIG = {
-  name: "StormNeighbor",
-  version: "1.0.0",
-  bundleId: "com.stormneighbor.app",
+  name: process.env.EXPO_PUBLIC_APP_NAME || "StormNeighbor",
+  version: process.env.EXPO_PUBLIC_APP_VERSION || "1.0.0",
+  bundleId: process.env.EXPO_PUBLIC_BUNDLE_ID || "com.stormneighbor.app",
 } as const;
 
 export const PUSH_CONFIG = {
-  projectId: Constants.expoConfig?.extra?.eas?.projectId || "stormneighbor-app",
+  projectId: process.env.EXPO_PUBLIC_PROJECT_ID || Constants.expoConfig?.extra?.eas?.projectId || "stormneighbor-app",
 } as const;
 
 export const FEATURES = {
-  enablePushNotifications: true,
-  enableLocationServices: true,
-  enableImageUploads: true,
-  enableRealTimeUpdates: true,
+  enablePushNotifications: process.env.EXPO_PUBLIC_ENABLE_PUSH_NOTIFICATIONS === "true",
+  enableLocationServices: process.env.EXPO_PUBLIC_ENABLE_LOCATION_SERVICES === "true",
+  enableImageUploads: process.env.EXPO_PUBLIC_ENABLE_IMAGE_UPLOADS === "true",
+  enableRealTimeUpdates: process.env.EXPO_PUBLIC_ENABLE_REAL_TIME_UPDATES === "true",
 } as const;
 
 export const WEATHER_CONFIG = {
   OPENWEATHER_API_KEY:
-    Constants.expoConfig?.extra?.openWeatherApiKey ||
     process.env.EXPO_PUBLIC_OPENWEATHER_API_KEY ||
+    Constants.expoConfig?.extra?.openWeatherApiKey ||
     "",
 } as const;
 
 export const URL_CONFIG = {
-  baseUrl: ENV.isDevelopment
+  baseUrl: process.env.EXPO_PUBLIC_BASE_WEB_URL || (ENV.isDevelopment
     ? "https://dev.stormneighbor.app"
-    : "https://stormneighbor.app",
-  appUrl: "stormneighbor://",
+    : "https://stormneighbor.app"),
+  appUrl: process.env.EXPO_PUBLIC_APP_URL_SCHEME || "stormneighbor://",
 } as const;

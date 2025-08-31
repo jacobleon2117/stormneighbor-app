@@ -114,7 +114,8 @@ export default function RegisterScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.wrapper}>
+      <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
@@ -227,8 +228,19 @@ export default function RegisterScreen() {
 
             <View style={styles.termsContainer}>
               <Text style={styles.termsText}>
-                By creating an account, you agree to our Terms of Service and
-                Privacy Policy.
+                By creating an account, you agree to our{' '}
+                <Text 
+                  style={styles.termsLink}
+                  onPress={() => router.push('/(auth)/terms-of-service')}
+                >
+                  Terms of Service
+                </Text>{' and '}
+                <Text 
+                  style={styles.termsLink}
+                  onPress={() => router.push('/(auth)/privacy-policy')}
+                >
+                  Privacy Policy
+                </Text>.
               </Text>
             </View>
 
@@ -238,6 +250,22 @@ export default function RegisterScreen() {
               loading={isLoading}
               style={styles.registerButton}
             />
+
+            <View style={styles.dividerContainer}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>Or</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <View style={styles.socialButtonsRow}>
+              <TouchableOpacity style={[styles.socialButton, styles.socialButtonHalf]}>
+                <Text style={styles.socialButtonText}>🔍 Google</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={[styles.socialButton, styles.socialButtonHalf]}>
+                <Text style={styles.socialButtonText}>🍎 Apple</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           <View style={styles.footer}>
@@ -250,28 +278,34 @@ export default function RegisterScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  wrapper: {
     flex: 1,
     backgroundColor: Colors.background,
   },
+  container: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
   keyboardView: {
     flex: 1,
+    backgroundColor: 'transparent',
   },
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 60,
-    paddingBottom: 24,
-    justifyContent: "center",
+    paddingTop: 40,
+    paddingBottom: 20,
+    justifyContent: "space-between",
   },
   header: {
     alignItems: "center",
-    marginBottom: 40,
+    marginBottom: 20,
   },
   title: {
     fontSize: 32,
@@ -288,7 +322,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   form: {
-    flex: 1,
+    flex: 0,
   },
   row: {
     flexDirection: "row",
@@ -327,7 +361,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   termsContainer: {
-    marginBottom: 24,
+    marginBottom: 16,
   },
   termsText: {
     fontSize: 12,
@@ -335,14 +369,55 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 16,
   },
+  termsLink: {
+    color: Colors.primary[600],
+    fontWeight: '600',
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 16,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.border,
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    fontSize: 14,
+    color: Colors.text.secondary,
+  },
+  socialButtonsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 8,
+  },
+  socialButton: {
+    height: 48,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'white',
+  },
+  socialButtonHalf: {
+    flex: 1,
+  },
+  socialButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: Colors.text.primary,
+  },
   registerButton: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
   footer: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 24,
+    marginTop: 8,
   },
   footerText: {
     color: Colors.text.secondary,

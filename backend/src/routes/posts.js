@@ -3,6 +3,7 @@ const router = express.Router();
 const { body, param } = require("express-validator");
 const { auth } = require("../middleware/auth");
 const { handleValidationErrors } = require("../middleware/validation");
+const logger = require("../utils/logger");
 
 const {
   getPosts,
@@ -287,7 +288,6 @@ router.post(
 router.get("/test", auth, async (req, res) => {
   try {
     const { pool } = require("../config/database");
-    const logger = require("../utils/logger");
     const client = await pool.connect();
 
     try {

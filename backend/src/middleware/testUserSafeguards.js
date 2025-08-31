@@ -1,4 +1,3 @@
-const redis = require("redis");
 const rateLimit = require("express-rate-limit");
 const logger = require("../utils/logger");
 
@@ -65,7 +64,7 @@ const trackAPIUsage = (service) => {
   };
 };
 
-const costMonitor = (req, res, next) => {
+const costMonitor = (_req, res, next) => {
   const startTime = Date.now();
 
   res.on("finish", () => {

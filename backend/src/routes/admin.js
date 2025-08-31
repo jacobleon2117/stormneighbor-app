@@ -139,7 +139,7 @@ router.get("/users", requirePermission("users", "read"), async (req, res) => {
   }
 });
 
-router.get("/roles", requireSuperAdmin, async (req, res) => {
+router.get("/roles", requireSuperAdmin, async (_req, res) => {
   const client = await pool.connect();
 
   try {
@@ -281,33 +281,34 @@ router.post("/users/:userId/roles", requireSuperAdmin, async (req, res) => {
   } finally {
     client.release();
   }
-  router.get("/analytics", requireAnalytics, async (req, res) => {
-    const client = await pool.connect();
+});
 
-    try {
-      const { start_date, end_date } = req.query;
+router.get("/analytics", requireAnalytics, async (req, res) => {
+  const client = await pool.connect();
 
-      const analytics = await client.query(
-        `SELECT * FROM daily_analytics 
-       WHERE date BETWEEN $1 AND $2
-       ORDER BY date DESC`,
-        [start_date || "2024-01-01", end_date || new Date().toISOString().split("T")[0]]
-      );
+  try {
+    const { start_date, end_date } = req.query;
 
-      res.json({
-        success: true,
-        data: analytics.rows,
-      });
-    } catch (error) {
-      logger.error("Analytics fetch error:", error);
-      res.status(500).json({
-        success: false,
-        message: "Error fetching analytics",
-      });
-    } finally {
-      client.release();
-    }
-  });
+    const analytics = await client.query(
+      `SELECT * FROM daily_analytics 
+     WHERE date BETWEEN $1 AND $2
+     ORDER BY date DESC`,
+      [start_date || "2024-01-01", end_date || new Date().toISOString().split("T")[0]]
+    );
+
+    res.json({
+      success: true,
+      data: analytics.rows,
+    });
+  } catch (error) {
+    logger.error("Analytics fetch error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching analytics",
+    });
+  } finally {
+    client.release();
+  }
 });
 
 router.get(
@@ -385,7 +386,7 @@ router.post("/weather/fetch-alerts", requirePermission("weather", "manage"), asy
   }
 });
 
-router.get("/weather/service-status", requirePermission("weather", "read"), async (req, res) => {
+router.get("/weather/service-status", requirePermission("weather", "read"), async (_req, res) => {
   try {
     const status = weatherAlertService.getStatus();
 

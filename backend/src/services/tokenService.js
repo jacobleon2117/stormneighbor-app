@@ -132,8 +132,63 @@ class TokenService {
 
     logger.warn("SECURITY_EVENT", logEntry);
 
-    // While in production, I could send it to a security monitoring service (need to implement this)
-    // e.g., Sentry, DataDog, or your own logging service
+    if (process.env.NODE_ENV === "production") {
+      if (process.env.SENTRY_DSN) {
+        try {
+          const Sentry = require("@sentry/node");
+          Sentry.addBreadcrumb({
+            message: `Security Event: ${event}`,
+            category: "security",
+            level: "warning",
+            data: logEntry,
+          });
+          Sentry.captureMessage(`Security Event: ${event}`, "warning");
+        } catch (error) {
+          logger.error("Failed to send security event to Sentry:", error.message);
+        }
+      }
+
+      if (process.env.DATADOG_API_KEY) {
+        try {
+          const datadogLogger = require("../utils/datadogLogger");
+          datadogLogger.logSecurityEvent(event, logEntry);
+        } catch (error) {
+          logger.error("Failed to send security event to DataDog:", error.message);
+        }
+      }
+
+      if (process.env.SECURITY_WEBHOOK_URL) {
+        try {
+          const axios = require("axios");
+          axios
+            .post(
+              process.env.SECURITY_WEBHOOK_URL,
+              {
+                timestamp: new Date().toISOString(),
+                service: "stormneighbor-backend",
+                event: event,
+                severity: "warning",
+                data: logEntry,
+              },
+              {
+                timeout: 5000,
+                headers: {
+                  "Content-Type": "application/json",
+                  "User-Agent": "StormNeighbor-Security-Monitor/1.0",
+                  ...(process.env.SECURITY_WEBHOOK_SECRET && {
+                    Authorization: `Bearer ${process.env.SECURITY_WEBHOOK_SECRET}`,
+                  }),
+                },
+              }
+            )
+            .catch((webhookError) => {
+              logger.error("Failed to send security event to webhook:", webhookError.message);
+            });
+        } catch (error) {
+          logger.error("Failed to configure security webhook:", error.message);
+        }
+      }
+    }
   }
 
   /**

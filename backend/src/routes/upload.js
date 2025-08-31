@@ -20,7 +20,6 @@ router.post(
     profileImageUpload.single("image")(req, res, (err) => {
       if (err) {
         logger.error("Multer profile upload error:", err.message);
-        s;
         return res.status(400).json({
           success: false,
           message: err.message.includes("File too large")

@@ -27,4 +27,6 @@ router.get(
   weatherController.getCurrentWeather
 );
 
+router.get("/cache/stats", weatherController.getCacheStats);
+
 module.exports = router;

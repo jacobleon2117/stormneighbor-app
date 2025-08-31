@@ -4,6 +4,7 @@ const { body, param, query } = require("express-validator");
 const { auth } = require("../middleware/auth");
 const { handleValidationErrors } = require("../middleware/validation");
 const { pool } = require("../config/database");
+const logger = require("../utils/logger");
 
 router.get(
   "/:userId",
@@ -766,10 +767,8 @@ router.get(
   }
 );
 
-router.get("/test/status", async (req, res) => {
+router.get("/test/status", async (_req, res) => {
   try {
-    const { pool } = require("../config/database");
-    const logger = require("../utils/logger");
     const client = await pool.connect();
 
     try {

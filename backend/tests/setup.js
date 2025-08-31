@@ -119,11 +119,3 @@ global.testHelpers = {
 process.on("unhandledRejection", (reason, promise) => {
   console.error("Unhandled Rejection at:", promise, "reason:", reason);
 });
-
-jest.mock("socket.io", () => ({
-  Server: jest.fn().mockImplementation(() => ({
-    on: jest.fn(),
-    emit: jest.fn(),
-    to: jest.fn().mockReturnThis(),
-  })),
-}));

@@ -2,6 +2,7 @@ const axios = require("axios");
 const { pool } = require("../config/database");
 const { validationResult } = require("express-validator");
 const logger = require("../utils/logger");
+const weatherCache = require("../services/weatherCacheService");
 
 const NOAA_API_BASE = process.env.NOAA_API_BASE_URL || "https://api.weather.gov";
 
@@ -13,6 +14,15 @@ const getCurrentWeather = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Latitude and longitude are required",
+      });
+    }
+
+    const cachedWeather = weatherCache.getCachedWeather(lat, lng);
+    if (cachedWeather) {
+      return res.json({
+        success: true,
+        message: "Weather data retrieved from cache",
+        data: cachedWeather,
       });
     }
 
@@ -62,6 +72,8 @@ const getCurrentWeather = async (req, res) => {
         source: "NOAA",
       };
 
+      weatherCache.cacheWeatherData(lat, lng, weatherData);
+
       res.json({
         success: true,
         message: "Weather data retrieved successfully",
@@ -70,40 +82,17 @@ const getCurrentWeather = async (req, res) => {
     } catch (apiError) {
       logger.error("NOAA API Error:", apiError.message);
 
-      const mockWeatherData = {
-        location: {
-          latitude: parseFloat(lat),
-          longitude: parseFloat(lng),
-        },
-        current: {
-          temperature: 72,
-          temperatureUnit: "F",
-          windSpeed: "10 mph",
-          windDirection: "SW",
-          shortForecast: "Partly Cloudy",
-          detailedForecast: "Partly cloudy skies with comfortable temperatures.",
-          icon: "https://api.weather.gov/icons/land/day/few?size=medium",
-          isDaytime: true,
-        },
-        forecast: [
-          {
-            name: "Today",
-            temperature: 72,
-            temperatureUnit: "F",
-            shortForecast: "Partly Cloudy",
-            windSpeed: "10 mph",
-            windDirection: "SW",
-          },
-        ],
-        lastUpdated: new Date().toISOString(),
-        source: "MOCK_DATA",
-        note: "Weather service temporarily unavailable. Showing sample data.",
-      };
+      const fallbackWeatherData = weatherCache.generateFallbackWeather(lat, lng);
+
+      const originalTimeout = weatherCache.cacheTimeout;
+      weatherCache.cacheTimeout = 5 * 60 * 1000;
+      weatherCache.cacheWeatherData(lat, lng, fallbackWeatherData);
+      weatherCache.cacheTimeout = originalTimeout;
 
       res.json({
         success: true,
-        message: "Weather data retrieved (using fallback data)",
-        data: mockWeatherData,
+        message: "Weather data retrieved (using intelligent fallback)",
+        data: fallbackWeatherData,
       });
     }
   } catch (error) {
@@ -470,10 +459,31 @@ const deleteAlert = async (req, res) => {
   }
 };
 
+const getCacheStats = async (_req, res) => {
+  try {
+    const stats = weatherCache.getStats();
+    weatherCache.cleanup();
+
+    res.json({
+      success: true,
+      message: "Weather cache statistics",
+      data: stats,
+    });
+  } catch (error) {
+    logger.error("Get cache stats error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching cache statistics",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
+};
+
 module.exports = {
   getCurrentWeather,
   getAlerts,
   createAlert,
   updateAlert,
   deleteAlert,
+  getCacheStats,
 };

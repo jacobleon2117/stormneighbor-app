@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 const EnvironmentValidator = require("../utils/envValidator");
+const logger = require("../utils/logger");
 
 function main() {
   logger.info("Environment Validation Script\n");
@@ -17,7 +18,6 @@ function main() {
       const template = validator.generateEnvTemplate();
       const fs = require("fs");
       const path = require("path");
-      const logger = require("../utils/logger");
 
       const templatePath = path.join(process.cwd(), ".env.template");
       fs.writeFileSync(templatePath, template);

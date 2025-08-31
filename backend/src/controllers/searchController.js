@@ -1,5 +1,6 @@
 const { validationResult } = require("express-validator");
 const SearchService = require("../services/searchService");
+const logger = require("../utils/logger");
 
 const searchPosts = async (req, res) => {
   try {

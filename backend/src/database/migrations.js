@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const { pool } = require("../config/database");
+const logger = require("../utils/logger");
 
 class DatabaseMigrator {
   constructor() {
@@ -125,7 +126,6 @@ class DatabaseMigrator {
 
   calculateChecksum(content) {
     const crypto = require("crypto");
-    const logger = require("../utils/logger");
     return crypto.createHash("sha256").update(content).digest("hex");
   }
 

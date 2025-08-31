@@ -143,7 +143,7 @@ export default function PrivacySecurityScreen() {
     title: string,
     description: string,
     value: string,
-    options: { key: string; label: string }[],
+    options: Array<{ key: string; label: string }>,
     onSelect: (key: string) => void
   ) => (
     <View style={styles.settingItem}>
@@ -200,7 +200,7 @@ export default function PrivacySecurityScreen() {
         <Header title="Privacy & Security" showBackButton />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.primary[500]} />
-          <Text style={styles.loadingText}>Loading settings...</Text>
+          <Text style={styles.loadingText}>Loading settings</Text>
         </View>
       </SafeAreaView>
     );

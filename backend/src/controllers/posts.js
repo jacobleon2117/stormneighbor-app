@@ -346,8 +346,7 @@ const createPost = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    logger.error("Create post error:", error);
-    console.error("Error details:", {
+    logger.error("Create post error:", error, {
       message: error.message,
       code: error.code,
       detail: error.detail,

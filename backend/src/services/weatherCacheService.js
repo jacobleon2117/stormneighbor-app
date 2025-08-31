@@ -1,0 +1,179 @@
+const logger = require("../utils/logger");
+
+class WeatherCacheService {
+  constructor() {
+    this.cache = new Map();
+    this.cacheTimeout = 30 * 60 * 1000;
+  }
+
+  getCacheKey(lat, lng) {
+    return `weather_${parseFloat(lat).toFixed(2)}_${parseFloat(lng).toFixed(2)}`;
+  }
+
+  getCachedWeather(lat, lng) {
+    const key = this.getCacheKey(lat, lng);
+    const cached = this.cache.get(key);
+
+    if (!cached) {
+      return null;
+    }
+
+    const now = Date.now();
+    if (now - cached.timestamp > this.cacheTimeout) {
+      this.cache.delete(key);
+      return null;
+    }
+
+    logger.info(`Weather cache hit for ${lat}, ${lng}`);
+    return cached.data;
+  }
+
+  cacheWeatherData(lat, lng, data) {
+    const key = this.getCacheKey(lat, lng);
+    this.cache.set(key, {
+      data: data,
+      timestamp: Date.now(),
+    });
+
+    logger.info(`Weather data cached for ${lat}, ${lng}`);
+  }
+
+  generateFallbackWeather(lat, lng) {
+    const latitude = parseFloat(lat);
+    const longitude = parseFloat(lng);
+    const now = new Date();
+    const month = now.getMonth();
+    const hour = now.getHours();
+    const isDaytime = hour >= 6 && hour < 20;
+
+    let baseTemp, tempVariation, commonConditions;
+
+    if (latitude >= 45) {
+      baseTemp = month >= 4 && month <= 9 ? 68 : 35;
+      tempVariation = 15;
+      commonConditions =
+        month >= 11 || month <= 2
+          ? ["Snow Showers", "Partly Cloudy", "Overcast"]
+          : ["Partly Cloudy", "Clear", "Scattered Clouds"];
+    } else if (latitude >= 35) {
+      baseTemp = month >= 4 && month <= 9 ? 75 : 50;
+      tempVariation = 20;
+      commonConditions = ["Partly Cloudy", "Clear", "Scattered Clouds", "Light Rain"];
+    } else if (latitude >= 25) {
+      baseTemp = month >= 4 && month <= 9 ? 85 : 70;
+      tempVariation = 12;
+      commonConditions =
+        month >= 5 && month <= 9
+          ? ["Partly Cloudy", "Scattered Thunderstorms", "Hot"]
+          : ["Clear", "Partly Cloudy", "Mild"];
+    } else {
+      baseTemp = 82;
+      tempVariation = 8;
+      commonConditions = ["Partly Cloudy", "Scattered Showers", "Humid"];
+    }
+
+    const tempOffset = Math.floor(Math.random() * tempVariation) - tempVariation / 2;
+    const temperature = Math.max(0, Math.min(120, baseTemp + tempOffset));
+
+    const condition = commonConditions[Math.floor(Math.random() * commonConditions.length)];
+
+    const windSpeeds = ["5 mph", "8 mph", "12 mph", "15 mph", "18 mph"];
+    const windDirections = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+    const windSpeed = windSpeeds[Math.floor(Math.random() * windSpeeds.length)];
+    const windDirection = windDirections[Math.floor(Math.random() * windDirections.length)];
+
+    const fallbackData = {
+      location: {
+        latitude,
+        longitude,
+      },
+      current: {
+        temperature,
+        temperatureUnit: "F",
+        windSpeed,
+        windDirection,
+        shortForecast: condition,
+        detailedForecast: `${condition} with temperatures around ${temperature}°F. Wind ${windDirection} at ${windSpeed}.`,
+        icon: `https://api.weather.gov/icons/land/${isDaytime ? "day" : "night"}/few?size=medium`,
+        isDaytime,
+      },
+      forecast: this.generateForecast(temperature, condition),
+      lastUpdated: now.toISOString(),
+      source: "FALLBACK_DATA",
+      note: "Weather service temporarily unavailable. Showing estimated data based on location and season.",
+    };
+
+    logger.info(
+      `Generated fallback weather for ${latitude}, ${longitude}: ${temperature}°F, ${condition}`
+    );
+    return fallbackData;
+  }
+
+  generateForecast(baseTemp, currentCondition) {
+    const days = [
+      "Today",
+      "Tomorrow",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+      "Sunday",
+    ];
+    const conditions = [
+      "Clear",
+      "Partly Cloudy",
+      "Mostly Cloudy",
+      "Light Rain",
+      "Scattered Clouds",
+    ];
+    const forecast = [];
+
+    for (let i = 0; i < 7; i++) {
+      const tempVariation = Math.floor(Math.random() * 10) - 5;
+      const dayTemp = Math.max(
+        20,
+        Math.min(110, baseTemp + tempVariation + Math.floor(Math.random() * 6) - 3)
+      );
+      const condition =
+        i === 0 ? currentCondition : conditions[Math.floor(Math.random() * conditions.length)];
+
+      forecast.push({
+        name: i < days.length ? days[i] : `Day ${i + 1}`,
+        temperature: dayTemp,
+        temperatureUnit: "F",
+        shortForecast: condition,
+        windSpeed: `${Math.floor(Math.random() * 15) + 5} mph`,
+        windDirection: ["N", "S", "E", "W", "NW", "SW"][Math.floor(Math.random() * 6)],
+      });
+    }
+
+    return forecast;
+  }
+
+  cleanup() {
+    const now = Date.now();
+    let removed = 0;
+
+    for (const [key, value] of this.cache.entries()) {
+      if (now - value.timestamp > this.cacheTimeout) {
+        this.cache.delete(key);
+        removed++;
+      }
+    }
+
+    if (removed > 0) {
+      logger.info(`Cleaned up ${removed} expired weather cache entries`);
+    }
+  }
+
+  getStats() {
+    return {
+      cacheSize: this.cache.size,
+      cacheTimeout: this.cacheTimeout,
+      lastCleanup: new Date().toISOString(),
+    };
+  }
+}
+
+module.exports = new WeatherCacheService();

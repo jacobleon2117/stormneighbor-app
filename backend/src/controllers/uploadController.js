@@ -1,5 +1,6 @@
 const { pool } = require("../config/database");
 const { deleteImage, getPublicIdFromUrl } = require("../config/cloudinary");
+const logger = require("../utils/logger");
 
 const uploadProfileImage = async (req, res) => {
   try {
@@ -374,7 +375,6 @@ const getUploadStats = async (req, res) => {
 const testUploadSystem = async (_req, res) => {
   try {
     const { cloudinary } = require("../config/cloudinary");
-    const logger = require("../utils/logger");
 
     const ping = await cloudinary.api.ping();
 

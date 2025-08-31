@@ -266,7 +266,7 @@ router.delete(
   authController.revokeSession
 );
 
-router.get("/test-email", async (req, res) => {
+router.get("/test-email", async (_req, res) => {
   try {
     const testResult = await testEmailService();
 
@@ -336,7 +336,7 @@ router.post(
 );
 
 if (process.env.NODE_ENV === "development") {
-  router.get("/security-stats", (req, res) => {
+  router.get("/security-stats", (_req, res) => {
     res.json({
       success: true,
       message: "Security monitoring stats",

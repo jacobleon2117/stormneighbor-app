@@ -322,7 +322,7 @@ class SecurityMiddleware {
   }
 
   contentSecurityPolicy() {
-    return (req, res, next) => {
+    return (_req, res, next) => {
       res.setHeader(
         "Content-Security-Policy",
         "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https:; font-src 'self' https:; object-src 'none'; media-src 'self'; frame-src 'none';"

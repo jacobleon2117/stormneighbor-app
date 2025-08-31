@@ -187,7 +187,7 @@ router.get(
     query("limit").optional().isInt({ min: 1, max: 50 }),
   ],
   handleValidationErrors,
-  async (req, res, next) => {
+  async (req, _res, next) => {
     req.query.emergencyOnly = "true";
     req.query.sortBy = "date";
     next();
@@ -204,7 +204,7 @@ router.get(
     query("limit").optional().isInt({ min: 1, max: 50 }),
   ],
   handleValidationErrors,
-  async (req, res, next) => {
+  async (req, _res, next) => {
     req.query.types = "help_request";
     req.query.resolved = "unresolved";
     req.query.sortBy = "date";
@@ -222,7 +222,7 @@ router.get(
     query("limit").optional().isInt({ min: 1, max: 50 }),
   ],
   handleValidationErrors,
-  async (req, res, next) => {
+  async (req, _res, next) => {
     req.query.types = "help_offer";
     req.query.sortBy = "date";
     next();
@@ -252,7 +252,7 @@ router.post(
     body("pagination.offset").optional().isInt({ min: 0 }),
   ],
   handleValidationErrors,
-  async (req, res, next) => {
+  async (req, _res, next) => {
     const { query, location, filters, sorting, pagination } = req.body;
 
     req.query = {

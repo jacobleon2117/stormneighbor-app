@@ -251,11 +251,11 @@ export default function RegisterScreen() {
 
               <View style={styles.socialButtonsRow}>
                 <TouchableOpacity style={[styles.socialButton, styles.socialButtonHalf]}>
-                  <Text style={styles.socialButtonText}>🔍 Google</Text>
+                  <Text style={styles.socialButtonText}>Google</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={[styles.socialButton, styles.socialButtonHalf]}>
-                  <Text style={styles.socialButtonText}>🍎 Apple</Text>
+                  <Text style={styles.socialButtonText}>Apple</Text>
                 </TouchableOpacity>
               </View>
             </View>

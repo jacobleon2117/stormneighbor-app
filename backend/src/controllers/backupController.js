@@ -1,5 +1,6 @@
 const backupService = require("../services/backupService");
 const { validationResult } = require("express-validator");
+const logger = require("../utils/logger");
 
 const createBackup = async (req, res) => {
   try {
@@ -243,7 +244,6 @@ const testBackupSystem = async (_req, res) => {
 
     const testPath = require("path").join(backupService.backupDir, testBackup.filename);
     await require("fs").promises.unlink(testPath);
-    const logger = require("../utils/logger");
 
     res.json({
       success: true,

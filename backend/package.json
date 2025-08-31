@@ -26,6 +26,8 @@
     "ci:test": "npm run lint:check && npm run format:check && npm run test:coverage",
     "backup:create": "node scripts/backup-manager.js create",
     "clean": "rm -rf node_modules coverage .nyc_output *.log",
+    "logs:clean": "rm -rf logs/*.log && echo 'Log files cleaned'",
+    "logs:check": "du -sh logs/ 2>/dev/null || echo 'No logs directory found'",
     "reset": "npm run clean && npm install && npm run db:setup"
   },
   "dependencies": {

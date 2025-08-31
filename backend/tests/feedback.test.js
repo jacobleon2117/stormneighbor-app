@@ -2,9 +2,6 @@ const request = require("supertest");
 const app = require("../src/app");
 
 describe("Feedback System", () => {
-  let authToken = null;
-  let feedbackId = null;
-
   it("POST /api/v1/feedback endpoint exists and requires auth", async () => {
     const response = await request(app).post("/api/v1/feedback").send({
       feedbackType: "general_feedback",

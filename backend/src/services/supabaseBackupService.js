@@ -1,6 +1,7 @@
 const { Pool } = require("pg");
 const fs = require("fs").promises;
 const path = require("path");
+const logger = require("../utils/logger");
 
 class SupabaseBackupService {
   constructor() {
@@ -14,7 +15,7 @@ class SupabaseBackupService {
     const filename = `stormneighbor_${type}_${timestamp}.sql`;
     const filepath = path.join(this.backupDir, filename);
 
-    console.log(`Creating SQL backup: ${filename}`);
+    logger.info(`Creating SQL backup: ${filename}`);
 
     try {
       await fs.mkdir(this.backupDir, { recursive: true });
@@ -46,7 +47,7 @@ SET row_security = off;
 
       for (const row of tablesResult.rows) {
         const tableName = row.tablename;
-        console.log(`Backing up table: ${tableName}`);
+        logger.info(`Backing up table: ${tableName}`);
 
         const schemaResult = await this.pool.query(
           `
@@ -90,7 +91,7 @@ SET row_security = off;
         method: "sql_export",
       };
 
-      console.log("SUCCESS: SQL backup completed:", {
+      logger.info("SUCCESS: SQL backup completed:", {
         file: filename,
         size: `${(stats.size / 1024).toFixed(2)} KB`,
         duration: `${duration}ms`,
@@ -99,7 +100,7 @@ SET row_security = off;
 
       return backupInfo;
     } catch (error) {
-      console.error("SQL backup failed:", error);
+      logger.error("SQL backup failed:", error);
 
       try {
         await fs.unlink(filepath);
@@ -197,14 +198,14 @@ SET row_security = off;
       const result = await client.query("SELECT version(), current_database(), current_user");
       client.release();
 
-      console.log("SUCCESS: Database connection successful");
-      console.log(`Database: ${result.rows[0].current_database}`);
-      console.log(`User: ${result.rows[0].current_user}`);
-      console.log(`Version: ${result.rows[0].version.split(" ").slice(0, 2).join(" ")}`);
+      logger.info("SUCCESS: Database connection successful");
+      logger.info(`Database: ${result.rows[0].current_database}`);
+      logger.info(`User: ${result.rows[0].current_user}`);
+      logger.info(`Version: ${result.rows[0].version.split(" ");.slice(0, 2).join(" ")}`);
 
       return true;
     } catch (error) {
-      console.error("ERROR: Database connection failed:", error.message);
+      logger.error("ERROR: Database connection failed:", error.message);
       return false;
     }
   }
@@ -238,7 +239,7 @@ SET row_security = off;
 
       return backups.sort((a, b) => b.created - a.created);
     } catch (error) {
-      console.error("ERROR: Failed to list backups:", error);
+      logger.error("ERROR: Failed to list backups:", error);
       return [];
     }
   }

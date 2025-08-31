@@ -108,7 +108,7 @@ const register = async (req, res) => {
       const emailResult = await sendVerificationEmail(email, verificationCode);
 
       if (!emailResult.success) {
-        console.error("Failed to send verification email:", emailResult.error);
+        logger.error("Failed to send verification email:", emailResult.error);
       }
 
       const tokens = await generateTokens(newUser.id, req);
@@ -134,7 +134,7 @@ const register = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Register error:", error);
+    logger.error("Register error:", error);
     res.status(500).json({
       success: false,
       message: "Server error during registration",
@@ -210,7 +210,7 @@ const login = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Login error:", error);
+    logger.error("Login error:", error);
     res.status(500).json({
       success: false,
       message: "Server error during login",
@@ -255,7 +255,7 @@ const forgotPassword = async (req, res) => {
       const emailResult = await sendPasswordResetEmail(email, resetCode);
 
       if (!emailResult.success) {
-        console.error("Failed to send password reset email:", emailResult.error);
+        logger.error("Failed to send password reset email:", emailResult.error);
       }
 
       res.json({
@@ -266,7 +266,7 @@ const forgotPassword = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Forgot password error:", error);
+    logger.error("Forgot password error:", error);
     res.status(500).json({
       success: false,
       message: "Server error processing request",
@@ -334,7 +334,7 @@ const verifyCode = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Verify code error:", error);
+    logger.error("Verify code error:", error);
     res.status(500).json({
       success: false,
       message: "Server error verifying code",
@@ -405,7 +405,7 @@ const resetPassword = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Reset password error:", error);
+    logger.error("Reset password error:", error);
     res.status(500).json({
       success: false,
       message: "Server error resetting password",
@@ -456,7 +456,7 @@ const resendVerificationCode = async (req, res) => {
       const emailResult = await sendVerificationEmail(email, verificationCode);
 
       if (!emailResult.success) {
-        console.error("Failed to resend verification email:", emailResult.error);
+        logger.error("Failed to resend verification email:", emailResult.error);
         return res.status(500).json({
           success: false,
           message: "Failed to send verification email. Please try again later.",
@@ -471,7 +471,7 @@ const resendVerificationCode = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Resend verification code error:", error);
+    logger.error("Resend verification code error:", error);
     res.status(500).json({
       success: false,
       message: "Server error resending verification code",
@@ -547,7 +547,7 @@ const getProfile = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Get profile error:", error);
+    logger.error("Get profile error:", error);
     res.status(500).json({
       success: false,
       message: "Server error getting profile",
@@ -685,7 +685,7 @@ const updateProfile = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Update profile error:", error);
+    logger.error("Update profile error:", error);
     res.status(500).json({
       success: false,
       message: "Server error updating profile",
@@ -746,7 +746,7 @@ const changePassword = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Change password error:", error);
+    logger.error("Change password error:", error);
     res.status(500).json({
       success: false,
       message: "Server error changing password",
@@ -782,7 +782,7 @@ const checkEmailVerification = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Check email verification error:", error);
+    logger.error("Check email verification error:", error);
     res.status(500).json({
       success: false,
       message: "Server error checking verification status",
@@ -827,7 +827,7 @@ const resendVerificationEmail = async (req, res) => {
       const emailResult = await sendVerificationEmail(user.email, verificationCode);
 
       if (!emailResult.success) {
-        console.error("Failed to resend verification email:", emailResult.error);
+        logger.error("Failed to resend verification email:", emailResult.error);
         return res.status(500).json({
           success: false,
           message: "Failed to send verification email. Please try again later.",
@@ -842,7 +842,7 @@ const resendVerificationEmail = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Resend verification email error:", error);
+    logger.error("Resend verification email error:", error);
     res.status(500).json({
       success: false,
       message: "Server error resending verification email",
@@ -871,7 +871,7 @@ const updateNotificationPreferences = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Update notification preferences error:", error);
+    logger.error("Update notification preferences error:", error);
     res.status(500).json({
       success: false,
       message: "Server error updating notification preferences",
@@ -903,7 +903,7 @@ const refreshToken = async (req, res) => {
         },
       });
     } catch (error) {
-      console.error("Token refresh error:", error);
+      logger.error("Token refresh error:", error);
 
       if (error.message.includes("Invalid or expired")) {
         return res.status(401).json({
@@ -920,7 +920,7 @@ const refreshToken = async (req, res) => {
       });
     }
   } catch (error) {
-    console.error("Refresh token endpoint error:", error);
+    logger.error("Refresh token endpoint error:", error);
     res.status(500).json({
       success: false,
       message: "Server error refreshing token",
@@ -937,7 +937,7 @@ const logout = async (req, res) => {
       try {
         await tokenService.revokeSession(refreshToken);
       } catch (error) {
-        console.error("Error revoking session:", error);
+        logger.error("Error revoking session:", error);
       }
     }
 
@@ -946,7 +946,7 @@ const logout = async (req, res) => {
       message: "Logged out successfully",
     });
   } catch (error) {
-    console.error("Logout error:", error);
+    logger.error("Logout error:", error);
     res.status(500).json({
       success: false,
       message: "Server error during logout",
@@ -969,14 +969,14 @@ const logoutAll = async (req, res) => {
         },
       });
     } catch (error) {
-      console.error("Error revoking all sessions:", error);
+      logger.error("Error revoking all sessions:", error);
       return res.status(500).json({
         success: false,
         message: "Failed to logout from all devices",
       });
     }
   } catch (error) {
-    console.error("Logout all error:", error);
+    logger.error("Logout all error:", error);
     res.status(500).json({
       success: false,
       message: "Server error during logout",
@@ -1000,14 +1000,14 @@ const getActiveSessions = async (req, res) => {
         },
       });
     } catch (error) {
-      console.error("Error getting active sessions:", error);
+      logger.error("Error getting active sessions:", error);
       return res.status(500).json({
         success: false,
         message: "Failed to get active sessions",
       });
     }
   } catch (error) {
-    console.error("Get active sessions error:", error);
+    logger.error("Get active sessions error:", error);
     res.status(500).json({
       success: false,
       message: "Server error getting sessions",
@@ -1067,14 +1067,14 @@ const revokeSession = async (req, res) => {
         client.release();
       }
     } catch (error) {
-      console.error("Error revoking session:", error);
+      logger.error("Error revoking session:", error);
       return res.status(500).json({
         success: false,
         message: "Failed to revoke session",
       });
     }
   } catch (error) {
-    console.error("Revoke session error:", error);
+    logger.error("Revoke session error:", error);
     res.status(500).json({
       success: false,
       message: "Server error revoking session",

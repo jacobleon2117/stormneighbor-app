@@ -5,10 +5,10 @@ const uploadProfileImage = async (req, res) => {
   try {
     const userId = req.user.userId;
 
-    console.log("Profile image upload request for user:", userId);
+    logger.info("Profile image upload request for user:", userId);
 
     if (!req.file) {
-      console.error("No image file provided");
+      logger.error("No image file provided");
       return res.status(400).json({
         message: "No image file provided",
         success: false,
@@ -18,7 +18,7 @@ const uploadProfileImage = async (req, res) => {
     const imageUrl = req.file.path;
     const publicId = req.file.filename;
 
-    console.log("Uploaded to Cloudinary:", {
+    logger.info("Uploaded to Cloudinary:", {
       url: imageUrl,
       publicId: publicId,
       size: req.file.size,
@@ -37,7 +37,7 @@ const uploadProfileImage = async (req, res) => {
       );
 
       if (result.rows.length === 0) {
-        console.error("User not found for ID:", userId);
+        logger.error("User not found for ID:", userId);
         return res.status(404).json({
           message: "User not found",
           success: false,
@@ -52,16 +52,16 @@ const uploadProfileImage = async (req, res) => {
         if (oldPublicId) {
           try {
             await deleteImage(oldPublicId);
-            console.log("Deleted old profile image:", oldPublicId);
+            logger.info("Deleted old profile image:", oldPublicId);
           } catch (error) {
-            console.error("Failed to delete old profile image:", error.message);
+            logger.error("Failed to delete old profile image:", error.message);
           }
         }
       }
 
       const updatedUser = result.rows[0];
 
-      console.log(
+      logger.info(
         "Profile image updated successfully for user:",
         updatedUser.first_name,
         updatedUser.last_name
@@ -84,14 +84,14 @@ const uploadProfileImage = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Upload profile image error:", error);
+    logger.error("Upload profile image error:", error);
 
     if (req.file?.filename) {
       try {
         await deleteImage(req.file.filename);
-        console.log("Cleaned up failed upload:", req.file.filename);
+        logger.info("Cleaned up failed upload:", req.file.filename);
       } catch (cleanupError) {
-        console.error("Failed to cleanup failed upload:", cleanupError.message);
+        logger.error("Failed to cleanup failed upload:", cleanupError.message);
       }
     }
 
@@ -108,7 +108,7 @@ const uploadPostImage = async (req, res) => {
     const { postId } = req.params;
     const userId = req.user.userId;
 
-    console.log("Post image upload request for post:", postId, "by user:", userId);
+    logger.info("Post image upload request for post:", postId, "by user:", userId);
 
     if (!req.file) {
       return res.status(400).json({
@@ -120,7 +120,7 @@ const uploadPostImage = async (req, res) => {
     const imageUrl = req.file.path;
     const publicId = req.file.filename;
 
-    console.log("Post image uploaded to Cloudinary:", {
+    logger.info("Post image uploaded to Cloudinary:", {
       url: imageUrl,
       publicId: publicId,
       size: req.file.size,
@@ -157,7 +157,7 @@ const uploadPostImage = async (req, res) => {
         [updatedImages, postId]
       );
 
-      console.log("Post image added successfully to post:", postId);
+      logger.info("Post image added successfully to post:", postId);
 
       res.json({
         success: true,
@@ -173,13 +173,13 @@ const uploadPostImage = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Upload post image error:", error);
+    logger.error("Upload post image error:", error);
 
     if (req.file?.filename) {
       try {
         await deleteImage(req.file.filename);
       } catch (cleanupError) {
-        console.error("Failed to cleanup failed upload:", cleanupError.message);
+        logger.error("Failed to cleanup failed upload:", cleanupError.message);
       }
     }
 
@@ -196,7 +196,7 @@ const uploadCommentImage = async (req, res) => {
     const { commentId } = req.params;
     const userId = req.user.userId;
 
-    console.log("Comment image upload request for comment:", commentId, "by user:", userId);
+    logger.info("Comment image upload request for comment:", commentId, "by user:", userId);
 
     if (!req.file) {
       return res.status(400).json({
@@ -208,7 +208,7 @@ const uploadCommentImage = async (req, res) => {
     const imageUrl = req.file.path;
     const publicId = req.file.filename;
 
-    console.log("Comment image uploaded to Cloudinary:", {
+    logger.info("Comment image uploaded to Cloudinary:", {
       url: imageUrl,
       publicId: publicId,
       size: req.file.size,
@@ -246,7 +246,7 @@ const uploadCommentImage = async (req, res) => {
         [updatedImages, commentId]
       );
 
-      console.log("Comment image added successfully to comment:", commentId);
+      logger.info("Comment image added successfully to comment:", commentId);
 
       res.json({
         success: true,
@@ -262,13 +262,13 @@ const uploadCommentImage = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Upload comment image error:", error);
+    logger.error("Upload comment image error:", error);
 
     if (req.file?.filename) {
       try {
         await deleteImage(req.file.filename);
       } catch (cleanupError) {
-        console.error("Failed to cleanup failed upload:", cleanupError.message);
+        logger.error("Failed to cleanup failed upload:", cleanupError.message);
       }
     }
 
@@ -285,7 +285,7 @@ const deleteImageById = async (req, res) => {
     const { publicId } = req.params;
     const userId = req.user.userId;
 
-    console.log("Delete image request for publicId:", publicId, "by user:", userId);
+    logger.info("Delete image request for publicId:", publicId, "by user:", userId);
 
     if (!publicId) {
       return res.status(400).json({
@@ -297,14 +297,14 @@ const deleteImageById = async (req, res) => {
     const result = await deleteImage(publicId);
 
     if (result.result === "ok") {
-      console.log("Image deleted successfully:", publicId);
+      logger.info("Image deleted successfully:", publicId);
       res.json({
         success: true,
         message: "Image deleted successfully",
         data: { publicId, result },
       });
     } else {
-      console.log("Image deletion failed:", result);
+      logger.info("Image deletion failed:", result);
       res.status(400).json({
         success: false,
         message: "Failed to delete image",
@@ -312,7 +312,7 @@ const deleteImageById = async (req, res) => {
       });
     }
   } catch (error) {
-    console.error("Delete image error:", error);
+    logger.error("Delete image error:", error);
     res.status(500).json({
       success: false,
       message: "Server error deleting image",
@@ -362,7 +362,7 @@ const getUploadStats = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Get upload stats error:", error);
+    logger.error("Get upload stats error:", error);
     res.status(500).json({
       success: false,
       message: "Server error getting upload stats",
@@ -374,6 +374,7 @@ const getUploadStats = async (req, res) => {
 const testUploadSystem = async (_req, res) => {
   try {
     const { cloudinary } = require("../config/cloudinary");
+const logger = require("../utils/logger");
 
     const ping = await cloudinary.api.ping();
 
@@ -402,7 +403,7 @@ const testUploadSystem = async (_req, res) => {
       },
     });
   } catch (error) {
-    console.error("Upload system test error:", error);
+    logger.error("Upload system test error:", error);
     res.status(500).json({
       success: false,
       message: "Upload system test failed",

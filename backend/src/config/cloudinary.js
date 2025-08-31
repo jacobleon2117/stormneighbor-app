@@ -1,6 +1,7 @@
 const cloudinary = require("cloudinary").v2;
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const multer = require("multer");
+const logger = require("../utils/logger");
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -15,21 +16,21 @@ const testCloudinaryConnection = async () => {
       !process.env.CLOUDINARY_API_KEY ||
       !process.env.CLOUDINARY_API_SECRET
     ) {
-      console.error("ERROR: Missing Cloudinary environment variables");
-      console.log(
+      logger.error("ERROR: Missing Cloudinary environment variables");
+      logger.info(
         "Required variables: CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET"
       );
       return false;
     }
 
     await cloudinary.api.ping();
-    console.log("SUCCESS: Cloudinary connection successful");
-    console.log("INFO: Cloudinary account:", process.env.CLOUDINARY_CLOUD_NAME);
+    logger.info("SUCCESS: Cloudinary connection successful");
+    logger.info("INFO: Cloudinary account:", process.env.CLOUDINARY_CLOUD_NAME);
     return true;
   } catch (error) {
-    console.error("ERROR: Cloudinary connection failed:", error.message);
+    logger.error("ERROR: Cloudinary connection failed:", error.message);
     if (error.http_code === 401) {
-      console.error("INFO: Check your API credentials");
+      logger.error("INFO: Check your API credentials");
     }
     return false;
   }
@@ -157,7 +158,7 @@ const getPublicIdFromUrl = (url) => {
     }
     return null;
   } catch (error) {
-    console.error("ERROR: Error extracting public_id from URL:", error);
+    logger.error("ERROR: Error extracting public_id from URL:", error);
     return null;
   }
 };
@@ -168,12 +169,12 @@ const deleteImage = async (publicId) => {
       throw new Error("No public_id provided");
     }
 
-    console.log("WORKING: Deleting image with public_id:", publicId);
+    logger.info("WORKING: Deleting image with public_id:", publicId);
     const result = await cloudinary.uploader.destroy(publicId);
-    console.log("INFO: Image deletion result:", result);
+    logger.info("INFO: Image deletion result:", result);
     return result;
   } catch (error) {
-    console.error("ERROR: Error deleting image:", error);
+    logger.error("ERROR: Error deleting image:", error);
     throw error;
   }
 };

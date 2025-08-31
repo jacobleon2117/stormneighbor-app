@@ -55,7 +55,7 @@ router.get(
         data: result.rows[0],
       });
     } catch (error) {
-      console.error("Get user profile error:", error);
+      logger.error("Get user profile error:", error);
       res.status(500).json({
         success: false,
         message: "Error fetching user profile",
@@ -145,7 +145,7 @@ router.get(
         },
       });
     } catch (error) {
-      console.error("Search users error:", error);
+      logger.error("Search users error:", error);
       res.status(500).json({
         success: false,
         message: "Error searching users",
@@ -227,7 +227,7 @@ router.get(
         },
       });
     } catch (error) {
-      console.error("Get user posts error:", error);
+      logger.error("Get user posts error:", error);
       res.status(500).json({
         success: false,
         message: "Error fetching user posts",
@@ -310,7 +310,7 @@ router.post(
           ]
         );
       } catch (notificationError) {
-        console.warn("Failed to create follow notification:", notificationError);
+        logger.warn("Failed to create follow notification:", notificationError);
       }
 
       res.json({
@@ -324,7 +324,7 @@ router.post(
         },
       });
     } catch (error) {
-      console.error("Follow user error:", error);
+      logger.error("Follow user error:", error);
       res.status(500).json({
         success: false,
         message: "Error following user",
@@ -421,7 +421,7 @@ router.get("/preferences/notifications", auth, async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Get notification preferences error:", error);
+    logger.error("Get notification preferences error:", error);
     res.status(500).json({
       success: false,
       message: "Error fetching notification preferences",
@@ -535,7 +535,7 @@ router.put(
       });
     } catch (error) {
       await client.query("ROLLBACK");
-      console.error("Update notification preferences error:", error);
+      logger.error("Update notification preferences error:", error);
       res.status(500).json({
         success: false,
         message: "Error updating notification preferences",
@@ -595,7 +595,7 @@ router.delete(
         },
       });
     } catch (error) {
-      console.error("Unfollow user error:", error);
+      logger.error("Unfollow user error:", error);
       res.status(500).json({
         success: false,
         message: "Error unfollowing user",
@@ -674,7 +674,7 @@ router.get(
         },
       });
     } catch (error) {
-      console.error("Get followers error:", error);
+      logger.error("Get followers error:", error);
       res.status(500).json({
         success: false,
         message: "Error fetching followers",
@@ -753,7 +753,7 @@ router.get(
         },
       });
     } catch (error) {
-      console.error("Get following error:", error);
+      logger.error("Get following error:", error);
       res.status(500).json({
         success: false,
         message: "Error fetching following",
@@ -768,6 +768,7 @@ router.get(
 router.get("/test/status", async (req, res) => {
   try {
     const { pool } = require("../config/database");
+const logger = require("../utils/logger");
     const client = await pool.connect();
 
     try {
@@ -787,7 +788,7 @@ router.get("/test/status", async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Users test endpoint error:", error);
+    logger.error("Users test endpoint error:", error);
     res.status(500).json({
       success: false,
       message: "Users routes test failed",

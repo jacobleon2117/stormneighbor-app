@@ -184,11 +184,12 @@ export default function ProfileScreen() {
           }
 
           const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            mediaTypes: "images",
             quality: 0.8,
             aspect: [1, 1],
             allowsEditing: true,
           });
+
 
           if (!result.canceled && result.assets?.[0]) {
             await uploadProfileImage(result.assets[0].uri);

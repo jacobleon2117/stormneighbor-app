@@ -1,4 +1,5 @@
 const { Resend } = require("resend");
+const logger = require("../utils/logger");
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 /**
@@ -31,10 +32,10 @@ const sendEmail = async (to, subject, text, html = null) => {
       html: html || generateDefaultHtml(subject, text),
     };
 
-    console.log(`Sending email to ${to}: ${subject}`);
+    logger.info(`Sending email to ${to}: ${subject}`);
     const response = await resend.emails.send(emailData);
 
-    console.log("Email sent successfully:", {
+    logger.info("Email sent successfully:", {
       to,
       subject,
       messageId: response.data?.id,
@@ -52,7 +53,7 @@ const sendEmail = async (to, subject, text, html = null) => {
     });
 
     if (error.message && error.message.includes("API key")) {
-      console.error("Check your RESEND_API_KEY configuration");
+      logger.error("Check your RESEND_API_KEY configuration");
     }
 
     return {
@@ -180,7 +181,7 @@ const generateDefaultHtml = (subject, text) => {
 
 const testEmailService = async () => {
   try {
-    console.log("Testing email service configuration...");
+    logger.info("Testing email service configuration...");
 
     if (!process.env.RESEND_API_KEY) {
       throw new Error("RESEND_API_KEY not configured");
@@ -190,10 +191,10 @@ const testEmailService = async () => {
       throw new Error("FROM_EMAIL not configured");
     }
 
-    console.log("Email service configuration is valid");
+    logger.info("Email service configuration is valid");
     return { success: true };
   } catch (error) {
-    console.error("Email service test failed:", error.message);
+    logger.error("Email service test failed:", error.message);
     return { success: false, error: error.message };
   }
 };

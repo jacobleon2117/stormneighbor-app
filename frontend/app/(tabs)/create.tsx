@@ -306,11 +306,14 @@ export default function CreateScreen() {
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: "images",
         allowsMultipleSelection: true,
         quality: 0.7,
         aspect: [1, 1],
       });
+
+
+
 
       if (!result.canceled && result.assets) {
         const imageUris = result.assets.map(asset => asset.uri);

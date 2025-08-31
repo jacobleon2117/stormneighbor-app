@@ -1,6 +1,7 @@
 const axios = require("axios");
 const { pool } = require("../config/database");
 const pushNotificationService = require("./pushNotificationService");
+const logger = require("../utils/logger");
 
 const NOAA_API_BASE = process.env.NOAA_API_BASE_URL || "https://api.weather.gov";
 
@@ -13,11 +14,11 @@ class WeatherAlertService {
 
   async start() {
     if (this.isRunning) {
-      console.log("Weather alert service is already running");
+      logger.info("Weather alert service is already running");
       return;
     }
 
-    console.log("Starting automated weather alert service");
+    logger.info("Starting automated weather alert service");
     this.isRunning = true;
 
     await this.fetchAndStoreAlerts();
@@ -26,11 +27,11 @@ class WeatherAlertService {
       try {
         await this.fetchAndStoreAlerts();
       } catch (error) {
-        console.error("Weather alert service error:", error.message);
+        logger.error("Weather alert service error:", error.message);
       }
     }, this.fetchInterval);
 
-    console.log(
+    logger.info(
       `Weather alert service started - checking every ${this.fetchInterval / 1000 / 60} minutes`
     );
   }
@@ -41,11 +42,11 @@ class WeatherAlertService {
       this.intervalId = null;
     }
     this.isRunning = false;
-    console.log("Weather alert service stopped");
+    logger.info("Weather alert service stopped");
   }
 
   async fetchAndStoreAlerts() {
-    console.log("Fetching weather alerts from NOAA");
+    logger.info("Fetching weather alerts from NOAA");
 
     try {
       const client = await pool.connect();
@@ -66,7 +67,7 @@ class WeatherAlertService {
           LIMIT 50
         `);
 
-        console.log(`Found ${locations.rows.length} locations with active users`);
+        logger.info(`Found ${locations.rows.length} locations with active users`);
 
         let totalNewAlerts = 0;
         let totalUpdatedAlerts = 0;
@@ -93,7 +94,7 @@ class WeatherAlertService {
           }
         }
 
-        console.log(
+        logger.info(
           `Weather alert fetch completed: ${totalNewAlerts} new, ${totalUpdatedAlerts} updated`
         );
 
@@ -104,7 +105,7 @@ class WeatherAlertService {
         client.release();
       }
     } catch (error) {
-      console.error("Weather alert service error:", error);
+      logger.error("Weather alert service error:", error);
       throw error;
     }
   }
@@ -161,13 +162,13 @@ class WeatherAlertService {
             updatedAlerts++;
           }
         } catch (alertError) {
-          console.error(`Error processing individual alert ${alert.id}:`, alertError.message);
+          logger.error(`Error processing individual alert ${alert.id}:`, alertError.message);
         }
       }
 
       return { newAlerts, updatedAlerts };
     } catch (error) {
-      console.error(`NOAA API error for ${city}, ${state}:`, error.message);
+      logger.error(`NOAA API error for ${city}, ${state}:`, error.message);
       return { newAlerts: 0, updatedAlerts: 0 };
     }
   }
@@ -230,7 +231,7 @@ class WeatherAlertService {
         return { isNew: true, isUpdated: false };
       }
     } catch (error) {
-      console.error("Error upserting alert:", error);
+      logger.error("Error upserting alert:", error);
       throw error;
     }
   }
@@ -246,7 +247,7 @@ class WeatherAlertService {
         state,
       });
     } catch (error) {
-      console.error("Error sending alert notifications:", error);
+      logger.error("Error sending alert notifications:", error);
     }
   }
 
@@ -262,7 +263,7 @@ class WeatherAlertService {
       );
 
       if (result.rows.length > 0) {
-        console.log(`Deactivated ${result.rows.length} expired weather alerts`);
+        logger.info(`Deactivated ${result.rows.length} expired weather alerts`);
       }
 
       const deleteResult = await client.query(
@@ -272,10 +273,10 @@ class WeatherAlertService {
       );
 
       if (deleteResult.rowCount > 0) {
-        console.log(`Deleted ${deleteResult.rowCount} old weather alerts`);
+        logger.info(`Deleted ${deleteResult.rowCount} old weather alerts`);
       }
     } catch (error) {
-      console.error("Error cleaning up old alerts:", error);
+      logger.error("Error cleaning up old alerts:", error);
     }
   }
 
@@ -310,7 +311,7 @@ const weatherAlertService = new WeatherAlertService();
 
 if (process.env.NODE_ENV === "production") {
   weatherAlertService.start().catch((error) => {
-    console.error("Failed to start weather alert service:", error);
+    logger.error("Failed to start weather alert service:", error);
   });
 }
 

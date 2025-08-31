@@ -121,7 +121,7 @@ router.get(
         },
       });
     } catch (error) {
-      console.error("Get conversations error:", error);
+      logger.error("Get conversations error:", error);
       res.status(500).json({
         success: false,
         message: "Error fetching conversations",
@@ -238,7 +238,7 @@ router.post(
           ]
         );
       } catch (notificationError) {
-        console.warn("Failed to create message notification:", notificationError);
+        logger.warn("Failed to create message notification:", notificationError);
       }
 
       await client.query("COMMIT");
@@ -268,7 +268,7 @@ router.post(
       });
     } catch (error) {
       await client.query("ROLLBACK");
-      console.error("Create conversation error:", error);
+      logger.error("Create conversation error:", error);
 
       if (error.code === "23505") {
         res.status(409).json({
@@ -401,7 +401,7 @@ router.get(
         },
       });
     } catch (error) {
-      console.error("Get messages error:", error);
+      logger.error("Get messages error:", error);
       res.status(500).json({
         success: false,
         message: "Error fetching messages",
@@ -491,7 +491,7 @@ router.post(
           ]
         );
       } catch (notificationError) {
-        console.warn("Failed to create message notification:", notificationError);
+        logger.warn("Failed to create message notification:", notificationError);
       }
 
       res.status(201).json({
@@ -511,7 +511,7 @@ router.post(
         },
       });
     } catch (error) {
-      console.error("Send message error:", error);
+      logger.error("Send message error:", error);
       res.status(500).json({
         success: false,
         message: "Error sending message",
@@ -562,7 +562,7 @@ router.put(
         },
       });
     } catch (error) {
-      console.error("Mark message as read error:", error);
+      logger.error("Mark message as read error:", error);
       res.status(500).json({
         success: false,
         message: "Error marking message as read",
@@ -607,7 +607,7 @@ router.get(
         },
       });
     } catch (error) {
-      console.error("Get unread count error:", error);
+      logger.error("Get unread count error:", error);
       res.status(500).json({
         success: false,
         message: "Error fetching unread count",
@@ -622,6 +622,7 @@ router.get(
 router.get("/test/status", async (req, res) => {
   try {
     const { pool } = require("../config/database");
+const logger = require("../utils/logger");
     const client = await pool.connect();
 
     try {
@@ -645,7 +646,7 @@ router.get("/test/status", async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Messages test endpoint error:", error);
+    logger.error("Messages test endpoint error:", error);
     res.status(500).json({
       success: false,
       message: "Messages routes test failed",

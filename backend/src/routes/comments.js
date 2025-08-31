@@ -79,7 +79,7 @@ router.get(
         data: { comment },
       });
     } catch (error) {
-      console.error("Get comment error:", error);
+      logger.error("Get comment error:", error);
       res.status(500).json({
         success: false,
         message: "Error fetching comment",
@@ -162,7 +162,7 @@ router.put(
         },
       });
     } catch (error) {
-      console.error("Update comment error:", error);
+      logger.error("Update comment error:", error);
       res.status(500).json({
         success: false,
         message: "Error updating comment",
@@ -220,7 +220,7 @@ router.delete(
         },
       });
     } catch (error) {
-      console.error("Delete comment error:", error);
+      logger.error("Delete comment error:", error);
       res.status(500).json({
         success: false,
         message: "Error deleting comment",
@@ -324,7 +324,7 @@ router.get(
         },
       });
     } catch (error) {
-      console.error("Get comment replies error:", error);
+      logger.error("Get comment replies error:", error);
       res.status(500).json({
         success: false,
         message: "Error fetching comment replies",
@@ -408,7 +408,7 @@ router.post(
         },
       });
     } catch (error) {
-      console.error("Add comment reaction error:", error);
+      logger.error("Add comment reaction error:", error);
       res.status(500).json({
         success: false,
         message: "Error adding reaction",
@@ -479,7 +479,7 @@ router.delete(
         },
       });
     } catch (error) {
-      console.error("Remove comment reaction error:", error);
+      logger.error("Remove comment reaction error:", error);
       res.status(500).json({
         success: false,
         message: "Error removing reaction",
@@ -566,7 +566,7 @@ router.post(
         },
       });
     } catch (error) {
-      console.error("Report comment error:", error);
+      logger.error("Report comment error:", error);
       res.status(500).json({
         success: false,
         message: "Error reporting comment",
@@ -581,6 +581,7 @@ router.post(
 router.get("/test/status", async (req, res) => {
   try {
     const { pool } = require("../config/database");
+const logger = require("../utils/logger");
     const client = await pool.connect();
 
     try {
@@ -604,7 +605,7 @@ router.get("/test/status", async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Comments test endpoint error:", error);
+    logger.error("Comments test endpoint error:", error);
     res.status(500).json({
       success: false,
       message: "Comments routes test failed",

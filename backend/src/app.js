@@ -1,17 +1,18 @@
 require("dotenv").config();
 
+const logger = require("./utils/logger");
 const EnvironmentValidator = require("./utils/envValidator");
 if (process.env.NODE_ENV !== "test") {
   const validator = new EnvironmentValidator();
   const result = validator.validate();
 
   if (!result.isValid) {
-    console.error("ERROR: Environment validation failed. Application cannot start.");
+    logger.error("ERROR: Environment validation failed. Application cannot start.");
     process.exitCode = 1;
   }
 
   if (result.warnings.length > 0 && process.env.NODE_ENV === "production") {
-    console.warn("WARNING: Production environment has configuration warnings. Please review.");
+    logger.warn("WARNING: Production environment has configuration warnings. Please review.");
   }
 }
 
@@ -150,66 +151,66 @@ app.get("/api/v1/cache/stats", getCacheStats);
 app.post("/api/v1/cache/clear", clearCache);
 
 try {
-  console.log("Loading authentication routes...");
+  logger.info("Loading authentication routes...");
   const authRoutes = require("./routes/auth");
   const { sanitizeSensitive } = require("./middleware/sanitize");
   app.use("/api/v1/auth", sanitizeSensitive, authRoutes);
 
-  console.log("Loading user routes...");
+  logger.info("Loading user routes...");
   const userRoutes = require("./routes/users");
   app.use("/api/v1/users", userRoutes);
 
-  console.log("Loading post routes...");
+  logger.info("Loading post routes...");
   const postRoutes = require("./routes/posts");
   app.use("/api/v1/posts", postRoutes);
 
-  console.log("Loading comment routes...");
+  logger.info("Loading comment routes...");
   const commentRoutes = require("./routes/comments");
   app.use("/api/v1/comments", commentRoutes);
 
-  console.log("Loading upload routes...");
+  logger.info("Loading upload routes...");
   const uploadRoutes = require("./routes/upload");
   app.use("/api/v1/upload", uploadRoutes);
 
-  console.log("Loading weather routes...");
+  logger.info("Loading weather routes...");
   const weatherRoutes = require("./routes/weather");
   app.use("/api/v1/weather", weatherRoutes);
 
-  console.log("Loading neighborhood routes...");
+  logger.info("Loading neighborhood routes...");
   const neighborhoodRoutes = require("./routes/neighborhoods");
   app.use("/api/v1/neighborhoods", neighborhoodRoutes);
 
-  console.log("Loading alert routes...");
+  logger.info("Loading alert routes...");
   const alertRoutes = require("./routes/alerts");
   app.use("/api/v1/alerts", alertRoutes);
 
-  console.log("Loading search routes...");
+  logger.info("Loading search routes...");
   const searchRoutes = require("./routes/search");
   app.use("/api/v1/search", searchRoutes);
 
-  console.log("Loading notification routes...");
+  logger.info("Loading notification routes...");
   const notificationRoutes = require("./routes/notifications");
   app.use("/api/v1/notifications", notificationRoutes);
 
-  console.log("Loading message routes...");
+  logger.info("Loading message routes...");
   const messageRoutes = require("./routes/messages");
   app.use("/api/v1/messages", messageRoutes);
 
-  console.log("Loading feedback routes...");
+  logger.info("Loading feedback routes...");
   const feedbackRoutes = require("./routes/feedback");
   app.use("/api/v1/feedback", feedbackRoutes);
 
-  console.log("Loading backup routes...");
+  logger.info("Loading backup routes...");
   const backupRoutes = require("./routes/backup");
   app.use("/api/v1/admin/backups", backupRoutes);
 
-  console.log("Loading admin routes...");
+  logger.info("Loading admin routes...");
   const adminRoutes = require("./routes/admin");
   app.use("/api/v1/admin", adminRoutes);
 
-  console.log("All routes loaded successfully");
+  logger.info("All routes loaded successfully");
 } catch (routeError) {
-  console.error("Error loading routes:", routeError);
+  logger.error("Error loading routes:", routeError);
   if (process.env.NODE_ENV !== "test") {
     throw new Error(`Failed to load routes: ${routeError.message}`);
   }

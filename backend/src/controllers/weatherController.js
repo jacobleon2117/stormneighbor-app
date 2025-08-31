@@ -1,6 +1,7 @@
 const axios = require("axios");
 const { pool } = require("../config/database");
 const { validationResult } = require("express-validator");
+const logger = require("../utils/logger");
 
 const NOAA_API_BASE = process.env.NOAA_API_BASE_URL || "https://api.weather.gov";
 
@@ -67,7 +68,7 @@ const getCurrentWeather = async (req, res) => {
         data: weatherData,
       });
     } catch (apiError) {
-      console.error("NOAA API Error:", apiError.message);
+      logger.error("NOAA API Error:", apiError.message);
 
       const mockWeatherData = {
         location: {
@@ -106,7 +107,7 @@ const getCurrentWeather = async (req, res) => {
       });
     }
   } catch (error) {
-    console.error("Get weather error:", error);
+    logger.error("Get weather error:", error);
     res.status(500).json({
       success: false,
       message: "Server error fetching weather data",
@@ -216,7 +217,7 @@ const getAlerts = async (req, res) => {
             }));
           }
         } catch (noaaError) {
-          console.warn("Failed to fetch NOAA alerts:", noaaError.message);
+          logger.warn("Failed to fetch NOAA alerts:", noaaError.message);
         }
       }
 
@@ -262,7 +263,7 @@ const getAlerts = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Get alerts error:", error);
+    logger.error("Get alerts error:", error);
     res.status(500).json({
       success: false,
       message: "Server error fetching alerts",
@@ -357,7 +358,7 @@ const createAlert = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Create alert error:", error);
+    logger.error("Create alert error:", error);
     res.status(500).json({
       success: false,
       message: "Server error creating alert",
@@ -415,7 +416,7 @@ const updateAlert = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Update alert error:", error);
+    logger.error("Update alert error:", error);
     res.status(500).json({
       success: false,
       message: "Server error updating alert",
@@ -460,7 +461,7 @@ const deleteAlert = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Delete alert error:", error);
+    logger.error("Delete alert error:", error);
     res.status(500).json({
       success: false,
       message: "Server error deleting alert",

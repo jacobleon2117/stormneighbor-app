@@ -1,6 +1,7 @@
 const createDOMPurify = require("isomorphic-dompurify");
 const { JSDOM } = require("jsdom");
 const path = require("path");
+const logger = require("../utils/logger");
 
 const window = new JSDOM("").window;
 const DOMPurify = createDOMPurify(window);
@@ -18,7 +19,7 @@ const sanitizeInput = (req, _res, next) => {
     }
     next();
   } catch (error) {
-    console.error("Input sanitization error:", error);
+    logger.error("Input sanitization error:", error);
     next();
   }
 };
@@ -68,7 +69,7 @@ const sanitizeSensitive = (req, _res, next) => {
     }
     next();
   } catch (error) {
-    console.error("Sensitive field sanitization error:", error);
+    logger.error("Sensitive field sanitization error:", error);
     next();
   }
 };
@@ -104,7 +105,7 @@ const sanitizeFileMetadata = (req, _res, next) => {
 
     next();
   } catch (error) {
-    console.error("File metadata sanitization error:", error);
+    logger.error("File metadata sanitization error:", error);
     next();
   }
 };

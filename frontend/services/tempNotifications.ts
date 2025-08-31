@@ -1,6 +1,4 @@
 import * as Notifications from "expo-notifications";
-import { Alert } from "react-native";
-
 export class TempNotificationService {
   
   static async sendLocalAlert(title: string, body: string, data?: any) {
@@ -16,7 +14,7 @@ export class TempNotificationService {
         trigger: null,
       });
       
-      console.log(`📱 Local notification sent: ${title}`);
+      console.log(`Local notification sent: ${title}`);
       return true;
     } catch (error) {
       console.error("Failed to send local notification:", error);
@@ -49,7 +47,7 @@ export class TempNotificationService {
 
   static async sendCommunityAlert(title: string, description: string) {
     return await this.sendLocalAlert(
-      `👥 Community Alert: ${title}`,
+      `Community Alert: ${title}`,
       description,
       { type: "community", timestamp: Date.now() }
     );

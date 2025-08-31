@@ -1,5 +1,6 @@
 const fs = require("fs").promises;
 const path = require("path");
+const logger = require("../utils/logger");
 
 class FeedbackLogger {
   constructor() {
@@ -13,7 +14,7 @@ class FeedbackLogger {
       await fs.mkdir(this.logsDir, { recursive: true });
       await fs.mkdir(this.feedbackDir, { recursive: true });
     } catch (error) {
-      console.error("Error creating feedback directories:", error);
+      logger.error("Error creating feedback directories:", error);
     }
   }
 
@@ -52,10 +53,10 @@ class FeedbackLogger {
       const masterMarkdownPath = path.join(this.feedbackDir, "feedback_summary.md");
       await this.updateMasterMarkdown(masterMarkdownPath, enhancedFeedback);
 
-      console.log(`SUCCESS: Feedback logged to files: ${jsonFileName}`);
+      logger.info(`SUCCESS: Feedback logged to files: ${jsonFileName}`);
       return enhancedFeedback;
     } catch (error) {
-      console.error("ERROR: Error logging feedback:", error);
+      logger.error("ERROR: Error logging feedback:", error);
       return feedbackData;
     }
   }
@@ -73,7 +74,7 @@ class FeedbackLogger {
       existingData.push(feedbackData);
       await fs.writeFile(filePath, JSON.stringify(existingData, null, 2));
     } catch (error) {
-      console.error("Error updating master JSON:", error);
+      logger.error("Error updating master JSON:", error);
     }
   }
 
@@ -92,7 +93,7 @@ class FeedbackLogger {
       const updatedContent = existingContent + markdownEntry + "\n---\n\n";
       await fs.writeFile(filePath, updatedContent);
     } catch (error) {
-      console.error("Error updating daily markdown:", error);
+      logger.error("Error updating daily markdown:", error);
     }
   }
 
@@ -120,7 +121,7 @@ class FeedbackLogger {
 
       await fs.writeFile(filePath, updatedLines.join("\n"));
     } catch (error) {
-      console.error("Error updating master markdown:", error);
+      logger.error("Error updating master markdown:", error);
     }
   }
 
@@ -183,7 +184,7 @@ ${feedbackData.description}
 
       return stats;
     } catch (error) {
-      console.error("ERROR: Error getting feedback stats:", error);
+      logger.error("ERROR: Error getting feedback stats:", error);
       return { total: 0, byType: {}, byPriority: {}, recent24h: 0, recent7days: 0 };
     }
   }

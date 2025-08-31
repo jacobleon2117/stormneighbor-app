@@ -55,8 +55,7 @@ export default function NewConversationScreen() {
       console.error("Error creating conversation:", error);
       Alert.alert(
         "Error",
-        error.response?.data?.message ||
-          "Failed to send message. Please try again."
+        error.response?.data?.message || "Failed to send message. Please try again."
       );
     } finally {
       setSending(false);
@@ -66,16 +65,13 @@ export default function NewConversationScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <ArrowLeft size={24} color={Colors.text.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>New Message</Text>
       </View>
 
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         style={styles.content}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
@@ -97,16 +93,11 @@ export default function NewConversationScreen() {
             textAlignVertical="top"
             autoFocus
           />
-          <Text style={styles.characterCount}>
-            {message.length}/1000
-          </Text>
+          <Text style={styles.characterCount}>{message.length}/1000</Text>
         </View>
 
         <TouchableOpacity
-          style={[
-            styles.sendButton,
-            (!message.trim() || sending) && styles.sendButtonDisabled,
-          ]}
+          style={[styles.sendButton, (!message.trim() || sending) && styles.sendButtonDisabled]}
           onPress={handleSendMessage}
           disabled={!message.trim() || sending}
         >
@@ -115,9 +106,7 @@ export default function NewConversationScreen() {
           ) : (
             <Send size={20} color={Colors.text.inverse} />
           )}
-          <Text style={styles.sendButtonText}>
-            {sending ? "Sending..." : "Send Message"}
-          </Text>
+          <Text style={styles.sendButtonText}>{sending ? "Sending" : "Send Message"}</Text>
         </TouchableOpacity>
       </KeyboardAvoidingView>
     </SafeAreaView>

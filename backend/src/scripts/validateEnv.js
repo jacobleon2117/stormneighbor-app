@@ -2,42 +2,43 @@
 const EnvironmentValidator = require("../utils/envValidator");
 
 function main() {
-  console.log("Environment Validation Script\n");
+  logger.info("Environment Validation Script\n");
 
   const validator = new EnvironmentValidator();
   const result = validator.validate();
 
   if (!result.isValid) {
-    console.log(
+    logger.info(
       "ERROR: Environment validation failed. Please fix the errors above before starting the application."
     );
 
     if (process.argv.includes("--generate-template")) {
-      console.log("\nWORKING: Generating .env template");
+      logger.info("\nWORKING: Generating .env template");
       const template = validator.generateEnvTemplate();
       const fs = require("fs");
       const path = require("path");
+const logger = require("../utils/logger");
 
       const templatePath = path.join(process.cwd(), ".env.template");
       fs.writeFileSync(templatePath, template);
-      console.log(`SUCCESS: Template saved to ${templatePath}`);
+      logger.info(`SUCCESS: Template saved to ${templatePath}`);
     }
 
     process.exitCode = 1;
   }
 
   if (result.warnings.length > 0) {
-    console.log(
+    logger.info(
       "WARNING: Environment validation completed with warnings. Application will start but some features may be limited."
     );
   } else {
-    console.log("SUCCESS: Environment validation passed");
+    logger.info("SUCCESS: Environment validation passed");
   }
 
   if (process.argv.includes("--verbose")) {
-    console.log("\nConfiguration Summary:");
+    logger.info("\nConfiguration Summary:");
     Object.entries(result.config).forEach(([key, value]) => {
-      console.log(`  ${key}: ${validator.maskSensitive(key, value)}`);
+      logger.info(`  ${key}: ${validator.maskSensitive(key, value);}`);
     });
   }
 
@@ -45,7 +46,7 @@ function main() {
 }
 
 if (process.argv.includes("--help")) {
-  console.log(`
+  logger.info(`
 Environment Validation Script
 
 Usage: node src/scripts/validateEnv.js [options]
@@ -62,7 +63,7 @@ Environment Variables Required:
   const required = validator.getRequiredVariables();
 
   required.forEach((variable) => {
-    console.log(`  ${variable.name}: ${variable.description}`);
+    logger.info(`  ${variable.name}: ${variable.description}`);
   });
 
   process.exitCode = 1;

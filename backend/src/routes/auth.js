@@ -5,6 +5,7 @@ const { auth } = require("../middleware/auth");
 const { testEmailService, sendEmail } = require("../services/emailService");
 const { handleValidationErrors, validateCoordinates } = require("../middleware/validation");
 const securityMiddleware = require("../middleware/security");
+const logger = require("../utils/logger");
 
 const router = express.Router();
 
@@ -283,7 +284,7 @@ router.get("/test-email", async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Email test error:", error);
+    logger.error("Email test error:", error);
     res.status(500).json({
       success: false,
       message: "Email service test failed",
@@ -324,7 +325,7 @@ router.post(
         },
       });
     } catch (error) {
-      console.error("Send test email error:", error);
+      logger.error("Send test email error:", error);
       res.status(500).json({
         success: false,
         message: "Server error sending test email",

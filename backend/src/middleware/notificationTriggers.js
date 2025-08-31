@@ -1,5 +1,6 @@
 const pushNotificationService = require("../services/pushNotificationService");
 const { pool } = require("../config/database");
+const logger = require("../utils/logger");
 
 class NotificationTriggers {
   static async triggerWeatherAlert(alertData) {
@@ -20,23 +21,23 @@ class NotificationTriggers {
         const userIds = result.rows.map((row) => row.id);
 
         if (userIds.length > 0) {
-          console.log(
+          logger.info(
             `Sending weather alert to ${userIds.length} users in ${alertData.city}, ${alertData.state}`
           );
 
           const results = await pushNotificationService.sendWeatherAlert(userIds, alertData);
-          console.log(`Weather alert sent: ${results.filter((r) => r.success).length} successful`);
+          logger.info(`Weather alert sent: ${results.filter((r); => r.success).length} successful`);
 
           return results;
         } else {
-          console.log(`No users found in ${alertData.city}, ${alertData.state} for weather alert`);
+          logger.info(`No users found in ${alertData.city}, ${alertData.state} for weather alert`);
           return [];
         }
       } finally {
         client.release();
       }
     } catch (error) {
-      console.error("Weather alert trigger failed:", error);
+      logger.error("Weather alert trigger failed:", error);
       throw error;
     }
   }
@@ -63,23 +64,23 @@ class NotificationTriggers {
         const userIds = result.rows.map((row) => row.id);
 
         if (userIds.length > 0) {
-          console.log(`Sending new post notification to ${userIds.length} users`);
+          logger.info(`Sending new post notification to ${userIds.length} users`);
 
           const results = await pushNotificationService.sendPostNotification(userIds, postData);
-          console.log(
+          logger.info(
             `New post notification sent: ${results.filter((r) => r.success).length} successful`
           );
 
           return results;
         } else {
-          console.log("No users found for new post notification");
+          logger.info("No users found for new post notification");
           return [];
         }
       } finally {
         client.release();
       }
     } catch (error) {
-      console.error("New post notification trigger failed:", error);
+      logger.error("New post notification trigger failed:", error);
       throw error;
     }
   }
@@ -94,7 +95,7 @@ class NotificationTriggers {
         ]);
 
         if (postResult.rows.length === 0) {
-          console.log("Post not found for comment notification");
+          logger.info("Post not found for comment notification");
           return null;
         }
 
@@ -111,7 +112,7 @@ class NotificationTriggers {
         );
 
         if (prefResult.rows.length === 0 || !prefResult.rows[0].enabled) {
-          console.log("User has comment notifications disabled");
+          logger.info("User has comment notifications disabled");
           return null;
         }
 
@@ -131,20 +132,20 @@ class NotificationTriggers {
           authorId: commentData.user_id,
         };
 
-        console.log(`Sending comment notification to user ${postAuthorId}`);
+        logger.info(`Sending comment notification to user ${postAuthorId}`);
 
         const result = await pushNotificationService.sendCommentNotification(
           postAuthorId,
           notificationData
         );
-        console.log(`Comment notification sent: ${result.success ? "successful" : "failed"}`);
+        logger.info(`Comment notification sent: ${result.success ? "successful" : "failed"}`);
 
         return result;
       } finally {
         client.release();
       }
     } catch (error) {
-      console.error("Comment notification trigger failed:", error);
+      logger.error("Comment notification trigger failed:", error);
       throw error;
     }
   }
@@ -166,7 +167,7 @@ class NotificationTriggers {
         const userIds = result.rows.map((row) => row.id);
 
         if (userIds.length > 0) {
-          console.log(
+          logger.info(
             `Sending emergency notification to ${userIds.length} users in ${emergencyData.state}`
           );
 
@@ -174,20 +175,20 @@ class NotificationTriggers {
             userIds,
             emergencyData
           );
-          console.log(
+          logger.info(
             `Emergency notification sent: ${results.filter((r) => r.success).length} successful`
           );
 
           return results;
         } else {
-          console.log(`No users found in ${emergencyData.state} for emergency notification`);
+          logger.info(`No users found in ${emergencyData.state} for emergency notification`);
           return [];
         }
       } finally {
         client.release();
       }
     } catch (error) {
-      console.error("Emergency notification trigger failed:", error);
+      logger.error("Emergency notification trigger failed:", error);
       throw error;
     }
   }

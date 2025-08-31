@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const logger = require("../utils/logger");
 
 class EnvironmentValidator {
   constructor() {
@@ -122,7 +123,7 @@ class EnvironmentValidator {
     this.silent = silent || process.env.NODE_ENV === "test";
 
     if (!this.silent) {
-      console.log("WORKING: Validating environment configuration\n");
+      logger.info("WORKING: Validating environment configuration\n");
     }
 
     this.checkEnvFile();
@@ -156,7 +157,7 @@ class EnvironmentValidator {
         this.warnings.push("WORKING: .env file not found (using system environment variables)");
       }
     } else if (!this.silent) {
-      console.log("SUCCESS: .env file found");
+      logger.info("SUCCESS: .env file found");
     }
 
     if (!fs.existsSync(envExamplePath)) {
@@ -189,7 +190,7 @@ class EnvironmentValidator {
 
     this.config[varName] = value;
     if (!this.silent) {
-      console.log(`SUCCESS: ${varName}: ${this.maskSensitive(varName, value)}`);
+      logger.info(`SUCCESS: ${varName}: ${this.maskSensitive(varName, value)}`);
     }
   }
 
@@ -256,33 +257,29 @@ class EnvironmentValidator {
   }
 
   reportResults() {
-    console.log("\nWORKING: Environment Validation Results:");
+    logger.info("\nWORKING: Environment Validation Results:");
 
     if (this.errors.length === 0) {
-      console.log("SUCCESS: Environment configuration is valid!\n");
+      logger.info("SUCCESS: Environment configuration is valid!\n");
     } else {
-      console.log(`ERROR: Environment configuration has ${this.errors.length} error(s):\n`);
-      this.errors.forEach((error) => console.log(`  ${error}`));
-      console.log("");
+      logger.info(`ERROR: Environment configuration has ${this.errors.length} error(s):\n`);
+      this.errors.forEach((error) => logger.info(`  ${error}`));
+      logger.info("");
     }
 
     if (this.warnings.length > 0) {
-      console.log(`WARNING: ${this.warnings.length} warning(s):\n`);
-      this.warnings.forEach((warning) => console.log(`  ${warning}`));
-      console.log("");
+      logger.info(`WARNING: ${this.warnings.length} warning(s):\n`);
+      this.warnings.forEach((warning) => logger.info(`  ${warning}`));
+      logger.info("");
     }
 
-    console.log(`INFO: Environment: ${process.env.NODE_ENV || "development"}`);
-    console.log(`INFO: Port: ${process.env.PORT || "3000"}`);
-    console.log(`INFO:  Database: ${process.env.DATABASE_URL ? "Configured" : "Not configured"}`);
-    console.log(`INFO: JWT: ${process.env.JWT_SECRET ? "Configured" : "Not configured"}`);
-    console.log(
-      `INFO: Push Notifications: ${process.env.FIREBASE_PROJECT_ID ? "Enabled" : "Disabled"}`
-    );
-    console.log(
-      `INFO: Image Uploads: ${process.env.CLOUDINARY_CLOUD_NAME ? "Enabled" : "Disabled"}`
-    );
-    console.log("");
+    logger.info(`INFO: Environment: ${process.env.NODE_ENV || "development"}`);
+    logger.info(`INFO: Port: ${process.env.PORT || "3000"}`);
+    logger.info(`INFO:  Database: ${process.env.DATABASE_URL ? "Configured" : "Not configured"}`);
+    logger.info(`INFO: JWT: ${process.env.JWT_SECRET ? "Configured" : "Not configured"}`);
+    logger.info(`INFO: Push Notifications: ${process.env.FIREBASE_PROJECT_ID ? "Enabled" : "Disabled"}`);
+    logger.info(`INFO: Image Uploads: ${process.env.CLOUDINARY_CLOUD_NAME ? "Enabled" : "Disabled"}`);
+    logger.info("");
   }
 
   getRequiredVariables() {

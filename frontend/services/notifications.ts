@@ -138,18 +138,18 @@ export class NotificationService {
 
   static addNotificationReceivedListener(
     listener: (notification: Notifications.Notification) => void
-  ): Notifications.Subscription {
+  ): Notifications.EventSubscription {
     return Notifications.addNotificationReceivedListener(listener);
   }
 
   static addNotificationResponseReceivedListener(
     listener: (response: Notifications.NotificationResponse) => void
-  ): Notifications.Subscription {
+  ): Notifications.EventSubscription {
     return Notifications.addNotificationResponseReceivedListener(listener);
   }
 
   static removeNotificationSubscription(
-    subscription: Notifications.Subscription
+    subscription: Notifications.EventSubscription
   ): void {
     subscription.remove();
   }

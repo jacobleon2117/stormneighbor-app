@@ -5,12 +5,12 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Dimensions,
+  // Dimensions, Currently unused due to commented out code on line 13
 } from "react-native";
 import { Colors } from "../../constants/Colors";
 import { ALERT_COLORS } from "../../constants/AlertColors";
 
-const { width: screenWidth } = Dimensions.get('window');
+// const { width: screenWidth } = Dimensions.get('window'); (declared but its value is never read, why?)
 const PILL_WIDTH = 80;
 const PILL_MARGIN = 12;
 const LEFT_PADDING = 32;

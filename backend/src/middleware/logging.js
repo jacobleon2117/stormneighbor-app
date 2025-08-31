@@ -1,4 +1,5 @@
 const crypto = require("crypto");
+const logger = require("../utils/logger");
 
 const generateRequestId = () => {
   return crypto.randomBytes(8).toString("hex");
@@ -10,7 +11,7 @@ const requestLogger = (req, res, next) => {
 
   req.requestId = requestId;
 
-  console.log(`[${new Date().toISOString()}] [${requestId}] ${req.method} ${req.path}`, {
+  logger.info(`[${new Date().toISOString()}] [${requestId}] ${req.method} ${req.path}`, {
     ip: req.ip || req.connection.remoteAddress,
     userAgent: req.get("User-Agent"),
     contentLength: req.get("Content-Length") || 0,
@@ -25,7 +26,7 @@ const requestLogger = (req, res, next) => {
     const endTime = Date.now();
     const duration = endTime - startTime;
 
-    console.log(
+    logger.info(
       `[${new Date().toISOString()}] [${requestId}] Response ${res.statusCode} - ${duration}ms`,
       {
         status: res.statusCode,
@@ -82,7 +83,7 @@ const sanitizeLogData = (data) => {
 const errorLogger = (err, req, _res, next) => {
   const requestId = req.requestId || "unknown";
 
-  console.error(`[${new Date().toISOString()}] [${requestId}] ERROR:`, {
+  logger.error(`[${new Date().toISOString()}] [${requestId}] ERROR:`, {
     message: err.message,
     stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
     path: req.path,
@@ -106,7 +107,7 @@ const performanceMonitor = (req, res, next) => {
     const finalMemory = process.memoryUsage();
 
     if (duration > 1000) {
-      console.warn(`[${new Date().toISOString()}] [${req.requestId}] SLOW REQUEST:`, {
+      logger.warn(`[${new Date().toISOString()}] [${req.requestId}] SLOW REQUEST:`, {
         method: req.method,
         path: req.path,
         duration: `${duration.toFixed(2)}ms`,
@@ -119,7 +120,7 @@ const performanceMonitor = (req, res, next) => {
 
     const heapIncrease = (finalMemory.heapUsed - initialMemory.heapUsed) / 1024 / 1024;
     if (heapIncrease > 50) {
-      console.warn(`[${new Date().toISOString()}] [${req.requestId}] HIGH MEMORY USAGE:`, {
+      logger.warn(`[${new Date().toISOString()}] [${req.requestId}] HIGH MEMORY USAGE:`, {
         method: req.method,
         path: req.path,
         heapIncrease: `${heapIncrease.toFixed(2)}MB`,
@@ -217,7 +218,7 @@ const healthCheck = async (_req, res) => {
 
     res.json(health);
   } catch (error) {
-    console.error("Health check error:", error);
+    logger.error("Health check error:", error);
     res.status(503).json({
       status: "unhealthy",
       timestamp: new Date().toISOString(),

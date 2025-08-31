@@ -6,6 +6,7 @@ const {
   createSuccessResponse,
 } = require("../middleware/errorHandler");
 const feedbackLogger = require("../utils/feedbackLogger");
+const logger = require("../utils/logger");
 
 exports.createFeedback = async (req, res) => {
   try {
@@ -37,7 +38,7 @@ exports.createFeedback = async (req, res) => {
       deviceInfo,
     });
 
-    console.log("Feedback received and logged:", {
+    logger.info("Feedback received and logged:", {
       id: loggedFeedback.id,
       userId,
       feedbackType,
@@ -63,7 +64,7 @@ exports.createFeedback = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error creating feedback:", error);
+    logger.error("Error creating feedback:", error);
     res.status(500).json({
       success: false,
       message: "Internal server error",
@@ -89,7 +90,7 @@ exports.getUserFeedback = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error getting user feedback:", error);
+    logger.error("Error getting user feedback:", error);
     res.status(500).json({
       success: false,
       message: "Internal server error",
@@ -113,7 +114,7 @@ exports.getAllFeedback = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error getting feedback:", error);
+    logger.error("Error getting feedback:", error);
     res.status(500).json({
       success: false,
       message: "Internal server error",
@@ -133,7 +134,7 @@ exports.updateFeedbackStatus = async (req, res) => {
       data: { id, status },
     });
   } catch (error) {
-    console.error("Error updating feedback status:", error);
+    logger.error("Error updating feedback status:", error);
     res.status(500).json({
       success: false,
       message: "Internal server error",
@@ -151,7 +152,7 @@ exports.deleteFeedback = async (req, res) => {
       message: "Feedback deleted successfully (placeholder)",
     });
   } catch (error) {
-    console.error("Error deleting feedback:", error);
+    logger.error("Error deleting feedback:", error);
     res.status(500).json({
       success: false,
       message: "Internal server error",
@@ -173,7 +174,7 @@ exports.getFeedbackStats = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error getting feedback stats:", error);
+    logger.error("Error getting feedback stats:", error);
     res.status(500).json({
       success: false,
       message: "Internal server error",

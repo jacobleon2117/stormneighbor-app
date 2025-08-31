@@ -120,7 +120,7 @@ router.get(
         },
       });
     } catch (error) {
-      console.error("Get nearby neighborhoods error:", error);
+      logger.error("Get nearby neighborhoods error:", error);
       res.status(500).json({
         success: false,
         message: "Error fetching nearby neighborhoods",
@@ -258,7 +258,7 @@ router.get(
         data: { neighborhood },
       });
     } catch (error) {
-      console.error("Get neighborhood details error:", error);
+      logger.error("Get neighborhood details error:", error);
       res.status(500).json({
         success: false,
         message: "Error fetching neighborhood details",
@@ -352,7 +352,7 @@ router.get(
         },
       });
     } catch (error) {
-      console.error("Get popular neighborhoods error:", error);
+      logger.error("Get popular neighborhoods error:", error);
       res.status(500).json({
         success: false,
         message: "Error fetching popular neighborhoods",
@@ -437,7 +437,7 @@ router.get(
         },
       });
     } catch (error) {
-      console.error("Search neighborhoods error:", error);
+      logger.error("Search neighborhoods error:", error);
       res.status(500).json({
         success: false,
         message: "Error searching neighborhoods",
@@ -509,7 +509,7 @@ router.get("/my/current", auth, async (req, res) => {
       data: { neighborhood },
     });
   } catch (error) {
-    console.error("Get user neighborhood error:", error);
+    logger.error("Get user neighborhood error:", error);
     res.status(500).json({
       success: false,
       message: "Error fetching user neighborhood",
@@ -523,6 +523,7 @@ router.get("/my/current", auth, async (req, res) => {
 router.get("/test/status", async (req, res) => {
   try {
     const { pool } = require("../config/database");
+const logger = require("../utils/logger");
     const client = await pool.connect();
 
     try {
@@ -547,7 +548,7 @@ router.get("/test/status", async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Neighborhoods test endpoint error:", error);
+    logger.error("Neighborhoods test endpoint error:", error);
     res.status(500).json({
       success: false,
       message: "Neighborhoods routes test failed",

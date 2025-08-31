@@ -14,7 +14,7 @@ const createBackup = async (req, res) => {
 
     const { type = "manual", schemaOnly = false, dataOnly = false, excludeTables = [] } = req.body;
 
-    console.log(`Admin ${req.user.userId} initiating ${type} backup`);
+    logger.info(`Admin ${req.user.userId} initiating ${type} backup`);
 
     const backupInfo = await backupService.createBackup(type, {
       schemaOnly,
@@ -31,7 +31,7 @@ const createBackup = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Backup creation failed:", error);
+    logger.error("Backup creation failed:", error);
     res.status(500).json({
       success: false,
       message: "Failed to create database backup",
@@ -55,7 +55,7 @@ const listBackups = async (_req, res) => {
       },
     });
   } catch (error) {
-    console.error("Failed to list backups:", error);
+    logger.error("Failed to list backups:", error);
     res.status(500).json({
       success: false,
       message: "Failed to retrieve backup list",
@@ -91,13 +91,13 @@ const downloadBackup = async (req, res) => {
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
     res.setHeader("Content-Length", backup.size);
 
-    console.log(`Admin ${req.user.userId} downloading backup: ${filename}`);
+    logger.info(`Admin ${req.user.userId} downloading backup: ${filename}`);
 
     const fs = require("fs");
     const fileStream = fs.createReadStream(backupPath);
 
     fileStream.on("error", (error) => {
-      console.error("File stream error:", error);
+      logger.error("File stream error:", error);
       if (!res.headersSent) {
         res.status(500).json({
           success: false,
@@ -108,7 +108,7 @@ const downloadBackup = async (req, res) => {
 
     fileStream.pipe(res);
   } catch (error) {
-    console.error("Backup download failed:", error);
+    logger.error("Backup download failed:", error);
     res.status(500).json({
       success: false,
       message: "Failed to download backup",
@@ -141,7 +141,7 @@ const deleteBackup = async (req, res) => {
     const backupPath = require("path").join(backupService.backupDir, filename);
     await require("fs").promises.unlink(backupPath);
 
-    console.log(`Admin ${req.user.userId} deleted backup: ${filename}`);
+    logger.info(`Admin ${req.user.userId} deleted backup: ${filename}`);
 
     res.json({
       success: true,
@@ -152,7 +152,7 @@ const deleteBackup = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Backup deletion failed:", error);
+    logger.error("Backup deletion failed:", error);
     res.status(500).json({
       success: false,
       message: "Failed to delete backup",
@@ -190,7 +190,7 @@ const restoreBackup = async (req, res) => {
       });
     }
 
-    console.log(`Admin ${req.user.userId} initiating database restore from: ${filename}`);
+    logger.info(`Admin ${req.user.userId} initiating database restore from: ${filename}`);
 
     const result = await backupService.restoreBackup(filename, {
       schemaOnly,
@@ -207,7 +207,7 @@ const restoreBackup = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Database restore failed:", error);
+    logger.error("Database restore failed:", error);
     res.status(500).json({
       success: false,
       message: "Database restore failed",
@@ -226,7 +226,7 @@ const getBackupStats = async (_req, res) => {
       data: stats,
     });
   } catch (error) {
-    console.error("Failed to get backup stats:", error);
+    logger.error("Failed to get backup stats:", error);
     res.status(500).json({
       success: false,
       message: "Failed to retrieve backup statistics",
@@ -243,6 +243,7 @@ const testBackupSystem = async (_req, res) => {
 
     const testPath = require("path").join(backupService.backupDir, testBackup.filename);
     await require("fs").promises.unlink(testPath);
+const logger = require("../utils/logger");
 
     res.json({
       success: true,
@@ -255,7 +256,7 @@ const testBackupSystem = async (_req, res) => {
       },
     });
   } catch (error) {
-    console.error("Backup system test failed:", error);
+    logger.error("Backup system test failed:", error);
     res.status(500).json({
       success: false,
       message: "Backup system test failed",

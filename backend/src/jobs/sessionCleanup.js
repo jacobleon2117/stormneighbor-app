@@ -1,5 +1,6 @@
 const cron = require("node-cron");
 const tokenService = require("../services/tokenService");
+const logger = require("../utils/logger");
 
 class SessionCleanupJob {
   constructor() {
@@ -9,13 +10,13 @@ class SessionCleanupJob {
   }
 
   start() {
-    console.log("Starting session cleanup job");
+    logger.info("Starting session cleanup job");
 
     this.cronJob = cron.schedule(
       "0 2 * * *",
       async () => {
         if (this.isRunning) {
-          console.log("Session cleanup already running, skipping");
+          logger.info("Session cleanup already running, skipping");
           return;
         }
 
@@ -27,7 +28,7 @@ class SessionCleanupJob {
       }
     );
 
-    console.log("Session cleanup job scheduled for 2:00 AM UTC daily");
+    logger.info("Session cleanup job scheduled for 2:00 AM UTC daily");
 
     this.startupTimeout = setTimeout(() => {
       this.startupTimeout = null;
@@ -40,14 +41,14 @@ class SessionCleanupJob {
     const startTime = Date.now();
 
     try {
-      console.log("Starting session cleanup...");
+      logger.info("Starting session cleanup...");
 
       await tokenService.cleanupExpiredSessions();
 
       const duration = Date.now() - startTime;
-      console.log(`SUCCESS: Session cleanup completed in ${duration}ms`);
+      logger.info(`SUCCESS: Session cleanup completed in ${duration}ms`);
     } catch (error) {
-      console.error("ERROR: Session cleanup failed:", error);
+      logger.error("ERROR: Session cleanup failed:", error);
     } finally {
       this.isRunning = false;
     }
@@ -62,12 +63,12 @@ class SessionCleanupJob {
   }
 
   stop() {
-    console.log("Stopping session cleanup job");
+    logger.info("Stopping session cleanup job");
 
     if (this.startupTimeout) {
       clearTimeout(this.startupTimeout);
       this.startupTimeout = null;
-      console.log("Cancelled pending startup cleanup");
+      logger.info("Cancelled pending startup cleanup");
     }
 
     if (this.cronJob) {

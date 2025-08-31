@@ -1,4 +1,5 @@
 const securityMiddleware = require("./security");
+const logger = require("../utils/logger");
 
 const createErrorResponse = (success = false, message, code, error = null, data = null) => {
   const response = {
@@ -20,7 +21,7 @@ const createErrorResponse = (success = false, message, code, error = null, data 
 };
 
 const handleDatabaseError = (error, req, res, operation = "database operation") => {
-  console.error(`Database error during ${operation}:`, error);
+  logger.error(`Database error during ${operation}:`, error);
 
   if (error.message.includes("invalid input syntax") || error.code === "22P02") {
     securityMiddleware.logSecurityEvent(req, "INVALID_INPUT", {
@@ -65,7 +66,7 @@ const handleRateLimitError = (res, message = "Too many requests") => {
 };
 
 const handleServerError = (error, _req, res, operation = "operation") => {
-  console.error(`Server error during ${operation}:`, error);
+  logger.error(`Server error during ${operation}:`, error);
 
   return res
     .status(500)

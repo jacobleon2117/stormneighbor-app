@@ -1,4 +1,5 @@
 const crypto = require("crypto");
+const logger = require("../utils/logger");
 class InMemoryCache {
   constructor() {
     this.cache = new Map();
@@ -99,7 +100,7 @@ class InMemoryCache {
     this.stats.evictions += evicted;
 
     if (evicted > 0) {
-      console.log(
+      logger.info(
         `[${new Date().toISOString()}] Cache cleanup: ${evicted} expired entries removed`
       );
     }
@@ -159,7 +160,7 @@ const createCacheMiddleware = (options = {}) => {
     const cachedData = cache.get(cacheKey);
 
     if (cachedData) {
-      console.log(
+      logger.info(
         `[${new Date().toISOString()}] [${requestId}] Cache HIT: ${req.method} ${req.path}`
       );
 
@@ -172,7 +173,7 @@ const createCacheMiddleware = (options = {}) => {
       return res.json(cachedData);
     }
 
-    console.log(
+    logger.info(
       `[${new Date().toISOString()}] [${requestId}] Cache MISS: ${req.method} ${req.path}`
     );
 
@@ -181,7 +182,7 @@ const createCacheMiddleware = (options = {}) => {
       if (res.statusCode >= 200 && res.statusCode < 300) {
         try {
           cache.set(cacheKey, data, ttl);
-          console.log(
+          logger.info(
             `[${new Date().toISOString()}] [${requestId}] Cached response: ${req.method} ${req.path} (TTL: ${ttl / 1000}s)`
           );
 
@@ -244,7 +245,7 @@ const invalidateCache = (patterns = []) => {
         }
 
         if (invalidated > 0) {
-          console.log(
+          logger.info(
             `[${new Date().toISOString()}] [${requestId}] Cache invalidated: ${invalidated} entries`
           );
         }

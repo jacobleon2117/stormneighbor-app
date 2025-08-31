@@ -5,6 +5,7 @@ const {
   handleServerError,
   createSuccessResponse,
 } = require("../middleware/errorHandler");
+const logger = require("../utils/logger");
 
 const getPosts = async (req, res) => {
   try {
@@ -224,7 +225,7 @@ const getPost = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Get post error:", error);
+    logger.error("Get post error:", error);
     res.status(500).json({
       success: false,
       message: "Server error fetching post",
@@ -246,10 +247,10 @@ const createPost = async (req, res) => {
       tags = [],
     } = req.body;
 
-    console.log("Create post request body:", req.body);
+    logger.info("Create post request body:", req.body);
 
     if (!content || !content.trim()) {
-      console.log("Content validation failed:", content);
+      logger.info("Content validation failed:", content);
       return res.status(400).json({
         success: false,
         message: "Content is required",
@@ -257,7 +258,7 @@ const createPost = async (req, res) => {
     }
 
     if (!postType) {
-      console.log("PostType validation failed:", postType);
+      logger.info("PostType validation failed:", postType);
       return res.status(400).json({
         success: false,
         message: "Post type is required",
@@ -280,9 +281,9 @@ const createPost = async (req, res) => {
       }
 
       const user = userQuery.rows[0];
-      console.log("User location data:", user);
+      logger.info("User location data:", user);
       if (!user.location_city || !user.address_state) {
-        console.log("Missing location data - location_city:", user.location_city, "address_state:", user.address_state);
+        logger.info("Missing location data - location_city:", user.location_city, "address_state:", user.address_state);
         return res.status(400).json({
           success: false,
           message: "Please complete your profile with city and state information to create posts",
@@ -339,7 +340,7 @@ const createPost = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Create post error:", error);
+    logger.error("Create post error:", error);
     console.error("Error details:", {
       message: error.message,
       code: error.code,
@@ -447,7 +448,7 @@ const updatePost = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Update post error:", error);
+    logger.error("Update post error:", error);
     res.status(500).json({
       success: false,
       message: "Server error updating post",
@@ -490,7 +491,7 @@ const deletePost = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Delete post error:", error);
+    logger.error("Delete post error:", error);
     res.status(500).json({
       success: false,
       message: "Server error deleting post",
@@ -572,7 +573,7 @@ const getComments = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Get comments error:", error);
+    logger.error("Get comments error:", error);
     res.status(500).json({
       success: false,
       message: "Server error fetching comments",
@@ -640,7 +641,7 @@ const createComment = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Create comment error:", error);
+    logger.error("Create comment error:", error);
     res.status(500).json({
       success: false,
       message: "Server error creating comment",
@@ -704,7 +705,7 @@ const updateComment = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Update comment error:", error);
+    logger.error("Update comment error:", error);
     res.status(500).json({
       success: false,
       message: "Server error updating comment",
@@ -750,7 +751,7 @@ const deleteComment = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Delete comment error:", error);
+    logger.error("Delete comment error:", error);
     res.status(500).json({
       success: false,
       message: "Server error deleting comment",
@@ -818,7 +819,7 @@ const addReaction = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Add reaction error:", error);
+    logger.error("Add reaction error:", error);
     res.status(500).json({
       success: false,
       message: "Server error adding reaction",
@@ -848,7 +849,7 @@ const removeReaction = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Remove reaction error:", error);
+    logger.error("Remove reaction error:", error);
     res.status(500).json({
       success: false,
       message: "Server error removing reaction",
@@ -925,7 +926,7 @@ const addCommentReaction = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Add comment reaction error:", error);
+    logger.error("Add comment reaction error:", error);
     res.status(500).json({
       success: false,
       message: "Server error adding reaction",
@@ -955,7 +956,7 @@ const removeCommentReaction = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Remove comment reaction error:", error);
+    logger.error("Remove comment reaction error:", error);
     res.status(500).json({
       success: false,
       message: "Server error removing reaction",

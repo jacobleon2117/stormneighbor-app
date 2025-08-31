@@ -1,6 +1,6 @@
 import * as Location from 'expo-location';
 import { Alert, Platform, Linking } from 'react-native';
-import { LocationPermissions, LocationPreferences } from '../types';
+import { LocationPermissionsWithChoice, LocationPreferences } from '../types';
 
 export class LocationService {
   private static instance: LocationService;
@@ -16,75 +16,92 @@ export class LocationService {
 
   async requestLocationPermissions(
     showRationale: boolean = true
-  ): Promise<{
-    foreground: Location.PermissionStatus;
-    background: Location.PermissionStatus;
-    userChoice: 'always' | 'while-using' | 'never' | 'cancelled';
-  }> {
+  ): Promise<LocationPermissionsWithChoice> {
     try {
-      const foregroundPermissions = await Location.getForegroundPermissionsAsync();
-      
-      if (foregroundPermissions.status === 'granted') {
-        const backgroundPermissions = await Location.getBackgroundPermissionsAsync();
-        return {
-          foreground: foregroundPermissions.status,
-          background: backgroundPermissions.status,
-          userChoice: backgroundPermissions.status === 'granted' ? 'always' : 'while-using'
-        };
+      const foregroundPermissions =
+        await Location.getForegroundPermissionsAsync();
+
+      const permissions: LocationPermissionsWithChoice = {
+        foreground: foregroundPermissions.status,
+        background: "denied",
+        lastUpdated: new Date().toISOString(),
+        userChoice: "never",
+      };
+
+      if (foregroundPermissions.status === "granted") {
+        const backgroundPermissions =
+          await Location.getBackgroundPermissionsAsync();
+        permissions.background = backgroundPermissions.status;
+        permissions.userChoice =
+          backgroundPermissions.status === "granted" ? "always" : "while-using";
+        permissions.lastUpdated = new Date().toISOString();
+        return permissions;
       }
 
       if (showRationale) {
         const choice = await this.showPermissionChoice();
-        if (choice === 'never' || choice === 'cancelled') {
-          return {
-            foreground: 'denied' as Location.PermissionStatus,
-            background: 'denied' as Location.PermissionStatus,
-            userChoice: choice
-          };
+        if (choice === "never" || choice === "cancelled") {
+          permissions.userChoice = choice;
+          return permissions;
         }
 
-        if (choice === 'always') {
-          return await this.requestAlwaysPermissions();
+        if (choice === "always") {
+          const alwaysPermissions = await this.requestAlwaysPermissions();
+          return { ...permissions, ...alwaysPermissions, userChoice: "always" };
         } else {
-          return await this.requestWhileUsingPermissions();
+          const whileUsingPermissions =
+            await this.requestWhileUsingPermissions();
+          return {
+            ...permissions,
+            ...whileUsingPermissions,
+            userChoice: "while-using",
+          };
         }
       }
 
-      return await this.requestWhileUsingPermissions();
-    } catch (error) {
-      console.error('Error requesting location permissions:', error);
+      const whileUsingPermissions = await this.requestWhileUsingPermissions();
       return {
-        foreground: 'denied' as Location.PermissionStatus,
-        background: 'denied' as Location.PermissionStatus,
-        userChoice: 'never'
+        ...permissions,
+        ...whileUsingPermissions,
+        userChoice: "while-using",
+      };
+    } catch (error) {
+      console.error("Error requesting location permissions:", error);
+      return {
+        foreground: "denied",
+        background: "denied",
+        lastUpdated: new Date().toISOString(),
+        userChoice: "never",
       };
     }
   }
 
-  private async showPermissionChoice(): Promise<'always' | 'while-using' | 'never' | 'cancelled'> {
+  private async showPermissionChoice(): Promise<
+    "always" | "while-using" | "never" | "cancelled"
+  > {
     return new Promise((resolve) => {
       Alert.alert(
-        'Location Access',
-        'StormNeighbor can provide better weather alerts and emergency notifications with location access. Choose your preference:',
+        "Location Access",
+        "StormNeighbor can provide better weather alerts and emergency notifications with location access. Choose your preference:",
         [
           {
-            text: 'Never',
-            style: 'destructive',
-            onPress: () => resolve('never')
+            text: "Never",
+            style: "destructive",
+            onPress: () => resolve("never"),
           },
           {
-            text: 'Cancel',
-            style: 'cancel',
-            onPress: () => resolve('cancelled')
+            text: "Cancel",
+            style: "cancel",
+            onPress: () => resolve("cancelled"),
           },
           {
-            text: 'While Using App',
-            onPress: () => resolve('while-using')
+            text: "While Using App",
+            onPress: () => resolve("while-using"),
           },
           {
-            text: 'Always',
-            onPress: () => resolve('always')
-          }
+            text: "Always",
+            onPress: () => resolve("always"),
+          },
         ],
         { cancelable: false }
       );
@@ -95,36 +112,40 @@ export class LocationService {
     const result = await Location.requestForegroundPermissionsAsync();
     return {
       foreground: result.status,
-      background: 'denied' as Location.PermissionStatus,
-      userChoice: 'while-using' as const
+      background: "denied" as Location.PermissionStatus,
+      userChoice: "while-using" as const,
     };
   }
 
   private async requestAlwaysPermissions() {
     const foregroundResult = await Location.requestForegroundPermissionsAsync();
-    
-    if (foregroundResult.status !== 'granted') {
+
+    if (foregroundResult.status !== "granted") {
       return {
         foreground: foregroundResult.status,
-        background: 'denied' as Location.PermissionStatus,
-        userChoice: 'while-using' as const
+        background: "denied" as Location.PermissionStatus,
+        userChoice: "while-using" as const,
       };
     }
 
     const backgroundResult = await Location.requestBackgroundPermissionsAsync();
-    
+
     return {
       foreground: foregroundResult.status,
       background: backgroundResult.status,
-      userChoice: (backgroundResult.status === 'granted' ? 'always' : 'while-using') as 'always' | 'while-using' | 'never' | 'cancelled'
+      userChoice: (backgroundResult.status === "granted"
+        ? "always"
+        : "while-using") as "always" | "while-using" | "never" | "cancelled",
     };
   }
 
-  async getCurrentLocation(accuracy: Location.Accuracy = Location.Accuracy.Balanced): Promise<Location.LocationObject | null> {
+  async getCurrentLocation(
+    accuracy: Location.Accuracy = Location.Accuracy.Balanced
+  ): Promise<Location.LocationObject | null> {
     try {
       const { status } = await Location.getForegroundPermissionsAsync();
-      
-      if (status !== 'granted') {
+
+      if (status !== "granted") {
         return null;
       }
 
@@ -136,27 +157,35 @@ export class LocationService {
       this.currentLocation = location;
       return location;
     } catch (error) {
-      console.error('Error getting current location:', error);
+      console.error("Error getting current location:", error);
       return null;
     }
   }
 
-  async reverseGeocode(latitude: number, longitude: number): Promise<Location.LocationGeocodedAddress | null> {
+  async reverseGeocode(
+    latitude: number,
+    longitude: number
+  ): Promise<Location.LocationGeocodedAddress | null> {
     try {
-      const result = await Location.reverseGeocodeAsync({ latitude, longitude });
+      const result = await Location.reverseGeocodeAsync({
+        latitude,
+        longitude,
+      });
       return result[0] || null;
     } catch (error) {
-      console.error('Error reverse geocoding:', error);
+      console.error("Error reverse geocoding:", error);
       return null;
     }
   }
 
-  async forwardGeocode(address: string): Promise<Location.LocationGeocodedLocation | null> {
+  async forwardGeocode(
+    address: string
+  ): Promise<Location.LocationGeocodedLocation | null> {
     try {
       const result = await Location.geocodeAsync(address);
       return result[0] || null;
     } catch (error) {
-      console.error('Error forward geocoding:', error);
+      console.error("Error forward geocoding:", error);
       return null;
     }
   }
@@ -167,9 +196,9 @@ export class LocationService {
   ): Promise<boolean> {
     try {
       const { status } = await Location.getBackgroundPermissionsAsync();
-      
-      if (status !== 'granted') {
-        console.warn('Background location permission not granted');
+
+      if (status !== "granted") {
+        console.warn("Background location permission not granted");
         return false;
       }
 
@@ -191,7 +220,7 @@ export class LocationService {
 
       return true;
     } catch (error) {
-      console.error('Error starting location watching:', error);
+      console.error("Error starting location watching:", error);
       return false;
     }
   }
@@ -203,17 +232,23 @@ export class LocationService {
     }
   }
 
-  async canUseLocationFor(purpose: 'weather' | 'alerts' | 'posts'): Promise<boolean> {
+  async canUseLocationFor(
+    purpose: "weather" | "alerts" | "posts"
+  ): Promise<boolean> {
     const permissions = await Location.getForegroundPermissionsAsync();
-    
+
     switch (purpose) {
-      case 'weather':
-        return permissions.status === 'granted';
-      case 'alerts':
-        const backgroundPermissions = await Location.getBackgroundPermissionsAsync();
-        return permissions.status === 'granted' || backgroundPermissions.status === 'granted';
-      case 'posts':
-        return permissions.status === 'granted';
+      case "weather":
+        return permissions.status === "granted";
+      case "alerts":
+        const backgroundPermissions =
+          await Location.getBackgroundPermissionsAsync();
+        return (
+          permissions.status === "granted" ||
+          backgroundPermissions.status === "granted"
+        );
+      case "posts":
+        return permissions.status === "granted";
       default:
         return false;
     }
@@ -222,98 +257,109 @@ export class LocationService {
   async showPermissionDeniedAlert(purpose: string): Promise<void> {
     return new Promise((resolve) => {
       Alert.alert(
-        'Location Access Required',
+        "Location Access Required",
         `To provide accurate ${purpose}, StormNeighbor needs location access. You can enable this in your device settings.`,
         [
           {
-            text: 'Not Now',
-            style: 'cancel',
-            onPress: () => resolve()
+            text: "Not Now",
+            style: "cancel",
+            onPress: () => resolve(),
           },
           {
-            text: 'Open Settings',
+            text: "Open Settings",
             onPress: () => {
-              if (Platform.OS === 'ios') {
-                Linking.openURL('app-settings:');
+              if (Platform.OS === "ios") {
+                Linking.openURL("app-settings:");
               } else {
                 Linking.openSettings();
               }
               resolve();
-            }
-          }
+            },
+          },
         ]
       );
     });
   }
 
   calculateDistance(
-    lat1: number, 
-    lon1: number, 
-    lat2: number, 
+    lat1: number,
+    lon1: number,
+    lat2: number,
     lon2: number
   ): number {
     const R = 3959;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }
 
   getBestLocationFor(
-    purpose: 'weather' | 'community' | 'alerts',
+    purpose: "weather" | "community" | "alerts",
     homeLocation?: { latitude: number; longitude: number },
     preferences?: LocationPreferences
-  ): { latitude: number; longitude: number; source: 'current' | 'home' | 'none' } | null {
-    
+  ): {
+    latitude: number;
+    longitude: number;
+    source: "current" | "home" | "none";
+  } | null {
     switch (purpose) {
-      case 'weather':
-        if (this.currentLocation && preferences?.useCurrentLocationForWeather !== false) {
+      case "weather":
+        if (
+          this.currentLocation &&
+          preferences?.useCurrentLocationForWeather !== false
+        ) {
           return {
             latitude: this.currentLocation.coords.latitude,
             longitude: this.currentLocation.coords.longitude,
-            source: 'current'
+            source: "current",
           };
         }
         if (homeLocation) {
           return {
             ...homeLocation,
-            source: 'home'
+            source: "home",
           };
         }
         return null;
 
-      case 'community':
+      case "community":
         if (homeLocation) {
           return {
             ...homeLocation,
-            source: 'home'
+            source: "home",
           };
         }
         if (this.currentLocation) {
           return {
             latitude: this.currentLocation.coords.latitude,
             longitude: this.currentLocation.coords.longitude,
-            source: 'current'
+            source: "current",
           };
         }
         return null;
 
-      case 'alerts':
-        if (this.currentLocation && preferences?.useCurrentLocationForAlerts !== false) {
+      case "alerts":
+        if (
+          this.currentLocation &&
+          preferences?.useCurrentLocationForAlerts !== false
+        ) {
           return {
             latitude: this.currentLocation.coords.latitude,
             longitude: this.currentLocation.coords.longitude,
-            source: 'current'
+            source: "current",
           };
         }
         if (homeLocation) {
           return {
             ...homeLocation,
-            source: 'home'
+            source: "home",
           };
         }
         return null;

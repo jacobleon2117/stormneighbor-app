@@ -1,5 +1,6 @@
 const rateLimit = require("express-rate-limit");
 const { pool } = require("../config/database");
+const logger = require("../utils/logger");
 
 const bruteForceStore = new Map();
 const suspiciousIPs = new Set();
@@ -38,7 +39,7 @@ class SecurityMiddleware {
       ...details,
     };
 
-    console.warn(`[SECURITY] ${eventType}:`, JSON.stringify(logEntry, null, 2));
+    logger.warn(`[SECURITY] ${eventType}:`, JSON.stringify(logEntry, null, 2));
 
     if (process.env.NODE_ENV === "production") {
       this.saveSecurityLog(logEntry);
@@ -60,7 +61,7 @@ class SecurityMiddleware {
         client.release();
       }
     } catch (error) {
-      console.error("Failed to save security log:", error.message);
+      logger.error("Failed to save security log:", error.message);
     }
   }
 
@@ -339,7 +340,7 @@ class SecurityMiddleware {
         const responseTime = Date.now() - startTime;
 
         if (req.method !== "GET" || res.statusCode >= 400) {
-          console.log(
+          logger.info(
             `[AUDIT] ${req.method} ${req.path} - Status: ${res.statusCode} - Time: ${responseTime}ms - IP: ${req.ip} - User: ${req.user?.userId || "anonymous"}`
           );
         }
@@ -391,7 +392,7 @@ const cleanupInterval = setInterval(
 securityMiddleware.clearCleanupInterval = () => {
   if (cleanupInterval) {
     clearInterval(cleanupInterval);
-    console.log("Security middleware cleanup interval cleared");
+    logger.info("Security middleware cleanup interval cleared");
   }
 };
 

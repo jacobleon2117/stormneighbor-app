@@ -1,5 +1,6 @@
 const { Pool } = require("pg");
 require("dotenv").config();
+const logger = require("../utils/logger");
 
 const getDatabaseConfig = () => {
   const isProduction = process.env.NODE_ENV === "production";
@@ -33,20 +34,20 @@ const testConnection = async () => {
   let client;
   try {
     client = await pool.connect();
-    console.log("SUCCESS: Database connected successfully!");
+    logger.info("SUCCESS: Database connected successfully!");
 
     const result = await client.query("SELECT NOW() as current_time, version()");
-    console.log("INFO: Database time:", result.rows[0].current_time);
-    console.log("INFO: PostgreSQL version:", result.rows[0].version.split(" ")[0]);
+    logger.info("INFO: Database time:", result.rows[0].current_time);
+    logger.info("INFO: PostgreSQL version:", result.rows[0].version.split(" ")[0]);
 
     try {
       const postgisResult = await client.query("SELECT PostGIS_Version() as version");
-      console.log("PostGIS version:", postgisResult.rows[0].version);
+      logger.info("PostGIS version:", postgisResult.rows[0].version);
     } catch (postgisError) {
-      console.log("INFO: PostGIS not available (OK for testing)");
+      logger.info("INFO: PostGIS not available (OK for testing);");
     }
 
-    console.log("Pool status:", {
+    logger.info("Pool status:", {
       total: pool.totalCount,
       idle: pool.idleCount,
       waiting: pool.waitingCount,
@@ -54,18 +55,18 @@ const testConnection = async () => {
 
     return true;
   } catch (error) {
-    console.error("ERROR: Database connection failed:", error.message);
+    logger.error("ERROR: Database connection failed:", error.message);
 
     if (error.code === "ECONNREFUSED") {
-      console.error("INFO: Make sure PostgreSQL is running and accessible");
+      logger.error("INFO: Make sure PostgreSQL is running and accessible");
     } else if (error.code === "28P01") {
-      console.error("INFO: Check your database credentials in DATABASE_URL");
+      logger.error("INFO: Check your database credentials in DATABASE_URL");
     } else if (error.code === "3D000") {
-      console.error("INFO: Database does not exist, create it first");
+      logger.error("INFO: Database does not exist, create it first");
     } else if (error.message.includes("SSL")) {
-      console.error("INFO: Try setting DATABASE_SSL=true for cloud databases");
+      logger.error("INFO: Try setting DATABASE_SSL=true for cloud databases");
     } else if (error.message.includes("timeout")) {
-      console.error("INFO: Database connection timeout, check network connectivity");
+      logger.error("INFO: Database connection timeout, check network connectivity");
     }
 
     return false;
@@ -84,11 +85,11 @@ const enablePostGIS = async () => {
     await client.query("CREATE EXTENSION IF NOT EXISTS postgis;");
     await client.query("CREATE EXTENSION IF NOT EXISTS postgis_topology;");
 
-    console.log("SUCCESS: PostGIS extensions enabled");
+    logger.info("SUCCESS: PostGIS extensions enabled");
     return true;
   } catch (error) {
-    console.warn("WARNING: PostGIS not available:", error.message);
-    console.warn("INFO: This is OK (city/state matching will work without PostGIS)");
+    logger.warn("WARNING: PostGIS not available:", error.message);
+    logger.warn("INFO: This is OK (city/state matching will work without PostGIS);");
     return false;
   } finally {
     if (client) {
@@ -98,12 +99,12 @@ const enablePostGIS = async () => {
 };
 
 const gracefulShutdown = async () => {
-  console.log("WORKING: Shutting down database pool");
+  logger.info("WORKING: Shutting down database pool");
   try {
     await pool.end();
-    console.log("SUCCESS: Database pool closed gracefully");
+    logger.info("SUCCESS: Database pool closed gracefully");
   } catch (error) {
-    console.error("ERROR: Error closing database pool:", error.message);
+    logger.error("ERROR: Error closing database pool:", error.message);
   }
 };
 
@@ -113,11 +114,11 @@ if (process.env.NODE_ENV === "test") {
 }
 
 pool.on("connect", () => {
-  console.log("SUCCESS: New database client connected");
+  logger.info("SUCCESS: New database client connected");
 });
 
 pool.on("error", (err) => {
-  console.error("ERROR: Unexpected database error:", err.message);
+  logger.error("ERROR: Unexpected database error:", err.message);
 });
 
 module.exports = {

@@ -1,5 +1,6 @@
 const tokenService = require("../services/tokenService");
 const { pool } = require("../config/database");
+const logger = require("../utils/logger");
 
 const auth = async (req, res, next) => {
   try {
@@ -77,7 +78,7 @@ const auth = async (req, res, next) => {
       }
     }
   } catch (error) {
-    console.error("Auth middleware error:", error);
+    logger.error("Auth middleware error:", error);
     res.status(500).json({ 
       success: false,
       message: "Server error in authentication",
@@ -129,7 +130,7 @@ const optionalAuth = async (req, _res, next) => {
 
     next();
   } catch (error) {
-    console.error("Optional auth middleware error:", error);
+    logger.error("Optional auth middleware error:", error);
     req.user = null;
     next();
   }

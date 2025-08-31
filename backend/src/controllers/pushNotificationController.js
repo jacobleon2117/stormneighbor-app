@@ -1,5 +1,6 @@
 const pushNotificationService = require("../services/pushNotificationService");
 const { validationResult } = require("express-validator");
+const logger = require("../utils/logger");
 
 const registerDevice = async (req, res) => {
   try {
@@ -30,7 +31,7 @@ const registerDevice = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Device registration failed:", error);
+    logger.error("Device registration failed:", error);
     res.status(500).json({
       success: false,
       message: "Failed to register device token",
@@ -57,7 +58,7 @@ const removeDevice = async (req, res) => {
       message: "Device token removed successfully",
     });
   } catch (error) {
-    console.error("Device removal failed:", error);
+    logger.error("Device removal failed:", error);
     res.status(500).json({
       success: false,
       message: "Failed to remove device token",
@@ -88,7 +89,7 @@ const getUserDevices = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Get user devices failed:", error);
+    logger.error("Get user devices failed:", error);
     res.status(500).json({
       success: false,
       message: "Failed to retrieve user devices",
@@ -135,7 +136,7 @@ const sendTestNotification = async (req, res) => {
       data: result,
     });
   } catch (error) {
-    console.error("Send test notification failed:", error);
+    logger.error("Send test notification failed:", error);
     res.status(500).json({
       success: false,
       message: "Failed to send test notification",
@@ -166,7 +167,7 @@ const sendTopicNotification = async (req, res) => {
       data: result,
     });
   } catch (error) {
-    console.error("Send topic notification failed:", error);
+    logger.error("Send topic notification failed:", error);
     res.status(500).json({
       success: false,
       message: "Failed to send topic notification",
@@ -205,7 +206,7 @@ const subscribeToTopic = async (req, res) => {
       data: result,
     });
   } catch (error) {
-    console.error("Subscribe to topic failed:", error);
+    logger.error("Subscribe to topic failed:", error);
     res.status(500).json({
       success: false,
       message: "Failed to subscribe to topic",
@@ -244,7 +245,7 @@ const unsubscribeFromTopic = async (req, res) => {
       data: result,
     });
   } catch (error) {
-    console.error("Unsubscribe from topic failed:", error);
+    logger.error("Unsubscribe from topic failed:", error);
     res.status(500).json({
       success: false,
       message: "Failed to unsubscribe from topic",
@@ -276,7 +277,7 @@ const getNotificationStats = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Get notification stats failed:", error);
+    logger.error("Get notification stats failed:", error);
     res.status(500).json({
       success: false,
       message: "Failed to retrieve notification statistics",
@@ -295,7 +296,7 @@ const testFirebaseConnection = async (_req, res) => {
       data: result,
     });
   } catch (error) {
-    console.error("Firebase connection test failed:", error);
+    logger.error("Firebase connection test failed:", error);
     res.status(500).json({
       success: false,
       message: "Firebase connection test failed",
@@ -314,7 +315,7 @@ const getServiceStatus = async (_req, res) => {
       data: status,
     });
   } catch (error) {
-    console.error("Get service status failed:", error);
+    logger.error("Get service status failed:", error);
     res.status(500).json({
       success: false,
       message: "Failed to get service status",

@@ -29,7 +29,7 @@ class PushNotificationService {
           projectId: process.env.FIREBASE_PROJECT_ID,
         });
 
-        logger.success("Firebase Admin SDK initialized successfully");
+        logger.info("Firebase Admin SDK initialized successfully");
         this.initialized = true;
       }
     } catch (error) {
@@ -320,11 +320,11 @@ class PushNotificationService {
 
       const response = await admin.messaging().unsubscribeFromTopic(tokens, topic);
 
-      console.log(`Unsubscribed ${response.successCount} tokens from topic '${topic}'`);
+      logger.info(`Unsubscribed ${response.successCount} tokens from topic '${topic}'`);
 
       return response;
     } catch (error) {
-      console.error("Unsubscribe from topic failed:", error);
+      logger.error("Unsubscribe from topic failed:", error);
       throw error;
     }
   }
@@ -344,7 +344,7 @@ class PushNotificationService {
             error?.code === "messaging/invalid-registration-token" ||
             error?.code === "messaging/registration-token-not-registered"
           ) {
-            console.log(`Removing invalid token: ${token.substring(0, 20)}...`);
+            logger.info(`Removing invalid token: ${token.substring(0, 20)}...`);
             await this.removeDeviceToken(token);
           }
         }
@@ -364,7 +364,7 @@ class PushNotificationService {
         [userId, notification.title, notification.body, JSON.stringify(data), result.success]
       );
     } catch (error) {
-      console.error("Failed to log notification:", error);
+      logger.error("Failed to log notification:", error);
     } finally {
       client.release();
     }
@@ -393,14 +393,14 @@ class PushNotificationService {
           const result = await this.sendToUser(userId, notification, data);
           results.push({ userId, ...result });
         } catch (error) {
-          console.error(`Failed to send weather alert to user ${userId}:`, error);
+          logger.error(`Failed to send weather alert to user ${userId}:`, error);
           results.push({ userId, success: false, error: error.message });
         }
       }
 
       return results;
     } catch (error) {
-      console.error("Send weather alert failed:", error);
+      logger.error("Send weather alert failed:", error);
       throw error;
     }
   }
@@ -428,14 +428,14 @@ class PushNotificationService {
           const result = await this.sendToUser(userId, notification, data);
           results.push({ userId, ...result });
         } catch (error) {
-          console.error(`Failed to send emergency notification to user ${userId}:`, error);
+          logger.error(`Failed to send emergency notification to user ${userId}:`, error);
           results.push({ userId, success: false, error: error.message });
         }
       }
 
       return results;
     } catch (error) {
-      console.error("Send emergency notification failed:", error);
+      logger.error("Send emergency notification failed:", error);
       throw error;
     }
   }
@@ -463,14 +463,14 @@ class PushNotificationService {
           const result = await this.sendToUser(userId, notification, data);
           results.push({ userId, ...result });
         } catch (error) {
-          console.error(`Failed to send post notification to user ${userId}:`, error);
+          logger.error(`Failed to send post notification to user ${userId}:`, error);
           results.push({ userId, success: false, error: error.message });
         }
       }
 
       return results;
     } catch (error) {
-      console.error("Send post notification failed:", error);
+      logger.error("Send post notification failed:", error);
       throw error;
     }
   }
@@ -492,7 +492,7 @@ class PushNotificationService {
 
       return await this.sendToUser(userId, notification, data);
     } catch (error) {
-      console.error("Send comment notification failed:", error);
+      logger.error("Send comment notification failed:", error);
       throw error;
     }
   }
@@ -535,7 +535,7 @@ class PushNotificationService {
         []
       );
 
-      console.log(`Cleaned up ${result.rowCount} old device tokens`);
+      logger.info(`Cleaned up ${result.rowCount} old device tokens`);
       return result.rowCount;
     } finally {
       client.release();

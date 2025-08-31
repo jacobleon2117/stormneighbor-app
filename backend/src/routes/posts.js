@@ -262,7 +262,7 @@ router.post(
         },
       });
     } catch (error) {
-      console.error("Post report error:", error);
+      logger.error("Post report error:", error);
       res.status(500).json({
         success: false,
         message: "Server error reporting post",
@@ -277,6 +277,7 @@ router.post(
 router.get("/test", auth, async (req, res) => {
   try {
     const { pool } = require("../config/database");
+const logger = require("../utils/logger");
     const client = await pool.connect();
 
     try {
@@ -302,7 +303,7 @@ router.get("/test", auth, async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Test endpoint error:", error);
+    logger.error("Test endpoint error:", error);
     res.status(500).json({
       success: false,
       message: "Test failed",

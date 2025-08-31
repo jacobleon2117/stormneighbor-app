@@ -1,6 +1,7 @@
 const { pool } = require("../config/database");
 const { validationResult } = require("express-validator");
 const { registerDevice, sendNotificationToUsers } = require("../services/pushNotificationService");
+const logger = require("../utils/logger");
 
 const registerUserDevice = async (req, res) => {
   try {
@@ -32,7 +33,7 @@ const registerUserDevice = async (req, res) => {
       });
     }
   } catch (error) {
-    console.error("Register device error:", error);
+    logger.error("Register device error:", error);
     res.status(500).json({
       success: false,
       message: "Server error registering device",
@@ -148,7 +149,7 @@ const getUserNotifications = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Get notifications error:", error);
+    logger.error("Get notifications error:", error);
     res.status(500).json({
       success: false,
       message: "Server error fetching notifications",
@@ -190,7 +191,7 @@ const markNotificationRead = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Mark notification read error:", error);
+    logger.error("Mark notification read error:", error);
     res.status(500).json({
       success: false,
       message: "Server error updating notification",
@@ -225,7 +226,7 @@ const markAllNotificationsRead = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Mark all notifications read error:", error);
+    logger.error("Mark all notifications read error:", error);
     res.status(500).json({
       success: false,
       message: "Server error updating notifications",
@@ -268,7 +269,7 @@ const trackNotificationClick = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Track notification click error:", error);
+    logger.error("Track notification click error:", error);
     res.status(500).json({
       success: false,
       message: "Server error tracking click",
@@ -320,7 +321,7 @@ const getNotificationPreferences = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Get notification preferences error:", error);
+    logger.error("Get notification preferences error:", error);
     res.status(500).json({
       success: false,
       message: "Server error fetching preferences",
@@ -400,7 +401,7 @@ const updateNotificationPreferences = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Update notification preferences error:", error);
+    logger.error("Update notification preferences error:", error);
     res.status(500).json({
       success: false,
       message: "Server error updating preferences",
@@ -434,7 +435,7 @@ const sendTestNotification = async (req, res) => {
       data: result,
     });
   } catch (error) {
-    console.error("Send test notification error:", error);
+    logger.error("Send test notification error:", error);
     res.status(500).json({
       success: false,
       message: "Server error sending test notification",
@@ -507,7 +508,7 @@ const getNotificationStats = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Get notification stats error:", error);
+    logger.error("Get notification stats error:", error);
     res.status(500).json({
       success: false,
       message: "Server error fetching statistics",

@@ -88,7 +88,7 @@ export default function ConversationScreen() {
         };
 
         setMessages((prev) => [...prev, newMsg]);
-        
+
         setTimeout(() => {
           flatListRef.current?.scrollToEnd({ animated: true });
         }, 100);
@@ -104,10 +104,10 @@ export default function ConversationScreen() {
 
   const formatTime = (dateString: string): string => {
     const messageDate = new Date(dateString);
-    return messageDate.toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      hour12: false 
+    return messageDate.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
     });
   };
 
@@ -115,7 +115,11 @@ export default function ConversationScreen() {
     const messageDate = new Date(dateString);
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const messageDay = new Date(messageDate.getFullYear(), messageDate.getMonth(), messageDate.getDate());
+    const messageDay = new Date(
+      messageDate.getFullYear(),
+      messageDate.getMonth(),
+      messageDate.getDate()
+    );
 
     if (messageDay.getTime() === today.getTime()) {
       return "Today";
@@ -140,10 +144,10 @@ export default function ConversationScreen() {
       fetchMessages();
     }
 
-    const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', (e) => {
+    const keyboardDidShowListener = Keyboard.addListener("keyboardDidShow", (e) => {
       setKeyboardHeight(e.endCoordinates.height);
     });
-    const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
+    const keyboardDidHideListener = Keyboard.addListener("keyboardDidHide", () => {
       setKeyboardHeight(0);
     });
 
@@ -162,9 +166,7 @@ export default function ConversationScreen() {
       <View>
         {showDateSeparator && (
           <View style={styles.dateSeparator}>
-            <Text style={styles.dateSeparatorText}>
-              {formatDate(item.createdAt)}
-            </Text>
+            <Text style={styles.dateSeparatorText}>{formatDate(item.createdAt)}</Text>
           </View>
         )}
         <View
@@ -180,7 +182,7 @@ export default function ConversationScreen() {
               ) : (
                 <View style={[styles.messageAvatar, styles.avatarPlaceholder]}>
                   <Text style={styles.avatarText}>
-                    {userName?.split(' ')[0]?.charAt(0)?.toUpperCase() || '?'}
+                    {userName?.split(" ")[0]?.charAt(0)?.toUpperCase() || "?"}
                   </Text>
                 </View>
               )}
@@ -208,9 +210,7 @@ export default function ConversationScreen() {
             >
               {formatTime(item.createdAt)}
               {isFromCurrentUser && (
-                <Text style={styles.messageStatus}>
-                  {item.isRead ? " Read" : " Sent"}
-                </Text>
+                <Text style={styles.messageStatus}>{item.isRead ? " Read" : " Sent"}</Text>
               )}
             </Text>
           </View>
@@ -223,10 +223,7 @@ export default function ConversationScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <ArrowLeft size={24} color={Colors.text.primary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{userName || "Conversation"}</Text>
@@ -242,10 +239,7 @@ export default function ConversationScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <ArrowLeft size={24} color={Colors.text.primary} />
         </TouchableOpacity>
         <View style={styles.headerInfo}>
@@ -254,7 +248,7 @@ export default function ConversationScreen() {
           ) : (
             <View style={[styles.headerAvatar, styles.avatarPlaceholder]}>
               <Text style={styles.avatarText}>
-                {userName?.split(' ')[0]?.charAt(0)?.toUpperCase() || '?'}
+                {userName?.split(" ")[0]?.charAt(0)?.toUpperCase() || "?"}
               </Text>
             </View>
           )}
@@ -262,7 +256,7 @@ export default function ConversationScreen() {
         </View>
       </View>
 
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         style={styles.content}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}

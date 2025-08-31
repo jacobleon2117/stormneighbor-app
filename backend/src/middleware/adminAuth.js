@@ -1,5 +1,6 @@
 const { pool } = require("../config/database");
 const { logAdminAction } = require("../utils/adminLogger");
+const logger = require("../utils/logger");
 
 const adminAuth = async (req, res, next) => {
   const client = await pool.connect();
@@ -83,7 +84,7 @@ const adminAuth = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error("Admin auth middleware error:", error);
+    logger.error("Admin auth middleware error:", error);
     res.status(500).json({
       success: false,
       message: "Server error in admin authentication",
@@ -135,7 +136,7 @@ const requirePermission = (resource, action) => {
 
       next();
     } catch (error) {
-      console.error("Permission check error:", error);
+      logger.error("Permission check error:", error);
       res.status(500).json({
         success: false,
         message: "Server error in permission check",

@@ -1,4 +1,5 @@
 const { pool } = require("../config/database");
+const logger = require("../utils/logger");
 
 /**
  * Log admin actions for audit trail
@@ -53,7 +54,7 @@ const logAdminAction = async (
       ]
     );
   } catch (error) {
-    console.error("Error logging admin action:", error);
+    logger.error("Error logging admin action:", error);
   } finally {
     client.release();
   }
@@ -139,7 +140,7 @@ const getAdminActionHistory = async (filters = {}) => {
 
     return result.rows;
   } catch (error) {
-    console.error("Error fetching admin action history:", error);
+    logger.error("Error fetching admin action history:", error);
     throw error;
   } finally {
     client.release();
@@ -193,7 +194,7 @@ const getAdminActionStats = async (startDate, endDate) => {
       adminStats: adminStats.rows,
     };
   } catch (error) {
-    console.error("Error fetching admin action stats:", error);
+    logger.error("Error fetching admin action stats:", error);
     throw error;
   } finally {
     client.release();

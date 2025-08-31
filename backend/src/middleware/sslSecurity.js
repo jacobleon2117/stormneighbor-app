@@ -1,4 +1,5 @@
 const crypto = require("crypto");
+const logger = require("../utils/logger");
 
 class SSLSecurityMiddleware {
   constructor() {
@@ -34,7 +35,7 @@ class SSLSecurityMiddleware {
       if (!isSecure) {
         const httpsUrl = `https://${req.get("host")}${req.originalUrl}`;
 
-        console.log(`[SSL] Redirecting HTTP to HTTPS: ${req.originalUrl}`);
+        logger.info(`[SSL] Redirecting HTTP to HTTPS: ${req.originalUrl}`);
 
         return res.status(301).redirect(httpsUrl);
       }
@@ -249,7 +250,7 @@ class SSLSecurityMiddleware {
   }
 
   initialize(app) {
-    console.log("WORKING: Initializing SSL/TLS Security");
+    logger.info("WORKING: Initializing SSL/TLS Security");
 
     app.use(this.sslHealthCheck());
     app.use(this.httpsEnforcement());
@@ -257,10 +258,10 @@ class SSLSecurityMiddleware {
 
     app.get("/security-audit", this.securityAudit());
 
-    console.log(`SUCCESS: SSL/TLS Security initialized for ${process.env.NODE_ENV} environment`);
-    console.log(` HTTPS Enforcement: ${this.forceHTTPS ? "ENABLED" : "DISABLED"}`);
-    console.log(` HSTS: ${this.getHSTSHeader()}`);
-    console.log(` Trusted Proxies: ${this.trustedProxies.join(", ")}`);
+    logger.info(`SUCCESS: SSL/TLS Security initialized for ${process.env.NODE_ENV} environment`);
+    logger.info(` HTTPS Enforcement: ${this.forceHTTPS ? "ENABLED" : "DISABLED"}`);
+    logger.info(` HSTS: ${this.getHSTSHeader()}`);
+    logger.info(` Trusted Proxies: ${this.trustedProxies.join(", ")}`);
   }
 }
 

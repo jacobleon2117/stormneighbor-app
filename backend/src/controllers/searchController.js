@@ -78,7 +78,7 @@ const searchPosts = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Search posts error:", error);
+    logger.error("Search posts error:", error);
     res.status(500).json({
       success: false,
       message: "Server error performing search",
@@ -111,7 +111,7 @@ const getSearchSuggestions = async (req, res) => {
       data: results,
     });
   } catch (error) {
-    console.error("Get search suggestions error:", error);
+    logger.error("Get search suggestions error:", error);
     res.status(500).json({
       success: false,
       message: "Server error getting suggestions",
@@ -155,7 +155,7 @@ const getTrendingSearches = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Get trending searches error:", error);
+    logger.error("Get trending searches error:", error);
     res.status(500).json({
       success: false,
       message: "Server error getting trending searches",
@@ -191,7 +191,7 @@ const searchUsers = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Search users error:", error);
+    logger.error("Search users error:", error);
     res.status(500).json({
       success: false,
       message: "Server error searching users",
@@ -227,7 +227,7 @@ const saveSearch = async (req, res) => {
       data: { savedSearch },
     });
   } catch (error) {
-    console.error("Save search error:", error);
+    logger.error("Save search error:", error);
 
     if (error.constraint === "saved_searches_user_id_name_key") {
       return res.status(400).json({
@@ -258,7 +258,7 @@ const getSavedSearches = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Get saved searches error:", error);
+    logger.error("Get saved searches error:", error);
     res.status(500).json({
       success: false,
       message: "Server error getting saved searches",
@@ -280,7 +280,7 @@ const executeSavedSearch = async (req, res) => {
       data: results,
     });
   } catch (error) {
-    console.error("Execute saved search error:", error);
+    logger.error("Execute saved search error:", error);
 
     if (error.message === "Saved search not found") {
       return res.status(404).json({
@@ -327,7 +327,7 @@ const deleteSavedSearch = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Delete saved search error:", error);
+    logger.error("Delete saved search error:", error);
     res.status(500).json({
       success: false,
       message: "Server error deleting saved search",
@@ -348,7 +348,7 @@ const getSearchAnalytics = async (req, res) => {
       data: analytics,
     });
   } catch (error) {
-    console.error("Get search analytics error:", error);
+    logger.error("Get search analytics error:", error);
     res.status(500).json({
       success: false,
       message: "Server error getting search analytics",
@@ -360,6 +360,7 @@ const getSearchAnalytics = async (req, res) => {
 const testSearchSystem = async (req, res) => {
   try {
     const { pool } = require("../config/database");
+const logger = require("../utils/logger");
     const client = await pool.connect();
 
     try {
@@ -394,7 +395,7 @@ const testSearchSystem = async (req, res) => {
         );
         searchFunctionWorking = true;
       } catch (searchError) {
-        console.log("Search service test failed:", searchError.message);
+        logger.info("Search service test failed:", searchError.message);
       }
 
       const userId = req.user?.userId;
@@ -450,7 +451,7 @@ const testSearchSystem = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Search system test error:", error);
+    logger.error("Search system test error:", error);
     res.status(500).json({
       success: false,
       message: "Search system test failed",

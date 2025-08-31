@@ -6,21 +6,21 @@ import {
   TouchableOpacity,
   Image,
   Modal,
-  SafeAreaView,
+  // SafeAreaView, Currently not being used, why?
   Dimensions,
   TouchableWithoutFeedback,
   PanResponder,
   Animated,
   ScrollView,
 } from "react-native";
-import { 
-  HelpCircle, 
-  Heart, 
-  AlertTriangle, 
-  Search, 
-  MessageCircle, 
-  User, 
-  MapPin, 
+import {
+  HelpCircle,
+  Heart,
+  AlertTriangle,
+  Search,
+  MessageCircle,
+  User,
+  MapPin,
   Share,
   MoreHorizontal,
   Flag,
@@ -28,19 +28,51 @@ import {
   UserX,
   UserMinus,
   UserPlus,
-  Info,
+  // Info, Currently not being used, why?
   Calendar,
   Megaphone,
   CloudRain,
   ArrowLeft,
   VolumeX,
   RotateCcw,
-  Trash2
+  Trash2,
 } from "lucide-react-native";
 import { Post } from "../../types";
 import { Colors } from "../../constants/Colors";
 
-const { height: screenHeight } = Dimensions.get('window');
+const { height: screenHeight } = Dimensions.get("window");
+
+const createSwipeDownPanResponder = (
+  animatedValue: Animated.Value,
+  onClose: () => void
+) => {
+  return PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: (_evt, gestureState) => gestureState.dy > 5,
+    onPanResponderMove: (_evt, gestureState) => {
+      if (gestureState.dy > 0) animatedValue.setValue(gestureState.dy);
+    },
+    onPanResponderRelease: (_evt, gestureState) => {
+      if (gestureState.dy > 60 || gestureState.vy > 0.5) {
+        Animated.timing(animatedValue, {
+          toValue: screenHeight,
+          duration: 250,
+          useNativeDriver: true,
+        }).start(() => {
+          onClose();
+          animatedValue.setValue(0);
+        });
+      } else {
+        Animated.spring(animatedValue, {
+          toValue: 0,
+          tension: 120,
+          friction: 8,
+          useNativeDriver: true,
+        }).start();
+      }
+    },
+  });
+};
 
 interface PostCardProps {
   post: Post;
@@ -62,13 +94,13 @@ interface PostCardProps {
 export function PostCard({
   post,
   onLike,
-  onComment,
-  onShare,
+  // onComment, Currently not being used, why?
+  // onShare, Currently not being used, why?
   onMessage,
   onReport,
   onBlock,
   onUnfollow,
-  onHide,
+  // onHide, Currently not being used, why?
   currentUserId,
   isFollowing = false,
   onFollow,
@@ -82,19 +114,26 @@ export function PostCard({
   const [showReportModal, setShowReportModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  
-  // Track if any modal is currently open
-  const isAnyModalOpen = showCommentModal || showMoreModal || showHideModal || showReportModal || showShareModal || showDeleteModal;
-  
-  // Helper to safely open a modal (only if no other modal is open)
-  const openModalSafely = (modalSetter: (value: boolean) => void) => {
-    if (!isAnyModalOpen) {
+
+  const openModal = (
+    modalSetter: (value: boolean) => void,
+    currentlyOpenModalSetter?: (value: boolean) => void
+  ) => {
+    if (currentlyOpenModalSetter) {
+      currentlyOpenModalSetter(false);
+      setTimeout(() => {
+        modalSetter(true);
+      }, 100);
+    } else {
       modalSetter(true);
     }
   };
-  
-  // Helper to close modal immediately
-  const closeModalImmediately = (modalSetter: (value: boolean) => void, animatedValue: Animated.Value) => {
+
+
+  const closeModalImmediately = (
+    modalSetter: (value: boolean) => void,
+    animatedValue: Animated.Value
+  ) => {
     modalSetter(false);
     animatedValue.setValue(0);
   };
@@ -105,171 +144,21 @@ export function PostCard({
   const reportModalY = React.useRef(new Animated.Value(0)).current;
   const shareModalY = React.useRef(new Animated.Value(0)).current;
 
-
-  const commentPanResponder = PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: (evt, gestureState) => {
-      return gestureState.dy > 5;
-    },
-    onPanResponderMove: (evt, gestureState) => {
-      if (gestureState.dy > 0) {
-        commentModalY.setValue(gestureState.dy);
-      }
-    },
-    onPanResponderRelease: (evt, gestureState) => {
-      if (gestureState.dy > 60 || gestureState.vy > 0.5) {
-        Animated.timing(commentModalY, {
-          toValue: screenHeight,
-          duration: 250,
-          useNativeDriver: true,
-        }).start(() => {
-          setShowCommentModal(false);
-          setTimeout(() => {
-            commentModalY.setValue(0);
-          }, 50);
-        });
-      } else {
-        Animated.spring(commentModalY, {
-          toValue: 0,
-          tension: 120,
-          friction: 8,
-          useNativeDriver: true,
-        }).start();
-      }
-    },
-  });
-
-  const morePanResponder = PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: (evt, gestureState) => {
-      return gestureState.dy > 5;
-    },
-    onPanResponderMove: (evt, gestureState) => {
-      if (gestureState.dy > 0) {
-        moreModalY.setValue(gestureState.dy);
-      }
-    },
-    onPanResponderRelease: (evt, gestureState) => {
-      if (gestureState.dy > 60 || gestureState.vy > 0.5) {
-        Animated.timing(moreModalY, {
-          toValue: screenHeight,
-          duration: 250,
-          useNativeDriver: true,
-        }).start(() => {
-          setShowMoreModal(false);
-          setTimeout(() => {
-            moreModalY.setValue(0);
-          }, 50);
-        });
-      } else {
-        Animated.spring(moreModalY, {
-          toValue: 0,
-          tension: 120,
-          friction: 8,
-          useNativeDriver: true,
-        }).start();
-      }
-    },
-  });
-
-  const hidePanResponder = PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: (evt, gestureState) => {
-      return gestureState.dy > 5;
-    },
-    onPanResponderMove: (evt, gestureState) => {
-      if (gestureState.dy > 0) {
-        hideModalY.setValue(gestureState.dy);
-      }
-    },
-    onPanResponderRelease: (evt, gestureState) => {
-      if (gestureState.dy > 60 || gestureState.vy > 0.5) {
-        Animated.timing(hideModalY, {
-          toValue: screenHeight,
-          duration: 250,
-          useNativeDriver: true,
-        }).start(() => {
-          setShowHideModal(false);
-          setTimeout(() => {
-            hideModalY.setValue(0);
-          }, 50);
-        });
-      } else {
-        Animated.spring(hideModalY, {
-          toValue: 0,
-          tension: 120,
-          friction: 8,
-          useNativeDriver: true,
-        }).start();
-      }
-    },
-  });
-
-  const reportPanResponder = PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: (evt, gestureState) => {
-      return gestureState.dy > 5;
-    },
-    onPanResponderMove: (evt, gestureState) => {
-      if (gestureState.dy > 0) {
-        reportModalY.setValue(gestureState.dy);
-      }
-    },
-    onPanResponderRelease: (evt, gestureState) => {
-      if (gestureState.dy > 60 || gestureState.vy > 0.5) {
-        Animated.timing(reportModalY, {
-          toValue: screenHeight,
-          duration: 250,
-          useNativeDriver: true,
-        }).start(() => {
-          setShowReportModal(false);
-          setTimeout(() => {
-            reportModalY.setValue(0);
-          }, 50);
-        });
-      } else {
-        Animated.spring(reportModalY, {
-          toValue: 0,
-          tension: 120,
-          friction: 8,
-          useNativeDriver: true,
-        }).start();
-      }
-    },
-  });
-
-  const sharePanResponder = PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: (evt, gestureState) => {
-      return gestureState.dy > 5;
-    },
-    onPanResponderMove: (evt, gestureState) => {
-      if (gestureState.dy > 0) {
-        shareModalY.setValue(gestureState.dy);
-      }
-    },
-    onPanResponderRelease: (evt, gestureState) => {
-      if (gestureState.dy > 60 || gestureState.vy > 0.5) {
-        Animated.timing(shareModalY, {
-          toValue: screenHeight,
-          duration: 250,
-          useNativeDriver: true,
-        }).start(() => {
-          setShowShareModal(false);
-          setTimeout(() => {
-            shareModalY.setValue(0);
-          }, 50);
-        });
-      } else {
-        Animated.spring(shareModalY, {
-          toValue: 0,
-          tension: 120,
-          friction: 8,
-          useNativeDriver: true,
-        }).start();
-      }
-    },
-  });
+  const commentPanResponder = createSwipeDownPanResponder(commentModalY, () =>
+    setShowCommentModal(false)
+  );
+  const morePanResponder = createSwipeDownPanResponder(moreModalY, () =>
+    setShowMoreModal(false)
+  );
+  const hidePanResponder = createSwipeDownPanResponder(hideModalY, () =>
+    setShowHideModal(false)
+  );
+  const reportPanResponder = createSwipeDownPanResponder(reportModalY, () =>
+    setShowReportModal(false)
+  );
+  const sharePanResponder = createSwipeDownPanResponder(shareModalY, () =>
+    setShowShareModal(false)
+  );
 
   const getPostTypeIcon = (type: string) => {
     switch (type) {
@@ -317,7 +206,6 @@ export function PostCard({
     }
   };
 
-
   const formatTimeAgo = (dateString: string): string => {
     const now = new Date();
     const postDate = new Date(dateString);
@@ -363,17 +251,8 @@ export function PostCard({
     setShowMoreModal(true);
   };
 
-  const closeAllModals = () => {
-    closeModalImmediately(setShowMoreModal, moreModalY);
-    closeModalImmediately(setShowHideModal, hideModalY);
-    closeModalImmediately(setShowReportModal, reportModalY);
-    closeModalImmediately(setShowShareModal, shareModalY);
-  };
-
   return (
-    <View
-      style={styles.card}
-    >
+    <View style={styles.card}>
       <View style={styles.header}>
         <View style={styles.userInfo}>
           <View style={styles.avatar}>
@@ -396,12 +275,11 @@ export function PostCard({
               {onMessage && currentUserId && post.userId !== currentUserId && (
                 <TouchableOpacity
                   style={styles.messageButton}
-                  onPress={() => onMessage(post.userId, `${post.firstName} ${post.lastName}`)}
+                  onPress={() =>
+                    onMessage(post.userId, `${post.firstName} ${post.lastName}`)
+                  }
                 >
-                  <MessageCircle
-                    size={16}
-                    color={Colors.primary[600]}
-                  />
+                  <MessageCircle size={16} color={Colors.primary[600]} />
                   <Text style={styles.messageButtonText}>Message</Text>
                 </TouchableOpacity>
               )}
@@ -413,10 +291,7 @@ export function PostCard({
               {post.locationCity && (
                 <>
                   <Text style={styles.dot}>•</Text>
-                  <MapPin
-                    size={12}
-                    color={Colors.neutral[500]}
-                  />
+                  <MapPin size={12} color={Colors.neutral[500]} />
                   <Text style={styles.location}>
                     {post.locationCity}, {post.locationState}
                   </Text>
@@ -433,7 +308,13 @@ export function PostCard({
               <Text style={styles.emergencyText}>EMERGENCY</Text>
             </View>
           )}
-          {(post.postType === "safety_alert" || post.postType === "help_request" || post.postType === "help_offer" || post.postType === "question" || post.postType === "event" || post.postType === "announcement" || post.postType === "weather_alert") && (
+          {(post.postType === "safety_alert" ||
+            post.postType === "help_request" ||
+            post.postType === "help_offer" ||
+            post.postType === "question" ||
+            post.postType === "event" ||
+            post.postType === "announcement" ||
+            post.postType === "weather_alert") && (
             <View
               style={[
                 styles.badge,
@@ -442,7 +323,7 @@ export function PostCard({
             >
               {React.createElement(getPostTypeIcon(post.postType), {
                 size: 12,
-                color: getPostTypeColor(post.postType)
+                color: getPostTypeColor(post.postType),
               })}
               <Text
                 style={[
@@ -483,7 +364,6 @@ export function PostCard({
         </View>
       )}
 
-
       <View style={styles.actions}>
         <View style={styles.leftActions}>
           <TouchableOpacity
@@ -492,7 +372,9 @@ export function PostCard({
           >
             <Heart
               size={20}
-              color={post.userReaction ? Colors.error[600] : Colors.neutral[600]}
+              color={
+                post.userReaction ? Colors.error[600] : Colors.neutral[600]
+              }
               fill={post.userReaction ? Colors.error[600] : "none"}
             />
             <Text
@@ -504,35 +386,65 @@ export function PostCard({
 
           <TouchableOpacity
             style={styles.actionButton}
-            onPress={() => openModalSafely(setShowCommentModal)}
+            onPress={() =>
+              openModal(
+                setShowCommentModal,
+                showMoreModal
+                  ? setShowMoreModal
+                  : showHideModal
+                  ? setShowHideModal
+                  : showReportModal
+                  ? setShowReportModal
+                  : showShareModal
+                  ? setShowShareModal
+                  : undefined
+              )
+            }
           >
-            <MessageCircle
-              size={20}
-              color={Colors.neutral[600]}
-            />
+            <MessageCircle size={20} color={Colors.neutral[600]} />
             <Text style={styles.actionText}>{post.commentCount || 0}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.actionButton}
-            onPress={() => openModalSafely(setShowShareModal)}
+            onPress={() =>
+              openModal(
+                setShowShareModal,
+                showMoreModal
+                  ? setShowMoreModal
+                  : showHideModal
+                  ? setShowHideModal
+                  : showReportModal
+                  ? setShowReportModal
+                  : showShareModal
+                  ? setShowShareModal
+                  : undefined
+              )
+            }
           >
-            <Share
-              size={20}
-              color={Colors.neutral[600]}
-            />
+            <Share size={20} color={Colors.neutral[600]} />
             <Text style={styles.actionText}>Share</Text>
           </TouchableOpacity>
         </View>
 
         <TouchableOpacity
-          style={styles.moreButton}
-          onPress={() => openModalSafely(setShowMoreModal)}
+          style={styles.actionButton}
+          onPress={() =>
+            openModal(
+              setShowMoreModal,
+              showMoreModal
+                ? setShowMoreModal
+                : showHideModal
+                ? setShowHideModal
+                : showReportModal
+                ? setShowReportModal
+                : showShareModal
+                ? setShowShareModal
+                : undefined
+            )
+          }
         >
-          <MoreHorizontal
-            size={20}
-            color={Colors.neutral[600]}
-          />
+          <MoreHorizontal size={20} color={Colors.neutral[600]} />
         </TouchableOpacity>
       </View>
 
@@ -540,19 +452,25 @@ export function PostCard({
         visible={showCommentModal}
         animationType="slide"
         transparent={true}
-        onRequestClose={() => closeModalImmediately(setShowCommentModal, commentModalY)}
+        onRequestClose={() =>
+          closeModalImmediately(setShowCommentModal, commentModalY)
+        }
       >
-        <TouchableWithoutFeedback onPress={() => closeModalImmediately(setShowCommentModal, commentModalY)}>
+        <TouchableWithoutFeedback
+          onPress={() =>
+            closeModalImmediately(setShowCommentModal, commentModalY)
+          }
+        >
           <View style={styles.modalOverlayTransparent}>
             <TouchableWithoutFeedback onPress={() => {}}>
-              <Animated.View 
+              <Animated.View
                 style={[
-                  styles.modalContainer, 
+                  styles.modalContainer,
                   { height: screenHeight * 0.5 },
-                  { transform: [{ translateY: commentModalY }] }
+                  { transform: [{ translateY: commentModalY }] },
                 ]}
               >
-                <View 
+                <View
                   style={styles.modalHeaderContainer}
                   {...commentPanResponder.panHandlers}
                 >
@@ -563,11 +481,10 @@ export function PostCard({
                     <Text style={styles.modalTitle}>Comments</Text>
                   </View>
                 </View>
-                <ScrollView 
+                <ScrollView
                   style={styles.modalContent}
                   showsVerticalScrollIndicator={false}
-                >
-                </ScrollView>
+                ></ScrollView>
               </Animated.View>
             </TouchableWithoutFeedback>
           </View>
@@ -578,19 +495,23 @@ export function PostCard({
         visible={showMoreModal}
         animationType="slide"
         transparent={true}
-        onRequestClose={() => closeModalImmediately(setShowMoreModal, moreModalY)}
+        onRequestClose={() =>
+          closeModalImmediately(setShowMoreModal, moreModalY)
+        }
       >
-        <TouchableWithoutFeedback onPress={() => closeModalImmediately(setShowMoreModal, moreModalY)}>
+        <TouchableWithoutFeedback
+          onPress={() => closeModalImmediately(setShowMoreModal, moreModalY)}
+        >
           <View style={styles.modalOverlayTransparent}>
             <TouchableWithoutFeedback onPress={() => {}}>
-              <Animated.View 
+              <Animated.View
                 style={[
-                  styles.modalContainer, 
+                  styles.modalContainer,
                   { height: screenHeight * 0.5 },
-                  { transform: [{ translateY: moreModalY }] }
+                  { transform: [{ translateY: moreModalY }] },
                 ]}
               >
-                <View 
+                <View
                   style={styles.modalHeaderContainer}
                   {...morePanResponder.panHandlers}
                 >
@@ -601,12 +522,12 @@ export function PostCard({
                     <Text style={styles.modalTitle}>More Options</Text>
                   </View>
                 </View>
-                <ScrollView 
+                <ScrollView
                   style={styles.modalContent}
                   showsVerticalScrollIndicator={false}
                 >
                   {currentUserId !== post.userId && (
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       style={styles.modalOptionNoBorder}
                       onPress={() => {
                         setShowMoreModal(false);
@@ -622,13 +543,20 @@ export function PostCard({
                       ) : (
                         <UserPlus size={20} color={Colors.primary[600]} />
                       )}
-                      <Text style={[styles.modalOptionText, isFollowing ? { color: Colors.warning[600] } : { color: Colors.primary[600] }]}>
-                        {isFollowing ? 'Unfollow' : 'Follow'}
+                      <Text
+                        style={[
+                          styles.modalOptionText,
+                          isFollowing
+                            ? { color: Colors.warning[600] }
+                            : { color: Colors.primary[600] },
+                        ]}
+                      >
+                        {isFollowing ? "Unfollow" : "Follow"}
                       </Text>
                     </TouchableOpacity>
                   )}
 
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.modalOptionNoBorder}
                     onPress={() => {
                       closeModalImmediately(setShowMoreModal, moreModalY);
@@ -639,7 +567,7 @@ export function PostCard({
                     <Text style={styles.modalOptionText}>Hide</Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.modalOptionNoBorder}
                     onPress={() => {
                       closeModalImmediately(setShowMoreModal, moreModalY);
@@ -647,11 +575,18 @@ export function PostCard({
                     }}
                   >
                     <Flag size={20} color={Colors.error[600]} />
-                    <Text style={[styles.modalOptionText, { color: Colors.error[600] }]}>Report</Text>
+                    <Text
+                      style={[
+                        styles.modalOptionText,
+                        { color: Colors.error[600] },
+                      ]}
+                    >
+                      Report
+                    </Text>
                   </TouchableOpacity>
 
                   {currentUserId !== post.userId && (
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       style={styles.modalOptionNoBorder}
                       onPress={() => {
                         setShowMoreModal(false);
@@ -659,12 +594,19 @@ export function PostCard({
                       }}
                     >
                       <UserX size={20} color={Colors.error[600]} />
-                      <Text style={[styles.modalOptionText, { color: Colors.error[600] }]}>Block User</Text>
+                      <Text
+                        style={[
+                          styles.modalOptionText,
+                          { color: Colors.error[600] },
+                        ]}
+                      >
+                        Block User
+                      </Text>
                     </TouchableOpacity>
                   )}
 
                   {currentUserId === post.userId && (
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       style={styles.modalOptionNoBorder}
                       onPress={() => {
                         setShowMoreModal(false);
@@ -672,10 +614,17 @@ export function PostCard({
                       }}
                     >
                       <Trash2 size={20} color={Colors.error[600]} />
-                      <Text style={[styles.modalOptionText, { color: Colors.error[600] }]}>Delete Post</Text>
+                      <Text
+                        style={[
+                          styles.modalOptionText,
+                          { color: Colors.error[600] },
+                        ]}
+                      >
+                        Delete Post
+                      </Text>
                     </TouchableOpacity>
                   )}
-            </ScrollView>
+                </ScrollView>
               </Animated.View>
             </TouchableWithoutFeedback>
           </View>
@@ -686,19 +635,23 @@ export function PostCard({
         visible={showHideModal}
         animationType="slide"
         transparent={true}
-        onRequestClose={() => closeModalImmediately(setShowHideModal, hideModalY)}
+        onRequestClose={() =>
+          closeModalImmediately(setShowHideModal, hideModalY)
+        }
       >
-        <TouchableWithoutFeedback onPress={() => closeModalImmediately(setShowHideModal, hideModalY)}>
+        <TouchableWithoutFeedback
+          onPress={() => closeModalImmediately(setShowHideModal, hideModalY)}
+        >
           <View style={styles.modalOverlayTransparent}>
             <TouchableWithoutFeedback onPress={() => {}}>
-              <Animated.View 
+              <Animated.View
                 style={[
-                  styles.modalContainer, 
+                  styles.modalContainer,
                   { height: screenHeight * 0.5 },
-                  { transform: [{ translateY: hideModalY }] }
+                  { transform: [{ translateY: hideModalY }] },
                 ]}
               >
-                <View 
+                <View
                   style={styles.modalHeaderContainer}
                   {...hidePanResponder.panHandlers}
                 >
@@ -706,7 +659,7 @@ export function PostCard({
                     <View style={styles.modalHandle} />
                   </View>
                   <View style={styles.modalHeader}>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       style={styles.backButton}
                       onPress={handleBackToMore}
                     >
@@ -716,11 +669,11 @@ export function PostCard({
                     <View style={styles.backButton} />
                   </View>
                 </View>
-                <ScrollView 
+                <ScrollView
                   style={styles.modalContent}
                   showsVerticalScrollIndicator={false}
                 >
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.modalOption}
                     onPress={() => {
                       closeModalImmediately(setShowHideModal, hideModalY);
@@ -731,7 +684,7 @@ export function PostCard({
                     <Text style={styles.modalOptionText}>Report this post</Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.modalOption}
                     onPress={() => {
                       setShowHideModal(false);
@@ -739,10 +692,12 @@ export function PostCard({
                     }}
                   >
                     <VolumeX size={20} color={Colors.neutral[600]} />
-                    <Text style={styles.modalOptionText}>Mute {post.firstName} {post.lastName}</Text>
+                    <Text style={styles.modalOptionText}>
+                      Mute {post.firstName} {post.lastName}
+                    </Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.modalOption}
                     onPress={() => setShowHideModal(false)}
                   >
@@ -760,19 +715,25 @@ export function PostCard({
         visible={showReportModal}
         animationType="slide"
         transparent={true}
-        onRequestClose={() => closeModalImmediately(setShowReportModal, reportModalY)}
+        onRequestClose={() =>
+          closeModalImmediately(setShowReportModal, reportModalY)
+        }
       >
-        <TouchableWithoutFeedback onPress={() => closeModalImmediately(setShowReportModal, reportModalY)}>
+        <TouchableWithoutFeedback
+          onPress={() =>
+            closeModalImmediately(setShowReportModal, reportModalY)
+          }
+        >
           <View style={styles.modalOverlayTransparent}>
             <TouchableWithoutFeedback onPress={() => {}}>
-              <Animated.View 
+              <Animated.View
                 style={[
-                  styles.modalContainer, 
+                  styles.modalContainer,
                   { height: screenHeight * 0.5 },
-                  { transform: [{ translateY: reportModalY }] }
+                  { transform: [{ translateY: reportModalY }] },
                 ]}
               >
-                <View 
+                <View
                   style={styles.modalHeaderContainer}
                   {...reportPanResponder.panHandlers}
                 >
@@ -780,7 +741,7 @@ export function PostCard({
                     <View style={styles.modalHandle} />
                   </View>
                   <View style={styles.modalHeader}>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       style={styles.backButton}
                       onPress={handleBackToMore}
                     >
@@ -790,98 +751,116 @@ export function PostCard({
                     <View style={styles.backButton} />
                   </View>
                 </View>
-                <ScrollView 
+                <ScrollView
                   style={styles.modalContent}
                   showsVerticalScrollIndicator={false}
                 >
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.modalOption}
                     onPress={() => {
                       setShowReportModal(false);
                       onReport?.(post.id);
                     }}
                   >
-                    <Text style={styles.modalOptionText}>I just don't like it</Text>
+                    <Text style={styles.modalOptionText}>
+                      I just don't like it
+                    </Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.modalOption}
                     onPress={() => {
                       setShowReportModal(false);
                       onReport?.(post.id);
                     }}
                   >
-                    <Text style={styles.modalOptionText}>Bullying or unwanted content</Text>
+                    <Text style={styles.modalOptionText}>
+                      Bullying or unwanted content
+                    </Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.modalOption}
                     onPress={() => {
                       setShowReportModal(false);
                       onReport?.(post.id);
                     }}
                   >
-                    <Text style={styles.modalOptionText}>Suicide, self injury or eating disorders</Text>
+                    <Text style={styles.modalOptionText}>
+                      Suicide, self injury or eating disorders
+                    </Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.modalOption}
                     onPress={() => {
                       setShowReportModal(false);
                       onReport?.(post.id);
                     }}
                   >
-                    <Text style={styles.modalOptionText}>Violence, hate or exploitation</Text>
+                    <Text style={styles.modalOptionText}>
+                      Violence, hate or exploitation
+                    </Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.modalOption}
                     onPress={() => {
                       setShowReportModal(false);
                       onReport?.(post.id);
                     }}
                   >
-                    <Text style={styles.modalOptionText}>Selling or promoting restricted items</Text>
+                    <Text style={styles.modalOptionText}>
+                      Selling or promoting restricted items
+                    </Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.modalOption}
                     onPress={() => {
                       setShowReportModal(false);
                       onReport?.(post.id);
                     }}
                   >
-                    <Text style={styles.modalOptionText}>Nudity or sexual activity</Text>
+                    <Text style={styles.modalOptionText}>
+                      Nudity or sexual activity
+                    </Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.modalOption}
                     onPress={() => {
                       setShowReportModal(false);
                       onReport?.(post.id);
                     }}
                   >
-                    <Text style={styles.modalOptionText}>Scam, fraud or spam</Text>
+                    <Text style={styles.modalOptionText}>
+                      Scam, fraud or spam
+                    </Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.modalOption}
                     onPress={() => {
                       setShowReportModal(false);
                       onReport?.(post.id);
                     }}
                   >
-                    <Text style={styles.modalOptionText}>Intellectual property</Text>
+                    <Text style={styles.modalOptionText}>
+                      Intellectual property
+                    </Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.modalOption}
                     onPress={() => {
                       setShowReportModal(false);
                       onReport?.(post.id);
                     }}
                   >
-                    <Text style={styles.modalOptionText}>I want to request a community note</Text>
+                    <Text style={styles.modalOptionText}>
+                      I want to request a community note
+                    </Text>
                   </TouchableOpacity>
                 </ScrollView>
               </Animated.View>
@@ -894,19 +873,23 @@ export function PostCard({
         visible={showShareModal}
         animationType="slide"
         transparent={true}
-        onRequestClose={() => closeModalImmediately(setShowShareModal, shareModalY)}
+        onRequestClose={() =>
+          closeModalImmediately(setShowShareModal, shareModalY)
+        }
       >
-        <TouchableWithoutFeedback onPress={() => closeModalImmediately(setShowShareModal, shareModalY)}>
+        <TouchableWithoutFeedback
+          onPress={() => closeModalImmediately(setShowShareModal, shareModalY)}
+        >
           <View style={styles.modalOverlayTransparent}>
             <TouchableWithoutFeedback onPress={() => {}}>
-              <Animated.View 
+              <Animated.View
                 style={[
-                  styles.modalContainer, 
+                  styles.modalContainer,
                   { height: screenHeight * 0.5 },
-                  { transform: [{ translateY: shareModalY }] }
+                  { transform: [{ translateY: shareModalY }] },
                 ]}
               >
-                <View 
+                <View
                   style={styles.modalHeaderContainer}
                   {...sharePanResponder.panHandlers}
                 >
@@ -920,27 +903,29 @@ export function PostCard({
                 <View style={styles.shareModalContent}>
                   <View style={styles.followersSection}>
                     <Text style={styles.sectionTitle}>Send to</Text>
-                    <ScrollView 
+                    <ScrollView
                       style={styles.followersScrollContainer}
                       showsVerticalScrollIndicator={true}
                       nestedScrollEnabled={true}
                     >
-                      <View style={styles.followersGrid}>
-                      </View>
+                      <View style={styles.followersGrid}></View>
                     </ScrollView>
                   </View>
-                  
+
                   <View style={styles.shareOptionsSection}>
                     <Text style={styles.sectionTitle}>More Options</Text>
-                    <ScrollView 
-                      horizontal 
+                    <ScrollView
+                      horizontal
                       style={styles.shareOptionsContainer}
                       showsHorizontalScrollIndicator={false}
                       contentContainerStyle={styles.shareOptionsContent}
                     >
                       <TouchableOpacity style={styles.shareOption}>
                         <View style={styles.shareOptionIcon}>
-                          <MessageCircle size={24} color={Colors.primary[600]} />
+                          <MessageCircle
+                            size={24}
+                            color={Colors.primary[600]}
+                          />
                         </View>
                         <Text style={styles.shareOptionText}>Messages</Text>
                       </TouchableOpacity>
@@ -991,9 +976,10 @@ export function PostCard({
           <View style={styles.deleteModal}>
             <Text style={styles.deleteTitle}>Delete post?</Text>
             <Text style={styles.deleteMessage}>
-              This can't be undone and it will be removed from your profile and the timeline.
+              This can't be undone and it will be removed from your profile and
+              the timeline.
             </Text>
-            
+
             <View style={styles.deleteButtons}>
               <TouchableOpacity
                 style={styles.deleteButtonSecondary}
@@ -1001,7 +987,7 @@ export function PostCard({
               >
                 <Text style={styles.deleteButtonSecondaryText}>Cancel</Text>
               </TouchableOpacity>
-              
+
               <TouchableOpacity
                 style={styles.deleteButtonPrimary}
                 onPress={() => {

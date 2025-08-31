@@ -1,3 +1,10 @@
+export interface LocationPermissionsWithChoice {
+  foreground: "granted" | "denied" | "undetermined";
+  background: "granted" | "denied" | "undetermined";
+  lastUpdated?: string;
+  userChoice: "always" | "while-using" | "never" | "cancelled";
+}
+
 export interface NotificationPreferences {
   emailNotifications: boolean;
   pushNotifications: boolean;
@@ -11,8 +18,8 @@ export interface NotificationPreferences {
 }
 
 export interface LocationPermissions {
-  foreground: 'granted' | 'denied' | 'undetermined';
-  background: 'granted' | 'denied' | 'undetermined';
+  foreground: "granted" | "denied" | "undetermined";
+  background: "granted" | "denied" | "undetermined";
   lastUpdated?: string;
 }
 
@@ -68,7 +75,11 @@ export interface Post {
     | "help_offer"
     | "lost_found"
     | "safety_alert"
-    | "general";
+    | "general"
+    | "question"
+    | "event"
+    | "announcement"
+    | "weather_alert";
   priority: "low" | "normal" | "high" | "urgent";
   locationCity?: string;
   locationState?: string;
@@ -157,9 +168,13 @@ export interface Alert {
   startTime?: string;
   endTime?: string;
   isActive: boolean;
-  metadata?: Record<string, unknown>;
+  metadata?: {
+    areaDesc?: string;
+    [key: string]: unknown;
+  };
   createdAt: string;
   updatedAt: string;
+  coordinates?: number[][];
 }
 
 export interface Notification {
@@ -335,7 +350,11 @@ export const REACTION_TYPES = {
 export interface UserFeedback {
   id?: number;
   userId: number;
-  feedbackType: "bug_report" | "feature_request" | "general_feedback" | "ui_ux_feedback";
+  feedbackType:
+    | "bug_report"
+    | "feature_request"
+    | "general_feedback"
+    | "ui_ux_feedback";
   title: string;
   description: string;
   priority: "low" | "normal" | "high";
@@ -346,8 +365,8 @@ export interface UserFeedback {
   updatedAt?: string;
 }
 
-export type PostType = keyof typeof POST_TYPES;
-export type Priority = keyof typeof PRIORITIES;
+export type PostType = (typeof POST_TYPES)[keyof typeof POST_TYPES];
+export type Priority = (typeof PRIORITIES)[keyof typeof PRIORITIES];
 
-export const POST_TYPE_OPTIONS = Object.keys(POST_TYPES) as PostType[];
-export const PRIORITY_OPTIONS = Object.keys(PRIORITIES) as Priority[];
+export const POST_TYPE_OPTIONS = Object.values(POST_TYPES) as PostType[];
+export const PRIORITY_OPTIONS = Object.values(PRIORITIES) as Priority[];

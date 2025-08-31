@@ -4,6 +4,7 @@ const {
   handleNotFoundError,
   createSuccessResponse,
 } = require("../middleware/errorHandler");
+const logger = require("../utils/logger");
 
 const getReports = async (req, res) => {
   try {
@@ -161,7 +162,7 @@ const getReports = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Get reports error:", error);
+    logger.error("Get reports error:", error);
     return handleDatabaseError(error, req, res, "fetching reports");
   }
 };
@@ -212,7 +213,7 @@ const reviewReport = async (req, res) => {
       const result = await client.query(updateQuery, [action, adminUserId, id]);
 
       if (action === "approved") {
-        console.log(
+        logger.info(
           `Report ${id} approved by admin ${adminUserId} for ${reportType} ${reportData[`${reportType}_id`]}`
         );
 
@@ -256,7 +257,7 @@ const reviewReport = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Review report error:", error);
+    logger.error("Review report error:", error);
     return handleDatabaseError(error, req, res, "reviewing report");
   }
 };
@@ -322,7 +323,7 @@ const getReportStats = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error("Get report stats error:", error);
+    logger.error("Get report stats error:", error);
     return handleDatabaseError(error, req, res, "fetching report statistics");
   }
 };
@@ -379,9 +380,9 @@ const handleContentModeration = async (
       await client.query(updateQuery, [contentId]);
       actions.push("Content hidden");
 
-      console.log(`[MODERATION] ${contentType.toUpperCase()} ${contentId} hidden due to ${reason}`);
+      logger.info(`[MODERATION] ${contentType.toUpperCase()} ${contentId} hidden due to ${reason}`);
     } else if (rule.contentAction === "flag") {
-      console.log(
+      logger.info(
         `[MODERATION] ${contentType.toUpperCase()} ${contentId} flagged for manual review due to ${reason}`
       );
       actions.push("Content flagged for review");
@@ -398,14 +399,14 @@ const handleContentModeration = async (
       const contentOwnerId = ownerResult.rows[0].user_id;
 
       if (rule.userWarning) {
-        console.log(
+        logger.info(
           `[MODERATION] User ${contentOwnerId} warned for ${reason} violation in ${contentType} ${contentId}`
         );
         actions.push(`User warned for ${reason}`);
       }
 
       if (rule.tempSuspension) {
-        console.log(
+        logger.info(
           `[MODERATION] User ${contentOwnerId} should be suspended for ${rule.tempSuspension} due to ${reason}`
         );
         actions.push(`User flagged for ${rule.tempSuspension} suspension`);
@@ -429,11 +430,11 @@ const handleContentModeration = async (
       ]
     );
 
-    console.log(
+    logger.info(
       `[MODERATION] Actions completed for ${contentType} ${contentId}: ${actions.join(", ")}`
     );
   } catch (error) {
-    console.error("Content moderation error:", error);
+    logger.error("Content moderation error:", error);
   }
 };
 

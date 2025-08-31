@@ -10,7 +10,7 @@ import {
   Alert,
   ActivityIndicator,
   Modal,
-  Dimensions,
+  // Dimensions, Currently not being used, why?
 } from "react-native";
 import {
   Sun,
@@ -18,9 +18,9 @@ import {
   CloudRain,
   Zap,
   Snowflake,
-  Droplets,
-  Wind,
-  Eye,
+  // Droplets, Currently not being used, why?
+  // Wind, Currently not being used, why?
+  // Eye, Currently not being used, why?
   Plus,
   Minus,
   AlertTriangle,
@@ -49,7 +49,7 @@ export default function WeatherScreen() {
     longitude: number;
     city?: string;
     state?: string;
-    source: 'current' | 'home' | 'fallback';
+    source: "current" | "home" | "fallback";
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -74,26 +74,32 @@ export default function WeatherScreen() {
     help_needed: false,
   });
   const [rainTimestamp, setRainTimestamp] = useState<number>(Date.now());
-  const [userLocationWeatherData, setUserLocationWeatherData] = useState<Array<{
-    id: string;
-    locationName: string;
-    locationType: 'current' | 'home';
-    latitude: number;
-    longitude: number;
-    temperature: number;
-    windSpeed: string;
-    condition: string;
-  }>>([]);
+  const [userLocationWeatherData, setUserLocationWeatherData] = useState<
+    Array<{
+      id: string;
+      locationName: string;
+      locationType: "current" | "home";
+      latitude: number;
+      longitude: number;
+      temperature: number;
+      windSpeed: string;
+      condition: string;
+    }>
+  >([]);
   const [communityAlerts, setCommunityAlerts] = useState<Post[]>([]);
   const [showAlertModal, setShowAlertModal] = useState(false);
-  const [selectedAlert, setSelectedAlert] = useState<WeatherAlert | Post | null>(null);
+  const [selectedAlert, setSelectedAlert] = useState<
+    WeatherAlert | Post | null
+  >(null);
 
   const requestLocationPermission = async () => {
     try {
-      const canUse = await locationService.canUseLocationFor('weather');
-      
+      const canUse = await locationService.canUseLocationFor("weather");
+
       if (!canUse) {
-        await locationService.showPermissionDeniedAlert('accurate weather data');
+        await locationService.showPermissionDeniedAlert(
+          "accurate weather data"
+        );
         return false;
       }
       return true;
@@ -106,23 +112,22 @@ export default function WeatherScreen() {
 
   const getCurrentLocation = useCallback(async () => {
     try {
-
       console.log("Weather screen - determining best location for weather");
 
-
-      const homeLocation = user?.homeLatitude && user?.homeLongitude 
-        ? { latitude: user.homeLatitude, longitude: user.homeLongitude }
-        : user?.latitude && user?.longitude 
-        ? { latitude: user.latitude, longitude: user.longitude }
-        : undefined;
+      const homeLocation =
+        user?.homeLatitude && user?.homeLongitude
+          ? { latitude: user.homeLatitude, longitude: user.homeLongitude }
+          : user?.latitude && user?.longitude
+          ? { latitude: user.latitude, longitude: user.longitude }
+          : undefined;
 
       const bestLocation = locationService.getBestLocationFor(
-        'weather',
+        "weather",
         homeLocation,
         user?.locationPreferences
       );
 
-      if (bestLocation && bestLocation.source === 'current') {
+      if (bestLocation && bestLocation.source === "current") {
         console.log("Using current GPS location for weather");
         const address = await locationService.reverseGeocode(
           bestLocation.latitude,
@@ -133,19 +138,19 @@ export default function WeatherScreen() {
           longitude: bestLocation.longitude,
           city: address?.city || "Current Location",
           state: address?.region || "Unknown",
-          source: 'current',
+          source: "current",
         });
         return;
       }
 
-      if (bestLocation && bestLocation.source === 'home') {
+      if (bestLocation && bestLocation.source === "home") {
         console.log("Using home address for weather");
         setLocation({
           latitude: bestLocation.latitude,
           longitude: bestLocation.longitude,
           city: user?.homeCity || user?.locationCity || "Your City",
           state: user?.homeState || user?.addressState || "State",
-          source: 'home',
+          source: "home",
         });
         return;
       }
@@ -159,7 +164,7 @@ export default function WeatherScreen() {
           longitude: -74.006,
           city: "New York",
           state: "NY",
-          source: 'fallback',
+          source: "fallback",
         });
         return;
       }
@@ -176,10 +181,10 @@ export default function WeatherScreen() {
             longitude: currentLocation.coords.longitude,
             city: address?.city || "Current Location",
             state: address?.region || "Unknown",
-            source: 'current',
+            source: "current",
           });
         } else {
-          throw new Error('Unable to get current location');
+          throw new Error("Unable to get current location");
         }
 
         setMapRegion((prev) => ({
@@ -194,7 +199,7 @@ export default function WeatherScreen() {
           longitude: -74.006,
           city: "New York",
           state: "NY",
-          source: 'fallback',
+          source: "fallback",
         });
       }
     } catch (error) {
@@ -204,7 +209,7 @@ export default function WeatherScreen() {
         longitude: -74.006,
         city: "New York",
         state: "NY",
-        source: 'fallback',
+        source: "fallback",
       });
     }
   }, [user]);
@@ -283,7 +288,9 @@ export default function WeatherScreen() {
           const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
           return (
             postDate > threeDaysAgo &&
-            (post.isEmergency || post.priority === "urgent" || post.priority === "high")
+            (post.isEmergency ||
+              post.priority === "urgent" ||
+              post.priority === "high")
           );
         });
         setCommunityAlerts(recentAlerts);
@@ -294,48 +301,54 @@ export default function WeatherScreen() {
     }
   };
 
-  const loadWeatherData = useCallback(async (isRefresh = false) => {
-    if (!location) {
-      console.log("No location available for weather data");
-      return;
-    }
+  const loadWeatherData = useCallback(
+    async (isRefresh = false) => {
+      if (!location) {
+        console.log("No location available for weather data");
+        return;
+      }
 
-    const now = Date.now();
-    if (!isRefresh && now - lastApiCall < 30000) {
-      console.log("Throttling weather API call - waiting 30 seconds between calls");
-      return;
-    }
+      const now = Date.now();
+      if (!isRefresh && now - lastApiCall < 30000) {
+        console.log(
+          "Throttling weather API call - waiting 30 seconds between calls"
+        );
+        return;
+      }
 
-    try {
-      console.log("Loading weather data for location:", location);
-      setLastApiCall(now);
-      if (!isRefresh) setLoading(true);
-      setError(null);
+      try {
+        console.log("Loading weather data for location:", location);
+        setLastApiCall(now);
+        if (!isRefresh) setLoading(true);
+        setError(null);
 
-      await Promise.all([
-        fetchWeatherData(location.latitude, location.longitude),
-        fetchAlerts(
-          location.city,
-          location.state,
-          location.latitude,
-          location.longitude
-        ),
-        fetchCommunityAlerts(),
-      ]);
-      console.log("Weather data loaded successfully");
-    } catch (error: any) {
-      console.error("Error loading weather data:", error);
-      setError(error.response?.data?.message || "Failed to load weather data");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [location, lastApiCall]);
-
+        await Promise.all([
+          fetchWeatherData(location.latitude, location.longitude),
+          fetchAlerts(
+            location.city,
+            location.state,
+            location.latitude,
+            location.longitude
+          ),
+          fetchCommunityAlerts(),
+        ]);
+        console.log("Weather data loaded successfully");
+      } catch (error: any) {
+        console.error("Error loading weather data:", error);
+        setError(
+          error.response?.data?.message || "Failed to load weather data"
+        );
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [location, lastApiCall]
+  );
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
     loadWeatherData(true);
-  }, [location, loadWeatherData]);
+  }, [loadWeatherData]);
 
   const handleSearchPress = () => {
     router.push("/(tabs)/search");
@@ -380,77 +393,110 @@ export default function WeatherScreen() {
 
   const handleLayerToggle = (layerId: string, enabled: boolean) => {
     console.log(`Weather layer ${layerId} ${enabled ? "ENABLED" : "DISABLED"}`);
-    
+
     if (enabled) {
-      console.log('WEATHER_CONFIG.OPENWEATHER_API_KEY available:', !!WEATHER_CONFIG.OPENWEATHER_API_KEY);
+      console.log(
+        "WEATHER_CONFIG.OPENWEATHER_API_KEY available:",
+        !!WEATHER_CONFIG.OPENWEATHER_API_KEY
+      );
       if (WEATHER_CONFIG.OPENWEATHER_API_KEY) {
-        console.log('API Key starts with:', WEATHER_CONFIG.OPENWEATHER_API_KEY.substring(0, 8) + '...');
+        console.log(
+          "API Key starts with:",
+          WEATHER_CONFIG.OPENWEATHER_API_KEY.substring(0, 8) + "..."
+        );
       }
     }
-    
-    setWeatherLayers(prev => {
-      let newLayers = { ...prev };
-      
+
+    setWeatherLayers((prev) => {
+      const newLayers = { ...prev };
+
       if (enabled) {
-        Object.keys(newLayers).forEach(layer => {
+        Object.keys(newLayers).forEach((layer) => {
           newLayers[layer] = false;
         });
         newLayers[layerId] = true;
       } else {
         newLayers[layerId] = false;
       }
-      
+
       console.log(`Updated weather layers (single selection):`, newLayers);
       return newLayers;
     });
 
     if (enabled) {
       const layerNames = {
-        precipitation: 'Rain & Snow',
-        clouds: 'Cloud Cover', 
-        wind: 'Wind Patterns',
-        temperature: 'Temperature',
-        alerts: 'Weather Alerts'
+        precipitation: "Rain & Snow",
+        clouds: "Cloud Cover",
+        wind: "Wind Patterns",
+        temperature: "Temperature",
+        alerts: "Weather Alerts",
       };
-      
-      const layerName = layerNames[layerId as keyof typeof layerNames] || layerId;
-      
-      if (layerId === 'clouds' || layerId === 'wind' || layerId === 'temperature') {
+
+      const layerName =
+        layerNames[layerId as keyof typeof layerNames] || layerId;
+
+      if (
+        layerId === "clouds" ||
+        layerId === "wind" ||
+        layerId === "temperature"
+      ) {
         if (!WEATHER_CONFIG.OPENWEATHER_API_KEY) {
-          console.warn(`${layerName} overlay enabled but NO API KEY found - overlay will not display`);
+          console.warn(
+            `${layerName} overlay enabled but NO API KEY found - overlay will not display`
+          );
         } else {
-          console.log(`${layerName} overlay enabled with API key - should display`);
+          console.log(
+            `${layerName} overlay enabled with API key - should display`
+          );
         }
       }
-      
-      if (layerId === 'precipitation') {
+
+      if (layerId === "precipitation") {
         const timestamp = Math.floor(rainTimestamp / 1000 / 600) * 600;
-        console.log(`Precipitation overlay enabled - using timestamp: ${timestamp}`);
-        console.log(`RainViewer URL pattern: https://tilecache.rainviewer.com/v2/radar/{z}/{x}/{y}/${timestamp}/1_1.png`);
-        console.log(`Test URL for zoom 5: https://tilecache.rainviewer.com/v2/radar/5/122/80/${timestamp}/1_1.png`);
-        
-        fetch('https://tilecache.rainviewer.com/api/maps.json')
-          .then(response => response.json())
-          .then(data => {
-            console.log('Latest RainViewer timestamps:', data.slice(-3));
+        console.log(
+          `Precipitation overlay enabled - using timestamp: ${timestamp}`
+        );
+        console.log(
+          `RainViewer URL pattern: https://tilecache.rainviewer.com/v2/radar/{z}/{x}/{y}/${timestamp}/1_1.png`
+        );
+        console.log(
+          `Test URL for zoom 5: https://tilecache.rainviewer.com/v2/radar/5/122/80/${timestamp}/1_1.png`
+        );
+
+        fetch("https://tilecache.rainviewer.com/api/maps.json")
+          .then((response) => response.json())
+          .then((data) => {
+            console.log("Latest RainViewer timestamps:", data.slice(-3));
             const latestTimestamp = data[data.length - 1];
             console.log(`Using latest timestamp: ${latestTimestamp}`);
             setRainTimestamp(latestTimestamp * 1000);
           })
-          .catch(error => console.error('Failed to fetch RainViewer timestamps:', error));
+          .catch((error) =>
+            console.error("Failed to fetch RainViewer timestamps:", error)
+          );
       }
-      
-      if (layerId === 'alerts') {
-        console.log(`Alerts overlay enabled - found ${alerts.length} active alerts`);
+
+      if (layerId === "alerts") {
+        console.log(
+          `Alerts overlay enabled - found ${alerts.length} active alerts`
+        );
         if (alerts.length > 0) {
           alerts.forEach((alert, index) => {
-            console.log(`Alert ${index + 1}: ${alert.severity} - ${alert.title}`);
-            console.log(`  Area: ${alert.areaDesc || 'Unknown area'}`);
-            console.log(`  Effective: ${alert.effective || 'Now'} until ${alert.expires || 'Unknown'}`);
+            console.log(
+              `Alert ${index + 1}: ${alert.severity} - ${alert.title}`
+            );
+            console.log(
+              `  Area: ${alert.metadata?.areaDesc || "Unknown area"}`
+            );
+            console.log(
+              `  Effective: ${alert.startTime || "Now"} until ${
+                alert.endTime || "Unknown"
+              }`
+            );
           });
         } else {
-          console.log('No active weather alerts in your area - all clear!');
-          
+          console.log("No active weather alerts in your area - all clear!");
+
           setTimeout(() => {
             Alert.alert(
               "No Weather Alerts",
@@ -463,10 +509,9 @@ export default function WeatherScreen() {
     }
   };
 
-
   useEffect(() => {
     getCurrentLocation();
-  }, []);
+  }, [getCurrentLocation]);
 
   useEffect(() => {
     const userHasLocation = user?.latitude && user?.longitude;
@@ -474,19 +519,13 @@ export default function WeatherScreen() {
     if (userHasLocation) {
       getCurrentLocation();
     }
-  }, [user?.latitude, user?.longitude]);
+  }, [getCurrentLocation, user?.latitude, user?.longitude]);
 
   useEffect(() => {
     if (location) {
       loadWeatherData();
     }
-  }, [location]);
-
-  useEffect(() => {
-    fetchUserLocationWeatherData();
-  }, [fetchUserLocationWeatherData]);
-
-
+  }, [loadWeatherData, location]);
 
   const formatTemperature = (temp: number) => {
     return `${Math.round(temp)}°F`;
@@ -494,136 +533,178 @@ export default function WeatherScreen() {
 
   const getAlertPolygonColors = (severity: string) => {
     const colors = {
-      'CRITICAL': { stroke: '#DC2626', fill: '#DC262620' },
-      'HIGH': { stroke: '#EA580C', fill: '#EA580C20' }, 
-      'MODERATE': { stroke: '#CA8A04', fill: '#CA8A0420' },
-      'LOW': { stroke: '#059669', fill: '#05966920' },
+      CRITICAL: { stroke: "#DC2626", fill: "#DC262620" },
+      HIGH: { stroke: "#EA580C", fill: "#EA580C20" },
+      MODERATE: { stroke: "#CA8A04", fill: "#CA8A0420" },
+      LOW: { stroke: "#059669", fill: "#05966920" },
     };
     return colors[severity as keyof typeof colors] || colors.MODERATE;
   };
 
   const generateAlertPolygon = (alert: WeatherAlert) => {
     if (alert.coordinates && alert.coordinates.length > 0) {
-      return alert.coordinates;
-    }
-    
+      return alert.coordinates.map(([lat, lon]) => ({
+        latitude: lat,
+        longitude: lon,
+      }));
+    };
+
     if (!location) return [];
-    
+
     const baseCoords = {
       latitude: location.latitude,
-      longitude: location.longitude
+      longitude: location.longitude,
     };
-    
+
     let offset = 0.05;
-    
-    const alertType = alert.title?.toLowerCase() || '';
-    const severity = alert.severity?.toLowerCase() || '';
-    
-    if (alertType.includes('tornado')) {
+
+    const alertType = alert.title?.toLowerCase() || "";
+
+    if (alertType.includes("tornado")) {
       offset = 0.02;
-    } else if (alertType.includes('flood') || alertType.includes('hurricane')) {
+    } else if (alertType.includes("flood") || alertType.includes("hurricane")) {
       offset = 0.15;
-    } else if (alertType.includes('thunderstorm') || alertType.includes('severe weather')) {
+    } else if (
+      alertType.includes("thunderstorm") ||
+      alertType.includes("severe weather")
+    ) {
       offset = 0.08;
-    } else if (alertType.includes('winter') || alertType.includes('snow') || alertType.includes('ice')) {
+    } else if (
+      alertType.includes("winter") ||
+      alertType.includes("snow") ||
+      alertType.includes("ice")
+    ) {
       offset = 0.12;
     }
-    
+
     const points = 8;
     const coordinates = [];
-    
+
     for (let i = 0; i < points; i++) {
       const angle = (2 * Math.PI * i) / points;
-      const latOffset = offset * Math.cos(angle) * 0.8 + (Math.random() - 0.5) * offset * 0.2;
-      const lngOffset = offset * Math.sin(angle) * 0.8 + (Math.random() - 0.5) * offset * 0.2;
-      
+      const latOffset =
+        offset * Math.cos(angle) * 0.8 + (Math.random() - 0.5) * offset * 0.2;
+      const lngOffset =
+        offset * Math.sin(angle) * 0.8 + (Math.random() - 0.5) * offset * 0.2;
+
       coordinates.push({
         latitude: baseCoords.latitude + latOffset,
-        longitude: baseCoords.longitude + lngOffset
+        longitude: baseCoords.longitude + lngOffset,
       });
     }
-    
+
     return coordinates;
   };
 
-  const fetchUserLocationWeatherData = useCallback(async () => {
-    if (!WEATHER_CONFIG.OPENWEATHER_API_KEY) {
-      console.log('No API key available for location weather data');
-      return;
-    }
+const fetchUserLocationWeatherData = useCallback(async () => {
+  if (!WEATHER_CONFIG.OPENWEATHER_API_KEY) {
+    console.log("No API key available for location weather data");
+    return;
+  }
 
-    console.log('Fetching weather data for user locations...');
-    
-    const locations = [];
+  console.log("Fetching weather data for user locations...");
 
-    try {
-      const currentLocation = await locationService.getCurrentLocation();
-      if (currentLocation) {
-        const address = await locationService.reverseGeocode(
-          currentLocation.coords.latitude,
-          currentLocation.coords.longitude
-        );
-        locations.push({
-          id: 'current',
-          locationName: `${address?.city || 'Current'}, ${address?.region || ''}`.replace(', ', ', ').replace(', ,', ',').replace(/,$/, ''),
-          locationType: 'current' as const,
-          latitude: currentLocation.coords.latitude,
-          longitude: currentLocation.coords.longitude
-        });
-      }
-    } catch (error) {
-      console.log('Could not get current location for weather marker');
-    }
+  const locations: Array<{
+    id: string;
+    locationName: string;
+    locationType: "current" | "home";
+    latitude: number;
+    longitude: number;
+  }> = [];
 
-    if (user?.homeLatitude && user?.homeLongitude) {
+  try {
+    const currentLocation = await locationService.getCurrentLocation();
+    if (currentLocation) {
+      const address = await locationService.reverseGeocode(
+        currentLocation.coords.latitude,
+        currentLocation.coords.longitude
+      );
       locations.push({
-        id: 'home',
-        locationName: user?.homeCity && user?.homeState 
+        id: "current",
+        locationName: `${address?.city || "Current"}, ${address?.region || ""}`
+          .replace(", ", ", ")
+          .replace(", ,", ",")
+          .replace(/,$/, ""),
+        locationType: "current",
+        latitude: currentLocation.coords.latitude,
+        longitude: currentLocation.coords.longitude,
+      });
+    }
+  } catch (err: unknown) {
+    console.log("Could not get current location for weather marker", err);
+  }
+
+  if (user?.homeLatitude && user?.homeLongitude) {
+    locations.push({
+      id: "home",
+      locationName:
+        user.homeCity && user.homeState
           ? `${user.homeCity}, ${user.homeState}`
-          : 'Home',
-        locationType: 'home' as const,
-        latitude: user.homeLatitude,
-        longitude: user.homeLongitude
-      });
-    } else if (user?.latitude && user?.longitude && !locations.find(loc => loc.id === 'current')) {
-      locations.push({
-        id: 'home',
-        locationName: user?.locationCity && user?.addressState 
-          ? `${user.locationCity}, ${user.addressState}`
-          : 'Home',
-        locationType: 'home' as const,
-        latitude: user.latitude,
-        longitude: user.longitude
-      });
-    }
-
-    console.log(`Fetching weather for ${locations.length} user locations:`, locations.map(l => l.locationName));
-
-    const weatherPromises = locations.map(async (location) => {
-      try {
-        const response = await fetch(
-          `https://api.openweathermap.org/data/2.5/weather?lat=${location.latitude}&lon=${location.longitude}&appid=${WEATHER_CONFIG.OPENWEATHER_API_KEY}&units=imperial`
-        );
-        const data = await response.json();
-        
-        return {
-          ...location,
-          temperature: Math.round(data.main.temp),
-          windSpeed: `${Math.round(data.wind?.speed || 0)} mph`,
-          condition: data.weather[0]?.main || 'Unknown'
-        };
-      } catch (error) {
-        console.error(`Failed to fetch weather for ${location.locationName}:`, error);
-        return null;
-      }
+          : "Home",
+      locationType: "home",
+      latitude: user.homeLatitude,
+      longitude: user.homeLongitude,
     });
+  } else if (
+    user?.latitude &&
+    user?.longitude &&
+    !locations.find((loc) => loc.id === "current")
+  ) {
+    locations.push({
+      id: "home",
+      locationName:
+        user.locationCity && user.addressState
+          ? `${user.locationCity}, ${user.addressState}`
+          : "Home",
+      locationType: "home",
+      latitude: user.latitude,
+      longitude: user.longitude,
+    });
+  }
 
-    const results = await Promise.all(weatherPromises);
-    const validResults = results.filter(result => result !== null);
-    
-    console.log(`Successfully fetched weather data for ${validResults.length} user locations`);
-    setUserLocationWeatherData(validResults);
-  }, [user]);
+  console.log(
+    `Fetching weather for ${locations.length} user locations:`,
+    locations.map((l) => l.locationName)
+  );
+
+  const weatherPromises = locations.map(async (location) => {
+    try {
+      const response = await fetch(
+        `https://api.openweathermap.org/data/2.5/weather?lat=${location.latitude}&lon=${location.longitude}&appid=${WEATHER_CONFIG.OPENWEATHER_API_KEY}&units=imperial`
+      );
+      const data = await response.json();
+
+      return {
+        ...location,
+        temperature: Math.round(data.main?.temp ?? 0),
+        windSpeed: `${Math.round(data.wind?.speed ?? 0)} mph`,
+        condition: data.weather?.[0]?.main || "Unknown",
+      };
+    } catch (err: unknown) {
+      console.error(
+        `Failed to fetch weather for ${location.locationName}:`,
+        err
+      );
+      return null;
+    }
+  });
+
+  const results = await Promise.all(weatherPromises);
+
+  const validResults = results.filter(
+    (result): result is NonNullable<typeof result> => result !== null
+  );
+
+  console.log(
+    `Successfully fetched weather data for ${validResults.length} user locations`
+  );
+
+  setUserLocationWeatherData(validResults);
+}, [user]);
+
+  useEffect(() => {
+    fetchUserLocationWeatherData();
+  }, [fetchUserLocationWeatherData]);
 
 
   const getWeatherLucideIcon = (condition: string) => {
@@ -642,22 +723,34 @@ export default function WeatherScreen() {
     return Sun;
   };
 
-  const isWeatherAlert = (alert: WeatherAlert | Post | null): alert is WeatherAlert => {
-    return alert !== null && 'severity' in alert && 'title' in alert && 'description' in alert;
+  const isWeatherAlert = (
+    alert: WeatherAlert | Post | null
+  ): alert is WeatherAlert => {
+    return (
+      alert !== null &&
+      "severity" in alert &&
+      "title" in alert &&
+      "description" in alert
+    );
   };
 
-  const isCommunityAlert = (alert: WeatherAlert | Post | null): alert is Post => {
-    return alert !== null && 'content' in alert && 'firstName' in alert;
+  const isCommunityAlert = (
+    alert: WeatherAlert | Post | null
+  ): alert is Post => {
+    return alert !== null && "content" in alert && "firstName" in alert;
   };
 
   const formatTimeAgo = (dateString: string): string => {
     const now = new Date();
     const alertDate = new Date(dateString);
-    const diffInSeconds = Math.floor((now.getTime() - alertDate.getTime()) / 1000);
+    const diffInSeconds = Math.floor(
+      (now.getTime() - alertDate.getTime()) / 1000
+    );
 
     if (diffInSeconds < 60) return "Just now";
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    if (diffInSeconds < 86400)
+      return `${Math.floor(diffInSeconds / 3600)}h ago`;
     return alertDate.toLocaleDateString();
   };
 
@@ -673,7 +766,7 @@ export default function WeatherScreen() {
       >
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalHeader}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.modalCloseButton}
               onPress={() => setShowAlertModal(false)}
             >
@@ -682,7 +775,9 @@ export default function WeatherScreen() {
               </View>
             </TouchableOpacity>
             <Text style={styles.modalTitle}>
-              {isWeatherAlert(selectedAlert) ? 'Weather Alert' : 'Community Alert'}
+              {isWeatherAlert(selectedAlert)
+                ? "Weather Alert"
+                : "Community Alert"}
             </Text>
             <View style={styles.modalPlaceholder} />
           </View>
@@ -690,37 +785,64 @@ export default function WeatherScreen() {
           <ScrollView style={styles.modalContent}>
             {isWeatherAlert(selectedAlert) && (
               <View style={styles.weatherAlertContent}>
-                <View style={[styles.severityBadge, { backgroundColor: getAlertPolygonColors(selectedAlert.severity).stroke }]}>
-                  <Text style={styles.severityText}>{selectedAlert.severity} ALERT</Text>
+                <View
+                  style={[
+                    styles.severityBadge,
+                    {
+                      backgroundColor: getAlertPolygonColors(
+                        selectedAlert.severity
+                      ).stroke,
+                    },
+                  ]}
+                >
+                  <Text style={styles.severityText}>
+                    {selectedAlert.severity} ALERT
+                  </Text>
                 </View>
-                
-                <Text style={styles.alertTitleModal}>{selectedAlert.title}</Text>
-                
-                <Text style={styles.alertDescriptionModal}>{selectedAlert.description}</Text>
-                
-                {selectedAlert.areaDesc && (
+
+                <Text style={styles.alertTitleModal}>
+                  {selectedAlert.title}
+                </Text>
+
+                <Text style={styles.alertDescriptionModal}>
+                  {selectedAlert.description}
+                </Text>
+
+                {selectedAlert.metadata?.areaDesc && (
                   <View style={styles.alertMetaInfo}>
                     <Text style={styles.alertMetaLabel}>Area:</Text>
-                    <Text style={styles.alertMetaValue}>{selectedAlert.areaDesc}</Text>
-                  </View>
-                )}
-                
-                {selectedAlert.effective && (
-                  <View style={styles.alertMetaInfo}>
-                    <Text style={styles.alertMetaLabel}>Effective:</Text>
                     <Text style={styles.alertMetaValue}>
-                      {new Date(selectedAlert.effective).toLocaleDateString()} at{' '}
-                      {new Date(selectedAlert.effective).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {selectedAlert.metadata.areaDesc}
                     </Text>
                   </View>
                 )}
-                
-                {selectedAlert.expires && (
+
+                {selectedAlert.startTime && (
+                  <View style={styles.alertMetaInfo}>
+                    <Text style={styles.alertMetaLabel}>Effective:</Text>
+                    <Text style={styles.alertMetaValue}>
+                      {new Date(selectedAlert.startTime).toLocaleDateString()}{" "}
+                      at{" "}
+                      {new Date(selectedAlert.startTime).toLocaleTimeString(
+                        [],
+                        {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        }
+                      )}
+                    </Text>
+                  </View>
+                )}
+
+                {selectedAlert.endTime && (
                   <View style={styles.alertMetaInfo}>
                     <Text style={styles.alertMetaLabel}>Expires:</Text>
                     <Text style={styles.alertMetaValue}>
-                      {new Date(selectedAlert.expires).toLocaleDateString()} at{' '}
-                      {new Date(selectedAlert.expires).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(selectedAlert.endTime).toLocaleDateString()} at{" "}
+                      {new Date(selectedAlert.endTime).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </Text>
                   </View>
                 )}
@@ -731,38 +853,47 @@ export default function WeatherScreen() {
               <View style={styles.communityAlertContent}>
                 <View style={styles.emergencyBadge}>
                   <Text style={styles.emergencyText}>
-                    {selectedAlert.isEmergency ? 'EMERGENCY' : 'COMMUNITY ALERT'}
+                    {selectedAlert.isEmergency
+                      ? "EMERGENCY"
+                      : "COMMUNITY ALERT"}
                   </Text>
                 </View>
-                
-                <Text style={styles.alertTitleModal}>{selectedAlert.title || 'Community Alert'}</Text>
-                
-                <Text style={styles.alertDescriptionModal}>{selectedAlert.content}</Text>
-                
+
+                <Text style={styles.alertTitleModal}>
+                  {selectedAlert.title || "Community Alert"}
+                </Text>
+
+                <Text style={styles.alertDescriptionModal}>
+                  {selectedAlert.content}
+                </Text>
+
                 <View style={styles.alertAuthorInfo}>
                   <Text style={styles.alertAuthorLabel}>Reported by:</Text>
                   <Text style={styles.alertAuthorName}>
                     {selectedAlert.firstName} {selectedAlert.lastName}
                   </Text>
                 </View>
-                
+
                 <View style={styles.alertMetaInfo}>
                   <Text style={styles.alertMetaLabel}>Posted:</Text>
-                  <Text style={styles.alertMetaValue}>{formatTimeAgo(selectedAlert.createdAt)}</Text>
+                  <Text style={styles.alertMetaValue}>
+                    {formatTimeAgo(selectedAlert.createdAt)}
+                  </Text>
                 </View>
-                
+
                 {selectedAlert.locationCity && selectedAlert.locationState && (
                   <View style={styles.alertMetaInfo}>
                     <Text style={styles.alertMetaLabel}>General Area:</Text>
                     <Text style={styles.alertMetaValue}>
-                      {selectedAlert.locationCity}, {selectedAlert.locationState}
+                      {selectedAlert.locationCity},{" "}
+                      {selectedAlert.locationState}
                     </Text>
                   </View>
                 )}
-                
+
                 <View style={styles.privacyNotice}>
                   <View style={styles.privacyNoticeContent}>
-                    <Info size={12} color={Colors.text.tertiary} />
+                    <Info size={12} color={Colors.text.secondary} />
                     <Text style={styles.privacyNoticeText}>
                       Location shown is approximate for privacy protection
                     </Text>
@@ -778,7 +909,7 @@ export default function WeatherScreen() {
               >
                 <Text style={styles.modalButtonText}>Close</Text>
               </TouchableOpacity>
-              
+
               {isCommunityAlert(selectedAlert) && (
                 <TouchableOpacity
                   style={[styles.modalButton, styles.modalButtonPrimary]}
@@ -787,7 +918,12 @@ export default function WeatherScreen() {
                     router.push(`/post/${selectedAlert.id}`);
                   }}
                 >
-                  <Text style={[styles.modalButtonText, styles.modalButtonTextPrimary]}>
+                  <Text
+                    style={[
+                      styles.modalButtonText,
+                      styles.modalButtonTextPrimary,
+                    ]}
+                  >
                     View Post
                   </Text>
                 </TouchableOpacity>
@@ -824,15 +960,23 @@ export default function WeatherScreen() {
 
           <View style={styles.topRight}>
             <WeatherIcon size={28} color={Colors.primary[500]} />
-            <Text style={styles.compactCondition} numberOfLines={2} ellipsizeMode="tail">
+            <Text
+              style={styles.compactCondition}
+              numberOfLines={2}
+              ellipsizeMode="tail"
+            >
               {weather.current?.shortForecast || weather.condition}
             </Text>
             <Text style={styles.highLowText}>
-              {weather.forecast && weather.forecast.length > 0 ? (
-                `H: ${weather.forecast.find(p => p.isDaytime)?.temperature || "N/A"}° L: ${weather.forecast.find(p => !p.isDaytime)?.temperature || "N/A"}°`
-              ) : (
-                "H: N/A° L: N/A°"
-              )}
+              {weather.forecast && weather.forecast.length > 0
+                ? `H: ${
+                    weather.forecast.find((p) => p.isDaytime)?.temperature ||
+                    "N/A"
+                  }° L: ${
+                    weather.forecast.find((p) => !p.isDaytime)?.temperature ||
+                    "N/A"
+                  }°`
+                : "H: N/A° L: N/A°"}
             </Text>
           </View>
         </View>
@@ -861,7 +1005,6 @@ export default function WeatherScreen() {
       </View>
     );
   };
-
 
   if (loading && !weather) {
     return (
@@ -918,11 +1061,13 @@ export default function WeatherScreen() {
           rotateEnabled={false}
           pitchEnabled={false}
           mapType="standard"
-          onMapReady={() => console.log('Map ready for overlays')}
+          onMapReady={() => console.log("Map ready for overlays")}
         >
           {weatherLayers.precipitation && (
             <UrlTile
-              urlTemplate={`https://tilecache.rainviewer.com/v2/radar/${Math.floor(rainTimestamp / 1000 / 600) * 600}/256/{z}/{x}/{y}/1/1_1.png`}
+              urlTemplate={`https://tilecache.rainviewer.com/v2/radar/${
+                Math.floor(rainTimestamp / 1000 / 600) * 600
+              }/256/{z}/{x}/{y}/1/1_1.png`}
               shouldReplaceMapContent={false}
               maximumZ={15}
               minimumZ={1}
@@ -930,11 +1075,9 @@ export default function WeatherScreen() {
               zIndex={1}
               opacity={0.7}
               tileSize={256}
-              onLoad={() => console.log('Precipitation overlay loaded successfully')}
-              onError={(error) => console.error('Precipitation overlay error:', error)}
             />
           )}
-          
+
           {weatherLayers.clouds && WEATHER_CONFIG.OPENWEATHER_API_KEY && (
             <UrlTile
               urlTemplate={`https://tile.openweathermap.org/map/clouds_new/{z}/{x}/{y}.png?appid=${WEATHER_CONFIG.OPENWEATHER_API_KEY}`}
@@ -945,11 +1088,9 @@ export default function WeatherScreen() {
               zIndex={2}
               opacity={0.5}
               tileSize={256}
-              onLoad={() => console.log('Clouds overlay loaded successfully')}
-              onError={(error) => console.error('Clouds overlay error:', error)}
             />
           )}
-          
+
           {weatherLayers.wind && WEATHER_CONFIG.OPENWEATHER_API_KEY && (
             <UrlTile
               urlTemplate={`https://tile.openweathermap.org/map/wind_new/{z}/{x}/{y}.png?appid=${WEATHER_CONFIG.OPENWEATHER_API_KEY}`}
@@ -960,11 +1101,9 @@ export default function WeatherScreen() {
               zIndex={3}
               opacity={0.5}
               tileSize={256}
-              onLoad={() => console.log('Wind overlay loaded successfully')}
-              onError={(error) => console.error('Wind overlay error:', error)}
             />
           )}
-          
+
           {weatherLayers.temperature && WEATHER_CONFIG.OPENWEATHER_API_KEY && (
             <UrlTile
               urlTemplate={`https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid=${WEATHER_CONFIG.OPENWEATHER_API_KEY}`}
@@ -975,127 +1114,153 @@ export default function WeatherScreen() {
               zIndex={4}
               opacity={0.5}
               tileSize={256}
-              onLoad={() => console.log('Temperature overlay loaded successfully')}
-              onError={(error) => console.error('Temperature overlay error:', error)}
             />
           )}
-          
-          {(weatherLayers.severe_weather || weatherLayers.weather_alerts) && alerts.map((alert, index) => {
-            const colors = getAlertPolygonColors(alert.severity);
-            const coordinates = generateAlertPolygon(alert);
-            
-            return coordinates.length > 0 ? (
-              <Polygon
-                key={`alert-${alert.id || index}`}
-                coordinates={coordinates}
-                strokeColor={colors.stroke}
-                fillColor={colors.fill}
-                strokeWidth={2}
-                onPress={() => {
-                  console.log('Weather alert pressed:', alert.title);
-                  setSelectedAlert(alert);
-                  setShowAlertModal(true);
-                }}
-              />
-            ) : null;
-          })}
-          
-          {(weatherLayers.safety_alerts || weatherLayers.community_alerts || weatherLayers.help_needed) && communityAlerts.map((alert) => {
-            if (!alert.latitude || !alert.longitude) return null;
-            
-            const getPrivacySafeLocation = (lat: number, lng: number, alertType: string) => {
-              let precision = 2;
-              
-              if (alert.isEmergency) {
-                precision = 3;
-              }
-              
-              if (alertType?.toLowerCase().includes('missing') || alertType?.toLowerCase().includes('lost')) {
-                precision = 1;
-              }
-              
-              const roundedLat = Math.round(lat * Math.pow(10, precision)) / Math.pow(10, precision);
-              const roundedLng = Math.round(lng * Math.pow(10, precision)) / Math.pow(10, precision);
-              
-              const randomOffset = 0.002;
-              const randomLat = (Math.random() - 0.5) * randomOffset;
-              const randomLng = (Math.random() - 0.5) * randomOffset;
-              
-              return {
-                latitude: roundedLat + randomLat,
-                longitude: roundedLng + randomLng
+
+          {(weatherLayers.severe_weather || weatherLayers.weather_alerts) &&
+            alerts.map((alert, index) => {
+              const colors = getAlertPolygonColors(alert.severity);
+              const coordinates = generateAlertPolygon(alert);
+
+              return coordinates.length > 0 ? (
+                <Polygon
+                  key={`alert-${alert.id || index}`}
+                  coordinates={coordinates}
+                  strokeColor={colors.stroke}
+                  fillColor={colors.fill}
+                  strokeWidth={2}
+                  onPress={() => {
+                    console.log("Weather alert pressed:", alert.title);
+                    setSelectedAlert(alert);
+                    setShowAlertModal(true);
+                  }}
+                />
+              ) : null;
+            })}
+
+          {(weatherLayers.safety_alerts ||
+            weatherLayers.community_alerts ||
+            weatherLayers.help_needed) &&
+            communityAlerts.map((alert) => {
+              if (!alert.latitude || !alert.longitude) return null;
+
+              const getPrivacySafeLocation = (
+                lat: number,
+                lng: number,
+                alertType: string
+              ) => {
+                let precision = 2;
+
+                if (alert.isEmergency) {
+                  precision = 3;
+                }
+
+                if (
+                  alertType?.toLowerCase().includes("missing") ||
+                  alertType?.toLowerCase().includes("lost")
+                ) {
+                  precision = 1;
+                }
+
+                const roundedLat =
+                  Math.round(lat * Math.pow(10, precision)) /
+                  Math.pow(10, precision);
+                const roundedLng =
+                  Math.round(lng * Math.pow(10, precision)) /
+                  Math.pow(10, precision);
+
+                const randomOffset = 0.002;
+                const randomLat = (Math.random() - 0.5) * randomOffset;
+                const randomLng = (Math.random() - 0.5) * randomOffset;
+
+                return {
+                  latitude: roundedLat + randomLat,
+                  longitude: roundedLng + randomLng,
+                };
               };
-            };
-            
-            const safeLocation = getPrivacySafeLocation(
-              alert.latitude, 
-              alert.longitude, 
-              alert.postType || ''
-            );
-            
-            return (
+
+              const safeLocation = getPrivacySafeLocation(
+                alert.latitude,
+                alert.longitude,
+                alert.postType || ""
+              );
+
+              return (
+                <Marker
+                  key={`community-${alert.id}`}
+                  coordinate={safeLocation}
+                  anchor={{ x: 0.5, y: 0.5 }}
+                  zIndex={999}
+                  onPress={() => {
+                    console.log("Community alert pressed:", alert.title);
+                    setSelectedAlert(alert);
+                    setShowAlertModal(true);
+                  }}
+                >
+                  <View style={styles.communityAlertMarker}>
+                    <AlertTriangle size={16} color={Colors.error[600]} />
+                    <Text style={styles.alertMarkerText}>
+                      {alert.isEmergency ? "EMERGENCY" : "ALERT"}
+                    </Text>
+                  </View>
+                </Marker>
+              );
+            })}
+
+          {(weatherLayers.temperature || weatherLayers.wind) &&
+            userLocationWeatherData.map((locationData) => (
               <Marker
-                key={`community-${alert.id}`}
-                coordinate={safeLocation}
+                key={locationData.id}
+                coordinate={{
+                  latitude: locationData.latitude,
+                  longitude: locationData.longitude,
+                }}
                 anchor={{ x: 0.5, y: 0.5 }}
-                zIndex={999}
+                zIndex={1000}
                 onPress={() => {
-                  console.log('Community alert pressed:', alert.title);
-                  setSelectedAlert(alert);
-                  setShowAlertModal(true);
+                  Alert.alert(
+                    `${locationData.locationName}`,
+                    `Temperature: ${locationData.temperature}°F\nWind: ${locationData.windSpeed}\nCondition: ${locationData.condition}`,
+                    [{ text: "OK" }]
+                  );
                 }}
               >
-                <View style={styles.communityAlertMarker}>
-                  <AlertTriangle size={16} color={Colors.error[600]} />
-                  <Text style={styles.alertMarkerText}>
-                    {alert.isEmergency ? 'EMERGENCY' : 'ALERT'}
+                <View
+                  style={[
+                    styles.userLocationWeatherMarker,
+                    locationData.locationType === "current"
+                      ? styles.currentLocationMarker
+                      : styles.homeLocationMarker,
+                  ]}
+                >
+                  {weatherLayers.temperature && (
+                    <Text style={styles.weatherMarkerText}>
+                      {locationData.temperature}°
+                    </Text>
+                  )}
+                  {weatherLayers.wind && (
+                    <Text style={styles.weatherMarkerText}>
+                      {locationData.windSpeed}
+                    </Text>
+                  )}
+                  <Text
+                    style={[
+                      styles.locationNameText,
+                      locationData.locationType === "current"
+                        ? styles.currentLocationText
+                        : styles.homeLocationText,
+                    ]}
+                  >
+                    {locationData.locationType === "current"
+                      ? "Current"
+                      : "Home"}
                   </Text>
                 </View>
               </Marker>
-            );
-          })}
-
-          {(weatherLayers.temperature || weatherLayers.wind) && userLocationWeatherData.map((locationData) => (
-            <Marker
-              key={locationData.id}
-              coordinate={{ latitude: locationData.latitude, longitude: locationData.longitude }}
-              anchor={{ x: 0.5, y: 0.5 }}
-              zIndex={1000}
-              onPress={() => {
-                Alert.alert(
-                  `${locationData.locationName}`,
-                  `Temperature: ${locationData.temperature}°F\nWind: ${locationData.windSpeed}\nCondition: ${locationData.condition}`,
-                  [{ text: "OK" }]
-                );
-              }}
-            >
-              <View style={[
-                styles.userLocationWeatherMarker,
-                locationData.locationType === 'current' 
-                  ? styles.currentLocationMarker 
-                  : styles.homeLocationMarker
-              ]}>
-                {weatherLayers.temperature && (
-                  <Text style={styles.weatherMarkerText}>{locationData.temperature}°</Text>
-                )}
-                {weatherLayers.wind && (
-                  <Text style={styles.weatherMarkerText}>{locationData.windSpeed}</Text>
-                )}
-                <Text style={[
-                  styles.locationNameText,
-                  locationData.locationType === 'current' 
-                    ? styles.currentLocationText 
-                    : styles.homeLocationText
-                ]}>
-                  {locationData.locationType === 'current' ? 'Current' : 'Home'}
-                </Text>
-              </View>
-            </Marker>
-          ))}
+            ))}
         </MapView>
 
         <SafeAreaView style={styles.overlayContent} pointerEvents="box-none">
-
           <View style={styles.topOverlay} pointerEvents="box-none">
             <ScrollView
               style={styles.scrollView}

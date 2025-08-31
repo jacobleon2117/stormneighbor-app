@@ -9,6 +9,7 @@ const {
   testUploadSystem,
 } = require("../controllers/uploadController");
 const { profileImageUpload, postImageUpload, commentImageUpload } = require("../config/cloudinary");
+const logger = require("../utils/logger");
 
 const router = express.Router();
 
@@ -18,7 +19,7 @@ router.post(
   (req, res, next) => {
     profileImageUpload.single("image")(req, res, (err) => {
       if (err) {
-        console.error("Multer profile upload error:", err.message);
+        logger.error("Multer profile upload error:", err.message);
         return res.status(400).json({
           success: false,
           message: err.message.includes("File too large")
@@ -38,7 +39,7 @@ router.post(
   (req, res, next) => {
     postImageUpload.single("image")(req, res, (err) => {
       if (err) {
-        console.error("Multer post upload error:", err.message);
+        logger.error("Multer post upload error:", err.message);
         return res.status(400).json({
           success: false,
           message: err.message.includes("File too large")
@@ -58,7 +59,7 @@ router.post(
   (req, res, next) => {
     commentImageUpload.single("image")(req, res, (err) => {
       if (err) {
-        console.error("Multer comment upload error:", err.message);
+        logger.error("Multer comment upload error:", err.message);
         return res.status(400).json({
           success: false,
           message: err.message.includes("File too large")
@@ -79,7 +80,7 @@ router.get("/stats", auth, getUploadStats);
 router.get("/test", testUploadSystem);
 
 router.use((error, _req, res, _next) => {
-  console.error("Upload route error:", error);
+  logger.error("Upload route error:", error);
 
   if (error.code === "LIMIT_FILE_SIZE") {
     return res.status(400).json({

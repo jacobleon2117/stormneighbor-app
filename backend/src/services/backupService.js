@@ -2,6 +2,7 @@ const { spawn } = require("child_process");
 const fs = require("fs").promises;
 const path = require("path");
 const cron = require("node-cron");
+const logger = require("../utils/logger");
 
 class DatabaseBackupService {
   constructor() {
@@ -22,9 +23,9 @@ class DatabaseBackupService {
   async initializeBackupDirectory() {
     try {
       await fs.mkdir(this.backupDir, { recursive: true });
-      console.log(`Backup directory initialized: ${this.backupDir}`);
+      logger.info(`Backup directory initialized: ${this.backupDir}`);
     } catch (error) {
-      console.error("Failed to create backup directory:", error);
+      logger.error("Failed to create backup directory:", error);
       throw error;
     }
   }
@@ -40,7 +41,7 @@ class DatabaseBackupService {
     const filename = this.generateBackupFilename(type);
     const filepath = path.join(this.backupDir, filename);
 
-    console.log(`Starting ${type} database backup: ${filename}`);
+    logger.info(`Starting ${type} database backup: ${filename}`);
 
     try {
       const dbUrl = new URL(process.env.DATABASE_URL);
@@ -49,7 +50,7 @@ class DatabaseBackupService {
       const username = dbUrl.username || "postgres";
       const database = dbUrl.pathname.slice(1);
 
-      console.log(`Connecting to: ${dbUrl.hostname}:${dbUrl.port || 5432} as ${username}`);
+      logger.info(`Connecting to: ${dbUrl.hostname}:${dbUrl.port || 5432} as ${username}`);
 
       const pgDumpOptions = [
         "--verbose",
@@ -98,7 +99,7 @@ class DatabaseBackupService {
         success: true,
       };
 
-      console.log("Backup completed successfully:", {
+      logger.info("Backup completed successfully:", {
         file: filename,
         size: `${(stats.size / 1024 / 1024).toFixed(2)} MB`,
         duration: `${duration}ms`,
@@ -114,12 +115,12 @@ class DatabaseBackupService {
 
       return backupInfo;
     } catch (error) {
-      console.error("Backup failed:", error);
+      logger.error("Backup failed:", error);
 
       try {
         await fs.unlink(filepath);
       } catch (cleanupError) {
-        console.error("Failed to cleanup incomplete backup file:", cleanupError);
+        logger.error("Failed to cleanup incomplete backup file:", cleanupError);
       }
 
       const backupInfo = {
@@ -190,7 +191,7 @@ class DatabaseBackupService {
   }
 
   async uploadToRemoteStorage(_filepath, _backupInfo) {
-    console.log("Remote upload not configured - implement uploadToRemoteStorage method");
+    logger.info("Remote upload not configured - implement uploadToRemoteStorage method");
   }
 
   async cleanupOldBackups() {
@@ -223,12 +224,12 @@ class DatabaseBackupService {
 
       for (const file of filesToDelete) {
         await fs.unlink(file.path);
-        console.log(`Deleted old backup: ${file.name}`);
+        logger.info(`Deleted old backup: ${file.name}`);
       }
 
-      console.log(`Cleanup completed: ${filesToDelete.length} old backups removed`);
+      logger.info(`Cleanup completed: ${filesToDelete.length} old backups removed`);
     } catch (error) {
-      console.error("Backup cleanup failed:", error);
+      logger.error("Backup cleanup failed:", error);
     }
   }
 
@@ -249,15 +250,15 @@ class DatabaseBackupService {
     try {
       await fs.appendFile(logFile, logLine);
     } catch (error) {
-      console.error("Failed to write backup log:", error);
+      logger.error("Failed to write backup log:", error);
     }
 
-    console.log("Backup logged:", logEntry);
+    logger.info("Backup logged:", logEntry);
   }
 
   async restoreBackup(backupFile, options = {}) {
     const startTime = Date.now();
-    console.log(`Starting database restore from: ${backupFile}`);
+    logger.info(`Starting database restore from: ${backupFile}`);
 
     try {
       const backupPath = path.isAbsolute(backupFile)
@@ -295,10 +296,10 @@ class DatabaseBackupService {
       await this.executePgRestore(pgRestoreOptions, password);
       const duration = Date.now() - startTime;
 
-      console.log(`Database restore completed successfully in ${duration}ms`);
+      logger.info(`Database restore completed successfully in ${duration}ms`);
       return { success: true, duration, file: backupFile };
     } catch (error) {
-      console.error("Database restore failed:", error);
+      logger.error("Database restore failed:", error);
       throw error;
     }
   }
@@ -370,41 +371,41 @@ class DatabaseBackupService {
 
       return backups.sort((a, b) => b.created - a.created);
     } catch (error) {
-      console.error("Failed to list backups:", error);
+      logger.error("Failed to list backups:", error);
       return [];
     }
   }
 
   startScheduledBackups() {
-    console.log("Starting scheduled backup tasks...");
+    logger.info("Starting scheduled backup tasks...");
 
     cron.schedule(this.schedules.daily, () => {
-      console.log("Running scheduled daily backup...");
+      logger.info("Running scheduled daily backup...");
       this.createBackup("daily").catch((error) => {
-        console.error("Scheduled daily backup failed:", error);
+        logger.error("Scheduled daily backup failed:", error);
       });
     });
 
     cron.schedule(this.schedules.weekly, () => {
-      console.log("Running scheduled weekly backup...");
+      logger.info("Running scheduled weekly backup...");
       this.createBackup("weekly").catch((error) => {
-        console.error("Scheduled weekly backup failed:", error);
+        logger.error("Scheduled weekly backup failed:", error);
       });
     });
 
     cron.schedule(this.schedules.monthly, () => {
-      console.log("Running scheduled monthly backup...");
+      logger.info("Running scheduled monthly backup...");
       this.createBackup("monthly").catch((error) => {
-        console.error("Scheduled monthly backup failed:", error);
+        logger.error("Scheduled monthly backup failed:", error);
       });
     });
 
-    console.log("Backup schedules configured:", this.schedules);
+    logger.info("Backup schedules configured:", this.schedules);
   }
 
   stopScheduledBackups() {
     cron.destroy();
-    console.log("All scheduled backup tasks stopped");
+    logger.info("All scheduled backup tasks stopped");
   }
 
   async getBackupStats() {

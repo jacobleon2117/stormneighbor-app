@@ -1,4 +1,5 @@
 const { validationResult } = require("express-validator");
+const logger = require("../utils/logger");
 
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
@@ -12,7 +13,7 @@ const handleValidationErrors = (req, res, next) => {
     }));
 
     if (process.env.NODE_ENV === "development") {
-      console.log("Validation errors:", formattedErrors);
+      logger.info("Validation errors:", formattedErrors);
     }
 
     return res.status(400).json({

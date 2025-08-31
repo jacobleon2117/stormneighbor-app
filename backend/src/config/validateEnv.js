@@ -1,4 +1,5 @@
 require("dotenv").config();
+const logger = require("../utils/logger");
 
 const requiredEnvVars = [
   "DATABASE_URL",
@@ -19,20 +20,17 @@ const optionalEnvVars = [
   "RATE_LIMIT_MAX_REQUESTS",
   "FROM_NAME",
   "JWT_EXPIRES_IN",
-  "SOCKET_CORS_ORIGIN",
   "DATABASE_SSL",
   "DATABASE_SSL_REJECT_UNAUTHORIZED",
   "DB_POOL_SIZE",
   "DB_CONNECTION_TIMEOUT",
   "DB_IDLE_TIMEOUT",
-  "REDIS_URL",
   "CACHE_TTL",
-  "SENTRY_DSN",
   "LOG_LEVEL",
 ];
 
 function validateEnvironment() {
-  console.log("WORKING: Validating environment variables");
+  logger.info("WORKING: Validating environment variables");
 
   const missing = [];
   const present = [];
@@ -86,35 +84,35 @@ function validateEnvironment() {
   }
 
   if (missing.length > 0) {
-    console.error("ERROR: Missing required environment variables:");
-    missing.forEach((envVar) => console.error(`   - ${envVar}`));
-    console.error("\nINFO: Add these to your .env file:");
+    logger.error("ERROR: Missing required environment variables:");
+    missing.forEach((envVar) => logger.error(`   - ${envVar}`));
+    logger.error("\nINFO: Add these to your .env file:");
     missing.forEach((envVar) => {
-      console.error(`   ${envVar}=value_here`);
+      logger.error(`   ${envVar}=value_here`);
     });
     throw new Error("ERROR: Missing required environment variables");
   }
 
   if (warnings.length > 0) {
-    console.warn("\nWARNING: Configuration warnings:");
-    warnings.forEach((warning) => console.warn(`   - ${warning}`));
+    logger.warn("\nWARNING: Configuration warnings:");
+    warnings.forEach((warning) => logger.warn(`   - ${warning}`));
   }
 
-  console.log(`WORKING: Environment validated (${present.length} variables configured)`);
+  logger.info(`WORKING: Environment validated (${present.length} variables configured);`);
 
-  console.log(`Environment: ${process.env.NODE_ENV}`);
+  logger.info(`Environment: ${process.env.NODE_ENV}`);
 
   if (process.env.NODE_ENV === "development") {
-    console.log("Development mode settings:");
-    console.log(`INFO: Client URL: ${process.env.CLIENT_URL || "http://localhost:19006"}`);
-    console.log(`INFO: Database SSL: ${process.env.DATABASE_SSL || "false"}`);
+    logger.info("Development mode settings:");
+    logger.info(`INFO: Client URL: ${process.env.CLIENT_URL || "http://localhost:19006"}`);
+    logger.info(`INFO: Database SSL: ${process.env.DATABASE_SSL || "false"}`);
   }
 
-  console.log("\nConfigured services:");
-  console.log(`INFO: Database: ${process.env.DATABASE_URL ? "SUCCESS" : "ERROR"}`);
-  console.log(`INFO: Email (Resend): ${process.env.RESEND_API_KEY ? "SUCCESS" : "ERROR"}`);
-  console.log(`INFO: Weather (NOAA): ${process.env.NOAA_API_BASE_URL ? "SUCCESS" : "ERROR"}`);
-  console.log(
+  logger.info("\nConfigured services:");
+  logger.info(`INFO: Database: ${process.env.DATABASE_URL ? "SUCCESS" : "ERROR"}`);
+  logger.info(`INFO: Email (Resend);: ${process.env.RESEND_API_KEY ? "SUCCESS" : "ERROR"}`);
+  logger.info(`INFO: Weather (NOAA);: ${process.env.NOAA_API_BASE_URL ? "SUCCESS" : "ERROR"}`);
+  logger.info(
     `Images (Cloudinary): ${
       process.env.CLOUDINARY_CLOUD_NAME &&
       process.env.CLOUDINARY_API_KEY &&
@@ -123,8 +121,7 @@ function validateEnvironment() {
         : "ERROR"
     }`
   );
-  console.log(`JWT Security: ${process.env.JWT_SECRET ? "SUCCESS" : "ERROR"}`);
-  console.log(`Redis Cache: ${process.env.REDIS_URL ? "SUCCESS" : "Optional"}`);
+  logger.info(`JWT Security: ${process.env.JWT_SECRET ? "SUCCESS" : "ERROR"}`);
 }
 
 module.exports = validateEnvironment;

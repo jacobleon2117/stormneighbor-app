@@ -1,4 +1,5 @@
 const { pool } = require("../config/database");
+const logger = require("../utils/logger");
 
 class SearchService {
   static async searchPosts(searchParams, userId) {
@@ -494,7 +495,7 @@ class SearchService {
           [userId, query, JSON.stringify(filters), city, state, "manual"]
         );
       } catch (error) {
-        console.error("Error logging search query:", error.message);
+        logger.error("Error logging search query:", error.message);
       }
     }
   }
@@ -528,7 +529,7 @@ class SearchService {
         [query, resultCount]
       );
     } catch (error) {
-      console.error("Error updating search stats:", error.message);
+      logger.error("Error updating search stats:", error.message);
     }
   }
 }

@@ -14,6 +14,7 @@ const { body, param, query } = require("express-validator");
 const { handleValidationErrors } = require("../middleware/validation");
 const { getReports, reviewReport, getReportStats } = require("../controllers/reportsController");
 const weatherAlertService = require("../services/weatherAlertService");
+const logger = require("../utils/logger");
 
 router.use(auth);
 router.use(adminAuth);
@@ -69,7 +70,7 @@ router.get("/dashboard", requireAnalytics, async (req, res) => {
       req.get("User-Agent")
     );
   } catch (error) {
-    console.error("Dashboard error:", error);
+    logger.error("Dashboard error:", error);
     res.status(500).json({
       success: false,
       message: "Error fetching dashboard data",
@@ -128,7 +129,7 @@ router.get("/users", requirePermission("users", "read"), async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Users fetch error:", error);
+    logger.error("Users fetch error:", error);
     res.status(500).json({
       success: false,
       message: "Error fetching users",
@@ -153,7 +154,7 @@ router.get("/roles", requireSuperAdmin, async (req, res) => {
       data: roles.rows,
     });
   } catch (error) {
-    console.error("Roles fetch error:", error);
+    logger.error("Roles fetch error:", error);
     res.status(500).json({
       success: false,
       message: "Error fetching roles",
@@ -248,7 +249,7 @@ router.post("/users/:userId/roles", requireSuperAdmin, async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Role assignment error:", error);
+    logger.error("Role assignment error:", error);
 
     try {
       const { userId } = req.params;
@@ -269,7 +270,7 @@ router.post("/users/:userId/roles", requireSuperAdmin, async (req, res) => {
         false
       );
     } catch (logError) {
-      console.error("Failed to log admin action:", logError);
+      logger.error("Failed to log admin action:", logError);
     }
 
     res.status(500).json({
@@ -298,7 +299,7 @@ router.post("/users/:userId/roles", requireSuperAdmin, async (req, res) => {
         data: analytics.rows,
       });
     } catch (error) {
-      console.error("Analytics fetch error:", error);
+      logger.error("Analytics fetch error:", error);
       res.status(500).json({
         success: false,
         message: "Error fetching analytics",
@@ -353,7 +354,7 @@ router.get("/reports/stats", requirePermission("reports", "read"), getReportStat
 
 router.post("/weather/fetch-alerts", requirePermission("weather", "manage"), async (req, res) => {
   try {
-    console.log(`Admin ${req.user.userId} triggered manual weather alert fetch`);
+    logger.info(`Admin ${req.user.userId} triggered manual weather alert fetch`);
 
     const result = await weatherAlertService.fetchAndStoreAlerts();
 
@@ -375,7 +376,7 @@ router.post("/weather/fetch-alerts", requirePermission("weather", "manage"), asy
       },
     });
   } catch (error) {
-    console.error("Manual weather alert fetch error:", error);
+    logger.error("Manual weather alert fetch error:", error);
     res.status(500).json({
       success: false,
       message: "Failed to fetch weather alerts",
@@ -394,7 +395,7 @@ router.get("/weather/service-status", requirePermission("weather", "read"), asyn
       data: status,
     });
   } catch (error) {
-    console.error("Get weather service status error:", error);
+    logger.error("Get weather service status error:", error);
     res.status(500).json({
       success: false,
       message: "Failed to get service status",
@@ -421,7 +422,7 @@ router.post("/weather/service/start", requireSuperAdmin, async (req, res) => {
       data: weatherAlertService.getStatus(),
     });
   } catch (error) {
-    console.error("Start weather service error:", error);
+    logger.error("Start weather service error:", error);
     res.status(500).json({
       success: false,
       message: "Failed to start weather service",
@@ -448,7 +449,7 @@ router.post("/weather/service/stop", requireSuperAdmin, async (req, res) => {
       data: weatherAlertService.getStatus(),
     });
   } catch (error) {
-    console.error("Stop weather service error:", error);
+    logger.error("Stop weather service error:", error);
     res.status(500).json({
       success: false,
       message: "Failed to stop weather service",

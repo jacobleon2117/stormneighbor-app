@@ -1,45 +1,53 @@
-const logger = {
-  info: (message, data = null) => {
-    const timestamp = new Date().toISOString();
-    console.log(`[${timestamp}] INFO  ${message}`);
-    if (data && process.env.NODE_ENV === "development") {
-      console.log("   Data:", data);
-    }
-  },
+const winston = require("winston");
+const DailyRotateFile = require("winston-daily-rotate-file");
 
-  error: (message, error = null) => {
-    const timestamp = new Date().toISOString();
-    console.error(`[${timestamp}] ERROR ${message}`);
-    if (error) {
-      if (process.env.NODE_ENV === "development") {
-        console.error("   Error:", error);
-      } else {
-        console.error("   Error:", error.message);
-      }
-    }
-  },
+const logFormat = winston.format.combine(
+  winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
+  winston.format.errors({ stack: true }),
+  winston.format.json()
+);
 
-  warn: (message, data = null) => {
-    const timestamp = new Date().toISOString();
-    console.warn(`[${timestamp}] WARN  ${message}`);
-    if (data && process.env.NODE_ENV === "development") {
-      console.warn("   Data:", data);
+const developmentFormat = winston.format.combine(
+  winston.format.colorize(),
+  winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
+  winston.format.printf(({ timestamp, level, message, stack }) => {
+    if (stack) {
+      return `${timestamp} [${level}]: ${message}\n${stack}`;
     }
-  },
+    return `${timestamp} [${level}]: ${message}`;
+  })
+);
 
-  success: (message, data = null) => {
-    const timestamp = new Date().toISOString();
-    console.log(`[${timestamp}] SUCCESS ${message}`);
-    if (data && process.env.NODE_ENV === "development") {
-      console.log("   Data:", data);
-    }
-  },
+const errorTransport = new DailyRotateFile({
+  filename: "logs/error-%DATE%.log",
+  datePattern: "YYYY-MM-DD",
+  level: "error",
+  maxSize: "20m",
+  maxFiles: "14d",
+  zippedArchive: true,
+});
 
-  api: (method, path, statusCode, responseTime) => {
-    const timestamp = new Date().toISOString();
-    const status = statusCode >= 400 ? "ERROR" : statusCode >= 300 ? "WARN" : "SUCCESS";
-    console.log(`[${timestamp}] ${status} ${method} ${path} - ${statusCode} (${responseTime}ms)`);
-  },
-};
+const combinedTransport = new DailyRotateFile({
+  filename: "logs/combined-%DATE%.log",
+  datePattern: "YYYY-MM-DD",
+  maxSize: "20m",
+  maxFiles: "14d",
+  zippedArchive: true,
+});
+
+const logger = winston.createLogger({
+  level: process.env.LOG_LEVEL || (process.env.NODE_ENV === "production" ? "info" : "debug"),
+  format: logFormat,
+  defaultMeta: { service: "stormneighbor-backend" },
+  transports: [errorTransport, combinedTransport],
+});
+
+if (process.env.NODE_ENV !== "production") {
+  logger.add(new winston.transports.Console({ format: developmentFormat }));
+}
+
+if (process.env.NODE_ENV === "test") {
+  logger.transports.forEach((t) => (t.silent = true));
+}
 
 module.exports = logger;

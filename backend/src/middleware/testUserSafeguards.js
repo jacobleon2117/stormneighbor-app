@@ -1,5 +1,6 @@
 const redis = require("redis");
 const rateLimit = require("express-rate-limit");
+const logger = require("../utils/logger");
 
 const testUserLimits = {
   weather: rateLimit({
@@ -53,7 +54,7 @@ const testUserLimits = {
 
 const trackAPIUsage = (service) => {
   return (req, res, next) => {
-    console.log(`API_USAGE: ${service} - User: ${req.user?.userId || "anonymous"} - IP: ${req.ip} - Time: ${new Date().toISOString()}`);
+    logger.info(`API_USAGE: ${service} - User: ${req.user?.userId || "anonymous"} - IP: ${req.ip} - Time: ${new Date().toISOString()}`);
     
     res.setHeader("X-API-Service", service);
     res.setHeader("X-Rate-Limit-Service", service);
@@ -70,7 +71,7 @@ const costMonitor = (req, res, next) => {
     const service = res.getHeader("X-API-Service");
     
     if (duration > 1000 || service === "weather") {
-      console.log(`COST_MONITOR: ${service} took ${duration}ms - Status: ${res.statusCode}`);
+      logger.info(`COST_MONITOR: ${service} took ${duration}ms - Status: ${res.statusCode}`);
     }
   });
   

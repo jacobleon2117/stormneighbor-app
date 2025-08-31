@@ -25,7 +25,8 @@ const getPosts = async (req, res) => {
 
         if (userResult.rows.length > 0) {
           userCity = userCity || userResult.rows[0].home_city || userResult.rows[0].location_city;
-          userState = userState || userResult.rows[0].home_state || userResult.rows[0].address_state;
+          userState =
+            userState || userResult.rows[0].home_state || userResult.rows[0].address_state;
         }
       }
 
@@ -283,7 +284,12 @@ const createPost = async (req, res) => {
       const user = userQuery.rows[0];
       logger.info("User location data:", user);
       if (!user.location_city || !user.address_state) {
-        logger.info("Missing location data - location_city:", user.location_city, "address_state:", user.address_state);
+        logger.info(
+          "Missing location data - location_city:",
+          user.location_city,
+          "address_state:",
+          user.address_state
+        );
         return res.status(400).json({
           success: false,
           message: "Please complete your profile with city and state information to create posts",
@@ -345,9 +351,9 @@ const createPost = async (req, res) => {
       message: error.message,
       code: error.code,
       detail: error.detail,
-      constraint: error.constraint
+      constraint: error.constraint,
     });
-    
+
     if (error.code === "23514") {
       return res.status(400).json({
         success: false,
@@ -355,7 +361,7 @@ const createPost = async (req, res) => {
         error: process.env.NODE_ENV === "development" ? error.message : undefined,
       });
     }
-    
+
     res.status(500).json({
       success: false,
       message: "Server error creating post",

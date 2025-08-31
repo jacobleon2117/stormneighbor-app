@@ -158,7 +158,7 @@ export default function PostDetailScreen() {
         const existingConversation = conversationsResponse.data.conversations.find(
           (conv: any) => conv.otherUser.id === userId
         );
-        
+
         if (existingConversation) {
           router.push({
             pathname: "/conversation/[id]" as any,
@@ -175,25 +175,21 @@ export default function PostDetailScreen() {
       console.error("Error checking conversations:", error);
     }
 
-    Alert.alert(
-      "Start Conversation",
-      `Send a message to ${userName}?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Send Message",
-          onPress: () => {
-            router.push({
-              pathname: "/conversation/new" as any,
-              params: {
-                recipientId: userId,
-                recipientName: userName,
-              },
-            });
-          },
+    Alert.alert("Start Conversation", `Send a message to ${userName}?`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Send Message",
+        onPress: () => {
+          router.push({
+            pathname: "/conversation/new" as any,
+            params: {
+              recipientId: userId,
+              recipientName: userName,
+            },
+          });
         },
-      ]
-    );
+      },
+    ]);
   };
 
   if (loading) {
@@ -219,10 +215,7 @@ export default function PostDetailScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <ScrollView
-          style={styles.postContainer}
-          showsVerticalScrollIndicator={false}
-        >
+        <ScrollView style={styles.postContainer} showsVerticalScrollIndicator={false}>
           <PostCard
             post={post}
             onLike={handleLike}
@@ -234,10 +227,7 @@ export default function PostDetailScreen() {
         </ScrollView>
 
         <View style={styles.commentsContainer}>
-          <CommentsSection
-            postId={postId}
-            onCommentCountChange={handleCommentCountChange}
-          />
+          <CommentsSection postId={postId} onCommentCountChange={handleCommentCountChange} />
         </View>
       </View>
     </SafeAreaView>

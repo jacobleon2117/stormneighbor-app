@@ -374,7 +374,7 @@ const getUploadStats = async (req, res) => {
 const testUploadSystem = async (_req, res) => {
   try {
     const { cloudinary } = require("../config/cloudinary");
-const logger = require("../utils/logger");
+    const logger = require("../utils/logger");
 
     const ping = await cloudinary.api.ping();
 

@@ -1,6 +1,5 @@
 import * as Notifications from "expo-notifications";
 export class TempNotificationService {
-  
   static async sendLocalAlert(title: string, body: string, data?: any) {
     try {
       await Notifications.scheduleNotificationAsync({
@@ -8,12 +7,12 @@ export class TempNotificationService {
           title,
           body,
           data,
-          sound: 'default',
+          sound: "default",
           badge: 1,
         },
         trigger: null,
       });
-      
+
       console.log(`Local notification sent: ${title}`);
       return true;
     } catch (error) {
@@ -24,7 +23,7 @@ export class TempNotificationService {
 
   static async sendTestNotification() {
     return await this.sendLocalAlert(
-      "Test Storm Alert", 
+      "Test Storm Alert",
       "This is a test notification from StormNeighbor! Emergency alerts will appear just like this.",
       { type: "test", timestamp: Date.now() }
     );
@@ -33,11 +32,11 @@ export class TempNotificationService {
   static async sendWeatherAlert(severity: string, description: string) {
     const severityPrefixes = {
       severe: "SEVERE",
-      critical: "CRITICAL", 
+      critical: "CRITICAL",
       moderate: "MODERATE",
-      low: "INFO"
+      low: "INFO",
     };
-    
+
     return await this.sendLocalAlert(
       `${severityPrefixes[severity as keyof typeof severityPrefixes]} Weather Alert`,
       description,
@@ -46,11 +45,10 @@ export class TempNotificationService {
   }
 
   static async sendCommunityAlert(title: string, description: string) {
-    return await this.sendLocalAlert(
-      `Community Alert: ${title}`,
-      description,
-      { type: "community", timestamp: Date.now() }
-    );
+    return await this.sendLocalAlert(`Community Alert: ${title}`, description, {
+      type: "community",
+      timestamp: Date.now(),
+    });
   }
 }
 

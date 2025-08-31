@@ -12,13 +12,7 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  Mail,
-  MessageSquare,
-  BookOpen,
-  Phone,
-  ExternalLink,
-} from "lucide-react-native";
+import { Mail, MessageSquare, BookOpen, Phone, ExternalLink } from "lucide-react-native";
 import { Header } from "../components/UI/Header";
 import { Button } from "../components/UI/Button";
 import { Colors } from "../constants/Colors";
@@ -208,18 +202,14 @@ export default function HelpSupportScreen() {
               key={category.key}
               style={[
                 styles.categoryButton,
-                contactForm.category === category.key &&
-                  styles.selectedCategory,
+                contactForm.category === category.key && styles.selectedCategory,
               ]}
-              onPress={() =>
-                setContactForm((prev) => ({ ...prev, category: category.key }))
-              }
+              onPress={() => setContactForm((prev) => ({ ...prev, category: category.key }))}
             >
               <Text
                 style={[
                   styles.categoryButtonText,
-                  contactForm.category === category.key &&
-                    styles.selectedCategoryText,
+                  contactForm.category === category.key && styles.selectedCategoryText,
                 ]}
               >
                 {category.label}
@@ -234,9 +224,7 @@ export default function HelpSupportScreen() {
         <TextInput
           style={styles.textInput}
           value={contactForm.subject}
-          onChangeText={(text) =>
-            setContactForm((prev) => ({ ...prev, subject: text }))
-          }
+          onChangeText={(text) => setContactForm((prev) => ({ ...prev, subject: text }))}
           placeholder="Brief description of your issue"
           placeholderTextColor={Colors.text.disabled}
         />
@@ -247,9 +235,7 @@ export default function HelpSupportScreen() {
         <TextInput
           style={[styles.textInput, styles.messageInput]}
           value={contactForm.message}
-          onChangeText={(text) =>
-            setContactForm((prev) => ({ ...prev, message: text }))
-          }
+          onChangeText={(text) => setContactForm((prev) => ({ ...prev, message: text }))}
           placeholder="Please provide as much detail as possible..."
           placeholderTextColor={Colors.text.disabled}
           multiline
@@ -301,11 +287,8 @@ export default function HelpSupportScreen() {
                 handleEmailSupport
               )}
 
-              {renderQuickAction(
-                MessageSquare,
-                "Contact Form",
-                "Fill out our detailed form",
-                () => setShowContactForm(true)
+              {renderQuickAction(MessageSquare, "Contact Form", "Fill out our detailed form", () =>
+                setShowContactForm(true)
               )}
 
               {renderQuickAction(
@@ -317,9 +300,7 @@ export default function HelpSupportScreen() {
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>
-                Frequently Asked Questions
-              </Text>
+              <Text style={styles.sectionTitle}>Frequently Asked Questions</Text>
 
               <ScrollView
                 horizontal
@@ -331,16 +312,14 @@ export default function HelpSupportScreen() {
                     key={category.key}
                     style={[
                       styles.categoryChip,
-                      selectedCategory === category.key &&
-                        styles.activeCategoryChip,
+                      selectedCategory === category.key && styles.activeCategoryChip,
                     ]}
                     onPress={() => setSelectedCategory(category.key)}
                   >
                     <Text
                       style={[
                         styles.categoryChipText,
-                        selectedCategory === category.key &&
-                          styles.activeCategoryChipText,
+                        selectedCategory === category.key && styles.activeCategoryChipText,
                       ]}
                     >
                       {category.label}
@@ -358,9 +337,7 @@ export default function HelpSupportScreen() {
               <View style={styles.contactInfo}>
                 <View style={styles.contactItem}>
                   <Mail size={20} color={Colors.primary[600]} />
-                  <Text style={styles.contactText}>
-                    support@stormneighbor.app
-                  </Text>
+                  <Text style={styles.contactText}>support@stormneighbor.app</Text>
                 </View>
 
                 <View style={styles.contactItem}>
@@ -369,9 +346,7 @@ export default function HelpSupportScreen() {
                 </View>
               </View>
 
-              <Text style={styles.responseTime}>
-                Average response time: 24 hours
-              </Text>
+              <Text style={styles.responseTime}>Average response time: 24 hours</Text>
             </View>
           </>
         ) : (

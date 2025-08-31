@@ -1,6 +1,6 @@
-import * as Location from 'expo-location';
-import { Alert, Platform, Linking } from 'react-native';
-import { LocationPermissionsWithChoice, LocationPreferences } from '../types';
+import * as Location from "expo-location";
+import { Alert, Platform, Linking } from "react-native";
+import { LocationPermissionsWithChoice, LocationPreferences } from "../types";
 
 export class LocationService {
   private static instance: LocationService;
@@ -18,8 +18,7 @@ export class LocationService {
     showRationale: boolean = true
   ): Promise<LocationPermissionsWithChoice> {
     try {
-      const foregroundPermissions =
-        await Location.getForegroundPermissionsAsync();
+      const foregroundPermissions = await Location.getForegroundPermissionsAsync();
 
       const permissions: LocationPermissionsWithChoice = {
         foreground: foregroundPermissions.status,
@@ -29,8 +28,7 @@ export class LocationService {
       };
 
       if (foregroundPermissions.status === "granted") {
-        const backgroundPermissions =
-          await Location.getBackgroundPermissionsAsync();
+        const backgroundPermissions = await Location.getBackgroundPermissionsAsync();
         permissions.background = backgroundPermissions.status;
         permissions.userChoice =
           backgroundPermissions.status === "granted" ? "always" : "while-using";
@@ -49,8 +47,7 @@ export class LocationService {
           const alwaysPermissions = await this.requestAlwaysPermissions();
           return { ...permissions, ...alwaysPermissions, userChoice: "always" };
         } else {
-          const whileUsingPermissions =
-            await this.requestWhileUsingPermissions();
+          const whileUsingPermissions = await this.requestWhileUsingPermissions();
           return {
             ...permissions,
             ...whileUsingPermissions,
@@ -76,9 +73,7 @@ export class LocationService {
     }
   }
 
-  private async showPermissionChoice(): Promise<
-    "always" | "while-using" | "never" | "cancelled"
-  > {
+  private async showPermissionChoice(): Promise<"always" | "while-using" | "never" | "cancelled"> {
     return new Promise((resolve) => {
       Alert.alert(
         "Location Access",
@@ -133,9 +128,11 @@ export class LocationService {
     return {
       foreground: foregroundResult.status,
       background: backgroundResult.status,
-      userChoice: (backgroundResult.status === "granted"
-        ? "always"
-        : "while-using") as "always" | "while-using" | "never" | "cancelled",
+      userChoice: (backgroundResult.status === "granted" ? "always" : "while-using") as
+        | "always"
+        | "while-using"
+        | "never"
+        | "cancelled",
     };
   }
 
@@ -178,9 +175,7 @@ export class LocationService {
     }
   }
 
-  async forwardGeocode(
-    address: string
-  ): Promise<Location.LocationGeocodedLocation | null> {
+  async forwardGeocode(address: string): Promise<Location.LocationGeocodedLocation | null> {
     try {
       const result = await Location.geocodeAsync(address);
       return result[0] || null;
@@ -232,21 +227,15 @@ export class LocationService {
     }
   }
 
-  async canUseLocationFor(
-    purpose: "weather" | "alerts" | "posts"
-  ): Promise<boolean> {
+  async canUseLocationFor(purpose: "weather" | "alerts" | "posts"): Promise<boolean> {
     const permissions = await Location.getForegroundPermissionsAsync();
 
     switch (purpose) {
       case "weather":
         return permissions.status === "granted";
       case "alerts":
-        const backgroundPermissions =
-          await Location.getBackgroundPermissionsAsync();
-        return (
-          permissions.status === "granted" ||
-          backgroundPermissions.status === "granted"
-        );
+        const backgroundPermissions = await Location.getBackgroundPermissionsAsync();
+        return permissions.status === "granted" || backgroundPermissions.status === "granted";
       case "posts":
         return permissions.status === "granted";
       default:
@@ -281,12 +270,7 @@ export class LocationService {
     });
   }
 
-  calculateDistance(
-    lat1: number,
-    lon1: number,
-    lat2: number,
-    lon2: number
-  ): number {
+  calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
     const R = 3959;
     const dLat = ((lat2 - lat1) * Math.PI) / 180;
     const dLon = ((lon2 - lon1) * Math.PI) / 180;
@@ -311,10 +295,7 @@ export class LocationService {
   } | null {
     switch (purpose) {
       case "weather":
-        if (
-          this.currentLocation &&
-          preferences?.useCurrentLocationForWeather !== false
-        ) {
+        if (this.currentLocation && preferences?.useCurrentLocationForWeather !== false) {
           return {
             latitude: this.currentLocation.coords.latitude,
             longitude: this.currentLocation.coords.longitude,
@@ -346,10 +327,7 @@ export class LocationService {
         return null;
 
       case "alerts":
-        if (
-          this.currentLocation &&
-          preferences?.useCurrentLocationForAlerts !== false
-        ) {
+        if (this.currentLocation && preferences?.useCurrentLocationForAlerts !== false) {
           return {
             latitude: this.currentLocation.coords.latitude,
             longitude: this.currentLocation.coords.longitude,

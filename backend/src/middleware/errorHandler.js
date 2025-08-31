@@ -40,13 +40,11 @@ const handleDatabaseError = (error, req, res, operation = "database operation") 
 };
 
 const handleValidationError = (errors, res) => {
-  return res
-    .status(400)
-    .json(
-      createErrorResponse(false, "Validation failed", "VALIDATION_ERROR", null, {
-        errors: errors.array(),
-      })
-    );
+  return res.status(400).json(
+    createErrorResponse(false, "Validation failed", "VALIDATION_ERROR", null, {
+      errors: errors.array(),
+    })
+  );
 };
 
 const handleAuthError = (res, message = "Authentication required") => {

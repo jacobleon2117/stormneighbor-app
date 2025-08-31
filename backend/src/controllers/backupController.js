@@ -243,7 +243,7 @@ const testBackupSystem = async (_req, res) => {
 
     const testPath = require("path").join(backupService.backupDir, testBackup.filename);
     await require("fs").promises.unlink(testPath);
-const logger = require("../utils/logger");
+    const logger = require("../utils/logger");
 
     res.json({
       success: true,

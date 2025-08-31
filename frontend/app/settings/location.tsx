@@ -11,16 +11,16 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
-import { 
-  ArrowLeft, 
-  MapPin, 
-  Navigation, 
-  Home, 
-  Shield, 
-  Eye, 
+import {
+  ArrowLeft,
+  MapPin,
+  Navigation,
+  Home,
+  Shield,
+  Eye,
   Zap,
   Settings as SettingsIcon,
-  Info
+  Info,
 } from "lucide-react-native";
 import { Colors } from "../../constants/Colors";
 import { locationService } from "../../services/locationService";
@@ -61,7 +61,7 @@ export default function LocationSettingsScreen() {
 
   const checkCurrentLocation = async () => {
     try {
-      const canUse = await locationService.canUseLocationFor('weather');
+      const canUse = await locationService.canUseLocationFor("weather");
       if (canUse) {
         const location = await locationService.getCurrentLocation();
         if (location) {
@@ -72,47 +72,56 @@ export default function LocationSettingsScreen() {
           setCurrentLocation({
             latitude: location.coords.latitude,
             longitude: location.coords.longitude,
-            address: address ? 
-              `${address.streetNumber || ''} ${address.street || ''}, ${address.city || ''}, ${address.region || ''}`.trim() :
-              `${location.coords.latitude.toFixed(4)}, ${location.coords.longitude.toFixed(4)}`
+            address: address
+              ? `${address.streetNumber || ""} ${address.street || ""}, ${address.city || ""}, ${
+                  address.region || ""
+                }`.trim()
+              : `${location.coords.latitude.toFixed(4)}, ${location.coords.longitude.toFixed(4)}`,
           });
         }
       }
     } catch (error) {
-      console.error('Error getting current location:', error);
+      console.error("Error getting current location:", error);
     }
   };
 
-  const handlePermissionChange = async (
-    permission: keyof typeof preferences,
-    value: boolean
-  ) => {
-    if (permission === 'allowBackgroundLocation' && value) {
+  const handlePermissionChange = async (permission: keyof typeof preferences, value: boolean) => {
+    if (permission === "allowBackgroundLocation" && value) {
       const result = await locationService.requestLocationPermissions();
-      if (result.background !== 'granted') {
+      if (result.background !== "granted") {
         Alert.alert(
-          'Background Location Required',
+          "Background Location Required",
           'To enable background location, please choose "Always Allow" for location permissions.',
           [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Open Settings', onPress: () => locationService.showPermissionDeniedAlert('background location') }
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Open Settings",
+              onPress: () => locationService.showPermissionDeniedAlert("background location"),
+            },
           ]
         );
         return;
       }
     }
 
-    if ((permission === 'useCurrentLocationForWeather' || permission === 'useCurrentLocationForAlerts') && value) {
-      const canUse = await locationService.canUseLocationFor('weather');
+    if (
+      (permission === "useCurrentLocationForWeather" ||
+        permission === "useCurrentLocationForAlerts") &&
+      value
+    ) {
+      const canUse = await locationService.canUseLocationFor("weather");
       if (!canUse) {
         const result = await locationService.requestLocationPermissions();
-        if (result.foreground !== 'granted') {
+        if (result.foreground !== "granted") {
           Alert.alert(
-            'Location Permission Required',
-            'Location access is required for this feature.',
+            "Location Permission Required",
+            "Location access is required for this feature.",
             [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Open Settings', onPress: () => locationService.showPermissionDeniedAlert('location-based features') }
+              { text: "Cancel", style: "cancel" },
+              {
+                text: "Open Settings",
+                onPress: () => locationService.showPermissionDeniedAlert("location-based features"),
+              },
             ]
           );
           return;
@@ -133,15 +142,15 @@ export default function LocationSettingsScreen() {
       });
       await refreshProfile();
     } catch (error) {
-      console.error('Error updating location preferences:', error);
-      Alert.alert('Error', 'Failed to save location preferences');
+      console.error("Error updating location preferences:", error);
+      Alert.alert("Error", "Failed to save location preferences");
       setPreferences(preferences);
     }
   };
 
   const handleUpdateHomeAddress = async () => {
     if (!homeAddressForm.city.trim() || !homeAddressForm.state.trim()) {
-      Alert.alert('Error', 'Please enter at least city and state');
+      Alert.alert("Error", "Please enter at least city and state");
       return;
     }
 
@@ -150,10 +159,11 @@ export default function LocationSettingsScreen() {
     try {
       let coordinates = null;
       if (homeAddressForm.address.trim()) {
-        const fullAddress = `${homeAddressForm.address}, ${homeAddressForm.city}, ${homeAddressForm.state} ${homeAddressForm.zipCode}`.trim();
+        const fullAddress =
+          `${homeAddressForm.address}, ${homeAddressForm.city}, ${homeAddressForm.state} ${homeAddressForm.zipCode}`.trim();
         coordinates = await locationService.forwardGeocode(fullAddress);
       }
-      
+
       if (!coordinates) {
         const cityStateAddress = `${homeAddressForm.city}, ${homeAddressForm.state}`;
         coordinates = await locationService.forwardGeocode(cityStateAddress);
@@ -170,12 +180,12 @@ export default function LocationSettingsScreen() {
 
       await apiService.updateProfile(updateData);
       await refreshProfile();
-      
+
       setShowAddressForm(false);
-      Alert.alert('Success', 'Home address updated successfully');
+      Alert.alert("Success", "Home address updated successfully");
     } catch (error) {
-      console.error('Error updating home address:', error);
-      Alert.alert('Error', 'Failed to update home address');
+      console.error("Error updating home address:", error);
+      Alert.alert("Error", "Failed to update home address");
     } finally {
       setIsUpdatingAddress(false);
     }
@@ -183,7 +193,7 @@ export default function LocationSettingsScreen() {
 
   const useCurrentLocationAsHome = async () => {
     if (!currentLocation) {
-      Alert.alert('Error', 'Current location not available');
+      Alert.alert("Error", "Current location not available");
       return;
     }
 
@@ -196,12 +206,12 @@ export default function LocationSettingsScreen() {
       );
 
       if (!address) {
-        Alert.alert('Error', 'Unable to determine address from current location');
+        Alert.alert("Error", "Unable to determine address from current location");
         return;
       }
 
       const updateData = {
-        homeAddress: `${address.streetNumber || ''} ${address.street || ''}`.trim() || undefined,
+        homeAddress: `${address.streetNumber || ""} ${address.street || ""}`.trim() || undefined,
         homeCity: address.city || address.subregion,
         homeState: address.region,
         homeZipCode: address.postalCode,
@@ -211,11 +221,11 @@ export default function LocationSettingsScreen() {
 
       await apiService.updateProfile(updateData);
       await refreshProfile();
-      
-      Alert.alert('Success', 'Home address set to current location');
+
+      Alert.alert("Success", "Home address set to current location");
     } catch (error) {
-      console.error('Error setting current location as home:', error);
-      Alert.alert('Error', 'Failed to set home address');
+      console.error("Error setting current location as home:", error);
+      Alert.alert("Error", "Failed to set home address");
     } finally {
       setIsLoading(false);
     }
@@ -320,7 +330,7 @@ export default function LocationSettingsScreen() {
           <Input
             label="Street Address (Optional)"
             value={homeAddressForm.address}
-            onChangeText={(text) => setHomeAddressForm(prev => ({ ...prev, address: text }))}
+            onChangeText={(text) => setHomeAddressForm((prev) => ({ ...prev, address: text }))}
             placeholder="123 Main Street"
             style={styles.formInput}
           />
@@ -328,7 +338,7 @@ export default function LocationSettingsScreen() {
             <Input
               label="City"
               value={homeAddressForm.city}
-              onChangeText={(text) => setHomeAddressForm(prev => ({ ...prev, city: text }))}
+              onChangeText={(text) => setHomeAddressForm((prev) => ({ ...prev, city: text }))}
               placeholder="City"
               style={[styles.formInput, styles.formInputHalf]}
               required
@@ -336,7 +346,7 @@ export default function LocationSettingsScreen() {
             <Input
               label="State"
               value={homeAddressForm.state}
-              onChangeText={(text) => setHomeAddressForm(prev => ({ ...prev, state: text }))}
+              onChangeText={(text) => setHomeAddressForm((prev) => ({ ...prev, state: text }))}
               placeholder="State"
               style={[styles.formInput, styles.formInputHalf]}
               required
@@ -345,7 +355,7 @@ export default function LocationSettingsScreen() {
           <Input
             label="ZIP Code (Optional)"
             value={homeAddressForm.zipCode}
-            onChangeText={(text) => setHomeAddressForm(prev => ({ ...prev, zipCode: text }))}
+            onChangeText={(text) => setHomeAddressForm((prev) => ({ ...prev, zipCode: text }))}
             placeholder="12345"
             keyboardType="numeric"
             maxLength={10}
@@ -373,16 +383,13 @@ export default function LocationSettingsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <ArrowLeft size={24} color={Colors.text.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Location Settings</Text>
       </View>
 
-      <ScrollView 
+      <ScrollView
         style={styles.content}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
@@ -397,30 +404,30 @@ export default function LocationSettingsScreen() {
           </Text>
 
           {renderPermissionToggle(
-            'useCurrentLocationForWeather',
-            'Use Current Location for Weather',
-            'Get weather for where you are right now',
+            "useCurrentLocationForWeather",
+            "Use Current Location for Weather",
+            "Get weather for where you are right now",
             Navigation
           )}
 
           {renderPermissionToggle(
-            'useCurrentLocationForAlerts',
-            'Current Location for Emergency Alerts',
-            'Receive alerts based on your current GPS location',
+            "useCurrentLocationForAlerts",
+            "Current Location for Emergency Alerts",
+            "Receive alerts based on your current GPS location",
             Shield
           )}
 
           {renderPermissionToggle(
-            'allowBackgroundLocation',
-            'Background Location Access',
-            'Allow location updates when app is closed (for emergency alerts)',
+            "allowBackgroundLocation",
+            "Background Location Access",
+            "Allow location updates when app is closed (for emergency alerts)",
             Zap
           )}
 
           {renderPermissionToggle(
-            'shareLocationInPosts',
-            'Share Location in Posts',
-            'Include your location when creating posts',
+            "shareLocationInPosts",
+            "Share Location in Posts",
+            "Include your location when creating posts",
             Eye,
             false
           )}
@@ -433,16 +440,20 @@ export default function LocationSettingsScreen() {
           </View>
           <View style={styles.infoContent}>
             <Text style={styles.infoText}>
-              • <Text style={styles.bold}>Weather:</Text> Uses current GPS location for real-time weather, falls back to home address
+              • <Text style={styles.bold}>Weather:</Text> Uses current GPS location for real-time
+              weather, falls back to home address
             </Text>
             <Text style={styles.infoText}>
-              • <Text style={styles.bold}>Community Posts:</Text> Uses home address to show relevant neighborhood content
+              • <Text style={styles.bold}>Community Posts:</Text> Uses home address to show relevant
+              neighborhood content
             </Text>
             <Text style={styles.infoText}>
-              • <Text style={styles.bold}>Emergency Alerts:</Text> Uses current location for immediate safety, home address as backup
+              • <Text style={styles.bold}>Emergency Alerts:</Text> Uses current location for
+              immediate safety, home address as backup
             </Text>
             <Text style={styles.infoText}>
-              • <Text style={styles.bold}>Privacy:</Text> Location data never leaves your device without your permission
+              • <Text style={styles.bold}>Privacy:</Text> Location data never leaves your device
+              without your permission
             </Text>
           </View>
         </View>

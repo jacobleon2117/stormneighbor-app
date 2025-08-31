@@ -1,15 +1,8 @@
 import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Dimensions,
-} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from "react-native";
 import { Colors } from "../../constants/Colors";
 
-const { width: screenWidth } = Dimensions.get('window');
+const { width: screenWidth } = Dimensions.get("window");
 const PILL_WIDTH = 100;
 const PILL_MARGIN = 12;
 const LEFT_PADDING = 20;
@@ -25,10 +18,7 @@ interface AlertsFilterProps {
   activeFilter: string;
 }
 
-export default function AlertsFilter({
-  onFilterChange,
-  activeFilter,
-}: AlertsFilterProps) {
+export default function AlertsFilter({ onFilterChange, activeFilter }: AlertsFilterProps) {
   const filters: AlertFilter[] = [
     {
       id: "all",
@@ -78,7 +68,7 @@ export default function AlertsFilter({
   ];
 
   const getLighterColor = (color: string, opacity: number = 0.3) => {
-    const hex = color.replace('#', '');
+    const hex = color.replace("#", "");
     const r = parseInt(hex.substring(0, 2), 16);
     const g = parseInt(hex.substring(2, 4), 16);
     const b = parseInt(hex.substring(4, 6), 16);
@@ -142,7 +132,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingLeft: LEFT_PADDING,
     paddingRight: LEFT_PADDING,
-    alignItems: 'center',
+    alignItems: "center",
     height: 50,
   },
   filterPill: {
@@ -161,8 +151,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   filterPillActive: {
     shadowOpacity: 0.15,

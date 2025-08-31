@@ -125,7 +125,8 @@ router.get(
       const countParams = [];
 
       if (search) {
-        countQuery += " AND (CONCAT(u.first_name, ' ', u.last_name) ILIKE $1 OR u.location_city ILIKE $1)";
+        countQuery +=
+          " AND (CONCAT(u.first_name, ' ', u.last_name) ILIKE $1 OR u.location_city ILIKE $1)";
         countParams.push(`%${search}%`);
       }
 
@@ -768,7 +769,7 @@ router.get(
 router.get("/test/status", async (req, res) => {
   try {
     const { pool } = require("../config/database");
-const logger = require("../utils/logger");
+    const logger = require("../utils/logger");
     const client = await pool.connect();
 
     try {

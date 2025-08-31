@@ -66,10 +66,10 @@ export default function NotificationsSetupScreen() {
       setIsLoading(true);
 
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
-      
+
       if (existingStatus !== "granted") {
         const { status } = await Notifications.requestPermissionsAsync();
-        
+
         if (status !== "granted") {
           Alert.alert(
             "Notifications Help Keep You Safe",
@@ -84,7 +84,7 @@ export default function NotificationsSetupScreen() {
       }
 
       setPermissionGranted(true);
-      
+
       const notificationPreferences = settings.reduce((acc, setting) => {
         acc[setting.id] = {
           enabled: setting.enabled,
@@ -99,21 +99,25 @@ export default function NotificationsSetupScreen() {
       } catch (error) {
         console.error("Failed to save notification preferences:", error);
       }
-
     } catch (error) {
       console.error("Error requesting notification permission:", error);
-      Alert.alert("Error", "Failed to set up notifications. You can enable them later in settings.");
+      Alert.alert(
+        "Error",
+        "Failed to set up notifications. You can enable them later in settings."
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
   const toggleSetting = (id: string) => {
-    setSettings(prev => prev.map(setting => 
-      setting.id === id && !setting.essential
-        ? { ...setting, enabled: !setting.enabled }
-        : setting
-    ));
+    setSettings((prev) =>
+      prev.map((setting) =>
+        setting.id === id && !setting.essential
+          ? { ...setting, enabled: !setting.enabled }
+          : setting
+      )
+    );
   };
 
   const handleContinue = async () => {
@@ -131,7 +135,7 @@ export default function NotificationsSetupScreen() {
     } catch (error) {
       console.error("Failed to save final notification preferences:", error);
     }
-    
+
     router.replace("/(tabs)");
   };
 
@@ -141,13 +145,13 @@ export default function NotificationsSetupScreen() {
 
   const renderNotificationSetting = (setting: NotificationSetting) => {
     const IconComponent = setting.icon;
-    
+
     return (
       <View key={setting.id} style={styles.settingItem}>
         <View style={styles.settingIcon}>
-          <IconComponent 
-            size={20} 
-            color={setting.essential ? Colors.primary[600] : Colors.text.secondary} 
+          <IconComponent
+            size={20}
+            color={setting.essential ? Colors.primary[600] : Colors.text.secondary}
           />
         </View>
         <View style={styles.settingContent}>
@@ -181,7 +185,8 @@ export default function NotificationsSetupScreen() {
           </View>
           <Text style={styles.title}>Stay Informed & Safe</Text>
           <Text style={styles.subtitle}>
-            Choose which notifications you'd like to receive. We'll only send important updates about weather and your community.
+            Choose which notifications you'd like to receive. We'll only send important updates
+            about weather and your community.
           </Text>
         </View>
 
@@ -195,7 +200,8 @@ export default function NotificationsSetupScreen() {
             <View style={styles.permissionInfo}>
               <AlertTriangle size={20} color={Colors.warning[600]} />
               <Text style={styles.permissionText}>
-                Notifications are disabled. Enable them to receive important weather alerts and safety information.
+                Notifications are disabled. Enable them to receive important weather alerts and
+                safety information.
               </Text>
             </View>
           </View>

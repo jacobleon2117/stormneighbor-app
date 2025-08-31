@@ -138,9 +138,7 @@ export default function LocationSetupScreen() {
       const updatedUser = await refreshProfile();
 
       if (!updatedUser?.locationCity) {
-        console.error(
-          "Warning: Manual location data not found in updated profile"
-        );
+        console.error("Warning: Manual location data not found in updated profile");
       } else {
         console.log("Manual location data verified in updated profile");
       }
@@ -171,8 +169,8 @@ export default function LocationSetupScreen() {
           </View>
           <Text style={styles.title}>Set Your Location</Text>
           <Text style={styles.subtitle}>
-            Help us personalize your experience with accurate weather
-            information and local community updates for your area.
+            Help us personalize your experience with accurate weather information and local
+            community updates for your area.
           </Text>
         </View>
 
@@ -206,18 +204,13 @@ export default function LocationSetupScreen() {
                 <View style={styles.dividerLine} />
               </View>
 
-              <TouchableOpacity
-                style={styles.locationOption}
-                onPress={() => setManualEntry(true)}
-              >
+              <TouchableOpacity style={styles.locationOption} onPress={() => setManualEntry(true)}>
                 <View style={styles.optionIcon}>
                   <Edit3 size={24} color={Colors.text.secondary} />
                 </View>
                 <View style={styles.optionContent}>
                   <Text style={styles.optionTitle}>Enter Manually</Text>
-                  <Text style={styles.optionDescription}>
-                    Type your city and state
-                  </Text>
+                  <Text style={styles.optionDescription}>Type your city and state</Text>
                 </View>
                 <ChevronRight size={20} color={Colors.text.secondary} />
               </TouchableOpacity>
@@ -248,10 +241,7 @@ export default function LocationSetupScreen() {
                 loading={isLoading}
                 style={styles.saveButton}
               />
-              <TouchableOpacity
-                style={styles.backButton}
-                onPress={() => setManualEntry(false)}
-              >
+              <TouchableOpacity style={styles.backButton} onPress={() => setManualEntry(false)}>
                 <Text style={styles.backButtonText}>Back to Options</Text>
               </TouchableOpacity>
             </View>
@@ -264,8 +254,7 @@ export default function LocationSetupScreen() {
               </View>
               <Text style={styles.successText}>Location Set!</Text>
               <Text style={styles.successDescription}>
-                We'll use this to provide accurate weather and alerts for your
-                area.
+                We'll use this to provide accurate weather and alerts for your area.
               </Text>
             </View>
           )}
@@ -273,11 +262,7 @@ export default function LocationSetupScreen() {
 
         <View style={styles.footer}>
           {locationGranted ? (
-            <Button
-              title="Continue"
-              onPress={handleContinue}
-              style={styles.continueButton}
-            />
+            <Button title="Continue" onPress={handleContinue} style={styles.continueButton} />
           ) : (
             <TouchableOpacity onPress={handleSkip}>
               <Text style={styles.skipText}>Skip for Now</Text>

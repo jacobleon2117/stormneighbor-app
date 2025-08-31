@@ -1,13 +1,5 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  Alert,
-  TextInput,
-} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Image, Alert, TextInput } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Comment } from "../../types";
 import { Colors } from "../../constants/Colors";
@@ -49,16 +41,12 @@ export function CommentCard({
   const formatTimeAgo = (dateString: string): string => {
     const now = new Date();
     const commentDate = new Date(dateString);
-    const diffInSeconds = Math.floor(
-      (now.getTime() - commentDate.getTime()) / 1000
-    );
+    const diffInSeconds = Math.floor((now.getTime() - commentDate.getTime()) / 1000);
 
     if (diffInSeconds < 60) return "Just now";
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400)
-      return `${Math.floor(diffInSeconds / 3600)}h ago`;
-    if (diffInSeconds < 604800)
-      return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
 
     return commentDate.toLocaleDateString();
   };
@@ -132,10 +120,7 @@ export function CommentCard({
 
   return (
     <View
-      style={[
-        styles.container,
-        { marginLeft: depth * 20, borderLeftWidth: depth > 0 ? 2 : 0 },
-      ]}
+      style={[styles.container, { marginLeft: depth * 20, borderLeftWidth: depth > 0 ? 2 : 0 }]}
     >
       <View style={styles.header}>
         <View style={styles.userInfo}>
@@ -157,9 +142,7 @@ export function CommentCard({
             </Text>
             <Text style={styles.timestamp}>
               {formatTimeAgo(comment.createdAt)}
-              {comment.isEdited && (
-                <Text style={styles.editedLabel}> • edited</Text>
-              )}
+              {comment.isEdited && <Text style={styles.editedLabel}> • edited</Text>}
             </Text>
           </View>
         </View>
@@ -188,11 +171,7 @@ export function CommentCard({
             }
           }}
         >
-          <Ionicons
-            name="ellipsis-horizontal"
-            size={16}
-            color={Colors.neutral[600]}
-          />
+          <Ionicons name="ellipsis-horizontal" size={16} color={Colors.neutral[600]} />
         </TouchableOpacity>
       </View>
 
@@ -243,9 +222,7 @@ export function CommentCard({
             ))}
             {comment.images.length > 2 && (
               <View style={styles.imageOverlay}>
-                <Text style={styles.imageCount}>
-                  +{comment.images.length - 2}
-                </Text>
+                <Text style={styles.imageCount}>+{comment.images.length - 2}</Text>
               </View>
             )}
           </View>
@@ -253,23 +230,13 @@ export function CommentCard({
       </View>
 
       <View style={styles.actions}>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => onLike?.(comment.id)}
-        >
+        <TouchableOpacity style={styles.actionButton} onPress={() => onLike?.(comment.id)}>
           <Ionicons
             name={comment.userReaction ? "heart" : "heart-outline"}
             size={16}
-            color={
-              comment.userReaction ? Colors.error[600] : Colors.neutral[600]
-            }
+            color={comment.userReaction ? Colors.error[600] : Colors.neutral[600]}
           />
-          <Text
-            style={[
-              styles.actionText,
-              comment.userReaction && styles.likedText,
-            ]}
-          >
+          <Text style={[styles.actionText, comment.userReaction && styles.likedText]}>
             {comment.reactionCount || 0}
           </Text>
         </TouchableOpacity>
@@ -279,11 +246,7 @@ export function CommentCard({
             style={styles.actionButton}
             onPress={() => setShowReplyInput(!showReplyInput)}
           >
-            <Ionicons
-              name="chatbubble-outline"
-              size={16}
-              color={Colors.neutral[600]}
-            />
+            <Ionicons name="chatbubble-outline" size={16} color={Colors.neutral[600]} />
             <Text style={styles.actionText}>Reply</Text>
           </TouchableOpacity>
         )}

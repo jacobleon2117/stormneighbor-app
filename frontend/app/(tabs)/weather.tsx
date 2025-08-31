@@ -88,18 +88,14 @@ export default function WeatherScreen() {
   >([]);
   const [communityAlerts, setCommunityAlerts] = useState<Post[]>([]);
   const [showAlertModal, setShowAlertModal] = useState(false);
-  const [selectedAlert, setSelectedAlert] = useState<
-    WeatherAlert | Post | null
-  >(null);
+  const [selectedAlert, setSelectedAlert] = useState<WeatherAlert | Post | null>(null);
 
   const requestLocationPermission = async () => {
     try {
       const canUse = await locationService.canUseLocationFor("weather");
 
       if (!canUse) {
-        await locationService.showPermissionDeniedAlert(
-          "accurate weather data"
-        );
+        await locationService.showPermissionDeniedAlert("accurate weather data");
         return false;
       }
       return true;
@@ -222,9 +218,7 @@ export default function WeatherScreen() {
       console.log("Weather API response:", {
         success: weatherResponse.success,
         hasData: !!weatherResponse.data,
-        dataKeys: weatherResponse.data
-          ? Object.keys(weatherResponse.data)
-          : null,
+        dataKeys: weatherResponse.data ? Object.keys(weatherResponse.data) : null,
       });
 
       if (weatherResponse.success && weatherResponse.data) {
@@ -243,12 +237,7 @@ export default function WeatherScreen() {
     }
   };
 
-  const fetchAlerts = async (
-    city?: string,
-    state?: string,
-    lat?: number,
-    lng?: number
-  ) => {
+  const fetchAlerts = async (city?: string, state?: string, lat?: number, lng?: number) => {
     try {
       const alertParams: any = {};
 
@@ -263,9 +252,9 @@ export default function WeatherScreen() {
       const alertsResponse = await apiService.getAlerts(alertParams);
 
       if (alertsResponse.success && alertsResponse.data) {
-        const activeAlerts = (
-          alertsResponse.data.alerts || alertsResponse.data
-        ).filter((alert: WeatherAlert) => alert.isActive);
+        const activeAlerts = (alertsResponse.data.alerts || alertsResponse.data).filter(
+          (alert: WeatherAlert) => alert.isActive
+        );
         setAlerts(activeAlerts);
       }
     } catch (error: any) {
@@ -288,9 +277,7 @@ export default function WeatherScreen() {
           const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
           return (
             postDate > threeDaysAgo &&
-            (post.isEmergency ||
-              post.priority === "urgent" ||
-              post.priority === "high")
+            (post.isEmergency || post.priority === "urgent" || post.priority === "high")
           );
         });
         setCommunityAlerts(recentAlerts);
@@ -310,9 +297,7 @@ export default function WeatherScreen() {
 
       const now = Date.now();
       if (!isRefresh && now - lastApiCall < 30000) {
-        console.log(
-          "Throttling weather API call - waiting 30 seconds between calls"
-        );
+        console.log("Throttling weather API call - waiting 30 seconds between calls");
         return;
       }
 
@@ -324,20 +309,13 @@ export default function WeatherScreen() {
 
         await Promise.all([
           fetchWeatherData(location.latitude, location.longitude),
-          fetchAlerts(
-            location.city,
-            location.state,
-            location.latitude,
-            location.longitude
-          ),
+          fetchAlerts(location.city, location.state, location.latitude, location.longitude),
           fetchCommunityAlerts(),
         ]);
         console.log("Weather data loaded successfully");
       } catch (error: any) {
         console.error("Error loading weather data:", error);
-        setError(
-          error.response?.data?.message || "Failed to load weather data"
-        );
+        setError(error.response?.data?.message || "Failed to load weather data");
       } finally {
         setLoading(false);
         setRefreshing(false);
@@ -432,30 +410,21 @@ export default function WeatherScreen() {
         alerts: "Weather Alerts",
       };
 
-      const layerName =
-        layerNames[layerId as keyof typeof layerNames] || layerId;
+      const layerName = layerNames[layerId as keyof typeof layerNames] || layerId;
 
-      if (
-        layerId === "clouds" ||
-        layerId === "wind" ||
-        layerId === "temperature"
-      ) {
+      if (layerId === "clouds" || layerId === "wind" || layerId === "temperature") {
         if (!WEATHER_CONFIG.OPENWEATHER_API_KEY) {
           console.warn(
             `${layerName} overlay enabled but NO API KEY found - overlay will not display`
           );
         } else {
-          console.log(
-            `${layerName} overlay enabled with API key - should display`
-          );
+          console.log(`${layerName} overlay enabled with API key - should display`);
         }
       }
 
       if (layerId === "precipitation") {
         const timestamp = Math.floor(rainTimestamp / 1000 / 600) * 600;
-        console.log(
-          `Precipitation overlay enabled - using timestamp: ${timestamp}`
-        );
+        console.log(`Precipitation overlay enabled - using timestamp: ${timestamp}`);
         console.log(
           `RainViewer URL pattern: https://tilecache.rainviewer.com/v2/radar/{z}/{x}/{y}/${timestamp}/1_1.png`
         );
@@ -471,27 +440,17 @@ export default function WeatherScreen() {
             console.log(`Using latest timestamp: ${latestTimestamp}`);
             setRainTimestamp(latestTimestamp * 1000);
           })
-          .catch((error) =>
-            console.error("Failed to fetch RainViewer timestamps:", error)
-          );
+          .catch((error) => console.error("Failed to fetch RainViewer timestamps:", error));
       }
 
       if (layerId === "alerts") {
-        console.log(
-          `Alerts overlay enabled - found ${alerts.length} active alerts`
-        );
+        console.log(`Alerts overlay enabled - found ${alerts.length} active alerts`);
         if (alerts.length > 0) {
           alerts.forEach((alert, index) => {
+            console.log(`Alert ${index + 1}: ${alert.severity} - ${alert.title}`);
+            console.log(`  Area: ${alert.metadata?.areaDesc || "Unknown area"}`);
             console.log(
-              `Alert ${index + 1}: ${alert.severity} - ${alert.title}`
-            );
-            console.log(
-              `  Area: ${alert.metadata?.areaDesc || "Unknown area"}`
-            );
-            console.log(
-              `  Effective: ${alert.startTime || "Now"} until ${
-                alert.endTime || "Unknown"
-              }`
+              `  Effective: ${alert.startTime || "Now"} until ${alert.endTime || "Unknown"}`
             );
           });
         } else {
@@ -547,7 +506,7 @@ export default function WeatherScreen() {
         latitude: lat,
         longitude: lon,
       }));
-    };
+    }
 
     if (!location) return [];
 
@@ -564,10 +523,7 @@ export default function WeatherScreen() {
       offset = 0.02;
     } else if (alertType.includes("flood") || alertType.includes("hurricane")) {
       offset = 0.15;
-    } else if (
-      alertType.includes("thunderstorm") ||
-      alertType.includes("severe weather")
-    ) {
+    } else if (alertType.includes("thunderstorm") || alertType.includes("severe weather")) {
       offset = 0.08;
     } else if (
       alertType.includes("winter") ||
@@ -582,10 +538,8 @@ export default function WeatherScreen() {
 
     for (let i = 0; i < points; i++) {
       const angle = (2 * Math.PI * i) / points;
-      const latOffset =
-        offset * Math.cos(angle) * 0.8 + (Math.random() - 0.5) * offset * 0.2;
-      const lngOffset =
-        offset * Math.sin(angle) * 0.8 + (Math.random() - 0.5) * offset * 0.2;
+      const latOffset = offset * Math.cos(angle) * 0.8 + (Math.random() - 0.5) * offset * 0.2;
+      const lngOffset = offset * Math.sin(angle) * 0.8 + (Math.random() - 0.5) * offset * 0.2;
 
       coordinates.push({
         latitude: baseCoords.latitude + latOffset,
@@ -596,116 +550,108 @@ export default function WeatherScreen() {
     return coordinates;
   };
 
-const fetchUserLocationWeatherData = useCallback(async () => {
-  if (!WEATHER_CONFIG.OPENWEATHER_API_KEY) {
-    console.log("No API key available for location weather data");
-    return;
-  }
+  const fetchUserLocationWeatherData = useCallback(async () => {
+    if (!WEATHER_CONFIG.OPENWEATHER_API_KEY) {
+      console.log("No API key available for location weather data");
+      return;
+    }
 
-  console.log("Fetching weather data for user locations...");
+    console.log("Fetching weather data for user locations...");
 
-  const locations: Array<{
-    id: string;
-    locationName: string;
-    locationType: "current" | "home";
-    latitude: number;
-    longitude: number;
-  }> = [];
+    const locations: Array<{
+      id: string;
+      locationName: string;
+      locationType: "current" | "home";
+      latitude: number;
+      longitude: number;
+    }> = [];
 
-  try {
-    const currentLocation = await locationService.getCurrentLocation();
-    if (currentLocation) {
-      const address = await locationService.reverseGeocode(
-        currentLocation.coords.latitude,
-        currentLocation.coords.longitude
-      );
+    try {
+      const currentLocation = await locationService.getCurrentLocation();
+      if (currentLocation) {
+        const address = await locationService.reverseGeocode(
+          currentLocation.coords.latitude,
+          currentLocation.coords.longitude
+        );
+        locations.push({
+          id: "current",
+          locationName: `${address?.city || "Current"}, ${address?.region || ""}`
+            .replace(", ", ", ")
+            .replace(", ,", ",")
+            .replace(/,$/, ""),
+          locationType: "current",
+          latitude: currentLocation.coords.latitude,
+          longitude: currentLocation.coords.longitude,
+        });
+      }
+    } catch (err: unknown) {
+      console.log("Could not get current location for weather marker", err);
+    }
+
+    if (user?.homeLatitude && user?.homeLongitude) {
       locations.push({
-        id: "current",
-        locationName: `${address?.city || "Current"}, ${address?.region || ""}`
-          .replace(", ", ", ")
-          .replace(", ,", ",")
-          .replace(/,$/, ""),
-        locationType: "current",
-        latitude: currentLocation.coords.latitude,
-        longitude: currentLocation.coords.longitude,
+        id: "home",
+        locationName:
+          user.homeCity && user.homeState ? `${user.homeCity}, ${user.homeState}` : "Home",
+        locationType: "home",
+        latitude: user.homeLatitude,
+        longitude: user.homeLongitude,
+      });
+    } else if (
+      user?.latitude &&
+      user?.longitude &&
+      !locations.find((loc) => loc.id === "current")
+    ) {
+      locations.push({
+        id: "home",
+        locationName:
+          user.locationCity && user.addressState
+            ? `${user.locationCity}, ${user.addressState}`
+            : "Home",
+        locationType: "home",
+        latitude: user.latitude,
+        longitude: user.longitude,
       });
     }
-  } catch (err: unknown) {
-    console.log("Could not get current location for weather marker", err);
-  }
 
-  if (user?.homeLatitude && user?.homeLongitude) {
-    locations.push({
-      id: "home",
-      locationName:
-        user.homeCity && user.homeState
-          ? `${user.homeCity}, ${user.homeState}`
-          : "Home",
-      locationType: "home",
-      latitude: user.homeLatitude,
-      longitude: user.homeLongitude,
+    console.log(
+      `Fetching weather for ${locations.length} user locations:`,
+      locations.map((l) => l.locationName)
+    );
+
+    const weatherPromises = locations.map(async (location) => {
+      try {
+        const response = await fetch(
+          `https://api.openweathermap.org/data/2.5/weather?lat=${location.latitude}&lon=${location.longitude}&appid=${WEATHER_CONFIG.OPENWEATHER_API_KEY}&units=imperial`
+        );
+        const data = await response.json();
+
+        return {
+          ...location,
+          temperature: Math.round(data.main?.temp ?? 0),
+          windSpeed: `${Math.round(data.wind?.speed ?? 0)} mph`,
+          condition: data.weather?.[0]?.main || "Unknown",
+        };
+      } catch (err: unknown) {
+        console.error(`Failed to fetch weather for ${location.locationName}:`, err);
+        return null;
+      }
     });
-  } else if (
-    user?.latitude &&
-    user?.longitude &&
-    !locations.find((loc) => loc.id === "current")
-  ) {
-    locations.push({
-      id: "home",
-      locationName:
-        user.locationCity && user.addressState
-          ? `${user.locationCity}, ${user.addressState}`
-          : "Home",
-      locationType: "home",
-      latitude: user.latitude,
-      longitude: user.longitude,
-    });
-  }
 
-  console.log(
-    `Fetching weather for ${locations.length} user locations:`,
-    locations.map((l) => l.locationName)
-  );
+    const results = await Promise.all(weatherPromises);
 
-  const weatherPromises = locations.map(async (location) => {
-    try {
-      const response = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?lat=${location.latitude}&lon=${location.longitude}&appid=${WEATHER_CONFIG.OPENWEATHER_API_KEY}&units=imperial`
-      );
-      const data = await response.json();
+    const validResults = results.filter(
+      (result): result is NonNullable<typeof result> => result !== null
+    );
 
-      return {
-        ...location,
-        temperature: Math.round(data.main?.temp ?? 0),
-        windSpeed: `${Math.round(data.wind?.speed ?? 0)} mph`,
-        condition: data.weather?.[0]?.main || "Unknown",
-      };
-    } catch (err: unknown) {
-      console.error(
-        `Failed to fetch weather for ${location.locationName}:`,
-        err
-      );
-      return null;
-    }
-  });
+    console.log(`Successfully fetched weather data for ${validResults.length} user locations`);
 
-  const results = await Promise.all(weatherPromises);
-
-  const validResults = results.filter(
-    (result): result is NonNullable<typeof result> => result !== null
-  );
-
-  console.log(
-    `Successfully fetched weather data for ${validResults.length} user locations`
-  );
-
-  setUserLocationWeatherData(validResults);
-}, [user]);
+    setUserLocationWeatherData(validResults);
+  }, [user]);
 
   useEffect(() => {
     fetchUserLocationWeatherData();
   }, [fetchUserLocationWeatherData]);
-
 
   const getWeatherLucideIcon = (condition: string) => {
     const lowerCondition = condition?.toLowerCase() || "";
@@ -723,34 +669,22 @@ const fetchUserLocationWeatherData = useCallback(async () => {
     return Sun;
   };
 
-  const isWeatherAlert = (
-    alert: WeatherAlert | Post | null
-  ): alert is WeatherAlert => {
-    return (
-      alert !== null &&
-      "severity" in alert &&
-      "title" in alert &&
-      "description" in alert
-    );
+  const isWeatherAlert = (alert: WeatherAlert | Post | null): alert is WeatherAlert => {
+    return alert !== null && "severity" in alert && "title" in alert && "description" in alert;
   };
 
-  const isCommunityAlert = (
-    alert: WeatherAlert | Post | null
-  ): alert is Post => {
+  const isCommunityAlert = (alert: WeatherAlert | Post | null): alert is Post => {
     return alert !== null && "content" in alert && "firstName" in alert;
   };
 
   const formatTimeAgo = (dateString: string): string => {
     const now = new Date();
     const alertDate = new Date(dateString);
-    const diffInSeconds = Math.floor(
-      (now.getTime() - alertDate.getTime()) / 1000
-    );
+    const diffInSeconds = Math.floor((now.getTime() - alertDate.getTime()) / 1000);
 
     if (diffInSeconds < 60) return "Just now";
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400)
-      return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
     return alertDate.toLocaleDateString();
   };
 
@@ -775,9 +709,7 @@ const fetchUserLocationWeatherData = useCallback(async () => {
               </View>
             </TouchableOpacity>
             <Text style={styles.modalTitle}>
-              {isWeatherAlert(selectedAlert)
-                ? "Weather Alert"
-                : "Community Alert"}
+              {isWeatherAlert(selectedAlert) ? "Weather Alert" : "Community Alert"}
             </Text>
             <View style={styles.modalPlaceholder} />
           </View>
@@ -789,31 +721,21 @@ const fetchUserLocationWeatherData = useCallback(async () => {
                   style={[
                     styles.severityBadge,
                     {
-                      backgroundColor: getAlertPolygonColors(
-                        selectedAlert.severity
-                      ).stroke,
+                      backgroundColor: getAlertPolygonColors(selectedAlert.severity).stroke,
                     },
                   ]}
                 >
-                  <Text style={styles.severityText}>
-                    {selectedAlert.severity} ALERT
-                  </Text>
+                  <Text style={styles.severityText}>{selectedAlert.severity} ALERT</Text>
                 </View>
 
-                <Text style={styles.alertTitleModal}>
-                  {selectedAlert.title}
-                </Text>
+                <Text style={styles.alertTitleModal}>{selectedAlert.title}</Text>
 
-                <Text style={styles.alertDescriptionModal}>
-                  {selectedAlert.description}
-                </Text>
+                <Text style={styles.alertDescriptionModal}>{selectedAlert.description}</Text>
 
                 {selectedAlert.metadata?.areaDesc && (
                   <View style={styles.alertMetaInfo}>
                     <Text style={styles.alertMetaLabel}>Area:</Text>
-                    <Text style={styles.alertMetaValue}>
-                      {selectedAlert.metadata.areaDesc}
-                    </Text>
+                    <Text style={styles.alertMetaValue}>{selectedAlert.metadata.areaDesc}</Text>
                   </View>
                 )}
 
@@ -821,15 +743,11 @@ const fetchUserLocationWeatherData = useCallback(async () => {
                   <View style={styles.alertMetaInfo}>
                     <Text style={styles.alertMetaLabel}>Effective:</Text>
                     <Text style={styles.alertMetaValue}>
-                      {new Date(selectedAlert.startTime).toLocaleDateString()}{" "}
-                      at{" "}
-                      {new Date(selectedAlert.startTime).toLocaleTimeString(
-                        [],
-                        {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        }
-                      )}
+                      {new Date(selectedAlert.startTime).toLocaleDateString()} at{" "}
+                      {new Date(selectedAlert.startTime).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </Text>
                   </View>
                 )}
@@ -853,9 +771,7 @@ const fetchUserLocationWeatherData = useCallback(async () => {
               <View style={styles.communityAlertContent}>
                 <View style={styles.emergencyBadge}>
                   <Text style={styles.emergencyText}>
-                    {selectedAlert.isEmergency
-                      ? "EMERGENCY"
-                      : "COMMUNITY ALERT"}
+                    {selectedAlert.isEmergency ? "EMERGENCY" : "COMMUNITY ALERT"}
                   </Text>
                 </View>
 
@@ -863,9 +779,7 @@ const fetchUserLocationWeatherData = useCallback(async () => {
                   {selectedAlert.title || "Community Alert"}
                 </Text>
 
-                <Text style={styles.alertDescriptionModal}>
-                  {selectedAlert.content}
-                </Text>
+                <Text style={styles.alertDescriptionModal}>{selectedAlert.content}</Text>
 
                 <View style={styles.alertAuthorInfo}>
                   <Text style={styles.alertAuthorLabel}>Reported by:</Text>
@@ -885,8 +799,7 @@ const fetchUserLocationWeatherData = useCallback(async () => {
                   <View style={styles.alertMetaInfo}>
                     <Text style={styles.alertMetaLabel}>General Area:</Text>
                     <Text style={styles.alertMetaValue}>
-                      {selectedAlert.locationCity},{" "}
-                      {selectedAlert.locationState}
+                      {selectedAlert.locationCity}, {selectedAlert.locationState}
                     </Text>
                   </View>
                 )}
@@ -903,10 +816,7 @@ const fetchUserLocationWeatherData = useCallback(async () => {
             )}
 
             <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={styles.modalButton}
-                onPress={() => setShowAlertModal(false)}
-              >
+              <TouchableOpacity style={styles.modalButton} onPress={() => setShowAlertModal(false)}>
                 <Text style={styles.modalButtonText}>Close</Text>
               </TouchableOpacity>
 
@@ -918,12 +828,7 @@ const fetchUserLocationWeatherData = useCallback(async () => {
                     router.push(`/post/${selectedAlert.id}`);
                   }}
                 >
-                  <Text
-                    style={[
-                      styles.modalButtonText,
-                      styles.modalButtonTextPrimary,
-                    ]}
-                  >
+                  <Text style={[styles.modalButtonText, styles.modalButtonTextPrimary]}>
                     View Post
                   </Text>
                 </TouchableOpacity>
@@ -938,9 +843,7 @@ const fetchUserLocationWeatherData = useCallback(async () => {
   const renderWeatherCard = () => {
     if (!weather) return null;
 
-    const WeatherIcon = getWeatherLucideIcon(
-      weather.current?.shortForecast || weather.condition
-    );
+    const WeatherIcon = getWeatherLucideIcon(weather.current?.shortForecast || weather.condition);
 
     return (
       <View style={styles.compactWeatherCard}>
@@ -952,29 +855,19 @@ const fetchUserLocationWeatherData = useCallback(async () => {
               </Text>
             </View>
             <Text style={styles.compactTemperature}>
-              {formatTemperature(
-                weather.current?.temperature || weather.temperature
-              )}
+              {formatTemperature(weather.current?.temperature || weather.temperature)}
             </Text>
           </View>
 
           <View style={styles.topRight}>
             <WeatherIcon size={28} color={Colors.primary[500]} />
-            <Text
-              style={styles.compactCondition}
-              numberOfLines={2}
-              ellipsizeMode="tail"
-            >
+            <Text style={styles.compactCondition} numberOfLines={2} ellipsizeMode="tail">
               {weather.current?.shortForecast || weather.condition}
             </Text>
             <Text style={styles.highLowText}>
               {weather.forecast && weather.forecast.length > 0
-                ? `H: ${
-                    weather.forecast.find((p) => p.isDaytime)?.temperature ||
-                    "N/A"
-                  }° L: ${
-                    weather.forecast.find((p) => !p.isDaytime)?.temperature ||
-                    "N/A"
+                ? `H: ${weather.forecast.find((p) => p.isDaytime)?.temperature || "N/A"}° L: ${
+                    weather.forecast.find((p) => !p.isDaytime)?.temperature || "N/A"
                   }°`
                 : "H: N/A° L: N/A°"}
             </Text>
@@ -997,9 +890,7 @@ const fetchUserLocationWeatherData = useCallback(async () => {
                 <CheckCircle size={18} color={Colors.success[600]} />
               </View>
             )}
-            <Text style={styles.alertLabel}>
-              {alerts.length > 0 ? "Alerts" : "No Alerts"}
-            </Text>
+            <Text style={styles.alertLabel}>{alerts.length > 0 ? "Alerts" : "No Alerts"}</Text>
           </View>
         </View>
       </View>
@@ -1024,10 +915,7 @@ const fetchUserLocationWeatherData = useCallback(async () => {
           <CloudOff size={64} color={Colors.neutral[400]} />
           <Text style={styles.errorTitle}>Weather Unavailable</Text>
           <Text style={styles.errorMessage}>{error}</Text>
-          <TouchableOpacity
-            style={styles.retryButton}
-            onPress={() => loadWeatherData()}
-          >
+          <TouchableOpacity style={styles.retryButton} onPress={() => loadWeatherData()}>
             <Text style={styles.retryButtonText}>Try Again</Text>
           </TouchableOpacity>
         </View>
@@ -1144,11 +1032,7 @@ const fetchUserLocationWeatherData = useCallback(async () => {
             communityAlerts.map((alert) => {
               if (!alert.latitude || !alert.longitude) return null;
 
-              const getPrivacySafeLocation = (
-                lat: number,
-                lng: number,
-                alertType: string
-              ) => {
+              const getPrivacySafeLocation = (lat: number, lng: number, alertType: string) => {
                 let precision = 2;
 
                 if (alert.isEmergency) {
@@ -1163,11 +1047,9 @@ const fetchUserLocationWeatherData = useCallback(async () => {
                 }
 
                 const roundedLat =
-                  Math.round(lat * Math.pow(10, precision)) /
-                  Math.pow(10, precision);
+                  Math.round(lat * Math.pow(10, precision)) / Math.pow(10, precision);
                 const roundedLng =
-                  Math.round(lng * Math.pow(10, precision)) /
-                  Math.pow(10, precision);
+                  Math.round(lng * Math.pow(10, precision)) / Math.pow(10, precision);
 
                 const randomOffset = 0.002;
                 const randomLat = (Math.random() - 0.5) * randomOffset;
@@ -1234,14 +1116,10 @@ const fetchUserLocationWeatherData = useCallback(async () => {
                   ]}
                 >
                   {weatherLayers.temperature && (
-                    <Text style={styles.weatherMarkerText}>
-                      {locationData.temperature}°
-                    </Text>
+                    <Text style={styles.weatherMarkerText}>{locationData.temperature}°</Text>
                   )}
                   {weatherLayers.wind && (
-                    <Text style={styles.weatherMarkerText}>
-                      {locationData.windSpeed}
-                    </Text>
+                    <Text style={styles.weatherMarkerText}>{locationData.windSpeed}</Text>
                   )}
                   <Text
                     style={[
@@ -1251,9 +1129,7 @@ const fetchUserLocationWeatherData = useCallback(async () => {
                         : styles.homeLocationText,
                     ]}
                   >
-                    {locationData.locationType === "current"
-                      ? "Current"
-                      : "Home"}
+                    {locationData.locationType === "current" ? "Current" : "Home"}
                   </Text>
                 </View>
               </Marker>
@@ -1288,18 +1164,12 @@ const fetchUserLocationWeatherData = useCallback(async () => {
             <TouchableOpacity style={styles.zoomButton} onPress={handleZoomOut}>
               <Minus size={18} color="white" />
             </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.zoomButton}
-              onPress={handleMyLocation}
-            >
+            <TouchableOpacity style={styles.zoomButton} onPress={handleMyLocation}>
               <Navigation size={18} color="white" />
             </TouchableOpacity>
           </View>
 
-          <WeatherLegend
-            onLayerToggle={handleLayerToggle}
-            weatherLayers={weatherLayers}
-          />
+          <WeatherLegend onLayerToggle={handleLayerToggle} weatherLayers={weatherLayers} />
         </SafeAreaView>
       </View>
 
@@ -1704,15 +1574,15 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   weatherMarker: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
     borderRadius: 6,
     paddingHorizontal: 6,
     paddingVertical: 3,
     minWidth: 40,
-    alignItems: 'center',
+    alignItems: "center",
     borderWidth: 1,
     borderColor: Colors.neutral[300],
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 1,
@@ -1723,25 +1593,25 @@ const styles = StyleSheet.create({
   },
   weatherMarkerText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.text.primary,
-    textAlign: 'center',
+    textAlign: "center",
   },
   weatherMarkerTextSmall: {
     fontSize: 10,
-    fontWeight: '500',
+    fontWeight: "500",
     color: Colors.text.secondary,
-    textAlign: 'center',
+    textAlign: "center",
   },
   userLocationWeatherMarker: {
-    backgroundColor: 'rgba(255, 255, 255, 0.98)',
+    backgroundColor: "rgba(255, 255, 255, 0.98)",
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 4,
     minWidth: 60,
-    alignItems: 'center',
+    alignItems: "center",
     borderWidth: 2,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 3,
@@ -1758,8 +1628,8 @@ const styles = StyleSheet.create({
   },
   locationNameText: {
     fontSize: 9,
-    fontWeight: '600',
-    textAlign: 'center',
+    fontWeight: "600",
+    textAlign: "center",
     marginTop: 2,
   },
   currentLocationText: {
@@ -1769,14 +1639,14 @@ const styles = StyleSheet.create({
     color: Colors.primary[700],
   },
   communityAlertMarker: {
-    backgroundColor: 'rgba(220, 38, 38, 0.95)',
+    backgroundColor: "rgba(220, 38, 38, 0.95)",
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    alignItems: 'center',
+    alignItems: "center",
     borderWidth: 1,
     borderColor: Colors.error[700],
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -1787,9 +1657,9 @@ const styles = StyleSheet.create({
   },
   alertMarkerText: {
     fontSize: 8,
-    fontWeight: '700',
+    fontWeight: "700",
     color: Colors.text.inverse,
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: 2,
   },
   modalContainer: {
@@ -1797,9 +1667,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
   },
   modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
@@ -1809,28 +1679,28 @@ const styles = StyleSheet.create({
   modalCloseButton: {
     width: 32,
     height: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   modalCloseIcon: {
     width: 28,
     height: 28,
     borderRadius: 14,
     backgroundColor: Colors.neutral[200],
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   modalCloseText: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.text.secondary,
     lineHeight: 20,
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.text.primary,
-    textAlign: 'center',
+    textAlign: "center",
   },
   modalPlaceholder: {
     width: 32,
@@ -1847,19 +1717,19 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   severityBadge: {
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
   },
   severityText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: "700",
     color: Colors.text.inverse,
     letterSpacing: 0.5,
   },
   emergencyBadge: {
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     backgroundColor: Colors.error[600],
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -1867,13 +1737,13 @@ const styles = StyleSheet.create({
   },
   emergencyText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: "700",
     color: Colors.text.inverse,
     letterSpacing: 0.5,
   },
   alertTitleModal: {
     fontSize: 22,
-    fontWeight: '700',
+    fontWeight: "700",
     color: Colors.text.primary,
     lineHeight: 28,
   },
@@ -1883,13 +1753,13 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   alertMetaInfo: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
-    alignItems: 'flex-start',
+    alignItems: "flex-start",
   },
   alertMetaLabel: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.text.secondary,
     minWidth: 60,
   },
@@ -1899,9 +1769,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   alertAuthorInfo: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: 8,
     paddingHorizontal: 12,
     backgroundColor: Colors.neutral[50],
@@ -1909,16 +1779,16 @@ const styles = StyleSheet.create({
   },
   alertAuthorLabel: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.text.secondary,
   },
   alertAuthorName: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.text.primary,
   },
   modalActions: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
     marginTop: 32,
     marginBottom: 32,
@@ -1929,14 +1799,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 8,
     backgroundColor: Colors.neutral[100],
-    alignItems: 'center',
+    alignItems: "center",
   },
   modalButtonPrimary: {
     backgroundColor: Colors.primary[500],
   },
   modalButtonText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.text.secondary,
   },
   modalButtonTextPrimary: {
@@ -1950,14 +1820,14 @@ const styles = StyleSheet.create({
     borderLeftColor: Colors.primary[300],
   },
   privacyNoticeContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
   },
   privacyNoticeText: {
     fontSize: 13,
     color: Colors.text.secondary,
-    fontStyle: 'italic',
+    fontStyle: "italic",
     flex: 1,
   },
 });

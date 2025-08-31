@@ -1,11 +1,5 @@
 import React, { useState } from "react";
-import {
-  View,
-  StyleSheet,
-  ScrollView,
-  Text,
-  FlatList,
-} from "react-native";
+import { View, StyleSheet, ScrollView, Text, FlatList } from "react-native";
 import { router } from "expo-router";
 import { Colors } from "../../constants/Colors";
 import { Header } from "../../components/UI/Header";
@@ -14,7 +8,15 @@ import AlertCard from "../../components/Alerts/AlertCard";
 
 interface Alert {
   id: string;
-  type: "severe_weather" | "community_alerts" | "safety_alerts" | "help_needed" | "events" | "questions" | "announcements" | "weather_alerts";
+  type:
+    | "severe_weather"
+    | "community_alerts"
+    | "safety_alerts"
+    | "help_needed"
+    | "events"
+    | "questions"
+    | "announcements"
+    | "weather_alerts";
   title: string;
   description: string;
   timestamp: string;
@@ -30,25 +32,28 @@ export default function AlertsScreen() {
       id: "1",
       type: "severe_weather",
       title: "Tornado Warning",
-      description: "A tornado warning has been issued for the area. Seek shelter immediately in a sturdy building away from windows.",
+      description:
+        "A tornado warning has been issued for the area. Seek shelter immediately in a sturdy building away from windows.",
       timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
       locations: ["Owasso, OK", "Claremore, OK", "Catoosa, OK"],
       isActive: true,
     },
     {
-      id: "2", 
+      id: "2",
       type: "community_alerts",
       title: "Neighborhood Watch Meeting",
-      description: "Monthly neighborhood watch meeting to discuss recent activities and safety concerns in our area.",
+      description:
+        "Monthly neighborhood watch meeting to discuss recent activities and safety concerns in our area.",
       timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
       locations: ["Owasso, OK"],
       isActive: false,
     },
     {
       id: "3",
-      type: "safety_alerts", 
+      type: "safety_alerts",
       title: "Road Closure Due to Accident",
-      description: "Highway 169 northbound is closed due to a multi-vehicle accident. Please use alternate routes.",
+      description:
+        "Highway 169 northbound is closed due to a multi-vehicle accident. Please use alternate routes.",
       timestamp: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
       locations: ["Highway 169, Owasso"],
       isActive: true,
@@ -57,7 +62,8 @@ export default function AlertsScreen() {
       id: "4",
       type: "help_needed",
       title: "Lost Pet - Golden Retriever",
-      description: "Max, a 3-year-old golden retriever, went missing from the park area. Please contact if you see him.",
+      description:
+        "Max, a 3-year-old golden retriever, went missing from the park area. Please contact if you see him.",
       timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
       locations: ["Redbud Valley Nature Preserve", "Owasso, OK"],
       isActive: false,
@@ -68,13 +74,13 @@ export default function AlertsScreen() {
     setActiveFilter(filterId);
   };
 
-  const filteredAlerts = sampleAlerts.filter(alert => {
+  const filteredAlerts = sampleAlerts.filter((alert) => {
     if (activeFilter === "all") return true;
     return alert.type === activeFilter;
   });
 
-  const activeAlerts = filteredAlerts.filter(alert => alert.isActive);
-  const recentAlerts = filteredAlerts.filter(alert => !alert.isActive);
+  const activeAlerts = filteredAlerts.filter((alert) => alert.isActive);
+  const recentAlerts = filteredAlerts.filter((alert) => !alert.isActive);
 
   const handleAlertView = (alertId: string) => {
     console.log(`Viewing alert: ${alertId}`);
@@ -99,7 +105,7 @@ export default function AlertsScreen() {
 
   const renderSection = (title: string, data: Alert[]) => {
     if (data.length === 0) return null;
-    
+
     return (
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{title}</Text>
@@ -125,15 +131,12 @@ export default function AlertsScreen() {
         onMessagesPress={() => router.push("/(tabs)/messages")}
       />
 
-      <AlertsSlider
-        onFilterChange={handleFilterChange}
-        activeFilter={activeFilter}
-      />
+      <AlertsSlider onFilterChange={handleFilterChange} activeFilter={activeFilter} />
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {renderSection("Active Alerts", activeAlerts)}
         {renderSection("Recent Alerts", recentAlerts)}
-        
+
         {filteredAlerts.length === 0 && (
           <View style={styles.emptyState}>
             <Text style={styles.emptyTitle}>
@@ -142,7 +145,10 @@ export default function AlertsScreen() {
             <Text style={styles.emptyMessage}>
               {activeFilter === "all"
                 ? "No alerts at this time. Stay safe!"
-                : `No ${activeFilter.replace("_", " ")} alerts found. Try selecting a different filter.`}
+                : `No ${activeFilter.replace(
+                    "_",
+                    " "
+                  )} alerts found. Try selecting a different filter.`}
             </Text>
           </View>
         )}

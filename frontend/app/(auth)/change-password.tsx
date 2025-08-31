@@ -72,30 +72,23 @@ export default function ChangePasswordScreen() {
       });
 
       if (response.data.success) {
-        Alert.alert(
-          "Success",
-          "Your password has been changed successfully.",
-          [
-            {
-              text: "OK",
-              onPress: () => router.back(),
-            },
-          ]
-        );
+        Alert.alert("Success", "Your password has been changed successfully.", [
+          {
+            text: "OK",
+            onPress: () => router.back(),
+          },
+        ]);
       }
     } catch (error: any) {
       console.error("Change password error:", error);
-      
+
       if (error.response?.status === 400) {
         setErrors({ currentPassword: "Current password is incorrect" });
       } else if (error.response?.status === 422) {
         const validationErrors = error.response.data.errors || {};
         setErrors(validationErrors);
       } else {
-        Alert.alert(
-          "Error",
-          "Failed to change password. Please try again."
-        );
+        Alert.alert("Error", "Failed to change password. Please try again.");
       }
     } finally {
       setLoading(false);
@@ -103,7 +96,7 @@ export default function ChangePasswordScreen() {
   };
 
   const togglePasswordVisibility = (field: keyof typeof showPasswords) => {
-    setShowPasswords(prev => ({
+    setShowPasswords((prev) => ({
       ...prev,
       [field]: !prev[field],
     }));
@@ -120,15 +113,12 @@ export default function ChangePasswordScreen() {
       <View style={styles.passwordInputWrapper}>
         <Lock size={20} color={Colors.text.disabled} style={styles.inputIcon} />
         <TextInput
-          style={[
-            styles.passwordInput,
-            errors[field] && styles.inputError,
-          ]}
+          style={[styles.passwordInput, errors[field] && styles.inputError]}
           value={formData[field]}
           onChangeText={(value) => {
-            setFormData(prev => ({ ...prev, [field]: value }));
+            setFormData((prev) => ({ ...prev, [field]: value }));
             if (errors[field]) {
-              setErrors(prev => ({ ...prev, [field]: "" }));
+              setErrors((prev) => ({ ...prev, [field]: "" }));
             }
           }}
           placeholder={placeholder}
@@ -148,15 +138,13 @@ export default function ChangePasswordScreen() {
           )}
         </TouchableOpacity>
       </View>
-      {errors[field] && (
-        <Text style={styles.errorText}>{errors[field]}</Text>
-      )}
+      {errors[field] && <Text style={styles.errorText}>{errors[field]}</Text>}
     </View>
   );
 
   const getPasswordStrength = (password: string) => {
     if (!password) return { strength: 0, label: "", color: Colors.neutral[300] };
-    
+
     let strength = 0;
     if (password.length >= 8) strength++;
     if (/[a-z]/.test(password)) strength++;
@@ -185,7 +173,7 @@ export default function ChangePasswordScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <Header title="Change Password" showBackButton />
-      
+
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
@@ -210,12 +198,7 @@ export default function ChangePasswordScreen() {
               "Enter your current password"
             )}
 
-            {renderPasswordInput(
-              "New Password",
-              "newPassword",
-              "new",
-              "Enter your new password"
-            )}
+            {renderPasswordInput("New Password", "newPassword", "new", "Enter your new password")}
 
             {formData.newPassword && (
               <View style={styles.strengthContainer}>
@@ -226,11 +209,11 @@ export default function ChangePasswordScreen() {
                       style={[
                         styles.strengthSegment,
                         {
-                          backgroundColor: 
-                            index < passwordStrength.strength 
-                              ? passwordStrength.color 
-                              : Colors.neutral[200]
-                        }
+                          backgroundColor:
+                            index < passwordStrength.strength
+                              ? passwordStrength.color
+                              : Colors.neutral[200],
+                        },
                       ]}
                     />
                   ))}

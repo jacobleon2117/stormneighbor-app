@@ -7,7 +7,8 @@ export const ENV = {
 } as const;
 
 const getDevBaseUrl = () => {
-  const debuggerHost = Constants.expoConfig?.hostUri || Constants.manifest2?.extra?.expoClient?.hostUri;
+  const debuggerHost =
+    Constants.expoConfig?.hostUri || Constants.manifest2?.extra?.expoClient?.hostUri;
 
   let lanIp: string | null = null;
 
@@ -19,15 +20,13 @@ const getDevBaseUrl = () => {
     return "http://127.0.0.1:3000/api/v1";
   }
 
-  return lanIp
-    ? `http://${lanIp}:3000/api/v1`
-    : "http://127.0.0.1:3000/api/v1";
+  return lanIp ? `http://${lanIp}:3000/api/v1` : "http://127.0.0.1:3000/api/v1";
 };
 
 export const API_CONFIG = {
-  BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL || (ENV.isDevelopment
-    ? getDevBaseUrl()
-    : "https://stormneighbor-api.onrender.com/api/v1"),
+  BASE_URL:
+    process.env.EXPO_PUBLIC_API_BASE_URL ||
+    (ENV.isDevelopment ? getDevBaseUrl() : "https://stormneighbor-api.onrender.com/api/v1"),
   TIMEOUT: parseInt(process.env.EXPO_PUBLIC_API_TIMEOUT || "30000", 10),
 } as const;
 
@@ -38,7 +37,10 @@ export const APP_CONFIG = {
 } as const;
 
 export const PUSH_CONFIG = {
-  projectId: process.env.EXPO_PUBLIC_PROJECT_ID || Constants.expoConfig?.extra?.eas?.projectId || "stormneighbor-app",
+  projectId:
+    process.env.EXPO_PUBLIC_PROJECT_ID ||
+    Constants.expoConfig?.extra?.eas?.projectId ||
+    "stormneighbor-app",
 } as const;
 
 export const FEATURES = {
@@ -56,8 +58,8 @@ export const WEATHER_CONFIG = {
 } as const;
 
 export const URL_CONFIG = {
-  baseUrl: process.env.EXPO_PUBLIC_BASE_WEB_URL || (ENV.isDevelopment
-    ? "https://dev.stormneighbor.app"
-    : "https://stormneighbor.app"),
+  baseUrl:
+    process.env.EXPO_PUBLIC_BASE_WEB_URL ||
+    (ENV.isDevelopment ? "https://dev.stormneighbor.app" : "https://stormneighbor.app"),
   appUrl: process.env.EXPO_PUBLIC_APP_URL_SCHEME || "stormneighbor://",
 } as const;

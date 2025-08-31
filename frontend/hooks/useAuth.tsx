@@ -1,10 +1,4 @@
-import React, {
-  createContext,
-  useContext,
-  useReducer,
-  useEffect,
-  ReactNode,
-} from "react";
+import React, { createContext, useContext, useReducer, useEffect, ReactNode } from "react";
 import { apiService } from "../services/api";
 import { NotificationService } from "../services/notifications";
 import { User } from "../types";
@@ -182,8 +176,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.log("Login after registration successful");
     } catch (error) {
       console.error("Registration/login error:", error);
-      const errorMessage =
-        (error as any).response?.data?.message || "Registration failed";
+      const errorMessage = (error as any).response?.data?.message || "Registration failed";
       dispatch({ type: "AUTH_ERROR", payload: errorMessage });
       throw error;
     }

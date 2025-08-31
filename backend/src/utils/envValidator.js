@@ -277,8 +277,12 @@ class EnvironmentValidator {
     logger.info(`INFO: Port: ${process.env.PORT || "3000"}`);
     logger.info(`INFO:  Database: ${process.env.DATABASE_URL ? "Configured" : "Not configured"}`);
     logger.info(`INFO: JWT: ${process.env.JWT_SECRET ? "Configured" : "Not configured"}`);
-    logger.info(`INFO: Push Notifications: ${process.env.FIREBASE_PROJECT_ID ? "Enabled" : "Disabled"}`);
-    logger.info(`INFO: Image Uploads: ${process.env.CLOUDINARY_CLOUD_NAME ? "Enabled" : "Disabled"}`);
+    logger.info(
+      `INFO: Push Notifications: ${process.env.FIREBASE_PROJECT_ID ? "Enabled" : "Disabled"}`
+    );
+    logger.info(
+      `INFO: Image Uploads: ${process.env.CLOUDINARY_CLOUD_NAME ? "Enabled" : "Disabled"}`
+    );
     logger.info("");
   }
 

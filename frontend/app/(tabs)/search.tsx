@@ -80,11 +80,9 @@ export default function SearchScreen() {
   const handleLike = async (postId: number) => {
     try {
       await apiService.toggleCommentReaction(postId);
-      setSearchResults(prev =>
-        prev.map(post =>
-          post.id === postId
-            ? { ...post, userReaction: post.userReaction ? null : "like" }
-            : post
+      setSearchResults((prev) =>
+        prev.map((post) =>
+          post.id === postId ? { ...post, userReaction: post.userReaction ? null : "like" } : post
         )
       );
     } catch (error) {
@@ -159,7 +157,7 @@ export default function SearchScreen() {
         {searchQuery ? "No results found" : "Search StormNeighbor"}
       </Text>
       <Text style={styles.emptyMessage}>
-        {searchQuery 
+        {searchQuery
           ? "Try adjusting your search terms or filters"
           : "Find posts, requests, and updates from your community"}
       </Text>
@@ -181,9 +179,8 @@ export default function SearchScreen() {
         showMessages={false}
         showMore={false}
       />
-      
-      <View style={{ flex: 1 }}>
-      </View>
+
+      <View style={{ flex: 1 }}></View>
     </View>
   );
 }

@@ -17,8 +17,7 @@ export class NotificationService {
   static async requestPermissions(): Promise<boolean> {
     try {
       if (Device.isDevice) {
-        const { status: existingStatus } =
-          await Notifications.getPermissionsAsync();
+        const { status: existingStatus } = await Notifications.getPermissionsAsync();
         let finalStatus = existingStatus;
 
         if (existingStatus !== "granted") {
@@ -148,9 +147,7 @@ export class NotificationService {
     return Notifications.addNotificationResponseReceivedListener(listener);
   }
 
-  static removeNotificationSubscription(
-    subscription: Notifications.EventSubscription
-  ): void {
+  static removeNotificationSubscription(subscription: Notifications.EventSubscription): void {
     subscription.remove();
   }
 }

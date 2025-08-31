@@ -21,10 +21,7 @@ interface CommentsSectionProps {
   onCommentCountChange?: (count: number) => void;
 }
 
-export function CommentsSection({
-  postId,
-  onCommentCountChange,
-}: CommentsSectionProps) {
+export function CommentsSection({ postId, onCommentCountChange }: CommentsSectionProps) {
   const { user } = useAuth();
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
@@ -68,8 +65,7 @@ export function CommentsSection({
         }
       } catch (error: any) {
         console.error("Error fetching comments:", error);
-        const errorMessage =
-          error.response?.data?.message || "Failed to load comments";
+        const errorMessage = error.response?.data?.message || "Failed to load comments";
 
         if (pageNum === 1) {
           setError(errorMessage);
@@ -117,8 +113,7 @@ export function CommentsSection({
       console.error("Error creating comment:", error);
       Alert.alert(
         "Error",
-        error.response?.data?.message ||
-          "Failed to post comment. Please try again."
+        error.response?.data?.message || "Failed to post comment. Please try again."
       );
     } finally {
       setSubmitting(false);
@@ -153,8 +148,7 @@ export function CommentsSection({
       console.error("Error creating reply:", error);
       Alert.alert(
         "Error",
-        error.response?.data?.message ||
-          "Failed to post reply. Please try again."
+        error.response?.data?.message || "Failed to post reply. Please try again."
       );
       throw error;
     }
@@ -245,8 +239,7 @@ export function CommentsSection({
       console.error("Error editing comment:", error);
       Alert.alert(
         "Error",
-        error.response?.data?.message ||
-          "Failed to edit comment. Please try again."
+        error.response?.data?.message || "Failed to edit comment. Please try again."
       );
       throw error;
     }
@@ -262,9 +255,7 @@ export function CommentsSection({
             .filter((comment) => comment.id !== commentId)
             .map((comment) => ({
               ...comment,
-              replies: comment.replies
-                ? removeComment(comment.replies)
-                : undefined,
+              replies: comment.replies ? removeComment(comment.replies) : undefined,
             }));
         };
 
@@ -278,8 +269,7 @@ export function CommentsSection({
       console.error("Error deleting comment:", error);
       Alert.alert(
         "Error",
-        error.response?.data?.message ||
-          "Failed to delete comment. Please try again."
+        error.response?.data?.message || "Failed to delete comment. Please try again."
       );
     }
   };
@@ -302,16 +292,12 @@ export function CommentsSection({
       console.error("Error reporting comment:", error);
       Alert.alert(
         "Error",
-        error.response?.data?.message ||
-          "Failed to report comment. Please try again."
+        error.response?.data?.message || "Failed to report comment. Please try again."
       );
     }
   };
 
-  const findCommentById = (
-    commentsList: Comment[],
-    id: number
-  ): Comment | null => {
+  const findCommentById = (commentsList: Comment[], id: number): Comment | null => {
     for (const comment of commentsList) {
       if (comment.id === id) return comment;
       if (comment.replies) {
@@ -368,9 +354,7 @@ export function CommentsSection({
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyTitle}>No comments yet</Text>
-      <Text style={styles.emptyMessage}>
-        Be the first to share your thoughts on this post!
-      </Text>
+      <Text style={styles.emptyMessage}>Be the first to share your thoughts on this post!</Text>
     </View>
   );
 

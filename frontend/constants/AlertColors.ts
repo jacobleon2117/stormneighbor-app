@@ -1,39 +1,39 @@
-import { Colors } from './Colors';
+import { Colors } from "./Colors";
 
 export const ALERT_COLORS = {
   severe_weather: Colors.error[600],
   weather_alerts: Colors.warning[600],
   safety_alerts: Colors.error[500],
-  
+
   community_alerts: Colors.primary[600],
   help_needed: Colors.success[600],
-  
+
   events: Colors.purple[600],
   announcements: Colors.primary[500],
   questions: Colors.neutral[600],
-  
+
   help_offer: Colors.success[600],
   lost_found: Colors.warning[600],
   general: Colors.primary[600],
 } as const;
 
 export const ALERT_LABELS = {
-  severe_weather: 'Severe Weather',
-  weather_alerts: 'Weather Alert',
-  safety_alerts: 'Safety Alert',
-  community_alerts: 'Community Alert',
-  help_needed: 'Help Needed',
-  events: 'Event',
-  announcements: 'Announcement',
-  questions: 'Question',
-  help_offer: 'Help Offer',
-  lost_found: 'Lost & Found',
-  general: 'General',
+  severe_weather: "Severe Weather",
+  weather_alerts: "Weather Alert",
+  safety_alerts: "Safety Alert",
+  community_alerts: "Community Alert",
+  help_needed: "Help Needed",
+  events: "Event",
+  announcements: "Announcement",
+  questions: "Question",
+  help_offer: "Help Offer",
+  lost_found: "Lost & Found",
+  general: "General",
 } as const;
 
 export const ALERT_BACKGROUNDS = {
   severe_weather: Colors.error[50],
-  weather_alerts: Colors.warning[50], 
+  weather_alerts: Colors.warning[50],
   safety_alerts: Colors.error[50],
   community_alerts: Colors.primary[50],
   help_needed: Colors.success[50],
@@ -48,7 +48,7 @@ export const ALERT_BACKGROUNDS = {
 export const ALERT_BORDERS = {
   severe_weather: Colors.error[200],
   weather_alerts: Colors.warning[200],
-  safety_alerts: Colors.error[200], 
+  safety_alerts: Colors.error[200],
   community_alerts: Colors.primary[200],
   help_needed: Colors.success[200],
   events: Colors.purple[200],
@@ -61,7 +61,7 @@ export const ALERT_BORDERS = {
 
 export const PRIORITY_COLORS = {
   urgent: Colors.error[600],
-  high: Colors.warning[600], 
+  high: Colors.warning[600],
   normal: Colors.primary[600],
   low: Colors.neutral[500],
 } as const;
@@ -79,7 +79,7 @@ export const getAlertBorder = (type: keyof typeof ALERT_BORDERS): string => {
 };
 
 export const getAlertLabel = (type: keyof typeof ALERT_LABELS): string => {
-  return ALERT_LABELS[type] || 'Alert';
+  return ALERT_LABELS[type] || "Alert";
 };
 
 export const getPriorityColor = (priority: keyof typeof PRIORITY_COLORS): string => {

@@ -107,12 +107,9 @@ class ApiService {
       throw new Error("No refresh token available");
     }
 
-    const response = await axios.post(
-      `${API_CONFIG.BASE_URL}/auth/refresh-token`,
-      {
-        refreshToken,
-      }
-    );
+    const response = await axios.post(`${API_CONFIG.BASE_URL}/auth/refresh-token`, {
+      refreshToken,
+    });
 
     const { accessToken, refreshToken: newRefreshToken } = response.data.data;
     await this.setAccessToken(accessToken);
@@ -244,22 +241,16 @@ class ApiService {
       });
       return response.data;
     } catch (error) {
-      console.error(
-        "Update notification preferences error in API service:",
-        error
-      );
+      console.error("Update notification preferences error in API service:", error);
       throw error;
     }
   }
 
   async registerPushToken(pushToken: string) {
     try {
-      const response = await this.api.post(
-        "/notifications/register-push-token",
-        {
-          pushToken,
-        }
-      );
+      const response = await this.api.post("/notifications/register-push-token", {
+        pushToken,
+      });
       return response.data;
     } catch (error) {
       console.error("Register push token error in API service:", error);
@@ -275,7 +266,7 @@ class ApiService {
     state?: string;
   }) {
     const response = await this.api.get("/posts", { params });
-    
+
     if (response.data.success && response.data.data?.posts) {
       const transformedPosts = response.data.data.posts.map((post: any) => ({
         ...post,
@@ -283,18 +274,18 @@ class ApiService {
         lastName: post.user?.lastName,
         profileImageUrl: post.user?.profileImageUrl,
         userId: post.user?.id || post.userId,
-        user: post.user
+        user: post.user,
       }));
-      
+
       return {
         ...response.data,
         data: {
           ...response.data.data,
-          posts: transformedPosts
-        }
+          posts: transformedPosts,
+        },
       };
     }
-    
+
     return response.data;
   }
 
@@ -362,10 +353,7 @@ class ApiService {
       images?: string[];
     }
   ) {
-    const response = await this.api.post(
-      `/posts/${postId}/comments`,
-      commentData
-    );
+    const response = await this.api.post(`/posts/${postId}/comments`, commentData);
     return response.data;
   }
 
@@ -379,10 +367,7 @@ class ApiService {
     return response.data;
   }
 
-  async toggleCommentReaction(
-    commentId: number,
-    reactionType: string = "like"
-  ) {
+  async toggleCommentReaction(commentId: number, reactionType: string = "like") {
     const response = await this.api.post(`/comments/${commentId}/reactions`, {
       reactionType,
     });
@@ -427,10 +412,7 @@ class ApiService {
     return response.data;
   }
 
-  async getConversations(params?: {
-    page?: number;
-    limit?: number;
-  }) {
+  async getConversations(params?: { page?: number; limit?: number }) {
     const response = await this.api.get("/messages/conversations", { params });
     return response.data;
   }
@@ -450,10 +432,9 @@ class ApiService {
       limit?: number;
     }
   ) {
-    const response = await this.api.get(
-      `/messages/conversations/${conversationId}/messages`,
-      { params }
-    );
+    const response = await this.api.get(`/messages/conversations/${conversationId}/messages`, {
+      params,
+    });
     return response.data;
   }
 
@@ -482,10 +463,7 @@ class ApiService {
     return response.data;
   }
 
-  async uploadImage(
-    imageUri: string,
-    type: "profile" | "post" | "comment" = "post"
-  ) {
+  async uploadImage(imageUri: string, type: "profile" | "post" | "comment" = "post") {
     const formData = new FormData();
     formData.append("image", {
       uri: imageUri,
@@ -508,19 +486,13 @@ class ApiService {
     return response.data;
   }
 
-  async getNotifications(params?: {
-    page?: number;
-    limit?: number;
-    unreadOnly?: boolean;
-  }) {
+  async getNotifications(params?: { page?: number; limit?: number; unreadOnly?: boolean }) {
     const response = await this.api.get("/notifications", { params });
     return response.data;
   }
 
   async markNotificationAsRead(notificationId: number) {
-    const response = await this.api.put(
-      `/notifications/${notificationId}/read`
-    );
+    const response = await this.api.put(`/notifications/${notificationId}/read`);
     return response.data;
   }
 
@@ -545,9 +517,7 @@ class ApiService {
   }
 
   async healthCheck() {
-    const response = await axios.get(
-      `${API_CONFIG.BASE_URL.replace("/api/v1", "")}/health`
-    );
+    const response = await axios.get(`${API_CONFIG.BASE_URL.replace("/api/v1", "")}/health`);
     return response.data;
   }
 

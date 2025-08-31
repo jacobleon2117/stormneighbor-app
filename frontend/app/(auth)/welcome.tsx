@@ -29,25 +29,19 @@ export default function WelcomeScreen() {
         <SafeAreaView style={styles.safeArea}>
           <View style={styles.spacer} />
         </SafeAreaView>
-        
+
         <View style={styles.bottomContainer}>
           <Text style={styles.appName}>StormNeighbor</Text>
-          <Text style={styles.tagline}>Get real-time, local severe weather alerts and updates from your community.</Text>
-          
-          <TouchableOpacity
-            style={styles.primaryButton}
-            onPress={handleGetStarted}
-          >
+          <Text style={styles.tagline}>
+            Get real-time, local severe weather alerts and updates from your community.
+          </Text>
+
+          <TouchableOpacity style={styles.primaryButton} onPress={handleGetStarted}>
             <Text style={styles.primaryButtonText}>Sign Up</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.secondaryButton}
-            onPress={handleHaveAccount}
-          >
-            <Text style={styles.secondaryButtonText}>
-              Login
-            </Text>
+          <TouchableOpacity style={styles.secondaryButton} onPress={handleHaveAccount}>
+            <Text style={styles.secondaryButtonText}>Login</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -55,17 +49,17 @@ export default function WelcomeScreen() {
   );
 }
 
-const { height: screenHeight } = Dimensions.get('window');
+const { height: screenHeight } = Dimensions.get("window");
 
 const styles = StyleSheet.create({
   backgroundImage: {
     flex: 1,
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   container: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
   safeArea: {
     flex: 1,
@@ -74,13 +68,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   bottomContainer: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingHorizontal: 24,
     paddingTop: 48,
     paddingBottom: 68,
-    alignItems: 'center',
+    alignItems: "center",
     maxHeight: screenHeight * 0.65,
   },
   appName: {
@@ -111,7 +105,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 3,
-    width: '100%',
+    width: "100%",
     marginBottom: 16,
   },
   primaryButtonText: {
@@ -127,7 +121,7 @@ const styles = StyleSheet.create({
     borderColor: "#3B82F6",
     justifyContent: "center",
     alignItems: "center",
-    width: '100%',
+    width: "100%",
   },
   secondaryButtonText: {
     color: "#1F2937",

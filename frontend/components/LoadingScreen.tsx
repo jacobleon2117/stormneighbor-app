@@ -1,10 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ActivityIndicator,
-} from "react-native";
+import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { Colors } from "../constants/Colors";
 
 export function LoadingScreen() {
@@ -23,11 +18,7 @@ export function LoadingScreen() {
       <View style={styles.content}>
         <Text style={styles.title}>StormNeighbor</Text>
         {showSpinner && (
-          <ActivityIndicator
-            size="large"
-            color={Colors.primary[500]}
-            style={styles.spinner}
-          />
+          <ActivityIndicator size="large" color={Colors.primary[500]} style={styles.spinner} />
         )}
       </View>
     </View>

@@ -56,12 +56,8 @@ export class DevTools {
     await this.forceLogout();
     await this.clearLocalData();
 
-    console.log(
-      "SUCESS: Complete reset finished - app should restart to welcome screen"
-    );
-    console.log(
-      "INFO: Backend data (posts, users) must be cleared separately on the server"
-    );
+    console.log("SUCESS: Complete reset finished - app should restart to welcome screen");
+    console.log("INFO: Backend data (posts, users) must be cleared separately on the server");
   }
 }
 

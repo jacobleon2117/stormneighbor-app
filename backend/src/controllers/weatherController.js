@@ -246,9 +246,9 @@ const getAlerts = async (req, res) => {
             coordinates:
               userLat && userLng
                 ? {
-                  latitude: parseFloat(userLat),
-                  longitude: parseFloat(userLng),
-                }
+                    latitude: parseFloat(userLat),
+                    longitude: parseFloat(userLng),
+                  }
                 : null,
           },
           lastUpdated: new Date().toISOString(),

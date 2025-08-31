@@ -56,9 +56,7 @@ export function Button({
       {loading ? (
         <ActivityIndicator
           size="small"
-          color={
-            variant === "primary" ? Colors.text.inverse : Colors.primary[500]
-          }
+          color={variant === "primary" ? Colors.text.inverse : Colors.primary[500]}
         />
       ) : (
         <Text style={textStyles}>{title}</Text>

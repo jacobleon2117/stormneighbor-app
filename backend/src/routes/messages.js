@@ -84,11 +84,11 @@ router.get(
         },
         lastMessage: row.last_message_content
           ? {
-            content: row.last_message_content,
-            senderId: row.last_message_sender_id,
-            messageType: row.last_message_type,
-            createdAt: row.last_message_created_at,
-          }
+              content: row.last_message_content,
+              senderId: row.last_message_sender_id,
+              messageType: row.last_message_type,
+              createdAt: row.last_message_created_at,
+            }
           : null,
       }));
 
@@ -222,7 +222,7 @@ router.post(
           "SELECT first_name, last_name FROM users WHERE id = $1",
           [senderId]
         );
-        
+
         const senderName = `${senderInfo.rows[0].first_name} ${senderInfo.rows[0].last_name}`;
 
         await client.query(
@@ -422,10 +422,7 @@ router.post(
       .trim()
       .isLength({ min: 1, max: 1000 })
       .withMessage("Message content is required and must be under 1000 characters"),
-    body("messageType")
-      .optional()
-      .isIn(["text", "image"])
-      .withMessage("Invalid message type"),
+    body("messageType").optional().isIn(["text", "image"]).withMessage("Invalid message type"),
     body("images").optional().isArray().withMessage("Images must be an array"),
   ],
   handleValidationErrors,
@@ -475,7 +472,7 @@ router.post(
           "SELECT first_name, last_name FROM users WHERE id = $1",
           [senderId]
         );
-        
+
         const senderName = `${senderInfo.rows[0].first_name} ${senderInfo.rows[0].last_name}`;
 
         await client.query(
@@ -574,17 +571,14 @@ router.put(
   }
 );
 
-router.get(
-  "/unread-count",
-  auth,
-  async (req, res) => {
-    const client = await pool.connect();
+router.get("/unread-count", auth, async (req, res) => {
+  const client = await pool.connect();
 
-    try {
-      const userId = req.user.userId;
+  try {
+    const userId = req.user.userId;
 
-      const result = await client.query(
-        `
+    const result = await client.query(
+      `
         SELECT 
           SUM(CASE 
             WHEN c.participant_1_id = $1 THEN c.participant_1_unread_count
@@ -594,35 +588,34 @@ router.get(
         WHERE (c.participant_1_id = $1 OR c.participant_2_id = $1) 
           AND c.is_active = true
       `,
-        [userId]
-      );
+      [userId]
+    );
 
-      const totalUnread = parseInt(result.rows[0].total_unread) || 0;
+    const totalUnread = parseInt(result.rows[0].total_unread) || 0;
 
-      res.json({
-        success: true,
-        data: {
-          totalUnread,
-          userId,
-        },
-      });
-    } catch (error) {
-      logger.error("Get unread count error:", error);
-      res.status(500).json({
-        success: false,
-        message: "Error fetching unread count",
-        code: "UNREAD_COUNT_ERROR",
-      });
-    } finally {
-      client.release();
-    }
+    res.json({
+      success: true,
+      data: {
+        totalUnread,
+        userId,
+      },
+    });
+  } catch (error) {
+    logger.error("Get unread count error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching unread count",
+      code: "UNREAD_COUNT_ERROR",
+    });
+  } finally {
+    client.release();
   }
-);
+});
 
 router.get("/test/status", async (req, res) => {
   try {
     const { pool } = require("../config/database");
-const logger = require("../utils/logger");
+    const logger = require("../utils/logger");
     const client = await pool.connect();
 
     try {

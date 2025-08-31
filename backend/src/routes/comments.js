@@ -581,7 +581,7 @@ router.post(
 router.get("/test/status", async (req, res) => {
   try {
     const { pool } = require("../config/database");
-const logger = require("../utils/logger");
+    const logger = require("../utils/logger");
     const client = await pool.connect();
 
     try {

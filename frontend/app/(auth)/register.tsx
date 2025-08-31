@@ -44,15 +44,13 @@ export default function RegisterScreen() {
     if (!formData.firstName.trim()) {
       newErrors.firstName = "First name is required";
     } else if (!/^[a-zA-Z\s'-]+$/.test(formData.firstName)) {
-      newErrors.firstName =
-        "First name can only contain letters, spaces, hyphens, and apostrophes";
+      newErrors.firstName = "First name can only contain letters, spaces, hyphens, and apostrophes";
     }
 
     if (!formData.lastName.trim()) {
       newErrors.lastName = "Last name is required";
     } else if (!/^[a-zA-Z\s'-]+$/.test(formData.lastName)) {
-      newErrors.lastName =
-        "Last name can only contain letters, spaces, hyphens, and apostrophes";
+      newErrors.lastName = "Last name can only contain letters, spaces, hyphens, and apostrophes";
     }
 
     if (!formData.email.trim()) {
@@ -73,9 +71,7 @@ export default function RegisterScreen() {
     } else if (formData.password.length < 8) {
       newErrors.password = "Password must be at least 8 characters";
     } else if (
-      !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/.test(
-        formData.password
-      )
+      !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/.test(formData.password)
     ) {
       newErrors.password =
         "Password must contain uppercase, lowercase, number, and special character";
@@ -103,9 +99,7 @@ export default function RegisterScreen() {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         email: formData.email.trim().toLowerCase(),
-        phone: formData.phone.trim()
-          ? formData.phone.replace(/[\s\-\(\)\+]/g, "")
-          : undefined,
+        phone: formData.phone.trim() ? formData.phone.replace(/[\s\-\(\)\+]/g, "") : undefined,
         password: formData.password,
       });
     } catch (error) {
@@ -116,168 +110,166 @@ export default function RegisterScreen() {
   return (
     <View style={styles.wrapper}>
       <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.keyboardView}
-      >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <View style={styles.header}>
-            <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>
-              Join your neighborhood community
-            </Text>
-          </View>
-
-          <View style={styles.form}>
-            <View style={styles.row}>
-              <Input
-                label="First Name"
-                value={formData.firstName}
-                onChangeText={(value) => updateFormData("firstName", value)}
-                placeholder="John"
-                autoCapitalize="words"
-                error={errors.firstName}
-                containerStyle={{ ...styles.halfWidth, ...styles.rightMargin }}
-                required
-              />
-              <Input
-                label="Last Name"
-                value={formData.lastName}
-                onChangeText={(value) => updateFormData("lastName", value)}
-                placeholder="Doe"
-                autoCapitalize="words"
-                error={errors.lastName}
-                containerStyle={styles.halfWidth}
-                required
-              />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.keyboardView}
+        >
+          <ScrollView contentContainerStyle={styles.scrollContent}>
+            <View style={styles.header}>
+              <Text style={styles.title}>Create Account</Text>
+              <Text style={styles.subtitle}>Join your neighborhood community</Text>
             </View>
 
-            <Input
-              label="Email Address"
-              value={formData.email}
-              onChangeText={(value) => updateFormData("email", value)}
-              placeholder="john.doe@example.com"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              error={errors.email}
-              required
-            />
-
-            <Input
-              label="Phone Number"
-              value={formData.phone}
-              onChangeText={(value) => updateFormData("phone", value)}
-              placeholder="(555) 123-4567"
-              keyboardType="phone-pad"
-              error={errors.phone}
-            />
-
-            <View style={styles.passwordContainer}>
-              <Input
-                label="Password"
-                value={formData.password}
-                onChangeText={(value) => updateFormData("password", value)}
-                placeholder="Create a strong password"
-                secureTextEntry={!showPassword}
-                error={errors.password}
-                required
-              />
-              <TouchableOpacity
-                style={styles.passwordToggle}
-                onPress={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? (
-                  <EyeOff size={20} color={Colors.text.secondary} />
-                ) : (
-                  <Eye size={20} color={Colors.text.secondary} />
-                )}
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.passwordContainer}>
-              <Input
-                label="Confirm Password"
-                value={formData.confirmPassword}
-                onChangeText={(value) =>
-                  updateFormData("confirmPassword", value)
-                }
-                placeholder="Confirm your password"
-                secureTextEntry={!showConfirmPassword}
-                error={errors.confirmPassword}
-                required
-              />
-              <TouchableOpacity
-                style={styles.passwordToggle}
-                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-              >
-                {showConfirmPassword ? (
-                  <EyeOff size={20} color={Colors.text.secondary} />
-                ) : (
-                  <Eye size={20} color={Colors.text.secondary} />
-                )}
-              </TouchableOpacity>
-            </View>
-
-            {error && (
-              <View style={styles.errorContainer}>
-                <AlertCircle size={16} color={Colors.error[600]} />
-                <Text style={styles.errorText}>{error}</Text>
+            <View style={styles.form}>
+              <View style={styles.row}>
+                <Input
+                  label="First Name"
+                  value={formData.firstName}
+                  onChangeText={(value) => updateFormData("firstName", value)}
+                  placeholder="John"
+                  autoCapitalize="words"
+                  error={errors.firstName}
+                  containerStyle={{ ...styles.halfWidth, ...styles.rightMargin }}
+                  required
+                />
+                <Input
+                  label="Last Name"
+                  value={formData.lastName}
+                  onChangeText={(value) => updateFormData("lastName", value)}
+                  placeholder="Doe"
+                  autoCapitalize="words"
+                  error={errors.lastName}
+                  containerStyle={styles.halfWidth}
+                  required
+                />
               </View>
-            )}
 
-            <View style={styles.termsContainer}>
-              <Text style={styles.termsText}>
-                By creating an account, you agree to our{' '}
-                <Text 
-                  style={styles.termsLink}
-                  onPress={() => router.push('/(auth)/terms-of-service')}
+              <Input
+                label="Email Address"
+                value={formData.email}
+                onChangeText={(value) => updateFormData("email", value)}
+                placeholder="john.doe@example.com"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                error={errors.email}
+                required
+              />
+
+              <Input
+                label="Phone Number"
+                value={formData.phone}
+                onChangeText={(value) => updateFormData("phone", value)}
+                placeholder="(555) 123-4567"
+                keyboardType="phone-pad"
+                error={errors.phone}
+              />
+
+              <View style={styles.passwordContainer}>
+                <Input
+                  label="Password"
+                  value={formData.password}
+                  onChangeText={(value) => updateFormData("password", value)}
+                  placeholder="Create a strong password"
+                  secureTextEntry={!showPassword}
+                  error={errors.password}
+                  required
+                />
+                <TouchableOpacity
+                  style={styles.passwordToggle}
+                  onPress={() => setShowPassword(!showPassword)}
                 >
-                  Terms of Service
-                </Text>{' and '}
-                <Text 
-                  style={styles.termsLink}
-                  onPress={() => router.push('/(auth)/privacy-policy')}
+                  {showPassword ? (
+                    <EyeOff size={20} color={Colors.text.secondary} />
+                  ) : (
+                    <Eye size={20} color={Colors.text.secondary} />
+                  )}
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.passwordContainer}>
+                <Input
+                  label="Confirm Password"
+                  value={formData.confirmPassword}
+                  onChangeText={(value) => updateFormData("confirmPassword", value)}
+                  placeholder="Confirm your password"
+                  secureTextEntry={!showConfirmPassword}
+                  error={errors.confirmPassword}
+                  required
+                />
+                <TouchableOpacity
+                  style={styles.passwordToggle}
+                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
-                  Privacy Policy
-                </Text>.
-              </Text>
+                  {showConfirmPassword ? (
+                    <EyeOff size={20} color={Colors.text.secondary} />
+                  ) : (
+                    <Eye size={20} color={Colors.text.secondary} />
+                  )}
+                </TouchableOpacity>
+              </View>
+
+              {error && (
+                <View style={styles.errorContainer}>
+                  <AlertCircle size={16} color={Colors.error[600]} />
+                  <Text style={styles.errorText}>{error}</Text>
+                </View>
+              )}
+
+              <View style={styles.termsContainer}>
+                <Text style={styles.termsText}>
+                  By creating an account, you agree to our{" "}
+                  <Text
+                    style={styles.termsLink}
+                    onPress={() => router.push("/(auth)/terms-of-service")}
+                  >
+                    Terms of Service
+                  </Text>
+                  {" and "}
+                  <Text
+                    style={styles.termsLink}
+                    onPress={() => router.push("/(auth)/privacy-policy")}
+                  >
+                    Privacy Policy
+                  </Text>
+                  .
+                </Text>
+              </View>
+
+              <Button
+                title="Create Account"
+                onPress={handleRegister}
+                loading={isLoading}
+                style={styles.registerButton}
+              />
+
+              <View style={styles.dividerContainer}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>Or</Text>
+                <View style={styles.dividerLine} />
+              </View>
+
+              <View style={styles.socialButtonsRow}>
+                <TouchableOpacity style={[styles.socialButton, styles.socialButtonHalf]}>
+                  <Text style={styles.socialButtonText}>🔍 Google</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={[styles.socialButton, styles.socialButtonHalf]}>
+                  <Text style={styles.socialButtonText}>🍎 Apple</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
-            <Button
-              title="Create Account"
-              onPress={handleRegister}
-              loading={isLoading}
-              style={styles.registerButton}
-            />
-
-            <View style={styles.dividerContainer}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>Or</Text>
-              <View style={styles.dividerLine} />
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>Already have an account? </Text>
+              <Link href="/(auth)/login" asChild>
+                <TouchableOpacity>
+                  <Text style={styles.signInText}>Sign In</Text>
+                </TouchableOpacity>
+              </Link>
             </View>
-
-            <View style={styles.socialButtonsRow}>
-              <TouchableOpacity style={[styles.socialButton, styles.socialButtonHalf]}>
-                <Text style={styles.socialButtonText}>🔍 Google</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={[styles.socialButton, styles.socialButtonHalf]}>
-                <Text style={styles.socialButtonText}>🍎 Apple</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Already have an account? </Text>
-            <Link href="/(auth)/login" asChild>
-              <TouchableOpacity>
-                <Text style={styles.signInText}>Sign In</Text>
-              </TouchableOpacity>
-            </Link>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </View>
   );
@@ -290,11 +282,11 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
   keyboardView: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
   scrollContent: {
     flexGrow: 1,
@@ -371,11 +363,11 @@ const styles = StyleSheet.create({
   },
   termsLink: {
     color: Colors.primary[600],
-    fontWeight: '600',
+    fontWeight: "600",
   },
   dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginVertical: 16,
   },
   dividerLine: {
@@ -389,7 +381,7 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary,
   },
   socialButtonsRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
     marginBottom: 8,
   },
@@ -398,16 +390,16 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1.5,
     borderColor: Colors.border,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'white',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "white",
   },
   socialButtonHalf: {
     flex: 1,
   },
   socialButtonText: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: "500",
     color: Colors.text.primary,
   },
   registerButton: {

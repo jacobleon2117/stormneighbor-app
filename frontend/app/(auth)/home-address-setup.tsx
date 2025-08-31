@@ -20,7 +20,7 @@ import { useAuth } from "../../hooks/useAuth";
 export default function HomeAddressSetupScreen() {
   const { refreshProfile, user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [method, setMethod] = useState<'current' | 'manual' | null>(null);
+  const [method, setMethod] = useState<"current" | "manual" | null>(null);
   const [formData, setFormData] = useState({
     address: "",
     city: "",
@@ -36,23 +36,23 @@ export default function HomeAddressSetupScreen() {
   }, [user]);
 
   const useCurrentLocationAsHome = async () => {
-    setMethod('current');
+    setMethod("current");
     setIsLoading(true);
 
     try {
-      const canUseLocation = await locationService.canUseLocationFor('weather');
-      
+      const canUseLocation = await locationService.canUseLocationFor("weather");
+
       if (!canUseLocation) {
-        await locationService.showPermissionDeniedAlert('setting your home address');
+        await locationService.showPermissionDeniedAlert("setting your home address");
         setMethod(null);
         return;
       }
 
       const location = await locationService.getCurrentLocation();
-      
+
       if (!location) {
-        Alert.alert('Error', 'Unable to get your current location. Please try manual entry.');
-        setMethod('manual');
+        Alert.alert("Error", "Unable to get your current location. Please try manual entry.");
+        setMethod("manual");
         return;
       }
 
@@ -62,13 +62,16 @@ export default function HomeAddressSetupScreen() {
       );
 
       if (!address) {
-        Alert.alert('Error', 'Unable to determine address from your location. Please try manual entry.');
-        setMethod('manual');
+        Alert.alert(
+          "Error",
+          "Unable to determine address from your location. Please try manual entry."
+        );
+        setMethod("manual");
         return;
       }
 
       const homeAddressData = {
-        homeAddress: `${address.streetNumber || ''} ${address.street || ''}`.trim() || undefined,
+        homeAddress: `${address.streetNumber || ""} ${address.street || ""}`.trim() || undefined,
         homeCity: address.city || address.subregion,
         homeState: address.region,
         homeZipCode: address.postalCode,
@@ -78,12 +81,11 @@ export default function HomeAddressSetupScreen() {
 
       await apiService.updateProfile(homeAddressData);
       await refreshProfile();
-      
-      setAddressSet(true);
 
+      setAddressSet(true);
     } catch (error: any) {
-      console.error('Error setting home address from current location:', error);
-      Alert.alert('Error', 'Failed to set home address. Please try again.');
+      console.error("Error setting home address from current location:", error);
+      Alert.alert("Error", "Failed to set home address. Please try again.");
       setMethod(null);
     } finally {
       setIsLoading(false);
@@ -92,7 +94,7 @@ export default function HomeAddressSetupScreen() {
 
   const handleManualSave = async () => {
     if (!formData.city.trim() || !formData.state.trim()) {
-      Alert.alert('Missing Information', 'Please enter at least your city and state.');
+      Alert.alert("Missing Information", "Please enter at least your city and state.");
       return;
     }
 
@@ -100,12 +102,13 @@ export default function HomeAddressSetupScreen() {
 
     try {
       let coordinates = null;
-      
+
       if (formData.address.trim()) {
-        const fullAddress = `${formData.address}, ${formData.city}, ${formData.state} ${formData.zipCode}`.trim();
+        const fullAddress =
+          `${formData.address}, ${formData.city}, ${formData.state} ${formData.zipCode}`.trim();
         coordinates = await locationService.forwardGeocode(fullAddress);
       }
-      
+
       if (!coordinates && formData.city.trim() && formData.state.trim()) {
         const cityStateAddress = `${formData.city}, ${formData.state}`;
         coordinates = await locationService.forwardGeocode(cityStateAddress);
@@ -122,19 +125,18 @@ export default function HomeAddressSetupScreen() {
 
       await apiService.updateProfile(homeAddressData);
       await refreshProfile();
-      
-      setAddressSet(true);
 
+      setAddressSet(true);
     } catch (error: any) {
-      console.error('Error saving home address:', error);
-      Alert.alert('Error', 'Failed to save home address. Please try again.');
+      console.error("Error saving home address:", error);
+      Alert.alert("Error", "Failed to save home address. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleContinue = () => {
-    router.push('/(auth)/notifications-setup');
+    router.push("/(auth)/notifications-setup");
   };
 
   const renderMethodSelection = () => (
@@ -153,7 +155,7 @@ export default function HomeAddressSetupScreen() {
             Set where you are right now as your home address
           </Text>
         </View>
-        {isLoading && method === 'current' ? (
+        {isLoading && method === "current" ? (
           <ActivityIndicator size="small" color={Colors.primary[500]} />
         ) : (
           <Text style={styles.optionArrow}>→</Text>
@@ -166,18 +168,13 @@ export default function HomeAddressSetupScreen() {
         <View style={styles.dividerLine} />
       </View>
 
-      <TouchableOpacity
-        style={styles.methodOption}
-        onPress={() => setMethod('manual')}
-      >
+      <TouchableOpacity style={styles.methodOption} onPress={() => setMethod("manual")}>
         <View style={styles.optionIcon}>
           <Home size={24} color={Colors.text.secondary} />
         </View>
         <View style={styles.optionContent}>
           <Text style={styles.optionTitle}>Enter Home Address</Text>
-          <Text style={styles.optionDescription}>
-            Manually type your home address
-          </Text>
+          <Text style={styles.optionDescription}>Manually type your home address</Text>
         </View>
         <Text style={styles.optionArrow}>→</Text>
       </TouchableOpacity>
@@ -189,14 +186,14 @@ export default function HomeAddressSetupScreen() {
       <Input
         label="Street Address (Optional)"
         value={formData.address}
-        onChangeText={(text) => setFormData(prev => ({ ...prev, address: text }))}
+        onChangeText={(text) => setFormData((prev) => ({ ...prev, address: text }))}
         placeholder="123 Main Street"
         autoCapitalize="words"
       />
       <Input
         label="City"
         value={formData.city}
-        onChangeText={(text) => setFormData(prev => ({ ...prev, city: text }))}
+        onChangeText={(text) => setFormData((prev) => ({ ...prev, city: text }))}
         placeholder="Your city"
         autoCapitalize="words"
         required
@@ -204,7 +201,7 @@ export default function HomeAddressSetupScreen() {
       <Input
         label="State"
         value={formData.state}
-        onChangeText={(text) => setFormData(prev => ({ ...prev, state: text }))}
+        onChangeText={(text) => setFormData((prev) => ({ ...prev, state: text }))}
         placeholder="Your state"
         autoCapitalize="words"
         required
@@ -212,12 +209,12 @@ export default function HomeAddressSetupScreen() {
       <Input
         label="ZIP Code (Optional)"
         value={formData.zipCode}
-        onChangeText={(text) => setFormData(prev => ({ ...prev, zipCode: text }))}
+        onChangeText={(text) => setFormData((prev) => ({ ...prev, zipCode: text }))}
         placeholder="12345"
         keyboardType="numeric"
         maxLength={10}
       />
-      
+
       <View style={styles.formActions}>
         <Button
           title="Save Home Address"
@@ -225,10 +222,7 @@ export default function HomeAddressSetupScreen() {
           loading={isLoading}
           style={styles.saveButton}
         />
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => setMethod(null)}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={() => setMethod(null)}>
           <Text style={styles.backButtonText}>Back to Options</Text>
         </TouchableOpacity>
       </View>
@@ -242,9 +236,10 @@ export default function HomeAddressSetupScreen() {
       </View>
       <Text style={styles.successTitle}>Home Address Set!</Text>
       <Text style={styles.successDescription}>
-        We'll use this address to show you relevant community posts and weather alerts for your area.
+        We'll use this address to show you relevant community posts and weather alerts for your
+        area.
       </Text>
-      
+
       <View style={styles.addressDisplay}>
         <Text style={styles.addressLabel}>Your Home Address:</Text>
         <Text style={styles.addressText}>
@@ -265,35 +260,26 @@ export default function HomeAddressSetupScreen() {
           </View>
           <Text style={styles.title}>Set Your Home Address</Text>
           <Text style={styles.subtitle}>
-            {addressSet 
+            {addressSet
               ? "Your home address helps us show you relevant community updates and local weather."
-              : "This helps us connect you with your local community and provide accurate weather information for your area."
-            }
+              : "This helps us connect you with your local community and provide accurate weather information for your area."}
           </Text>
         </View>
 
         <View style={styles.contentContainer}>
-          {addressSet ? (
-            renderSuccess()
-          ) : method === 'manual' ? (
-            renderManualForm()
-          ) : (
-            renderMethodSelection()
-          )}
+          {addressSet
+            ? renderSuccess()
+            : method === "manual"
+            ? renderManualForm()
+            : renderMethodSelection()}
         </View>
 
         <View style={styles.footer}>
           {addressSet && (
-            <Button
-              title="Continue"
-              onPress={handleContinue}
-              style={styles.continueButton}
-            />
+            <Button title="Continue" onPress={handleContinue} style={styles.continueButton} />
           )}
           <TouchableOpacity onPress={handleContinue}>
-            <Text style={styles.skipText}>
-              {addressSet ? "Continue" : "Skip for Now"}
-            </Text>
+            <Text style={styles.skipText}>{addressSet ? "Continue" : "Skip for Now"}</Text>
           </TouchableOpacity>
         </View>
       </View>

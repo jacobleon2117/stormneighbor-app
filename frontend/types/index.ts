@@ -350,11 +350,7 @@ export const REACTION_TYPES = {
 export interface UserFeedback {
   id?: number;
   userId: number;
-  feedbackType:
-    | "bug_report"
-    | "feature_request"
-    | "general_feedback"
-    | "ui_ux_feedback";
+  feedbackType: "bug_report" | "feature_request" | "general_feedback" | "ui_ux_feedback";
   title: string;
   description: string;
   priority: "low" | "normal" | "high";

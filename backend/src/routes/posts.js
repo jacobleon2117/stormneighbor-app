@@ -31,7 +31,17 @@ const createPostValidation = [
     .isLength({ min: 1, max: 5000 })
     .withMessage("Content is required and must be under 5000 characters"),
   body("postType")
-    .isIn(["help_request", "help_offer", "lost_found", "safety_alert", "general", "question", "event", "announcement", "weather_alert"])
+    .isIn([
+      "help_request",
+      "help_offer",
+      "lost_found",
+      "safety_alert",
+      "general",
+      "question",
+      "event",
+      "announcement",
+      "weather_alert",
+    ])
     .withMessage("Invalid post type"),
   body("priority")
     .optional()
@@ -277,7 +287,7 @@ router.post(
 router.get("/test", auth, async (req, res) => {
   try {
     const { pool } = require("../config/database");
-const logger = require("../utils/logger");
+    const logger = require("../utils/logger");
     const client = await pool.connect();
 
     try {

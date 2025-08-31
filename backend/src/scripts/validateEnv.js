@@ -17,7 +17,7 @@ function main() {
       const template = validator.generateEnvTemplate();
       const fs = require("fs");
       const path = require("path");
-const logger = require("../utils/logger");
+      const logger = require("../utils/logger");
 
       const templatePath = path.join(process.cwd(), ".env.template");
       fs.writeFileSync(templatePath, template);
@@ -38,7 +38,7 @@ const logger = require("../utils/logger");
   if (process.argv.includes("--verbose")) {
     logger.info("\nConfiguration Summary:");
     Object.entries(result.config).forEach(([key, value]) => {
-      logger.info(`  ${key}: ${validator.maskSensitive(key, value);}`);
+      logger.info(`  ${key}: ${validator.maskSensitive(key, value)}`);
     });
   }
 
@@ -47,17 +47,17 @@ const logger = require("../utils/logger");
 
 if (process.argv.includes("--help")) {
   logger.info(`
-Environment Validation Script
+  Environment Validation Script
 
-Usage: node src/scripts/validateEnv.js [options]
+  Usage: node src/scripts/validateEnv.js [options]
 
-Options:
-  --help              Show this help message
-  --generate-template Generate a .env template file
-  --verbose          Show detailed configuration summary
-  
-Environment Variables Required:
-`);
+  Options:
+    --help              Show this help message
+    --generate-template Generate a .env template file
+    --verbose          Show detailed configuration summary
+    
+  Environment Variables Required:
+  `);
 
   const validator = new EnvironmentValidator();
   const required = validator.getRequiredVariables();

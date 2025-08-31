@@ -103,27 +103,27 @@ const getUserNotifications = async (req, res) => {
 
         relatedPost: row.related_post_id
           ? {
-            id: row.related_post_id,
-            title: row.post_title,
-            content: row.post_content?.substring(0, 100) + "...",
-          }
+              id: row.related_post_id,
+              title: row.post_title,
+              content: row.post_content?.substring(0, 100) + "...",
+            }
           : null,
 
         relatedUser: row.related_user_id
           ? {
-            id: row.related_user_id,
-            firstName: row.related_user_first_name,
-            lastName: row.related_user_last_name,
-            profileImageUrl: row.related_user_image,
-          }
+              id: row.related_user_id,
+              firstName: row.related_user_first_name,
+              lastName: row.related_user_last_name,
+              profileImageUrl: row.related_user_image,
+            }
           : null,
 
         relatedAlert: row.related_alert_id
           ? {
-            id: row.related_alert_id,
-            title: row.alert_title,
-            severity: row.alert_severity,
-          }
+              id: row.related_alert_id,
+              title: row.alert_title,
+              severity: row.alert_severity,
+            }
           : null,
       }));
 

@@ -566,16 +566,16 @@ const updateProfile = async (req, res) => {
     }
 
     const userId = req.user.userId;
-    const { 
-      firstName, 
-      lastName, 
-      phone, 
-      bio, 
-      latitude, 
-      longitude, 
-      address, 
-      city, 
-      state, 
+    const {
+      firstName,
+      lastName,
+      phone,
+      bio,
+      latitude,
+      longitude,
+      address,
+      city,
+      state,
       zipCode,
       homeCity,
       homeState,
@@ -585,7 +585,7 @@ const updateProfile = async (req, res) => {
       homeLongitude,
       locationPreferences,
       locationPermissions,
-      notificationPreferences
+      notificationPreferences,
     } = req.body;
 
     const client = await pool.connect();
@@ -609,22 +609,22 @@ const updateProfile = async (req, res) => {
       `;
 
       const values = [
-        firstName, 
-        lastName, 
-        phone, 
-        bio, 
-        city, 
-        state, 
-        zipCode, 
+        firstName,
+        lastName,
+        phone,
+        bio,
+        city,
+        state,
+        zipCode,
         address,
         homeCity,
         homeState,
         homeZipCode,
-        homeAddress
+        homeAddress,
       ];
 
       let valueIndex = values.length + 1;
-      
+
       if (latitude !== undefined && longitude !== undefined) {
         const lat = parseFloat(latitude);
         const lng = parseFloat(longitude);
@@ -635,7 +635,7 @@ const updateProfile = async (req, res) => {
           valueIndex += 2;
         }
       }
-      
+
       if (homeLatitude !== undefined && homeLongitude !== undefined) {
         const lat = parseFloat(homeLatitude);
         const lng = parseFloat(homeLongitude);
@@ -646,19 +646,19 @@ const updateProfile = async (req, res) => {
           valueIndex += 2;
         }
       }
-      
+
       if (locationPreferences !== undefined) {
         updateQuery += `, location_preferences = $${valueIndex}::jsonb`;
         values.push(JSON.stringify(locationPreferences));
         valueIndex += 1;
       }
-      
+
       if (locationPermissions !== undefined) {
         updateQuery += `, location_permissions = $${valueIndex}::jsonb`;
         values.push(JSON.stringify(locationPermissions));
         valueIndex += 1;
       }
-      
+
       if (notificationPreferences !== undefined) {
         updateQuery += `, notification_preferences = $${valueIndex}::jsonb`;
         values.push(JSON.stringify(notificationPreferences));

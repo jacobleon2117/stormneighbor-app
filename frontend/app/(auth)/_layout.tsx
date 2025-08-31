@@ -1,52 +1,52 @@
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
+import { Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 
 export default function AuthLayout() {
   return (
     <>
       <StatusBar style="dark" />
       <Stack>
-        <Stack.Screen 
-          name="welcome" 
+        <Stack.Screen
+          name="welcome"
           options={{
-            title: 'Welcome',
+            title: "Welcome",
             headerShown: false,
-          }} 
+          }}
         />
-        <Stack.Screen 
-          name="login" 
+        <Stack.Screen
+          name="login"
           options={{
-            title: 'Sign In',
+            title: "Sign In",
             headerShown: false,
-          }} 
+          }}
         />
-        <Stack.Screen 
-          name="register" 
+        <Stack.Screen
+          name="register"
           options={{
-            title: 'Create Account',
+            title: "Create Account",
             headerShown: false,
-          }} 
+          }}
         />
-        <Stack.Screen 
-          name="forgot-password" 
+        <Stack.Screen
+          name="forgot-password"
           options={{
-            title: 'Reset Password',
+            title: "Reset Password",
             headerShown: false,
-          }} 
+          }}
         />
-        <Stack.Screen 
-          name="location-permissions" 
+        <Stack.Screen
+          name="location-permissions"
           options={{
-            title: 'Location Permissions',
+            title: "Location Permissions",
             headerShown: false,
-          }} 
+          }}
         />
-        <Stack.Screen 
-          name="home-address-setup" 
+        <Stack.Screen
+          name="home-address-setup"
           options={{
-            title: 'Home Address',
+            title: "Home Address",
             headerShown: false,
-          }} 
+          }}
         />
       </Stack>
     </>

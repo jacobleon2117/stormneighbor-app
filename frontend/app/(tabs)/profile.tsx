@@ -80,18 +80,17 @@ export default function ProfileScreen() {
     showCityOnly: user?.showCityOnly || false,
   });
 
-  const [notificationPrefs, setNotificationPrefs] =
-    useState<NotificationPreferences>({
-      emailNotifications: user?.notificationPreferences?.emailNotifications || true,
-      pushNotifications: user?.notificationPreferences?.pushNotifications || true,
-      emergencyAlerts: user?.notificationPreferences?.emergencyAlerts || true,
-      communityUpdates: user?.notificationPreferences?.communityUpdates || false,
-      postReactions: user?.notificationPreferences?.postReactions || false,
-      comments: user?.notificationPreferences?.comments || false,
-      quietHoursEnabled: user?.notificationPreferences?.quietHoursEnabled || false,
-      quietHoursStart: user?.notificationPreferences?.quietHoursStart || "22:00",
-      quietHoursEnd: user?.notificationPreferences?.quietHoursEnd || "07:00",
-    });
+  const [notificationPrefs, setNotificationPrefs] = useState<NotificationPreferences>({
+    emailNotifications: user?.notificationPreferences?.emailNotifications || true,
+    pushNotifications: user?.notificationPreferences?.pushNotifications || true,
+    emergencyAlerts: user?.notificationPreferences?.emergencyAlerts || true,
+    communityUpdates: user?.notificationPreferences?.communityUpdates || false,
+    postReactions: user?.notificationPreferences?.postReactions || false,
+    comments: user?.notificationPreferences?.comments || false,
+    quietHoursEnabled: user?.notificationPreferences?.quietHoursEnabled || false,
+    quietHoursStart: user?.notificationPreferences?.quietHoursStart || "22:00",
+    quietHoursEnd: user?.notificationPreferences?.quietHoursEnd || "07:00",
+  });
 
   useEffect(() => {
     if (user) {
@@ -151,10 +150,7 @@ export default function ProfileScreen() {
         onPress: async () => {
           const { status } = await ImagePicker.requestCameraPermissionsAsync();
           if (status !== "granted") {
-            Alert.alert(
-              "Permission Required",
-              "Camera permission is required to take photos."
-            );
+            Alert.alert("Permission Required", "Camera permission is required to take photos.");
             return;
           }
 
@@ -173,8 +169,7 @@ export default function ProfileScreen() {
       {
         text: "Choose from Gallery",
         onPress: async () => {
-          const { status } =
-            await ImagePicker.requestMediaLibraryPermissionsAsync();
+          const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
           if (status !== "granted") {
             Alert.alert(
               "Permission Required",
@@ -189,7 +184,6 @@ export default function ProfileScreen() {
             aspect: [1, 1],
             allowsEditing: true,
           });
-
 
           if (!result.canceled && result.assets?.[0]) {
             await uploadProfileImage(result.assets[0].uri);
@@ -212,10 +206,7 @@ export default function ProfileScreen() {
       }
     } catch (error: any) {
       console.error("Error uploading image:", error);
-      Alert.alert(
-        "Error",
-        "Failed to update profile picture. Please try again."
-      );
+      Alert.alert("Error", "Failed to update profile picture. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -248,9 +239,7 @@ export default function ProfileScreen() {
     try {
       setLoading(true);
 
-      const response = await apiService
-        .getApi()
-        .put("/users/location", locationForm);
+      const response = await apiService.getApi().put("/users/location", locationForm);
 
       if (response.data.success) {
         Alert.alert("Success", "Location settings updated successfully!");
@@ -273,18 +262,12 @@ export default function ProfileScreen() {
         .put("/users/preferences/notifications", notificationPrefs);
 
       if (response.data.success) {
-        Alert.alert(
-          "Success",
-          "Notification preferences updated successfully!"
-        );
+        Alert.alert("Success", "Notification preferences updated successfully!");
         setEditMode(null);
       }
     } catch (error: any) {
       console.error("Error updating notifications:", error);
-      Alert.alert(
-        "Error",
-        "Failed to update notification preferences. Please try again."
-      );
+      Alert.alert("Error", "Failed to update notification preferences. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -292,10 +275,7 @@ export default function ProfileScreen() {
 
   const renderProfileHeader = () => (
     <View style={styles.profileHeader}>
-      <TouchableOpacity
-        onPress={handleUpdateProfileImage}
-        style={styles.avatarContainer}
-      >
+      <TouchableOpacity onPress={handleUpdateProfileImage} style={styles.avatarContainer}>
         {user?.profileImageUrl && !imageError ? (
           <Image
             source={{ uri: user.profileImageUrl }}
@@ -344,7 +324,7 @@ export default function ProfileScreen() {
   ) => (
     <TouchableOpacity style={styles.menuItem} onPress={onPress}>
       <View style={styles.menuIcon}>
-        {typeof icon === 'string' ? (
+        {typeof icon === "string" ? (
           <Ionicons name={icon as any} size={24} color={Colors.primary[500]} />
         ) : (
           React.createElement(icon, { size: 24, color: Colors.primary[500], ...iconProps })
@@ -354,22 +334,12 @@ export default function ProfileScreen() {
         <Text style={styles.menuTitle}>{title}</Text>
         <Text style={styles.menuSubtitle}>{subtitle}</Text>
       </View>
-      {rightElement || (
-        <Ionicons
-          name="chevron-forward"
-          size={20}
-          color={Colors.neutral[400]}
-        />
-      )}
+      {rightElement || <Ionicons name="chevron-forward" size={20} color={Colors.neutral[400]} />}
     </TouchableOpacity>
   );
 
   const renderPersonalModal = () => (
-    <Modal
-      visible={editMode === "personal"}
-      animationType="slide"
-      presentationStyle="pageSheet"
-    >
+    <Modal visible={editMode === "personal"} animationType="slide" presentationStyle="pageSheet">
       <SafeAreaView style={styles.modalContainer}>
         <View style={styles.modalHeader}>
           <TouchableOpacity onPress={() => setEditMode(null)}>
@@ -383,27 +353,21 @@ export default function ProfileScreen() {
           <Input
             label="First Name"
             value={profileForm.firstName}
-            onChangeText={(firstName) =>
-              setProfileForm((prev) => ({ ...prev, firstName }))
-            }
+            onChangeText={(firstName) => setProfileForm((prev) => ({ ...prev, firstName }))}
             required
           />
 
           <Input
             label="Last Name"
             value={profileForm.lastName}
-            onChangeText={(lastName) =>
-              setProfileForm((prev) => ({ ...prev, lastName }))
-            }
+            onChangeText={(lastName) => setProfileForm((prev) => ({ ...prev, lastName }))}
             required
           />
 
           <Input
             label="Phone Number"
             value={profileForm.phone}
-            onChangeText={(phone) =>
-              setProfileForm((prev) => ({ ...prev, phone }))
-            }
+            onChangeText={(phone) => setProfileForm((prev) => ({ ...prev, phone }))}
             keyboardType="phone-pad"
             placeholder="(555) 123-4567"
           />
@@ -413,9 +377,7 @@ export default function ProfileScreen() {
             <TextInput
               style={styles.textArea}
               value={profileForm.bio}
-              onChangeText={(bio) =>
-                setProfileForm((prev) => ({ ...prev, bio }))
-              }
+              onChangeText={(bio) => setProfileForm((prev) => ({ ...prev, bio }))}
               placeholder="Tell your neighbors a bit about yourself..."
               placeholderTextColor={Colors.text.disabled}
               multiline
@@ -423,9 +385,7 @@ export default function ProfileScreen() {
               textAlignVertical="top"
               maxLength={500}
             />
-            <Text style={styles.characterCount}>
-              {profileForm.bio.length}/500
-            </Text>
+            <Text style={styles.characterCount}>{profileForm.bio.length}/500</Text>
           </View>
 
           <View style={styles.modalActions}>
@@ -440,9 +400,7 @@ export default function ProfileScreen() {
               title="Save Changes"
               onPress={handleSavePersonal}
               loading={loading}
-              disabled={
-                !profileForm.firstName.trim() || !profileForm.lastName.trim()
-              }
+              disabled={!profileForm.firstName.trim() || !profileForm.lastName.trim()}
               size="large"
               style={styles.modalButton}
             />
@@ -453,11 +411,7 @@ export default function ProfileScreen() {
   );
 
   const renderLocationModal = () => (
-    <Modal
-      visible={editMode === "location"}
-      animationType="slide"
-      presentationStyle="pageSheet"
-    >
+    <Modal visible={editMode === "location"} animationType="slide" presentationStyle="pageSheet">
       <SafeAreaView style={styles.modalContainer}>
         <View style={styles.modalHeader}>
           <TouchableOpacity onPress={() => setEditMode(null)}>
@@ -471,9 +425,7 @@ export default function ProfileScreen() {
           <Input
             label="Street Address"
             value={locationForm.address}
-            onChangeText={(address) =>
-              setLocationForm((prev) => ({ ...prev, address }))
-            }
+            onChangeText={(address) => setLocationForm((prev) => ({ ...prev, address }))}
             placeholder="123 Main St"
           />
 
@@ -503,9 +455,7 @@ export default function ProfileScreen() {
           <Input
             label="ZIP Code"
             value={locationForm.zipCode}
-            onChangeText={(zipCode) =>
-              setLocationForm((prev) => ({ ...prev, zipCode }))
-            }
+            onChangeText={(zipCode) => setLocationForm((prev) => ({ ...prev, zipCode }))}
             keyboardType="numeric"
             maxLength={5}
             placeholder="90210"
@@ -545,11 +495,7 @@ export default function ProfileScreen() {
                 false: Colors.neutral[300],
                 true: Colors.primary[300],
               }}
-              thumbColor={
-                locationForm.showCityOnly
-                  ? Colors.primary[500]
-                  : Colors.neutral[500]
-              }
+              thumbColor={locationForm.showCityOnly ? Colors.primary[500] : Colors.neutral[500]}
             />
           </View>
 
@@ -565,10 +511,7 @@ export default function ProfileScreen() {
               title="Save Changes"
               onPress={handleSaveLocation}
               loading={loading}
-              disabled={
-                !locationForm.locationCity.trim() ||
-                !locationForm.addressState.trim()
-              }
+              disabled={!locationForm.locationCity.trim() || !locationForm.addressState.trim()}
               size="large"
               style={styles.modalButton}
             />
@@ -599,9 +542,7 @@ export default function ProfileScreen() {
           <View style={styles.switchRow}>
             <View style={styles.switchInfo}>
               <Text style={styles.switchLabel}>Push Notifications</Text>
-              <Text style={styles.switchDescription}>
-                Receive notifications on your device
-              </Text>
+              <Text style={styles.switchDescription}>Receive notifications on your device</Text>
             </View>
             <Switch
               value={notificationPrefs.pushNotifications}
@@ -613,9 +554,7 @@ export default function ProfileScreen() {
                 true: Colors.primary[300],
               }}
               thumbColor={
-                notificationPrefs.pushNotifications
-                  ? Colors.primary[500]
-                  : Colors.neutral[500]
+                notificationPrefs.pushNotifications ? Colors.primary[500] : Colors.neutral[500]
               }
             />
           </View>
@@ -623,9 +562,7 @@ export default function ProfileScreen() {
           <View style={styles.switchRow}>
             <View style={styles.switchInfo}>
               <Text style={styles.switchLabel}>Email Notifications</Text>
-              <Text style={styles.switchDescription}>
-                Receive important updates via email
-              </Text>
+              <Text style={styles.switchDescription}>Receive important updates via email</Text>
             </View>
             <Switch
               value={notificationPrefs.emailNotifications}
@@ -640,9 +577,7 @@ export default function ProfileScreen() {
                 true: Colors.primary[300],
               }}
               thumbColor={
-                notificationPrefs.emailNotifications
-                  ? Colors.primary[500]
-                  : Colors.neutral[500]
+                notificationPrefs.emailNotifications ? Colors.primary[500] : Colors.neutral[500]
               }
             />
           </View>
@@ -650,9 +585,7 @@ export default function ProfileScreen() {
           <View style={styles.switchRow}>
             <View style={styles.switchInfo}>
               <Text style={styles.switchLabel}>Emergency Alerts</Text>
-              <Text style={styles.switchDescription}>
-                Critical safety notifications
-              </Text>
+              <Text style={styles.switchDescription}>Critical safety notifications</Text>
             </View>
             <Switch
               value={notificationPrefs.emergencyAlerts}
@@ -664,9 +597,7 @@ export default function ProfileScreen() {
                 true: Colors.error[300],
               }}
               thumbColor={
-                notificationPrefs.emergencyAlerts
-                  ? Colors.error[600]
-                  : Colors.neutral[500]
+                notificationPrefs.emergencyAlerts ? Colors.error[600] : Colors.neutral[500]
               }
             />
           </View>
@@ -674,9 +605,7 @@ export default function ProfileScreen() {
           <View style={styles.switchRow}>
             <View style={styles.switchInfo}>
               <Text style={styles.switchLabel}>Weather Alerts</Text>
-              <Text style={styles.switchDescription}>
-                Severe weather warnings
-              </Text>
+              <Text style={styles.switchDescription}>Severe weather warnings</Text>
             </View>
             <Switch
               value={notificationPrefs.weatherAlerts}
@@ -688,9 +617,7 @@ export default function ProfileScreen() {
                 true: Colors.primary[300],
               }}
               thumbColor={
-                notificationPrefs.weatherAlerts
-                  ? Colors.primary[500]
-                  : Colors.neutral[500]
+                notificationPrefs.weatherAlerts ? Colors.primary[500] : Colors.neutral[500]
               }
             />
           </View>
@@ -698,9 +625,7 @@ export default function ProfileScreen() {
           <View style={styles.switchRow}>
             <View style={styles.switchInfo}>
               <Text style={styles.switchLabel}>Community Updates</Text>
-              <Text style={styles.switchDescription}>
-                General community posts and updates
-              </Text>
+              <Text style={styles.switchDescription}>General community posts and updates</Text>
             </View>
             <Switch
               value={notificationPrefs.communityUpdates}
@@ -712,9 +637,7 @@ export default function ProfileScreen() {
                 true: Colors.primary[300],
               }}
               thumbColor={
-                notificationPrefs.communityUpdates
-                  ? Colors.primary[500]
-                  : Colors.neutral[500]
+                notificationPrefs.communityUpdates ? Colors.primary[500] : Colors.neutral[500]
               }
             />
           </View>
@@ -754,19 +677,12 @@ export default function ProfileScreen() {
         onMessagesPress={() => router.push("/(tabs)/messages")}
         showMore={false}
       />
-      <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-      >
-
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {renderProfileHeader()}
 
         <View style={styles.menuSection}>
-          {renderMenuItem(
-            "person",
-            "Personal Information",
-            "Name, phone, bio",
-            () => setEditMode("personal")
+          {renderMenuItem("person", "Personal Information", "Name, phone, bio", () =>
+            setEditMode("personal")
           )}
 
           {renderMenuItem(
@@ -790,11 +706,8 @@ export default function ProfileScreen() {
             () => router.push("/privacy-security")
           )}
 
-          {renderMenuItem(
-            "help-circle",
-            "Help & Support",
-            "FAQs, contact support",
-            () => router.push("/help-support")
+          {renderMenuItem("help-circle", "Help & Support", "FAQs, contact support", () =>
+            router.push("/help-support")
           )}
 
           {renderMenuItem(
@@ -804,20 +717,21 @@ export default function ProfileScreen() {
             () => router.push("/user-feedback")
           )}
 
-          {__DEV__ && renderMenuItem(
-            TestTube,
-            "Test Notification",
-            "Test local notifications (temp Firebase fix)",
-            async () => {
-              const success = await TempNotificationService.sendTestNotification();
-              Alert.alert(
-                success ? "Test Sent!" : "Test Failed", 
-                success 
-                  ? "Check your notification bar! This is how alerts will appear." 
-                  : "Make sure you've enabled notifications for this app."
-              );
-            }
-          )}
+          {__DEV__ &&
+            renderMenuItem(
+              TestTube,
+              "Test Notification",
+              "Test local notifications (temp Firebase fix)",
+              async () => {
+                const success = await TempNotificationService.sendTestNotification();
+                Alert.alert(
+                  success ? "Test Sent!" : "Test Failed",
+                  success
+                    ? "Check your notification bar! This is how alerts will appear."
+                    : "Make sure you've enabled notifications for this app."
+                );
+              }
+            )}
         </View>
 
         <View style={styles.dangerZone}>

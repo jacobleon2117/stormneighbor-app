@@ -63,15 +63,11 @@ export default function ForgotPasswordScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.content}>
           <View style={styles.successContainer}>
-            <Ionicons
-              name="checkmark-circle"
-              size={64}
-              color={Colors.success[600]}
-            />
+            <Ionicons name="checkmark-circle" size={64} color={Colors.success[600]} />
             <Text style={styles.successTitle}>Email Sent!</Text>
             <Text style={styles.successMessage}>
-              We've sent a password reset link to {email}. Please check your
-              email and follow the instructions to reset your password.
+              We've sent a password reset link to {email}. Please check your email and follow the
+              instructions to reset your password.
             </Text>
 
             <Button
@@ -93,15 +89,10 @@ export default function ForgotPasswordScreen() {
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.header}>
-            <Ionicons
-              name="lock-closed-outline"
-              size={48}
-              color={Colors.primary[600]}
-            />
+            <Ionicons name="lock-closed-outline" size={48} color={Colors.primary[600]} />
             <Text style={styles.title}>Forgot Password?</Text>
             <Text style={styles.subtitle}>
-              Enter your email address and we'll send you a link to reset your
-              password.
+              Enter your email address and we'll send you a link to reset your password.
             </Text>
           </View>
 
@@ -127,11 +118,7 @@ export default function ForgotPasswordScreen() {
 
             <Link href="/(auth)/login" asChild>
               <TouchableOpacity style={styles.backToLogin}>
-                <Ionicons
-                  name="arrow-back-outline"
-                  size={16}
-                  color={Colors.primary[600]}
-                />
+                <Ionicons name="arrow-back-outline" size={16} color={Colors.primary[600]} />
                 <Text style={styles.backToLoginText}>Back to Sign In</Text>
               </TouchableOpacity>
             </Link>

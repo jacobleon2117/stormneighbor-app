@@ -26,10 +26,7 @@ interface WeatherLegendProps {
   weatherLayers: Record<string, boolean>;
 }
 
-export default function WeatherLegend({
-  onLayerToggle,
-  weatherLayers,
-}: WeatherLegendProps) {
+export default function WeatherLegend({ onLayerToggle, weatherLayers }: WeatherLegendProps) {
   const layers: WeatherLayer[] = [
     {
       id: "precipitation",
@@ -85,7 +82,7 @@ export default function WeatherLegend({
   };
 
   const getLighterColor = (color: string, opacity: number = 0.3) => {
-    const hex = color.replace('#', '');
+    const hex = color.replace("#", "");
     const r = parseInt(hex.substring(0, 2), 16);
     const g = parseInt(hex.substring(2, 4), 16);
     const b = parseInt(hex.substring(4, 6), 16);
@@ -145,7 +142,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 50,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
   scrollView: {
     flex: 1,
@@ -153,7 +150,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingLeft: LEFT_PADDING,
     paddingRight: LEFT_PADDING,
-    alignItems: 'center',
+    alignItems: "center",
     height: 50,
   },
   layerPill: {
@@ -172,8 +169,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   layerPillActive: {
     shadowOpacity: 0.15,

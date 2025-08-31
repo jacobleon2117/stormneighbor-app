@@ -23,7 +23,7 @@ class FeedbackLogger {
       const timestamp = new Date();
       const dateStr = timestamp.toISOString().split("T")[0];
       const timeStr = timestamp.toISOString().replace(/[:.]/g, "-");
-      
+
       const enhancedFeedback = {
         ...feedbackData,
         id: `feedback_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -36,8 +36,8 @@ class FeedbackLogger {
           hour: "2-digit",
           minute: "2-digit",
           second: "2-digit",
-          hour12: true
-        })
+          hour12: true,
+        }),
       };
 
       const jsonFileName = `${timeStr}_${feedbackData.feedbackType}_${feedbackData.userId || "unknown"}.json`;
@@ -80,7 +80,7 @@ class FeedbackLogger {
 
   async appendToMarkdown(filePath, feedbackData) {
     const markdownEntry = this.formatAsMarkdown(feedbackData);
-    
+
     try {
       let existingContent = "";
       try {
@@ -107,16 +107,14 @@ class FeedbackLogger {
       }
 
       const markdownEntry = this.formatAsMarkdown(feedbackData);
-      
+
       const lines = existingContent.split("\n");
-      const headerEndIndex = lines.findIndex(line => line.includes("## Recent Feedback")) + 2;
-      
+      const headerEndIndex = lines.findIndex((line) => line.includes("## Recent Feedback")) + 2;
+
       lines.splice(headerEndIndex, 0, markdownEntry, "---", "");
-      
-      const updatedLines = lines.map(line => 
-        line.includes("*Last updated:") ? 
-          `*Last updated: ${new Date().toLocaleString()}*` : 
-          line
+
+      const updatedLines = lines.map((line) =>
+        line.includes("*Last updated:") ? `*Last updated: ${new Date().toLocaleString()}*` : line
       );
 
       await fs.writeFile(filePath, updatedLines.join("\n"));
@@ -127,16 +125,16 @@ class FeedbackLogger {
 
   formatAsMarkdown(feedbackData) {
     const typeEmojis = {
-      "bug_report": "Bug",
-      "feature_request": "Feature",
-      "general_feedback": "General",
-      "ui_ux_feedback": "UI/UX"
+      bug_report: "Bug",
+      feature_request: "Feature",
+      general_feedback: "General",
+      ui_ux_feedback: "UI/UX",
     };
 
     const priorityEmojis = {
-      "low": "Low",
-      "normal": "Normal",
-      "high": "High"
+      low: "Low",
+      normal: "Normal",
+      high: "High",
     };
 
     return `## ${typeEmojis[feedbackData.feedbackType] || "Feedback Data"} ${feedbackData.title}
@@ -165,18 +163,18 @@ ${feedbackData.description}
         byType: {},
         byPriority: {},
         recent24h: 0,
-        recent7days: 0
+        recent7days: 0,
       };
 
       const now = new Date();
       const oneDayAgo = new Date(now - 24 * 60 * 60 * 1000);
       const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
 
-      allFeedback.forEach(feedback => {
+      allFeedback.forEach((feedback) => {
         stats.byType[feedback.feedbackType] = (stats.byType[feedback.feedbackType] || 0) + 1;
-        
+
         stats.byPriority[feedback.priority] = (stats.byPriority[feedback.priority] || 0) + 1;
-        
+
         const feedbackDate = new Date(feedback.submittedAt);
         if (feedbackDate > oneDayAgo) stats.recent24h++;
         if (feedbackDate > sevenDaysAgo) stats.recent7days++;

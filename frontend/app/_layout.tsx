@@ -15,8 +15,9 @@ function RootLayoutContent() {
       if (isAuthenticated) {
         const hasHomeLocation = user?.homeCity && user?.homeState;
         const hasLegacyLocation = user?.locationCity && user?.addressState;
-        const hasLocationPreferences = user?.locationPreferences && Object.keys(user.locationPreferences).length > 0;
-        
+        const hasLocationPreferences =
+          user?.locationPreferences && Object.keys(user.locationPreferences).length > 0;
+
         const needsLocationOnboarding = !hasHomeLocation && !hasLegacyLocation;
         const needsPermissionsOnboarding = !hasLocationPreferences;
 

@@ -39,7 +39,7 @@ logger.info(`STATUS: Port ${PORT} - ${HOST}`);
 const server = app.listen(PORT, HOST, () => {
   logger.info("\nSERVER STARTED SUCCESSFULLY");
   logger.info("═".repeat(50));
-  
+
   logger.info(`STATUS: RUNNING - Server listening on ${HOST}:${PORT}`);
   logger.info(`SUCCESS: Local Access → http://localhost:${PORT}`);
 
@@ -61,16 +61,16 @@ const server = app.listen(PORT, HOST, () => {
   logger.info("SUCCESS: Input Sanitization Active");
   logger.info("SUCCESS: Rate Limiting Active");
   logger.info("SUCCESS: SQL Injection Detection Active");
-  
+
   logger.info("\nMONITORING SYSTEMS");
   logger.info("SUCCESS: Request Tracking Active");
   logger.info("SUCCESS: Performance Monitoring Active");
   logger.info("SUCCESS: Error Logging Active");
-  
+
   logger.info("\nDATABASE & CACHING");
   logger.info("SUCCESS: Intelligent Response Caching Active");
   logger.info("SUCCESS: Database Middleware Active");
-  
+
   logger.info("\nAUTHENTICATION");
   logger.info("SUCCESS: JWT Token System Active");
   logger.info("SUCCESS: Session Management Active");
@@ -112,7 +112,7 @@ const server = app.listen(PORT, HOST, () => {
   logger.info("\nREADY TO SERVE");
   logger.info("═".repeat(50));
   logger.info("SUCCESS: StormNeighbor API Server is fully operational!");
-  
+
   logger.info("\nAPI ENDPOINTS");
   logger.info("▶ Authentication:");
   logger.info("   POST /api/v1/auth/register");
@@ -156,7 +156,7 @@ const server = app.listen(PORT, HOST, () => {
   logger.info("2. Verify database connectivity");
   logger.info("3. Check API endpoints at /health");
   logger.info("4. Review logs for any warnings");
-  
+
   logger.info("\n" + "═".repeat(50));
   logger.info("BOOTSTRAP COMPLETE - Server ready for connections");
   logger.info("═".repeat(50));
@@ -169,7 +169,7 @@ const gracefulShutdown = (signal) => {
     logger.info("INFORMATION: Shutdown already in progress");
     return;
   }
-  
+
   shutdownInProgress = true;
   logger.info("\nSHUTDOWN INITIATED");
   logger.info("═".repeat(50));
@@ -199,18 +199,20 @@ const gracefulShutdown = (signal) => {
     }
 
     clearTimeout(forceShutdownTimeout);
-    
+
     logger.info("SUCCESS: Graceful shutdown completed");
     logger.info("═".repeat(50));
     logger.info("API Server stopped");
-    
-    process.exitCode = 1;  });
+
+    process.exitCode = 1;
+  });
 
   setTimeout(() => {
     if (shutdownInProgress) {
       logger.info("WARNING: Server close callback not called - forcing exit");
       clearTimeout(forceShutdownTimeout);
-      process.exitCode = 1;    }
+      process.exitCode = 1;
+    }
   }, 5000);
 };
 
@@ -226,7 +228,8 @@ process.on("uncaughtException", (error) => {
   logger.error("CRITICAL: Uncaught Exception:", error.message);
   logger.error("STACK:", error.stack);
   logger.info("CRITICAL: Application will terminate");
-  process.exitCode = 1;});
+  process.exitCode = 1;
+});
 
 process.on("unhandledRejection", (reason, promise) => {
   logger.info("\nUNHANDLED PROMISE REJECTION");

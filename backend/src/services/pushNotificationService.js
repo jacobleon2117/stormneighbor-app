@@ -218,7 +218,9 @@ class PushNotificationService {
 
       const response = await admin.messaging().sendMulticast(message);
 
-      logger.info(`Notification sent: ${response.successCount} successful, ${response.failureCount} failed`);
+      logger.info(
+        `Notification sent: ${response.successCount} successful, ${response.failureCount} failed`
+      );
 
       if (response.failureCount > 0) {
         await this.handleFailedTokens(tokens, response.responses);

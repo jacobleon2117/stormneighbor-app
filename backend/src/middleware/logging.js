@@ -34,8 +34,8 @@ const requestLogger = (req, res, next) => {
         contentLength: JSON.stringify(data).length,
         ...(process.env.NODE_ENV === "development" &&
           res.statusCode >= 400 && {
-          responseData: sanitizeLogData(data),
-        }),
+            responseData: sanitizeLogData(data),
+          }),
       }
     );
 

@@ -42,10 +42,7 @@ import { Colors } from "../../constants/Colors";
 
 const { height: screenHeight } = Dimensions.get("window");
 
-const createSwipeDownPanResponder = (
-  animatedValue: Animated.Value,
-  onClose: () => void
-) => {
+const createSwipeDownPanResponder = (animatedValue: Animated.Value, onClose: () => void) => {
   return PanResponder.create({
     onStartShouldSetPanResponder: () => true,
     onMoveShouldSetPanResponder: (_evt, gestureState) => gestureState.dy > 5,
@@ -129,7 +126,6 @@ export function PostCard({
     }
   };
 
-
   const closeModalImmediately = (
     modalSetter: (value: boolean) => void,
     animatedValue: Animated.Value
@@ -147,12 +143,8 @@ export function PostCard({
   const commentPanResponder = createSwipeDownPanResponder(commentModalY, () =>
     setShowCommentModal(false)
   );
-  const morePanResponder = createSwipeDownPanResponder(moreModalY, () =>
-    setShowMoreModal(false)
-  );
-  const hidePanResponder = createSwipeDownPanResponder(hideModalY, () =>
-    setShowHideModal(false)
-  );
+  const morePanResponder = createSwipeDownPanResponder(moreModalY, () => setShowMoreModal(false));
+  const hidePanResponder = createSwipeDownPanResponder(hideModalY, () => setShowHideModal(false));
   const reportPanResponder = createSwipeDownPanResponder(reportModalY, () =>
     setShowReportModal(false)
   );
@@ -209,16 +201,12 @@ export function PostCard({
   const formatTimeAgo = (dateString: string): string => {
     const now = new Date();
     const postDate = new Date(dateString);
-    const diffInSeconds = Math.floor(
-      (now.getTime() - postDate.getTime()) / 1000
-    );
+    const diffInSeconds = Math.floor((now.getTime() - postDate.getTime()) / 1000);
 
     if (diffInSeconds < 60) return "Just now";
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400)
-      return `${Math.floor(diffInSeconds / 3600)}h ago`;
-    if (diffInSeconds < 604800)
-      return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
 
     return postDate.toLocaleDateString();
   };
@@ -275,9 +263,7 @@ export function PostCard({
               {onMessage && currentUserId && post.userId !== currentUserId && (
                 <TouchableOpacity
                   style={styles.messageButton}
-                  onPress={() =>
-                    onMessage(post.userId, `${post.firstName} ${post.lastName}`)
-                  }
+                  onPress={() => onMessage(post.userId, `${post.firstName} ${post.lastName}`)}
                 >
                   <MessageCircle size={16} color={Colors.primary[600]} />
                   <Text style={styles.messageButtonText}>Message</Text>
@@ -285,9 +271,7 @@ export function PostCard({
               )}
             </View>
             <View style={styles.metaRow}>
-              <Text style={styles.timestamp}>
-                {formatTimeAgo(post.createdAt)}
-              </Text>
+              <Text style={styles.timestamp}>{formatTimeAgo(post.createdAt)}</Text>
               {post.locationCity && (
                 <>
                   <Text style={styles.dot}>•</Text>
@@ -315,22 +299,12 @@ export function PostCard({
             post.postType === "event" ||
             post.postType === "announcement" ||
             post.postType === "weather_alert") && (
-            <View
-              style={[
-                styles.badge,
-                { borderColor: getPostTypeColor(post.postType) },
-              ]}
-            >
+            <View style={[styles.badge, { borderColor: getPostTypeColor(post.postType) }]}>
               {React.createElement(getPostTypeIcon(post.postType), {
                 size: 12,
                 color: getPostTypeColor(post.postType),
               })}
-              <Text
-                style={[
-                  styles.badgeText,
-                  { color: getPostTypeColor(post.postType) },
-                ]}
-              >
+              <Text style={[styles.badgeText, { color: getPostTypeColor(post.postType) }]}>
                 {formatPostType(post.postType)}
               </Text>
             </View>
@@ -351,11 +325,7 @@ export function PostCard({
 
       {post.images && post.images.length > 0 && (
         <View style={styles.imagesContainer}>
-          <Image
-            source={{ uri: post.images[0] }}
-            style={styles.postImage}
-            resizeMode="contain"
-          />
+          <Image source={{ uri: post.images[0] }} style={styles.postImage} resizeMode="contain" />
           {post.images.length > 1 && (
             <View style={styles.imageOverlay}>
               <Text style={styles.imageCount}>+{post.images.length - 1}</Text>
@@ -366,20 +336,13 @@ export function PostCard({
 
       <View style={styles.actions}>
         <View style={styles.leftActions}>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => onLike?.(post.id)}
-          >
+          <TouchableOpacity style={styles.actionButton} onPress={() => onLike?.(post.id)}>
             <Heart
               size={20}
-              color={
-                post.userReaction ? Colors.error[600] : Colors.neutral[600]
-              }
+              color={post.userReaction ? Colors.error[600] : Colors.neutral[600]}
               fill={post.userReaction ? Colors.error[600] : "none"}
             />
-            <Text
-              style={[styles.actionText, post.userReaction && styles.likedText]}
-            >
+            <Text style={[styles.actionText, post.userReaction && styles.likedText]}>
               {post.likeCount || 0}
             </Text>
           </TouchableOpacity>
@@ -452,14 +415,10 @@ export function PostCard({
         visible={showCommentModal}
         animationType="slide"
         transparent={true}
-        onRequestClose={() =>
-          closeModalImmediately(setShowCommentModal, commentModalY)
-        }
+        onRequestClose={() => closeModalImmediately(setShowCommentModal, commentModalY)}
       >
         <TouchableWithoutFeedback
-          onPress={() =>
-            closeModalImmediately(setShowCommentModal, commentModalY)
-          }
+          onPress={() => closeModalImmediately(setShowCommentModal, commentModalY)}
         >
           <View style={styles.modalOverlayTransparent}>
             <TouchableWithoutFeedback onPress={() => {}}>
@@ -470,10 +429,7 @@ export function PostCard({
                   { transform: [{ translateY: commentModalY }] },
                 ]}
               >
-                <View
-                  style={styles.modalHeaderContainer}
-                  {...commentPanResponder.panHandlers}
-                >
+                <View style={styles.modalHeaderContainer} {...commentPanResponder.panHandlers}>
                   <View style={styles.modalHandleContainer}>
                     <View style={styles.modalHandle} />
                   </View>
@@ -495,9 +451,7 @@ export function PostCard({
         visible={showMoreModal}
         animationType="slide"
         transparent={true}
-        onRequestClose={() =>
-          closeModalImmediately(setShowMoreModal, moreModalY)
-        }
+        onRequestClose={() => closeModalImmediately(setShowMoreModal, moreModalY)}
       >
         <TouchableWithoutFeedback
           onPress={() => closeModalImmediately(setShowMoreModal, moreModalY)}
@@ -511,10 +465,7 @@ export function PostCard({
                   { transform: [{ translateY: moreModalY }] },
                 ]}
               >
-                <View
-                  style={styles.modalHeaderContainer}
-                  {...morePanResponder.panHandlers}
-                >
+                <View style={styles.modalHeaderContainer} {...morePanResponder.panHandlers}>
                   <View style={styles.modalHandleContainer}>
                     <View style={styles.modalHandle} />
                   </View>
@@ -522,10 +473,7 @@ export function PostCard({
                     <Text style={styles.modalTitle}>More Options</Text>
                   </View>
                 </View>
-                <ScrollView
-                  style={styles.modalContent}
-                  showsVerticalScrollIndicator={false}
-                >
+                <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
                   {currentUserId !== post.userId && (
                     <TouchableOpacity
                       style={styles.modalOptionNoBorder}
@@ -575,12 +523,7 @@ export function PostCard({
                     }}
                   >
                     <Flag size={20} color={Colors.error[600]} />
-                    <Text
-                      style={[
-                        styles.modalOptionText,
-                        { color: Colors.error[600] },
-                      ]}
-                    >
+                    <Text style={[styles.modalOptionText, { color: Colors.error[600] }]}>
                       Report
                     </Text>
                   </TouchableOpacity>
@@ -594,12 +537,7 @@ export function PostCard({
                       }}
                     >
                       <UserX size={20} color={Colors.error[600]} />
-                      <Text
-                        style={[
-                          styles.modalOptionText,
-                          { color: Colors.error[600] },
-                        ]}
-                      >
+                      <Text style={[styles.modalOptionText, { color: Colors.error[600] }]}>
                         Block User
                       </Text>
                     </TouchableOpacity>
@@ -614,12 +552,7 @@ export function PostCard({
                       }}
                     >
                       <Trash2 size={20} color={Colors.error[600]} />
-                      <Text
-                        style={[
-                          styles.modalOptionText,
-                          { color: Colors.error[600] },
-                        ]}
-                      >
+                      <Text style={[styles.modalOptionText, { color: Colors.error[600] }]}>
                         Delete Post
                       </Text>
                     </TouchableOpacity>
@@ -635,9 +568,7 @@ export function PostCard({
         visible={showHideModal}
         animationType="slide"
         transparent={true}
-        onRequestClose={() =>
-          closeModalImmediately(setShowHideModal, hideModalY)
-        }
+        onRequestClose={() => closeModalImmediately(setShowHideModal, hideModalY)}
       >
         <TouchableWithoutFeedback
           onPress={() => closeModalImmediately(setShowHideModal, hideModalY)}
@@ -651,28 +582,19 @@ export function PostCard({
                   { transform: [{ translateY: hideModalY }] },
                 ]}
               >
-                <View
-                  style={styles.modalHeaderContainer}
-                  {...hidePanResponder.panHandlers}
-                >
+                <View style={styles.modalHeaderContainer} {...hidePanResponder.panHandlers}>
                   <View style={styles.modalHandleContainer}>
                     <View style={styles.modalHandle} />
                   </View>
                   <View style={styles.modalHeader}>
-                    <TouchableOpacity
-                      style={styles.backButton}
-                      onPress={handleBackToMore}
-                    >
+                    <TouchableOpacity style={styles.backButton} onPress={handleBackToMore}>
                       <ArrowLeft size={20} color={Colors.text.primary} />
                     </TouchableOpacity>
                     <Text style={styles.modalTitle}>Hide Post</Text>
                     <View style={styles.backButton} />
                   </View>
                 </View>
-                <ScrollView
-                  style={styles.modalContent}
-                  showsVerticalScrollIndicator={false}
-                >
+                <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
                   <TouchableOpacity
                     style={styles.modalOption}
                     onPress={() => {
@@ -715,14 +637,10 @@ export function PostCard({
         visible={showReportModal}
         animationType="slide"
         transparent={true}
-        onRequestClose={() =>
-          closeModalImmediately(setShowReportModal, reportModalY)
-        }
+        onRequestClose={() => closeModalImmediately(setShowReportModal, reportModalY)}
       >
         <TouchableWithoutFeedback
-          onPress={() =>
-            closeModalImmediately(setShowReportModal, reportModalY)
-          }
+          onPress={() => closeModalImmediately(setShowReportModal, reportModalY)}
         >
           <View style={styles.modalOverlayTransparent}>
             <TouchableWithoutFeedback onPress={() => {}}>
@@ -733,28 +651,19 @@ export function PostCard({
                   { transform: [{ translateY: reportModalY }] },
                 ]}
               >
-                <View
-                  style={styles.modalHeaderContainer}
-                  {...reportPanResponder.panHandlers}
-                >
+                <View style={styles.modalHeaderContainer} {...reportPanResponder.panHandlers}>
                   <View style={styles.modalHandleContainer}>
                     <View style={styles.modalHandle} />
                   </View>
                   <View style={styles.modalHeader}>
-                    <TouchableOpacity
-                      style={styles.backButton}
-                      onPress={handleBackToMore}
-                    >
+                    <TouchableOpacity style={styles.backButton} onPress={handleBackToMore}>
                       <ArrowLeft size={20} color={Colors.text.primary} />
                     </TouchableOpacity>
                     <Text style={styles.modalTitle}>Report Post</Text>
                     <View style={styles.backButton} />
                   </View>
                 </View>
-                <ScrollView
-                  style={styles.modalContent}
-                  showsVerticalScrollIndicator={false}
-                >
+                <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
                   <TouchableOpacity
                     style={styles.modalOption}
                     onPress={() => {
@@ -762,9 +671,7 @@ export function PostCard({
                       onReport?.(post.id);
                     }}
                   >
-                    <Text style={styles.modalOptionText}>
-                      I just don't like it
-                    </Text>
+                    <Text style={styles.modalOptionText}>I just don't like it</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -774,9 +681,7 @@ export function PostCard({
                       onReport?.(post.id);
                     }}
                   >
-                    <Text style={styles.modalOptionText}>
-                      Bullying or unwanted content
-                    </Text>
+                    <Text style={styles.modalOptionText}>Bullying or unwanted content</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -798,9 +703,7 @@ export function PostCard({
                       onReport?.(post.id);
                     }}
                   >
-                    <Text style={styles.modalOptionText}>
-                      Violence, hate or exploitation
-                    </Text>
+                    <Text style={styles.modalOptionText}>Violence, hate or exploitation</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -822,9 +725,7 @@ export function PostCard({
                       onReport?.(post.id);
                     }}
                   >
-                    <Text style={styles.modalOptionText}>
-                      Nudity or sexual activity
-                    </Text>
+                    <Text style={styles.modalOptionText}>Nudity or sexual activity</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -834,9 +735,7 @@ export function PostCard({
                       onReport?.(post.id);
                     }}
                   >
-                    <Text style={styles.modalOptionText}>
-                      Scam, fraud or spam
-                    </Text>
+                    <Text style={styles.modalOptionText}>Scam, fraud or spam</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -846,9 +745,7 @@ export function PostCard({
                       onReport?.(post.id);
                     }}
                   >
-                    <Text style={styles.modalOptionText}>
-                      Intellectual property
-                    </Text>
+                    <Text style={styles.modalOptionText}>Intellectual property</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -858,9 +755,7 @@ export function PostCard({
                       onReport?.(post.id);
                     }}
                   >
-                    <Text style={styles.modalOptionText}>
-                      I want to request a community note
-                    </Text>
+                    <Text style={styles.modalOptionText}>I want to request a community note</Text>
                   </TouchableOpacity>
                 </ScrollView>
               </Animated.View>
@@ -873,9 +768,7 @@ export function PostCard({
         visible={showShareModal}
         animationType="slide"
         transparent={true}
-        onRequestClose={() =>
-          closeModalImmediately(setShowShareModal, shareModalY)
-        }
+        onRequestClose={() => closeModalImmediately(setShowShareModal, shareModalY)}
       >
         <TouchableWithoutFeedback
           onPress={() => closeModalImmediately(setShowShareModal, shareModalY)}
@@ -889,10 +782,7 @@ export function PostCard({
                   { transform: [{ translateY: shareModalY }] },
                 ]}
               >
-                <View
-                  style={styles.modalHeaderContainer}
-                  {...sharePanResponder.panHandlers}
-                >
+                <View style={styles.modalHeaderContainer} {...sharePanResponder.panHandlers}>
                   <View style={styles.modalHandleContainer}>
                     <View style={styles.modalHandle} />
                   </View>
@@ -922,10 +812,7 @@ export function PostCard({
                     >
                       <TouchableOpacity style={styles.shareOption}>
                         <View style={styles.shareOptionIcon}>
-                          <MessageCircle
-                            size={24}
-                            color={Colors.primary[600]}
-                          />
+                          <MessageCircle size={24} color={Colors.primary[600]} />
                         </View>
                         <Text style={styles.shareOptionText}>Messages</Text>
                       </TouchableOpacity>
@@ -976,8 +863,7 @@ export function PostCard({
           <View style={styles.deleteModal}>
             <Text style={styles.deleteTitle}>Delete post?</Text>
             <Text style={styles.deleteMessage}>
-              This can't be undone and it will be removed from your profile and
-              the timeline.
+              This can't be undone and it will be removed from your profile and the timeline.
             </Text>
 
             <View style={styles.deleteButtons}>
@@ -1196,18 +1082,18 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
   },
   modalOverlayTransparent: {
     flex: 1,
-    justifyContent: 'flex-end',
+    justifyContent: "flex-end",
   },
   modalContainer: {
     backgroundColor: Colors.background,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: -4,
@@ -1217,12 +1103,12 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   modalHeaderContainer: {
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
     minHeight: 60,
   },
   modalHandleContainer: {
     paddingVertical: 12,
-    alignItems: 'center',
+    alignItems: "center",
   },
   modalHandle: {
     width: 40,
@@ -1251,8 +1137,8 @@ const styles = StyleSheet.create({
   backButton: {
     width: 24,
     height: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   modalTitle: {
     fontSize: 18,
@@ -1265,7 +1151,7 @@ const styles = StyleSheet.create({
   },
   shareModalContent: {
     flex: 1,
-    flexDirection: 'column',
+    flexDirection: "column",
   },
   modalOption: {
     flexDirection: "row",
@@ -1311,14 +1197,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   followersGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'flex-start',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "flex-start",
     gap: 12,
   },
   followerItem: {
-    width: '30%',
-    alignItems: 'center',
+    width: "30%",
+    alignItems: "center",
     marginBottom: 16,
   },
   followerAvatar: {
@@ -1334,7 +1220,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "500",
     color: Colors.text.primary,
-    textAlign: 'center',
+    textAlign: "center",
   },
   shareOptionsSection: {
     borderTopWidth: 1,
@@ -1350,7 +1236,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   shareOption: {
-    alignItems: 'center',
+    alignItems: "center",
     width: 80,
   },
   shareOptionIcon: {
@@ -1366,13 +1252,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "500",
     color: Colors.text.primary,
-    textAlign: 'center',
+    textAlign: "center",
   },
   deleteOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 40,
   },
   deleteModal: {
@@ -1380,28 +1266,28 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingVertical: 24,
     paddingHorizontal: 24,
-    width: '100%',
+    width: "100%",
     maxWidth: 340,
-    alignItems: 'center',
+    alignItems: "center",
   },
   deleteTitle: {
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.text.primary,
     marginBottom: 8,
-    textAlign: 'center',
+    textAlign: "center",
   },
   deleteMessage: {
     fontSize: 16,
     color: Colors.text.secondary,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 22,
     marginBottom: 24,
   },
   deleteButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
-    width: '100%',
+    width: "100%",
   },
   deleteButtonSecondary: {
     flex: 1,
@@ -1409,11 +1295,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     backgroundColor: Colors.neutral[100],
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
   },
   deleteButtonSecondaryText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.text.primary,
   },
   deleteButtonPrimary: {
@@ -1422,11 +1308,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     backgroundColor: Colors.error[600],
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
   },
   deleteButtonPrimaryText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.text.inverse,
   },
 });

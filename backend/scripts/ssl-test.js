@@ -279,22 +279,22 @@ async function main() {
 
   try {
     switch (command) {
-    case "config":
-      await tester.testSSLConfig();
-      break;
-    case "redirect":
-      await tester.testHTTPSRedirect();
-      break;
-    case "headers":
-      await tester.testSecurityHeaders();
-      break;
-    case "cert":
-      await tester.testCertificateInfo();
-      break;
-    case "all":
-    default:
-      await tester.runAllTests();
-      break;
+      case "config":
+        await tester.testSSLConfig();
+        break;
+      case "redirect":
+        await tester.testHTTPSRedirect();
+        break;
+      case "headers":
+        await tester.testSecurityHeaders();
+        break;
+      case "cert":
+        await tester.testCertificateInfo();
+        break;
+      case "all":
+      default:
+        await tester.runAllTests();
+        break;
     }
   } catch (error) {
     console.error("ERROR: Test failed:", error.message);

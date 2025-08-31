@@ -34,7 +34,7 @@ export default function MessagesScreen() {
       setError(null);
 
       const response = await apiService.getConversations();
-      
+
       if (response.success && response.data) {
         setConversations(response.data.conversations || []);
       }
@@ -61,9 +61,7 @@ export default function MessagesScreen() {
   const formatTime = (dateString: string): string => {
     const now = new Date();
     const messageDate = new Date(dateString);
-    const diffInSeconds = Math.floor(
-      (now.getTime() - messageDate.getTime()) / 1000
-    );
+    const diffInSeconds = Math.floor((now.getTime() - messageDate.getTime()) / 1000);
 
     if (diffInSeconds < 60) return "Just now";
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
@@ -86,7 +84,7 @@ export default function MessagesScreen() {
 
   const renderConversation = ({ item }: { item: Conversation }) => {
     const isFromCurrentUser = item.lastMessage?.senderId === user?.id;
-    
+
     return (
       <TouchableOpacity
         style={styles.conversationItem}
@@ -95,10 +93,7 @@ export default function MessagesScreen() {
       >
         <View style={styles.avatarContainer}>
           {item.otherUser.profileImageUrl ? (
-            <Image
-              source={{ uri: item.otherUser.profileImageUrl }}
-              style={styles.avatar}
-            />
+            <Image source={{ uri: item.otherUser.profileImageUrl }} style={styles.avatar} />
           ) : (
             <View style={[styles.avatar, styles.avatarPlaceholder]}>
               <Text style={styles.avatarText}>
@@ -120,9 +115,7 @@ export default function MessagesScreen() {
             <Text style={styles.userName} numberOfLines={1}>
               {item.otherUser.firstName} {item.otherUser.lastName}
             </Text>
-            <Text style={styles.timestamp}>
-              {formatTime(item.lastMessageAt)}
-            </Text>
+            <Text style={styles.timestamp}>{formatTime(item.lastMessageAt)}</Text>
           </View>
 
           <View style={styles.lastMessageContainer}>
@@ -135,9 +128,7 @@ export default function MessagesScreen() {
                 numberOfLines={1}
               >
                 {isFromCurrentUser && "You: "}
-                {item.lastMessage.messageType === "image"
-                  ? "Image"
-                  : item.lastMessage.content}
+                {item.lastMessage.messageType === "image" ? "Image" : item.lastMessage.content}
               </Text>
             )}
           </View>
@@ -164,17 +155,11 @@ export default function MessagesScreen() {
     router.back();
   };
 
-
   return (
     <View style={styles.container}>
-      <Header
-        title="Messages"
-        showBackButton={true}
-        onBackPress={handleGoBack}
-      />
-      
-      <View style={{ flex: 1 }}>
-      </View>
+      <Header title="Messages" showBackButton={true} onBackPress={handleGoBack} />
+
+      <View style={{ flex: 1 }}></View>
     </View>
   );
 }

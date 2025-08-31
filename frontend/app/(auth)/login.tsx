@@ -22,9 +22,7 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>(
-    {}
-  );
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [biometricType, setBiometricType] = useState<string | null>(null);
   const [isAutoLoggingIn, setIsAutoLoggingIn] = useState(false);
 
@@ -43,7 +41,7 @@ export default function LoginScreen() {
             await login(email.trim().toLowerCase(), password);
             router.replace("/(tabs)");
           } catch (error) {
-            console.log('Auto-login from auto-fill failed:', error);
+            console.log("Auto-login from auto-fill failed:", error);
             setIsAutoLoggingIn(false);
           }
         }, 500);
@@ -56,48 +54,48 @@ export default function LoginScreen() {
   const checkBiometricAndAutoLogin = async () => {
     try {
       if (!LocalAuthentication) {
-        console.log('LocalAuthentication not available');
+        console.log("LocalAuthentication not available");
         return;
       }
 
       const hasHardware = await LocalAuthentication.hasHardwareAsync();
       const isEnrolled = await LocalAuthentication.isEnrolledAsync();
       const supportedTypes = await LocalAuthentication.supportedAuthenticationTypesAsync();
-      
+
       if (hasHardware && isEnrolled && supportedTypes.length > 0) {
         if (supportedTypes.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) {
-          setBiometricType('Face ID');
+          setBiometricType("Face ID");
         } else if (supportedTypes.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) {
-          setBiometricType('Touch ID');
+          setBiometricType("Touch ID");
         }
-        
-        const storedEmail = await SecureStore.getItemAsync('biometric_email');
-        const storedPassword = await SecureStore.getItemAsync('biometric_password');
-        
+
+        const storedEmail = await SecureStore.getItemAsync("biometric_email");
+        const storedPassword = await SecureStore.getItemAsync("biometric_password");
+
         if (storedEmail && storedPassword) {
           const result = await LocalAuthentication.authenticateAsync({
-            promptMessage: `Use ${biometricType || 'biometrics'} to sign in`,
-            cancelLabel: 'Cancel',
+            promptMessage: `Use ${biometricType || "biometrics"} to sign in`,
+            cancelLabel: "Cancel",
             disableDeviceFallback: true,
           });
-          
+
           if (result.success) {
             setEmail(storedEmail);
             setPassword(storedPassword);
             setIsAutoLoggingIn(true);
-            
+
             try {
               await login(storedEmail.trim().toLowerCase(), storedPassword);
               router.replace("/(tabs)");
             } catch (error) {
-              console.log('Auto-login failed:', error);
+              console.log("Auto-login failed:", error);
               setIsAutoLoggingIn(false);
             }
           }
         }
       }
     } catch (error) {
-      console.log('Biometric check error:', error);
+      console.log("Biometric check error:", error);
     }
   };
 
@@ -127,16 +125,16 @@ export default function LoginScreen() {
 
     try {
       await login(email.trim().toLowerCase(), password);
-      
+
       if (biometricType) {
         try {
-          await SecureStore.setItemAsync('biometric_email', email.trim().toLowerCase());
-          await SecureStore.setItemAsync('biometric_password', password);
+          await SecureStore.setItemAsync("biometric_email", email.trim().toLowerCase());
+          await SecureStore.setItemAsync("biometric_password", password);
         } catch (error) {
-          console.log('Failed to store biometric credentials:', error);
+          console.log("Failed to store biometric credentials:", error);
         }
       }
-      
+
       router.replace("/(tabs)");
     } catch (error) {}
   };
@@ -144,105 +142,104 @@ export default function LoginScreen() {
   return (
     <View style={styles.wrapper}>
       <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.keyboardView}
-      >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <View style={styles.contentContainer}>
-          <View style={styles.header}>
-            <Text style={styles.title}>Welcome Back</Text>
-            <Text style={styles.subtitle}>
-              Sign in to your StormNeighbor account
-            </Text>
-          </View>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.keyboardView}
+        >
+          <ScrollView contentContainerStyle={styles.scrollContent}>
+            <View style={styles.contentContainer}>
+              <View style={styles.header}>
+                <Text style={styles.title}>Welcome Back</Text>
+                <Text style={styles.subtitle}>Sign in to your StormNeighbor account</Text>
+              </View>
 
-          <View style={styles.form}>
-            <Input
-              label="Email Address"
-              value={email}
-              onChangeText={setEmail}
-              placeholder="Enter your email"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              error={errors.email}
-              required
-            />
+              <View style={styles.form}>
+                <Input
+                  label="Email Address"
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder="Enter your email"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  error={errors.email}
+                  required
+                />
 
-            <View style={styles.passwordContainer}>
-              <Input
-                label="Password"
-                value={password}
-                onChangeText={setPassword}
-                placeholder="Enter your password"
-                secureTextEntry={!showPassword}
-                error={errors.password}
-                required
-              />
-              <TouchableOpacity
-                style={styles.passwordToggle}
-                onPress={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? (
-                  <EyeOff size={20} color={Colors.text.secondary} />
-                ) : (
-                  <Eye size={20} color={Colors.text.secondary} />
+                <View style={styles.passwordContainer}>
+                  <Input
+                    label="Password"
+                    value={password}
+                    onChangeText={setPassword}
+                    placeholder="Enter your password"
+                    secureTextEntry={!showPassword}
+                    error={errors.password}
+                    required
+                  />
+                  <TouchableOpacity
+                    style={styles.passwordToggle}
+                    onPress={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff size={20} color={Colors.text.secondary} />
+                    ) : (
+                      <Eye size={20} color={Colors.text.secondary} />
+                    )}
+                  </TouchableOpacity>
+
+                  <Link href="/(auth)/forgot-password" asChild>
+                    <TouchableOpacity style={styles.forgotPassword}>
+                      <Text style={styles.forgotPasswordText}>Forgot your password?</Text>
+                    </TouchableOpacity>
+                  </Link>
+                </View>
+
+                {error && (
+                  <View style={styles.errorContainer}>
+                    <AlertCircle size={16} color={Colors.error[600]} />
+                    <Text style={styles.errorText}>{error}</Text>
+                  </View>
                 )}
-              </TouchableOpacity>
-              
-              <Link href="/(auth)/forgot-password" asChild>
-                <TouchableOpacity style={styles.forgotPassword}>
-                  <Text style={styles.forgotPasswordText}>
-                    Forgot your password?
-                  </Text>
+
+                <Button
+                  title={
+                    isAutoLoggingIn
+                      ? `Signing in with ${biometricType || "biometrics"}...`
+                      : "Sign In"
+                  }
+                  onPress={handleLogin}
+                  loading={isLoading || isAutoLoggingIn}
+                  style={styles.loginButton}
+                />
+
+                <View style={styles.dividerContainer}>
+                  <View style={styles.dividerLine} />
+                  <Text style={styles.dividerText}>Or login with</Text>
+                  <View style={styles.dividerLine} />
+                </View>
+
+                <View style={styles.socialButtonsRow}>
+                  <TouchableOpacity style={[styles.socialButton, styles.socialButtonHalf]}>
+                    <Text style={styles.socialButtonText}>🔍 Google</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity style={[styles.socialButton, styles.socialButtonHalf]}>
+                    <Text style={styles.socialButtonText}>🍎 Apple</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>Don't have an account? </Text>
+              <Link href="/(auth)/register" asChild>
+                <TouchableOpacity>
+                  <Text style={styles.signUpText}>Sign Up</Text>
                 </TouchableOpacity>
               </Link>
             </View>
-
-            {error && (
-              <View style={styles.errorContainer}>
-                <AlertCircle size={16} color={Colors.error[600]} />
-                <Text style={styles.errorText}>{error}</Text>
-              </View>
-            )}
-
-            <Button
-              title={isAutoLoggingIn ? `Signing in with ${biometricType || 'biometrics'}...` : "Sign In"}
-              onPress={handleLogin}
-              loading={isLoading || isAutoLoggingIn}
-              style={styles.loginButton}
-            />
-
-            <View style={styles.dividerContainer}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>Or login with</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
-            <View style={styles.socialButtonsRow}>
-              <TouchableOpacity style={[styles.socialButton, styles.socialButtonHalf]}>
-                <Text style={styles.socialButtonText}>🔍 Google</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={[styles.socialButton, styles.socialButtonHalf]}>
-                <Text style={styles.socialButtonText}>🍎 Apple</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          </View>
-          
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
-            <Link href="/(auth)/register" asChild>
-              <TouchableOpacity>
-                <Text style={styles.signUpText}>Sign Up</Text>
-              </TouchableOpacity>
-            </Link>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </View>
   );
@@ -255,22 +252,22 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
   keyboardView: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
     paddingTop: 40,
     paddingBottom: 20,
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
   },
   contentContainer: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   header: {
     alignItems: "center",
@@ -341,8 +338,8 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginVertical: 16,
   },
   dividerLine: {
@@ -356,7 +353,7 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary,
   },
   socialButtonsRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
     marginBottom: 8,
   },
@@ -365,16 +362,16 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1.5,
     borderColor: Colors.border,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'white',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "white",
   },
   socialButtonHalf: {
     flex: 1,
   },
   socialButtonText: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: "500",
     color: Colors.text.primary,
   },
   footerText: {

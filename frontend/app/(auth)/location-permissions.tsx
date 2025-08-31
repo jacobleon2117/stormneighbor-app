@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,13 +7,13 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
-} from 'react-native';
-import { router } from 'expo-router';
-import * as Location from 'expo-location';
-import { MapPin, Navigation, Home, Shield } from 'lucide-react-native';
-import { Colors } from '../../constants/Colors';
-import { useAuth } from '../../hooks/useAuth';
-import { apiService } from '../../services/api';
+} from "react-native";
+import { router } from "expo-router";
+import * as Location from "expo-location";
+import { MapPin, Navigation, Home, Shield } from "lucide-react-native";
+import { Colors } from "../../constants/Colors";
+import { useAuth } from "../../hooks/useAuth";
+import { apiService } from "../../services/api";
 
 export default function LocationPermissionsScreen() {
   const { user, refreshProfile } = useAuth();
@@ -29,27 +29,27 @@ export default function LocationPermissionsScreen() {
       const { status } = await Location.getForegroundPermissionsAsync();
       setPermissionStatus(status);
     } catch (error) {
-      console.error('Error checking location permissions:', error);
+      console.error("Error checking location permissions:", error);
     }
   };
 
   const handleRequestLocation = async () => {
     setIsLoading(true);
-    
+
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
-      
-      let backgroundStatus = 'denied';
-      if (status === 'granted') {
+
+      let backgroundStatus = "denied";
+      if (status === "granted") {
         const bgPermission = await Location.requestBackgroundPermissionsAsync();
         backgroundStatus = bgPermission.status;
       }
 
       const locationPreferences = {
-        useCurrentLocationForWeather: status === 'granted',
-        useCurrentLocationForAlerts: backgroundStatus === 'granted',
-        allowBackgroundLocation: backgroundStatus === 'granted',
-        shareLocationInPosts: status === 'granted',
+        useCurrentLocationForWeather: status === "granted",
+        useCurrentLocationForAlerts: backgroundStatus === "granted",
+        allowBackgroundLocation: backgroundStatus === "granted",
+        shareLocationInPosts: status === "granted",
       };
 
       const locationPermissions = {
@@ -65,18 +65,17 @@ export default function LocationPermissionsScreen() {
 
       await refreshProfile();
 
-      router.push('/(auth)/home-address-setup');
-      
+      router.push("/(auth)/home-address-setup");
     } catch (error) {
-      console.error('Error requesting location permissions:', error);
+      console.error("Error requesting location permissions:", error);
       Alert.alert(
-        'Error',
-        'Unable to request location permissions. You can continue and set this up later in settings.',
+        "Error",
+        "Unable to request location permissions. You can continue and set this up later in settings.",
         [
-          { 
-            text: 'Continue Anyway', 
-            onPress: () => router.push('/(auth)/home-address-setup')
-          }
+          {
+            text: "Continue Anyway",
+            onPress: () => router.push("/(auth)/home-address-setup"),
+          },
         ]
       );
     } finally {
@@ -94,8 +93,8 @@ export default function LocationPermissionsScreen() {
       };
 
       const locationPermissions = {
-        foreground: 'denied',
-        background: 'denied',
+        foreground: "denied",
+        background: "denied",
         lastUpdated: new Date().toISOString(),
       };
 
@@ -105,10 +104,10 @@ export default function LocationPermissionsScreen() {
       });
 
       await refreshProfile();
-      router.push('/(auth)/home-address-setup');
+      router.push("/(auth)/home-address-setup");
     } catch (error) {
-      console.error('Error saving location preferences:', error);
-      router.push('/(auth)/home-address-setup');
+      console.error("Error saving location preferences:", error);
+      router.push("/(auth)/home-address-setup");
     }
   };
 
@@ -119,7 +118,8 @@ export default function LocationPermissionsScreen() {
           <MapPin size={64} color={Colors.primary[600]} />
           <Text style={styles.title}>Location Access</Text>
           <Text style={styles.subtitle}>
-            StormNeighbor works better with location access for accurate weather and local community updates.
+            StormNeighbor works better with location access for accurate weather and local community
+            updates.
           </Text>
         </View>
 
@@ -191,24 +191,24 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 24,
     paddingVertical: 32,
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
   },
   header: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 48,
   },
   title: {
     fontSize: 28,
-    fontWeight: '700',
+    fontWeight: "700",
     color: Colors.text.primary,
     marginTop: 24,
     marginBottom: 12,
-    textAlign: 'center',
+    textAlign: "center",
   },
   subtitle: {
     fontSize: 16,
     color: Colors.text.secondary,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 24,
     paddingHorizontal: 12,
   },
@@ -217,8 +217,8 @@ const styles = StyleSheet.create({
     marginVertical: 32,
   },
   benefitItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 16,
     paddingVertical: 8,
   },
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
   },
   benefitTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.text.primary,
     marginBottom: 4,
   },
@@ -240,9 +240,9 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 16,
     paddingHorizontal: 24,
     borderRadius: 12,
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
   },
   primaryButtonText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.text.inverse,
   },
   secondaryButton: {
@@ -263,13 +263,13 @@ const styles = StyleSheet.create({
   },
   secondaryButtonText: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: "500",
     color: Colors.text.primary,
   },
   note: {
     fontSize: 12,
     color: Colors.text.disabled,
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: 8,
     lineHeight: 16,
   },

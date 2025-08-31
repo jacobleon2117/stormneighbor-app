@@ -6,10 +6,10 @@ const auth = async (req, res, next) => {
   try {
     const authHeader = req.header("Authorization");
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         success: false,
         message: "No token provided, authorization denied",
-        code: "NO_TOKEN"
+        code: "NO_TOKEN",
       });
     }
 
@@ -26,20 +26,20 @@ const auth = async (req, res, next) => {
         );
 
         if (userResult.rows.length === 0) {
-          return res.status(401).json({ 
+          return res.status(401).json({
             success: false,
             message: "Token is not valid - user not found",
-            code: "USER_NOT_FOUND"
+            code: "USER_NOT_FOUND",
           });
         }
 
         const user = userResult.rows[0];
 
         if (!user.is_active) {
-          return res.status(401).json({ 
+          return res.status(401).json({
             success: false,
             message: "Account has been deactivated",
-            code: "ACCOUNT_DEACTIVATED"
+            code: "ACCOUNT_DEACTIVATED",
           });
         }
 
@@ -58,31 +58,31 @@ const auth = async (req, res, next) => {
       }
     } catch (jwtError) {
       if (jwtError.name === "TokenExpiredError") {
-        return res.status(401).json({ 
+        return res.status(401).json({
           success: false,
           message: "Access token has expired",
-          code: "TOKEN_EXPIRED"
+          code: "TOKEN_EXPIRED",
         });
       } else if (jwtError.name === "JsonWebTokenError") {
-        return res.status(401).json({ 
+        return res.status(401).json({
           success: false,
           message: "Invalid token format",
-          code: "INVALID_TOKEN"
+          code: "INVALID_TOKEN",
         });
       } else {
-        return res.status(401).json({ 
+        return res.status(401).json({
           success: false,
           message: "Token verification failed",
-          code: "TOKEN_INVALID"
+          code: "TOKEN_INVALID",
         });
       }
     }
   } catch (error) {
     logger.error("Auth middleware error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
       message: "Server error in authentication",
-      code: "SERVER_ERROR"
+      code: "SERVER_ERROR",
     });
   }
 };
@@ -90,7 +90,7 @@ const auth = async (req, res, next) => {
 const optionalAuth = async (req, _res, next) => {
   try {
     const authHeader = req.header("Authorization");
-    
+
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       req.user = null;
       return next();
@@ -138,18 +138,18 @@ const optionalAuth = async (req, _res, next) => {
 
 const requireEmailVerified = (req, res, next) => {
   if (!req.user) {
-    return res.status(401).json({ 
+    return res.status(401).json({
       success: false,
       message: "Authentication required",
-      code: "NO_AUTH"
+      code: "NO_AUTH",
     });
   }
 
   if (!req.user.isVerified) {
-    return res.status(403).json({ 
+    return res.status(403).json({
       success: false,
       message: "Email verification required",
-      code: "EMAIL_NOT_VERIFIED"
+      code: "EMAIL_NOT_VERIFIED",
     });
   }
 

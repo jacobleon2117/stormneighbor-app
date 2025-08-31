@@ -1,19 +1,6 @@
 import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
-} from "react-native";
-import {
-  Search,
-  MessageCircle,
-  MoreHorizontal,
-  ArrowLeft,
-  X,
-  Bell,
-} from "lucide-react-native";
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from "react-native";
+import { Search, MessageCircle, MoreHorizontal, ArrowLeft, X, Bell } from "lucide-react-native";
 import { Colors } from "../../constants/Colors";
 
 interface HeaderProps {

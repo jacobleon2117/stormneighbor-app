@@ -292,19 +292,19 @@ router.get(
 
       let timeFilter = "";
       switch (timeframe) {
-      case "24h":
-        timeFilter = "AND p.created_at > NOW() - INTERVAL '24 hours'";
-        break;
-      case "7d":
-        timeFilter = "AND p.created_at > NOW() - INTERVAL '7 days'";
-        break;
-      case "30d":
-        timeFilter = "AND p.created_at > NOW() - INTERVAL '30 days'";
-        break;
-      case "all":
-      default:
-        timeFilter = "";
-        break;
+        case "24h":
+          timeFilter = "AND p.created_at > NOW() - INTERVAL '24 hours'";
+          break;
+        case "7d":
+          timeFilter = "AND p.created_at > NOW() - INTERVAL '7 days'";
+          break;
+        case "30d":
+          timeFilter = "AND p.created_at > NOW() - INTERVAL '30 days'";
+          break;
+        case "all":
+        default:
+          timeFilter = "";
+          break;
       }
 
       const result = await client.query(
@@ -523,7 +523,7 @@ router.get("/my/current", auth, async (req, res) => {
 router.get("/test/status", async (req, res) => {
   try {
     const { pool } = require("../config/database");
-const logger = require("../utils/logger");
+    const logger = require("../utils/logger");
     const client = await pool.connect();
 
     try {

@@ -8,10 +8,10 @@ import {
   ScrollView,
   SafeAreaView,
 } from "react-native";
-import { 
-  MapPin, 
-  Share, 
-  Eye, 
+import {
+  MapPin,
+  Share,
+  Eye,
   X,
   AlertTriangle,
   Cloud,
@@ -28,7 +28,15 @@ import { ALERT_COLORS, ALERT_LABELS } from "../../constants/AlertColors";
 
 interface AlertCardProps {
   id: string;
-  type: "severe_weather" | "community_alerts" | "safety_alerts" | "help_needed" | "events" | "questions" | "announcements" | "weather_alerts";
+  type:
+    | "severe_weather"
+    | "community_alerts"
+    | "safety_alerts"
+    | "help_needed"
+    | "events"
+    | "questions"
+    | "announcements"
+    | "weather_alerts";
   title: string;
   description: string;
   timestamp: string;
@@ -59,29 +67,28 @@ export default function AlertCard({
   onShare,
 }: AlertCardProps) {
   const [showLocationModal, setShowLocationModal] = useState(false);
-  
+
   const IconComponent = ALERT_ICONS[type];
   const alertColor = ALERT_COLORS[type];
   const badgeText = ALERT_LABELS[type];
-  
+
   const formatTimeAgo = (dateString: string): string => {
     const now = new Date();
     const alertDate = new Date(dateString);
-    const diffInSeconds = Math.floor(
-      (now.getTime() - alertDate.getTime()) / 1000
-    );
+    const diffInSeconds = Math.floor((now.getTime() - alertDate.getTime()) / 1000);
 
     if (diffInSeconds < 60) return "Just now";
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
     if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
-    
+
     return alertDate.toLocaleDateString();
   };
 
-  const displayedLocation = locations.length > 1 
-    ? `${locations[0]} + ${locations.length - 1}` 
-    : locations[0] || "Unknown location";
+  const displayedLocation =
+    locations.length > 1
+      ? `${locations[0]} + ${locations.length - 1}`
+      : locations[0] || "Unknown location";
 
   const handleLocationPress = () => {
     if (locations.length > 1) {
@@ -116,15 +123,13 @@ export default function AlertCard({
           {description}
         </Text>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.locationContainer}
           onPress={handleLocationPress}
           disabled={locations.length <= 1}
         >
           <MapPin size={16} color={Colors.text.secondary} />
-          <Text style={styles.locationText}>
-            {displayedLocation}
-          </Text>
+          <Text style={styles.locationText}>{displayedLocation}</Text>
         </TouchableOpacity>
 
         <View style={styles.footer}>
@@ -133,16 +138,14 @@ export default function AlertCard({
               <Eye size={16} color={Colors.primary[600]} />
               <Text style={styles.actionButtonText}>View</Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
               <Share size={16} color={Colors.primary[600]} />
               <Text style={styles.actionButtonText}>Share</Text>
             </TouchableOpacity>
           </View>
-          
-          <Text style={styles.timestamp}>
-            {formatTimeAgo(timestamp)}
-          </Text>
+
+          <Text style={styles.timestamp}>{formatTimeAgo(timestamp)}</Text>
         </View>
       </View>
 
@@ -163,7 +166,7 @@ export default function AlertCard({
                 <X size={24} color={Colors.text.primary} />
               </TouchableOpacity>
             </View>
-            
+
             <ScrollView style={styles.locationsList}>
               {locations.map((location, index) => (
                 <View key={index} style={styles.locationItem}>

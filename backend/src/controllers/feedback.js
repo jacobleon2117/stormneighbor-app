@@ -42,7 +42,7 @@ exports.createFeedback = async (req, res) => {
       id: loggedFeedback.id,
       userId,
       feedbackType,
-      title: title.substring(0, 50) + (title.length > 50 ? '...' : ''),
+      title: title.substring(0, 50) + (title.length > 50 ? "..." : ""),
       priority,
       timestamp: loggedFeedback.submittedAt,
     });
@@ -76,7 +76,7 @@ exports.createFeedback = async (req, res) => {
 exports.getUserFeedback = async (req, res) => {
   try {
     const userId = req.user.id;
-    
+
     res.json({
       success: true,
       data: {

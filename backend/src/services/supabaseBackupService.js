@@ -30,20 +30,20 @@ class SupabaseBackupService {
       `);
 
       let sqlContent = `-- StormNeighbor Database Backup
--- Created: ${new Date().toISOString()}
--- Type: ${type}
--- Database: ${this.getDatabaseName()}
+        -- Created: ${new Date().toISOString()}
+        -- Type: ${type}
+        -- Database: ${this.getDatabaseName()}
 
-SET statement_timeout = 0;
-SET lock_timeout = 0;
-SET client_encoding = 'UTF8';
-SET standard_conforming_strings = on;
-SET check_function_bodies = false;
-SET xmloption = content;
-SET client_min_messages = warning;
-SET row_security = off;
+        SET statement_timeout = 0;
+        SET lock_timeout = 0;
+        SET client_encoding = 'UTF8';
+        SET standard_conforming_strings = on;
+        SET check_function_bodies = false;
+        SET xmloption = content;
+        SET client_min_messages = warning;
+        SET row_security = off;
 
-`;
+        `;
 
       for (const row of tablesResult.rows) {
         const tableName = row.tablename;

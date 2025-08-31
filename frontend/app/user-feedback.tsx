@@ -12,14 +12,7 @@ import {
   Platform,
 } from "react-native";
 import { router } from "expo-router";
-import { 
-  ArrowLeft, 
-  MessageSquare, 
-  Bug, 
-  Lightbulb, 
-  Palette,
-  Send
-} from "lucide-react-native";
+import { ArrowLeft, MessageSquare, Bug, Lightbulb, Palette, Send } from "lucide-react-native";
 import { Colors } from "../constants/Colors";
 import { Button } from "../components/UI/Button";
 import { useAuth } from "../hooks/useAuth";
@@ -84,7 +77,7 @@ export default function UserFeedbackScreen() {
 
     setIsSubmitting(true);
     try {
-      const feedbackData: Omit<UserFeedback, 'id' | 'createdAt' | 'updatedAt'> = {
+      const feedbackData: Omit<UserFeedback, "id" | "createdAt" | "updatedAt"> = {
         userId: user.id,
         feedbackType: selectedType,
         title: title.trim(),
@@ -95,9 +88,9 @@ export default function UserFeedbackScreen() {
       };
 
       await apiService.submitUserFeedback(feedbackData);
-      
+
       Alert.alert(
-        "Feedback Submitted", 
+        "Feedback Submitted",
         "Thank you for your feedback! We'll review it and get back to you if needed.",
         [
           {
@@ -114,15 +107,12 @@ export default function UserFeedbackScreen() {
     }
   };
 
-  const selectedTypeInfo = FEEDBACK_TYPES.find(type => type.key === selectedType);
+  const selectedTypeInfo = FEEDBACK_TYPES.find((type) => type.key === selectedType);
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <ArrowLeft size={24} color={Colors.text.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>User Feedback</Text>
@@ -135,7 +125,7 @@ export default function UserFeedbackScreen() {
           <Text style={styles.sectionDescription}>
             Your feedback helps us improve the app for everyone during testing.
           </Text>
-          
+
           <View style={styles.typeGrid}>
             {FEEDBACK_TYPES.map((type) => {
               const Icon = type.icon;
@@ -143,13 +133,10 @@ export default function UserFeedbackScreen() {
               return (
                 <TouchableOpacity
                   key={type.key}
-                  style={[
-                    styles.typeCard,
-                    isSelected && styles.typeCardSelected,
-                  ]}
+                  style={[styles.typeCard, isSelected && styles.typeCardSelected]}
                   onPress={() => setSelectedType(type.key)}
                 >
-                  <View style={[styles.typeIcon, { backgroundColor: type.color + '20' }]}>
+                  <View style={[styles.typeIcon, { backgroundColor: type.color + "20" }]}>
                     <Icon size={24} color={type.color} />
                   </View>
                   <Text style={[styles.typeLabel, isSelected && styles.typeLabelSelected]}>
@@ -176,10 +163,12 @@ export default function UserFeedbackScreen() {
                     ]}
                     onPress={() => setSelectedPriority(priority.key)}
                   >
-                    <Text style={[
-                      styles.priorityChipText,
-                      selectedPriority === priority.key && styles.priorityChipTextSelected,
-                    ]}>
+                    <Text
+                      style={[
+                        styles.priorityChipText,
+                        selectedPriority === priority.key && styles.priorityChipTextSelected,
+                      ]}
+                    >
                       {priority.label}
                     </Text>
                   </TouchableOpacity>
@@ -203,7 +192,8 @@ export default function UserFeedbackScreen() {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Description</Text>
               <Text style={styles.sectionDescription}>
-                Please provide detailed information about your feedback. What happened? What did you expect? Any steps to reproduce?
+                Please provide detailed information about your feedback. What happened? What did you
+                expect? Any steps to reproduce?
               </Text>
               <TextInput
                 style={styles.descriptionInput}

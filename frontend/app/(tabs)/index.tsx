@@ -50,10 +50,7 @@ export default function HomeScreen() {
 
   const { user } = useAuth();
 
-  const fetchPosts = async (
-    pageNum: number = 1,
-    isRefresh: boolean = false
-  ) => {
+  const fetchPosts = async (pageNum: number = 1, isRefresh: boolean = false) => {
     try {
       if (pageNum === 1) {
         setError(null);
@@ -85,10 +82,7 @@ export default function HomeScreen() {
       }
     } catch (error: any) {
       console.error("Error fetching posts:", error);
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to load posts";
+      const errorMessage = error.response?.data?.message || error.message || "Failed to load posts";
 
       if (pageNum === 1) {
         setError(errorMessage);
@@ -168,38 +162,34 @@ export default function HomeScreen() {
   const handleShare = (postId: number) => {
     const shareUrl = `${URL_CONFIG.baseUrl}/post/${postId}`;
     const shareMessage = `Check out this post on StormNeighbor: ${shareUrl}`;
-    
-    Alert.alert(
-      "Share Post",
-      "How would you like to share this post?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Copy Link",
-          onPress: async () => {
-            try {
-              await Clipboard.setStringAsync(shareUrl);
-              Alert.alert("Success", "Link copied to clipboard!");
-            } catch (error) {
-              Alert.alert("Error", "Failed to copy link");
-            }
-          },
+
+    Alert.alert("Share Post", "How would you like to share this post?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Copy Link",
+        onPress: async () => {
+          try {
+            await Clipboard.setStringAsync(shareUrl);
+            Alert.alert("Success", "Link copied to clipboard!");
+          } catch (error) {
+            Alert.alert("Error", "Failed to copy link");
+          }
         },
-        {
-          text: "More Options",
-          onPress: async () => {
-            try {
-              await Share.share({
-                message: shareMessage,
-                url: shareUrl,
-              });
-            } catch (error) {
-              console.error("Error sharing:", error);
-            }
-          },
+      },
+      {
+        text: "More Options",
+        onPress: async () => {
+          try {
+            await Share.share({
+              message: shareMessage,
+              url: shareUrl,
+            });
+          } catch (error) {
+            console.error("Error sharing:", error);
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handlePostPress = (postId: number) => {
@@ -213,7 +203,7 @@ export default function HomeScreen() {
         const existingConversation = conversationsResponse.data.conversations.find(
           (conv: any) => conv.otherUser.id === userId
         );
-        
+
         if (existingConversation) {
           router.push({
             pathname: "/conversation/[id]" as any,
@@ -230,33 +220,25 @@ export default function HomeScreen() {
       console.error("Error checking conversations:", error);
     }
 
-    Alert.alert(
-      "Start Conversation",
-      `Send a message to ${userName}?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Send Message",
-          onPress: () => {
-            router.push({
-              pathname: "/conversation/new" as any,
-              params: {
-                recipientId: userId,
-                recipientName: userName,
-              },
-            });
-          },
+    Alert.alert("Start Conversation", `Send a message to ${userName}?`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Send Message",
+        onPress: () => {
+          router.push({
+            pathname: "/conversation/new" as any,
+            params: {
+              recipientId: userId,
+              recipientName: userName,
+            },
+          });
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleSearch = async (query: string, filters?: SearchFilters) => {
-    if (
-      !query.trim() &&
-      !filters?.types?.length &&
-      !filters?.priorities?.length
-    ) {
+    if (!query.trim() && !filters?.types?.length && !filters?.priorities?.length) {
       setSearchActive(false);
       setSearchResults([]);
       return;
@@ -279,10 +261,7 @@ export default function HomeScreen() {
 
         if (query.trim()) {
           setRecentSearches((prev) => {
-            const updated = [
-              query.trim(),
-              ...prev.filter((s) => s !== query.trim()),
-            ].slice(0, 5);
+            const updated = [query.trim(), ...prev.filter((s) => s !== query.trim())].slice(0, 5);
             return updated;
           });
         }
@@ -294,9 +273,6 @@ export default function HomeScreen() {
       setSearchLoading(false);
     }
   };
-
-
-
 
   useEffect(() => {
     if (user) {
@@ -322,7 +298,7 @@ export default function HomeScreen() {
     if (params.newPost && params.refresh) {
       try {
         const newPost = JSON.parse(params.newPost as string);
-        setPosts(currentPosts => [newPost, ...currentPosts]);
+        setPosts((currentPosts) => [newPost, ...currentPosts]);
         router.setParams({ newPost: undefined, refresh: undefined });
       } catch (error) {
         console.error("Error parsing new post:", error);
@@ -338,10 +314,10 @@ export default function HomeScreen() {
       onShare={handleShare}
       onPress={handlePostPress}
       onMessage={handleMessage}
-      onReport={(postId) => console.log('Report post:', postId)}
-      onBlock={(userId) => console.log('Block user:', userId)}
-      onUnfollow={(userId) => console.log('Unfollow user:', userId)}
-      onHide={(postId) => console.log('Hide post:', postId)}
+      onReport={(postId) => console.log("Report post:", postId)}
+      onBlock={(userId) => console.log("Block user:", userId)}
+      onUnfollow={(userId) => console.log("Unfollow user:", userId)}
+      onHide={(postId) => console.log("Hide post:", postId)}
       currentUserId={user?.id}
       isFollowing={false} // TODO: Implement following logic
     />
@@ -362,9 +338,7 @@ export default function HomeScreen() {
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyTitle}>No posts yet</Text>
-      <Text style={styles.emptyMessage}>
-        Be the first to share something with your community!
-      </Text>
+      <Text style={styles.emptyMessage}>Be the first to share something with your community!</Text>
     </View>
   );
 
@@ -428,11 +402,7 @@ export default function HomeScreen() {
     };
 
     return (
-      <Modal
-        visible={showFilters}
-        animationType="slide"
-        presentationStyle="pageSheet"
-      >
+      <Modal visible={showFilters} animationType="slide" presentationStyle="pageSheet">
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={() => setShowFilters(false)}>
@@ -453,8 +423,7 @@ export default function HomeScreen() {
                     key={type.key}
                     style={[
                       styles.filterChip,
-                      (searchFilters.types || []).includes(type.key) &&
-                        styles.filterChipActive,
+                      (searchFilters.types || []).includes(type.key) && styles.filterChipActive,
                     ]}
                     onPress={() => toggleType(type.key)}
                   >
@@ -488,9 +457,8 @@ export default function HomeScreen() {
                     <Text
                       style={[
                         styles.filterChipText,
-                        (searchFilters.priorities || []).includes(
-                          priority.key
-                        ) && styles.filterChipTextActive,
+                        (searchFilters.priorities || []).includes(priority.key) &&
+                          styles.filterChipTextActive,
                       ]}
                     >
                       {priority.label}
@@ -508,8 +476,7 @@ export default function HomeScreen() {
                     key={option.key}
                     style={[
                       styles.filterChip,
-                      searchFilters.sortBy === option.key &&
-                        styles.filterChipActive,
+                      searchFilters.sortBy === option.key && styles.filterChipActive,
                     ]}
                     onPress={() =>
                       setSearchFilters((prev) => ({
@@ -521,8 +488,7 @@ export default function HomeScreen() {
                     <Text
                       style={[
                         styles.filterChipText,
-                        searchFilters.sortBy === option.key &&
-                          styles.filterChipTextActive,
+                        searchFilters.sortBy === option.key && styles.filterChipTextActive,
                       ]}
                     >
                       {option.label}
@@ -584,77 +550,66 @@ export default function HomeScreen() {
         onMessagesPress={() => router.push("/(tabs)/messages")}
       />
       <FlatList
-          data={currentData}
-          renderItem={renderPost}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.contentContainer}
-          ListEmptyComponent={() => {
-            if (searchActive && !searchLoading) {
-              return (
-                <View style={styles.emptyContainer}>
-                  <Search
-                    size={64}
-                    color={Colors.neutral[400]}
-                  />
-                  <Text style={styles.emptyTitle}>No results found</Text>
-                  <Text style={styles.emptyMessage}>
-                    Try adjusting your search terms or filters
-                  </Text>
-                  {recentSearches.length > 0 && (
-                    <View style={styles.recentSearches}>
-                      <Text style={styles.recentSearchesTitle}>
-                        Recent Searches:
-                      </Text>
-                      <View style={styles.recentSearchesContainer}>
-                        {recentSearches.map((search, index) => (
-                          <TouchableOpacity
-                            key={index}
-                            style={styles.recentSearchChip}
-                            onPress={() => {
-                              setSearchQuery(search);
-                              handleSearch(search, searchFilters);
-                            }}
-                          >
-                            <Text style={styles.recentSearchText}>
-                              {search}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
-                      </View>
+        data={currentData}
+        renderItem={renderPost}
+        keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={styles.contentContainer}
+        ListEmptyComponent={() => {
+          if (searchActive && !searchLoading) {
+            return (
+              <View style={styles.emptyContainer}>
+                <Search size={64} color={Colors.neutral[400]} />
+                <Text style={styles.emptyTitle}>No results found</Text>
+                <Text style={styles.emptyMessage}>Try adjusting your search terms or filters</Text>
+                {recentSearches.length > 0 && (
+                  <View style={styles.recentSearches}>
+                    <Text style={styles.recentSearchesTitle}>Recent Searches:</Text>
+                    <View style={styles.recentSearchesContainer}>
+                      {recentSearches.map((search, index) => (
+                        <TouchableOpacity
+                          key={index}
+                          style={styles.recentSearchChip}
+                          onPress={() => {
+                            setSearchQuery(search);
+                            handleSearch(search, searchFilters);
+                          }}
+                        >
+                          <Text style={styles.recentSearchText}>{search}</Text>
+                        </TouchableOpacity>
+                      ))}
                     </View>
-                  )}
-                </View>
-              );
-            }
-            return renderEmpty();
-          }}
-          ListFooterComponent={() => {
-            if (searchLoading && searchResults.length > 0) {
-              return (
-                <View style={styles.loadingMore}>
-                  <ActivityIndicator size="small" color={Colors.primary[500]} />
-                  <Text style={styles.loadingText}>Searching...</Text>
-                </View>
-              );
-            }
-            return searchActive ? null : renderFooter();
-          }}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={
-                searchActive
-                  ? () => handleSearch(searchQuery, searchFilters)
-                  : handleRefresh
-              }
-              colors={[Colors.primary[500]]}
-              tintColor={Colors.primary[500]}
-            />
+                  </View>
+                )}
+              </View>
+            );
           }
-          onEndReached={searchActive ? undefined : handleLoadMore}
-          onEndReachedThreshold={0.3}
-          showsVerticalScrollIndicator={false}
-        />
+          return renderEmpty();
+        }}
+        ListFooterComponent={() => {
+          if (searchLoading && searchResults.length > 0) {
+            return (
+              <View style={styles.loadingMore}>
+                <ActivityIndicator size="small" color={Colors.primary[500]} />
+                <Text style={styles.loadingText}>Searching...</Text>
+              </View>
+            );
+          }
+          return searchActive ? null : renderFooter();
+        }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={
+              searchActive ? () => handleSearch(searchQuery, searchFilters) : handleRefresh
+            }
+            colors={[Colors.primary[500]]}
+            tintColor={Colors.primary[500]}
+          />
+        }
+        onEndReached={searchActive ? undefined : handleLoadMore}
+        onEndReachedThreshold={0.3}
+        showsVerticalScrollIndicator={false}
+      />
 
       {renderFiltersModal()}
     </View>

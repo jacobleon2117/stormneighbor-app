@@ -17,17 +17,17 @@ import {
   ActivityIndicator,
   Animated,
 } from "react-native";
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Header } from "../../components/UI/Header";
 import { Colors } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
 import { apiService } from "../../services/api";
 import * as ImagePicker from "expo-image-picker";
-import { 
-  MapPin, 
-  Camera, 
-  Image as Gallery, 
+import {
+  MapPin,
+  Camera,
+  Image as Gallery,
   MoreHorizontal,
   Megaphone,
   Heart,
@@ -39,15 +39,14 @@ import {
   Check,
   Globe,
   Users,
-  UserCheck
+  UserCheck,
 } from "lucide-react-native";
-
 
 export default function CreateScreen() {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const textInputRef = React.useRef<TextInput>(null);
-  const [postText, setPostText] = useState('');
+  const [postText, setPostText] = useState("");
   const [showQuickActions, setShowQuickActions] = useState(true);
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
@@ -63,70 +62,70 @@ export default function CreateScreen() {
     name: user?.locationCity ? `${user.locationCity}, ${user.addressState}` : "Current Location",
     latitude: user?.latitude,
     longitude: user?.longitude,
-    useCurrentLocation: true
+    useCurrentLocation: true,
   });
-  const [privacyLevel, setPrivacyLevel] = useState<'public' | 'neighbors' | 'friends'>('neighbors');
+  const [privacyLevel, setPrivacyLevel] = useState<"public" | "neighbors" | "friends">("neighbors");
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showDiscardModal, setShowDiscardModal] = useState(false);
-  const [postStatus, setPostStatus] = useState<'idle' | 'posting' | 'success'>('idle');
+  const [postStatus, setPostStatus] = useState<"idle" | "posting" | "success">("idle");
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const scaleAnim = React.useRef(new Animated.Value(0)).current;
 
   const quickActions = [
-    { 
-      id: 'announcement', 
-      label: 'Announcement', 
-      icon: Megaphone, 
+    {
+      id: "announcement",
+      label: "Announcement",
+      icon: Megaphone,
       color: Colors.primary[500],
-      bgColor: Colors.primary[50]
+      bgColor: Colors.primary[50],
     },
-    { 
-      id: 'offer_help', 
-      label: 'Offer Help', 
-      icon: Heart, 
+    {
+      id: "offer_help",
+      label: "Offer Help",
+      icon: Heart,
       color: Colors.success[600],
-      bgColor: Colors.success[50]
+      bgColor: Colors.success[50],
     },
-    { 
-      id: 'weather_alert', 
-      label: 'Weather Alert', 
-      icon: CloudRain, 
+    {
+      id: "weather_alert",
+      label: "Weather Alert",
+      icon: CloudRain,
       color: Colors.warning[600],
-      bgColor: Colors.warning[50]
+      bgColor: Colors.warning[50],
     },
-    { 
-      id: 'safety_alert', 
-      label: 'Safety Alert', 
-      icon: AlertTriangle, 
+    {
+      id: "safety_alert",
+      label: "Safety Alert",
+      icon: AlertTriangle,
       color: Colors.error[600],
-      bgColor: Colors.error[50]
+      bgColor: Colors.error[50],
     },
-    { 
-      id: 'ask_question', 
-      label: 'Ask Question', 
-      icon: HelpCircle, 
+    {
+      id: "ask_question",
+      label: "Ask Question",
+      icon: HelpCircle,
       color: Colors.neutral[600],
-      bgColor: Colors.neutral[50]
+      bgColor: Colors.neutral[50],
     },
-    { 
-      id: 'create_event', 
-      label: 'Create Event', 
-      icon: Calendar, 
+    {
+      id: "create_event",
+      label: "Create Event",
+      icon: Calendar,
       color: Colors.purple[600],
-      bgColor: Colors.purple[50]
+      bgColor: Colors.purple[50],
     },
   ];
 
   useEffect(() => {
     const keyboardWillShowListener = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
       (e) => {
         setKeyboardHeight(e.endCoordinates.height);
       }
     );
     const keyboardWillHideListener = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
       () => {
         setKeyboardHeight(0);
       }
@@ -187,21 +186,21 @@ export default function CreateScreen() {
     try {
       Keyboard.dismiss();
       setIsPosting(true);
-      setPostStatus('posting');
-      
+      setPostStatus("posting");
+
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 300,
         useNativeDriver: true,
       }).start();
 
-      const selectedQuickAction = quickActions.find(a => a.id === selectedAction);
-      
+      const selectedQuickAction = quickActions.find((a) => a.id === selectedAction);
+
       const postData = {
         content: postText.trim(),
         postType: getPostTypeFromAction(selectedAction),
         priority: getPriorityFromAction(selectedAction),
-        isEmergency: selectedAction === 'safety_alert',
+        isEmergency: selectedAction === "safety_alert",
         tags: selectedAction ? [selectedAction] : [],
         images: selectedImages,
         // TODO: Backend doesn't support these fields yet, will add later
@@ -211,13 +210,13 @@ export default function CreateScreen() {
         // privacy: privacyLevel,
       };
 
-      console.log('Creating post:', postData);
+      console.log("Creating post:", postData);
 
       const response = await apiService.createPost(postData);
 
       if (response.success) {
-        setPostStatus('success');
-        
+        setPostStatus("success");
+
         Animated.sequence([
           Animated.timing(scaleAnim, {
             toValue: 1,
@@ -229,16 +228,16 @@ export default function CreateScreen() {
             toValue: 0,
             duration: 300,
             useNativeDriver: true,
-          })
+          }),
         ]).start(() => {
-          setPostText('');
+          setPostText("");
           setSelectedAction(null);
           setSelectedImages([]);
           setShowQuickActions(true);
-          setPostStatus('idle');
+          setPostStatus("idle");
           scaleAnim.setValue(0);
           fadeAnim.setValue(0);
-          
+
           router.replace("/(tabs)");
         });
       } else {
@@ -246,14 +245,14 @@ export default function CreateScreen() {
       }
     } catch (error: any) {
       console.error("Error creating post:", error);
-      setPostStatus('idle');
+      setPostStatus("idle");
       Animated.timing(fadeAnim, {
         toValue: 0,
         duration: 300,
         useNativeDriver: true,
       }).start();
       Alert.alert(
-        "Error", 
+        "Error",
         error.response?.data?.message || error.message || "Failed to create post. Please try again."
       );
     } finally {
@@ -263,45 +262,48 @@ export default function CreateScreen() {
 
   const getPostTypeFromAction = (actionId: string | null): string => {
     switch (actionId) {
-      case 'safety_alert':
-        return 'safety_alert';
-      case 'offer_help':
-        return 'help_offer';
-      case 'ask_question':
-        return 'question';
-      case 'create_event':
-        return 'event';
-      case 'weather_alert':
-        return 'weather_alert';
-      case 'announcement':
-        return 'announcement';
+      case "safety_alert":
+        return "safety_alert";
+      case "offer_help":
+        return "help_offer";
+      case "ask_question":
+        return "question";
+      case "create_event":
+        return "event";
+      case "weather_alert":
+        return "weather_alert";
+      case "announcement":
+        return "announcement";
       default:
-        return 'general';
+        return "general";
     }
   };
 
   const getPriorityFromAction = (actionId: string | null): string => {
     switch (actionId) {
-      case 'safety_alert':
-      case 'weather_alert':
-        return 'urgent';
-      case 'offer_help':
-      case 'ask_question':
-        return 'high';
-      case 'create_event':
-        return 'normal';
-      case 'announcement':
-        return 'high';
+      case "safety_alert":
+      case "weather_alert":
+        return "urgent";
+      case "offer_help":
+      case "ask_question":
+        return "high";
+      case "create_event":
+        return "normal";
+      case "announcement":
+        return "high";
       default:
-        return 'normal';
+        return "normal";
     }
   };
 
   const handleGalleryPress = async () => {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission Required', 'Please allow access to your photo library to select images.');
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission Required",
+          "Please allow access to your photo library to select images."
+        );
         return;
       }
 
@@ -312,28 +314,25 @@ export default function CreateScreen() {
         aspect: [1, 1],
       });
 
-
-
-
       if (!result.canceled && result.assets) {
-        const imageUris = result.assets.map(asset => asset.uri);
-        setSelectedImages(prev => [...prev, ...imageUris].slice(0, 5));
+        const imageUris = result.assets.map((asset) => asset.uri);
+        setSelectedImages((prev) => [...prev, ...imageUris].slice(0, 5));
       }
-      
+
       setTimeout(() => {
         textInputRef.current?.focus();
       }, 100);
     } catch (error) {
-      console.error('Error selecting images:', error);
-      Alert.alert('Error', 'Failed to select images from gallery.');
+      console.error("Error selecting images:", error);
+      Alert.alert("Error", "Failed to select images from gallery.");
     }
   };
 
   const handleCameraPress = async () => {
     try {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission Required', 'Please allow camera access to take photos.');
+      if (status !== "granted") {
+        Alert.alert("Permission Required", "Please allow camera access to take photos.");
         return;
       }
 
@@ -346,15 +345,15 @@ export default function CreateScreen() {
 
       if (!result.canceled && result.assets && result.assets[0]) {
         const newImage = result.assets[0].uri;
-        setSelectedImages(prev => [...prev, newImage].slice(0, 5));
+        setSelectedImages((prev) => [...prev, newImage].slice(0, 5));
       }
-      
+
       setTimeout(() => {
         textInputRef.current?.focus();
       }, 100);
     } catch (error) {
-      console.error('Error taking photo:', error);
-      Alert.alert('Error', 'Failed to take photo.');
+      console.error("Error taking photo:", error);
+      Alert.alert("Error", "Failed to take photo.");
     }
   };
 
@@ -368,25 +367,33 @@ export default function CreateScreen() {
 
   const getPrivacyIcon = () => {
     switch (privacyLevel) {
-      case 'public': return Globe;
-      case 'neighbors': return Users;
-      case 'friends': return UserCheck;
-      default: return Users;
+      case "public":
+        return Globe;
+      case "neighbors":
+        return Users;
+      case "friends":
+        return UserCheck;
+      default:
+        return Users;
     }
   };
 
   const getPrivacyLabel = () => {
     switch (privacyLevel) {
-      case 'public': return 'Public';
-      case 'neighbors': return 'Neighbors';
-      case 'friends': return 'Friends';
-      default: return 'Neighbors';
+      case "public":
+        return "Public";
+      case "neighbors":
+        return "Neighbors";
+      case "friends":
+        return "Friends";
+      default:
+        return "Neighbors";
     }
   };
 
   const handleClosePress = () => {
     const hasContent = postText.trim() || selectedImages.length > 0 || selectedAction;
-    
+
     if (hasContent) {
       setShowDiscardModal(true);
     } else {
@@ -395,7 +402,7 @@ export default function CreateScreen() {
   };
 
   const handleDiscardPost = () => {
-    setPostText('');
+    setPostText("");
     setSelectedAction(null);
     setSelectedImages([]);
     setShowQuickActions(true);
@@ -430,10 +437,7 @@ export default function CreateScreen() {
             <View style={styles.content}>
               <View style={styles.topButtonRow}>
                 <View style={styles.leftButtons}>
-                  <TouchableOpacity
-                    style={styles.locationButton}
-                    onPress={handleLocationPress}
-                  >
+                  <TouchableOpacity style={styles.locationButton} onPress={handleLocationPress}>
                     <MapPin size={16} color={Colors.text.secondary} />
                     <Text style={styles.buttonText} numberOfLines={1}>
                       {selectedLocation.name.length > 12
@@ -442,10 +446,7 @@ export default function CreateScreen() {
                     </Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity
-                    style={styles.privacyButton}
-                    onPress={handlePrivacyPress}
-                  >
+                  <TouchableOpacity style={styles.privacyButton} onPress={handlePrivacyPress}>
                     {React.createElement(getPrivacyIcon(), {
                       size: 16,
                       color: Colors.text.secondary,
@@ -457,8 +458,7 @@ export default function CreateScreen() {
                 <TouchableOpacity
                   style={[
                     styles.postButton,
-                    (!postText.trim() || isPosting) &&
-                      styles.postButtonDisabled,
+                    (!postText.trim() || isPosting) && styles.postButtonDisabled,
                   ]}
                   onPress={handleCreatePost}
                   disabled={!postText.trim() || isPosting}
@@ -466,8 +466,7 @@ export default function CreateScreen() {
                   <Text
                     style={[
                       styles.postButtonText,
-                      (!postText.trim() || isPosting) &&
-                        styles.postButtonTextDisabled,
+                      (!postText.trim() || isPosting) && styles.postButtonTextDisabled,
                     ]}
                   >
                     Post
@@ -480,20 +479,13 @@ export default function CreateScreen() {
                   {selectedAction && (
                     <View style={styles.selectedActionInline}>
                       {(() => {
-                        const action = quickActions.find(
-                          (a) => a.id === selectedAction
-                        );
+                        const action = quickActions.find((a) => a.id === selectedAction);
                         if (!action) return null;
                         const IconComponent = action.icon;
                         return (
                           <>
                             <IconComponent size={16} color={action.color} />
-                            <Text
-                              style={[
-                                styles.inlineBadgeText,
-                                { color: action.color },
-                              ]}
-                            >
+                            <Text style={[styles.inlineBadgeText, { color: action.color }]}>
                               {action.label}
                             </Text>
                             <TouchableOpacity
@@ -510,10 +502,7 @@ export default function CreateScreen() {
                   )}
                   <TextInput
                     ref={textInputRef}
-                    style={[
-                      styles.textInput,
-                      selectedAction && styles.textInputWithBadge,
-                    ]}
+                    style={[styles.textInput, selectedAction && styles.textInputWithBadge]}
                     multiline
                     placeholder="What's happening in your neighborhood?"
                     placeholderTextColor={Colors.text.disabled}
@@ -534,11 +523,7 @@ export default function CreateScreen() {
           style={[
             styles.selectedImagesFloating,
             {
-              bottom: showQuickActions
-                ? 372
-                : keyboardHeight > 0
-                ? keyboardHeight + 72
-                : 112,
+              bottom: showQuickActions ? 372 : keyboardHeight > 0 ? keyboardHeight + 72 : 112,
             },
           ]}
         >
@@ -549,17 +534,10 @@ export default function CreateScreen() {
           >
             {selectedImages.map((imageUri, index) => (
               <View key={index} style={styles.selectedImageWrapper}>
-                <Image
-                  source={{ uri: imageUri }}
-                  style={styles.selectedImage}
-                />
+                <Image source={{ uri: imageUri }} style={styles.selectedImage} />
                 <TouchableOpacity
                   style={styles.removeImageButton}
-                  onPress={() =>
-                    setSelectedImages((prev) =>
-                      prev.filter((_, i) => i !== index)
-                    )
-                  }
+                  onPress={() => setSelectedImages((prev) => prev.filter((_, i) => i !== index))}
                 >
                   <X size={16} color={Colors.text.inverse} />
                 </TouchableOpacity>
@@ -573,50 +551,30 @@ export default function CreateScreen() {
         style={[
           styles.mediaButtonsContainer,
           {
-            bottom: showQuickActions
-              ? 300
-              : keyboardHeight > 0
-              ? keyboardHeight
-              : 40,
+            bottom: showQuickActions ? 300 : keyboardHeight > 0 ? keyboardHeight : 40,
           },
         ]}
       >
         <View style={styles.mediaButtons}>
           <View style={styles.leftMediaButtons}>
-            <TouchableOpacity
-              style={styles.mediaButton}
-              onPress={handleGalleryPress}
-            >
+            <TouchableOpacity style={styles.mediaButton} onPress={handleGalleryPress}>
               <Gallery size={20} color={Colors.text.secondary} />
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.mediaButton}
-              onPress={handleCameraPress}
-            >
+            <TouchableOpacity style={styles.mediaButton} onPress={handleCameraPress}>
               <Camera size={20} color={Colors.text.secondary} />
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity
-            style={styles.moreButton}
-            onPress={toggleQuickActions}
-          >
+          <TouchableOpacity style={styles.moreButton} onPress={toggleQuickActions}>
             <MoreHorizontal size={20} color={Colors.text.secondary} />
-            <Text style={styles.moreButtonText}>
-              {showQuickActions ? "Less" : "More"}
-            </Text>
+            <Text style={styles.moreButtonText}>{showQuickActions ? "Less" : "More"}</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       {showQuickActions && (
-        <View
-          style={[
-            styles.quickActionsSection,
-            { paddingBottom: insets.bottom + 20 },
-          ]}
-        >
+        <View style={[styles.quickActionsSection, { paddingBottom: insets.bottom + 20 }]}>
           <Text style={styles.quickActionsHeader}>Quick Actions</Text>
           <View style={styles.quickActionsList}>
             {quickActions.map((action) => {
@@ -677,8 +635,7 @@ export default function CreateScreen() {
             <TouchableOpacity
               style={[
                 styles.locationOption,
-                selectedLocation.useCurrentLocation &&
-                  styles.locationOptionSelected,
+                selectedLocation.useCurrentLocation && styles.locationOptionSelected,
               ]}
               onPress={() =>
                 setSelectedLocation({
@@ -694,17 +651,14 @@ export default function CreateScreen() {
               <MapPin
                 size={20}
                 color={
-                  selectedLocation.useCurrentLocation
-                    ? Colors.primary[500]
-                    : Colors.text.secondary
+                  selectedLocation.useCurrentLocation ? Colors.primary[500] : Colors.text.secondary
                 }
               />
               <View style={styles.locationOptionText}>
                 <Text
                   style={[
                     styles.locationOptionTitle,
-                    selectedLocation.useCurrentLocation &&
-                      styles.locationOptionTitleSelected,
+                    selectedLocation.useCurrentLocation && styles.locationOptionTitleSelected,
                   ]}
                 >
                   Current Location
@@ -723,8 +677,7 @@ export default function CreateScreen() {
             <TouchableOpacity
               style={[
                 styles.locationOption,
-                !selectedLocation.useCurrentLocation &&
-                  styles.locationOptionSelected,
+                !selectedLocation.useCurrentLocation && styles.locationOptionSelected,
               ]}
               onPress={() =>
                 setSelectedLocation({
@@ -736,17 +689,14 @@ export default function CreateScreen() {
               <MapPin
                 size={20}
                 color={
-                  !selectedLocation.useCurrentLocation
-                    ? Colors.primary[500]
-                    : Colors.text.secondary
+                  !selectedLocation.useCurrentLocation ? Colors.primary[500] : Colors.text.secondary
                 }
               />
               <View style={styles.locationOptionText}>
                 <Text
                   style={[
                     styles.locationOptionTitle,
-                    !selectedLocation.useCurrentLocation &&
-                      styles.locationOptionTitleSelected,
+                    !selectedLocation.useCurrentLocation && styles.locationOptionTitleSelected,
                   ]}
                 >
                   Custom Location
@@ -790,29 +740,20 @@ export default function CreateScreen() {
             >
               <Globe
                 size={20}
-                color={
-                  privacyLevel === "public"
-                    ? Colors.primary[500]
-                    : Colors.text.secondary
-                }
+                color={privacyLevel === "public" ? Colors.primary[500] : Colors.text.secondary}
               />
               <View style={styles.privacyOptionText}>
                 <Text
                   style={[
                     styles.privacyOptionTitle,
-                    privacyLevel === "public" &&
-                      styles.privacyOptionTitleSelected,
+                    privacyLevel === "public" && styles.privacyOptionTitleSelected,
                   ]}
                 >
                   Public
                 </Text>
-                <Text style={styles.privacyOptionSubtitle}>
-                  Anyone can see this post
-                </Text>
+                <Text style={styles.privacyOptionSubtitle}>Anyone can see this post</Text>
               </View>
-              {privacyLevel === "public" && (
-                <Check size={20} color={Colors.primary[500]} />
-              )}
+              {privacyLevel === "public" && <Check size={20} color={Colors.primary[500]} />}
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -824,18 +765,13 @@ export default function CreateScreen() {
             >
               <Users
                 size={20}
-                color={
-                  privacyLevel === "neighbors"
-                    ? Colors.primary[500]
-                    : Colors.text.secondary
-                }
+                color={privacyLevel === "neighbors" ? Colors.primary[500] : Colors.text.secondary}
               />
               <View style={styles.privacyOptionText}>
                 <Text
                   style={[
                     styles.privacyOptionTitle,
-                    privacyLevel === "neighbors" &&
-                      styles.privacyOptionTitleSelected,
+                    privacyLevel === "neighbors" && styles.privacyOptionTitleSelected,
                   ]}
                 >
                   Neighbors
@@ -844,9 +780,7 @@ export default function CreateScreen() {
                   Only people in your neighborhood can see this
                 </Text>
               </View>
-              {privacyLevel === "neighbors" && (
-                <Check size={20} color={Colors.primary[500]} />
-              )}
+              {privacyLevel === "neighbors" && <Check size={20} color={Colors.primary[500]} />}
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -858,18 +792,13 @@ export default function CreateScreen() {
             >
               <UserCheck
                 size={20}
-                color={
-                  privacyLevel === "friends"
-                    ? Colors.primary[500]
-                    : Colors.text.secondary
-                }
+                color={privacyLevel === "friends" ? Colors.primary[500] : Colors.text.secondary}
               />
               <View style={styles.privacyOptionText}>
                 <Text
                   style={[
                     styles.privacyOptionTitle,
-                    privacyLevel === "friends" &&
-                      styles.privacyOptionTitleSelected,
+                    privacyLevel === "friends" && styles.privacyOptionTitleSelected,
                   ]}
                 >
                   Friends Only
@@ -878,9 +807,7 @@ export default function CreateScreen() {
                   Only your friends can see this post
                 </Text>
               </View>
-              {privacyLevel === "friends" && (
-                <Check size={20} color={Colors.primary[500]} />
-              )}
+              {privacyLevel === "friends" && <Check size={20} color={Colors.primary[500]} />}
             </TouchableOpacity>
           </ScrollView>
         </SafeAreaView>
@@ -895,24 +822,17 @@ export default function CreateScreen() {
         <View style={styles.discardOverlay}>
           <View style={styles.discardModal}>
             <Text style={styles.discardTitle}>Discard post?</Text>
-            <Text style={styles.discardMessage}>
-              If you go back now, you'll lose your post.
-            </Text>
+            <Text style={styles.discardMessage}>If you go back now, you'll lose your post.</Text>
 
             <View style={styles.discardButtons}>
               <TouchableOpacity
                 style={styles.discardButtonSecondary}
                 onPress={() => setShowDiscardModal(false)}
               >
-                <Text style={styles.discardButtonSecondaryText}>
-                  Keep editing
-                </Text>
+                <Text style={styles.discardButtonSecondaryText}>Keep editing</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.discardButtonPrimary}
-                onPress={handleDiscardPost}
-              >
+              <TouchableOpacity style={styles.discardButtonPrimary} onPress={handleDiscardPost}>
                 <Text style={styles.discardButtonPrimaryText}>Discard</Text>
               </TouchableOpacity>
             </View>
@@ -926,14 +846,11 @@ export default function CreateScreen() {
             {postStatus === "posting" ? (
               <>
                 <ActivityIndicator size="large" color={Colors.primary[500]} />
-                <Text style={styles.loadingText}>Posting...</Text>
+                <Text style={styles.loadingText}>Posting</Text>
               </>
             ) : (
               <Animated.View
-                style={[
-                  styles.successContainer,
-                  { transform: [{ scale: scaleAnim }] },
-                ]}
+                style={[styles.successContainer, { transform: [{ scale: scaleAnim }] }]}
               >
                 <View style={styles.successCircle}>
                   <Check size={32} color={Colors.text.inverse} />
@@ -963,22 +880,22 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 20,
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
   },
   topButtonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingTop: 16,
     paddingBottom: 12,
   },
   leftButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
   },
   locationButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 12,
     paddingVertical: 8,
     backgroundColor: Colors.background,
@@ -988,8 +905,8 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   privacyButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 12,
     paddingVertical: 8,
     backgroundColor: Colors.background,
@@ -1000,7 +917,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
     color: Colors.text.secondary,
   },
   postButton: {
@@ -1011,7 +928,7 @@ const styles = StyleSheet.create({
   },
   postButtonText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.text.inverse,
   },
   postButtonDisabled: {
@@ -1026,11 +943,11 @@ const styles = StyleSheet.create({
   },
   selectedActionBadgeRow: {
     paddingVertical: 8,
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
   },
   selectedActionBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 12,
     paddingVertical: 8,
     backgroundColor: Colors.background,
@@ -1038,7 +955,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
     gap: 6,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 1,
@@ -1055,16 +972,16 @@ const styles = StyleSheet.create({
     color: Colors.text.primary,
     lineHeight: 22,
     minHeight: 120,
-    textAlignVertical: 'top',
+    textAlignVertical: "top",
     padding: 0,
   },
   textInputWithBadge: {
     marginTop: 8,
   },
   selectedActionInline: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
     paddingHorizontal: 10,
     paddingVertical: 6,
     backgroundColor: Colors.background,
@@ -1076,7 +993,7 @@ const styles = StyleSheet.create({
   },
   inlineBadgeText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   removeInlineBadgeButton: {
     marginLeft: 2,
@@ -1084,14 +1001,14 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   removeBadgeButton: {
     marginLeft: 4,
     padding: 2,
   },
   mediaButtonsContainer: {
-    position: 'absolute',
+    position: "absolute",
     left: 0,
     right: 0,
     paddingVertical: 16,
@@ -1100,13 +1017,13 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   mediaButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   leftMediaButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
   },
   mediaButton: {
@@ -1116,12 +1033,12 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
     borderWidth: 1,
     borderColor: Colors.border,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   moreButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 12,
     paddingVertical: 10,
     backgroundColor: Colors.background,
@@ -1132,11 +1049,11 @@ const styles = StyleSheet.create({
   },
   moreButtonText: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
     color: Colors.text.secondary,
   },
   quickActionsSection: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
@@ -1145,7 +1062,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 16,
     paddingTop: 20,
     paddingHorizontal: 20,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: -4,
@@ -1156,32 +1073,32 @@ const styles = StyleSheet.create({
   },
   quickActionsHeader: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.text.primary,
     marginBottom: 16,
-    textAlign: 'left',
+    textAlign: "left",
   },
   quickActionsList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 12,
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
   },
   quickActionPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 25,
     gap: 8,
     marginBottom: 12,
-    width: '48%',
+    width: "48%",
     minHeight: 44,
   },
   quickActionPillText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   selectedImagesContainer: {
     paddingHorizontal: 20,
@@ -1191,7 +1108,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
   },
   selectedImagesFloating: {
-    position: 'absolute',
+    position: "absolute",
     left: 0,
     right: 0,
     paddingHorizontal: 20,
@@ -1203,7 +1120,7 @@ const styles = StyleSheet.create({
     maxHeight: 100,
   },
   selectedImageWrapper: {
-    position: 'relative',
+    position: "relative",
     marginRight: 8,
   },
   selectedImage: {
@@ -1213,16 +1130,16 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.neutral[100],
   },
   removeImageButton: {
-    position: 'absolute',
+    position: "absolute",
     top: -6,
     right: -6,
     width: 24,
     height: 24,
     borderRadius: 12,
     backgroundColor: Colors.error[600],
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -1234,9 +1151,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
   },
   modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
@@ -1244,7 +1161,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.text.primary,
   },
   modalContent: {
@@ -1252,8 +1169,8 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   locationOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
@@ -1268,7 +1185,7 @@ const styles = StyleSheet.create({
   },
   locationOptionTitle: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: "500",
     color: Colors.text.primary,
     marginBottom: 4,
   },
@@ -1280,8 +1197,8 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary,
   },
   privacyOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
@@ -1296,7 +1213,7 @@ const styles = StyleSheet.create({
   },
   privacyOptionTitle: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: "500",
     color: Colors.text.primary,
     marginBottom: 4,
   },
@@ -1308,38 +1225,38 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary,
   },
   loadingOverlay: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    justifyContent: "center",
+    alignItems: "center",
     zIndex: 1000,
   },
   loadingContent: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   loadingText: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.text.inverse,
     marginTop: 16,
   },
   successContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   successCircle: {
     width: 80,
     height: 80,
     borderRadius: 40,
     backgroundColor: Colors.success[600],
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 4,
@@ -1350,15 +1267,15 @@ const styles = StyleSheet.create({
   },
   successText: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.text.inverse,
     marginTop: 16,
   },
   discardOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 40,
   },
   discardModal: {
@@ -1366,28 +1283,28 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingVertical: 24,
     paddingHorizontal: 24,
-    width: '100%',
+    width: "100%",
     maxWidth: 340,
-    alignItems: 'center',
+    alignItems: "center",
   },
   discardTitle: {
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.text.primary,
     marginBottom: 8,
-    textAlign: 'center',
+    textAlign: "center",
   },
   discardMessage: {
     fontSize: 16,
     color: Colors.text.secondary,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 22,
     marginBottom: 24,
   },
   discardButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
-    width: '100%',
+    width: "100%",
   },
   discardButtonSecondary: {
     flex: 1,
@@ -1395,11 +1312,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     backgroundColor: Colors.neutral[100],
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
   },
   discardButtonSecondaryText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.text.primary,
   },
   discardButtonPrimary: {
@@ -1408,11 +1325,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     backgroundColor: Colors.error[600],
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
   },
   discardButtonPrimaryText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     color: Colors.text.inverse,
   },
 });

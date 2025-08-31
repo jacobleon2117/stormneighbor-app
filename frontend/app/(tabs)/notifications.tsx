@@ -11,7 +11,15 @@ import {
   RefreshControl,
 } from "react-native";
 import { router } from "expo-router";
-import { Bell, BellOff, CheckCircle, AlertCircle, MessageSquare, Users, Trash2 } from "lucide-react-native";
+import {
+  Bell,
+  BellOff,
+  CheckCircle,
+  AlertCircle,
+  MessageSquare,
+  Users,
+  Trash2,
+} from "lucide-react-native";
 import { Header } from "../../components/UI/Header";
 import { Colors } from "../../constants/Colors";
 import { apiService } from "../../services/api";
@@ -48,9 +56,9 @@ export default function NotificationsScreen() {
   const loadNotifications = async (isRefresh = false) => {
     try {
       if (!isRefresh) setLoading(true);
-      
+
       const response = await apiService.getNotifications();
-      
+
       if (response.success && response.data) {
         setNotifications(response.data.items || []);
       } else {
@@ -77,11 +85,9 @@ export default function NotificationsScreen() {
   const markAsRead = async (notificationId: number) => {
     try {
       await apiService.markNotificationAsRead(notificationId);
-      setNotifications(prev =>
-        prev.map(notification =>
-          notification.id === notificationId
-            ? { ...notification, isRead: true }
-            : notification
+      setNotifications((prev) =>
+        prev.map((notification) =>
+          notification.id === notificationId ? { ...notification, isRead: true } : notification
         )
       );
     } catch (error) {
@@ -92,9 +98,7 @@ export default function NotificationsScreen() {
   const markAllAsRead = async () => {
     try {
       await apiService.markAllNotificationsAsRead();
-      setNotifications(prev =>
-        prev.map(notification => ({ ...notification, isRead: true }))
-      );
+      setNotifications((prev) => prev.map((notification) => ({ ...notification, isRead: true })));
     } catch (error) {
       console.error("Mark all as read error:", error);
       Alert.alert("Error", "Failed to mark all as read. Please try again.");
@@ -104,9 +108,7 @@ export default function NotificationsScreen() {
   const deleteNotification = async (notificationId: number) => {
     try {
       await apiService.deleteNotification(notificationId);
-      setNotifications(prev =>
-        prev.filter(notification => notification.id !== notificationId)
-      );
+      setNotifications((prev) => prev.filter((notification) => notification.id !== notificationId));
     } catch (error) {
       console.error("Delete notification error:", error);
       Alert.alert("Error", "Failed to delete notification. Please try again.");
@@ -129,20 +131,20 @@ export default function NotificationsScreen() {
     const now = new Date();
     const date = new Date(dateString);
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    
+
     if (diffInSeconds < 60) return "Just now";
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
     if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
-    
+
     return date.toLocaleDateString();
   };
 
-  const filteredNotifications = notifications.filter(notification => 
-    filter === "all" || !notification.isRead
+  const filteredNotifications = notifications.filter(
+    (notification) => filter === "all" || !notification.isRead
   );
 
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   const renderNotification = ({ item }: { item: Notification }) => {
     const IconComponent = NOTIFICATION_ICONS[item.type]?.component || Bell;
@@ -162,7 +164,7 @@ export default function NotificationsScreen() {
           <IconComponent size={20} color={iconColor} />
           {!item.isRead && <View style={styles.unreadIndicator} />}
         </View>
-        
+
         <View style={styles.notificationContent}>
           <Text style={[styles.notificationTitle, !item.isRead && styles.unreadTitle]}>
             {item.title}
@@ -170,9 +172,7 @@ export default function NotificationsScreen() {
           <Text style={styles.notificationMessage} numberOfLines={2}>
             {item.message}
           </Text>
-          <Text style={styles.notificationTime}>
-            {formatTimeAgo(item.createdAt)}
-          </Text>
+          <Text style={styles.notificationTime}>{formatTimeAgo(item.createdAt)}</Text>
         </View>
 
         <TouchableOpacity
@@ -183,11 +183,11 @@ export default function NotificationsScreen() {
               "Are you sure you want to delete this notification?",
               [
                 { text: "Cancel", style: "cancel" },
-                { 
-                  text: "Delete", 
+                {
+                  text: "Delete",
                   style: "destructive",
-                  onPress: () => deleteNotification(item.id)
-                }
+                  onPress: () => deleteNotification(item.id),
+                },
               ]
             );
           }}
@@ -209,7 +209,7 @@ export default function NotificationsScreen() {
         {filter === "unread" ? "No unread notifications" : "No notifications"}
       </Text>
       <Text style={styles.emptyMessage}>
-        {filter === "unread" 
+        {filter === "unread"
           ? "All caught up! Check back later for updates."
           : "We'll notify you when something important happens in your community."}
       </Text>
@@ -231,9 +231,8 @@ export default function NotificationsScreen() {
         showMessages={false}
         showMore={false}
       />
-      
-      <View style={{ flex: 1 }}>
-      </View>
+
+      <View style={{ flex: 1 }}></View>
     </View>
   );
 }

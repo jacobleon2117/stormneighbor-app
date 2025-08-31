@@ -41,9 +41,7 @@ export default function PrivacySecurityScreen() {
 
   const loadSecuritySettings = async () => {
     try {
-      const response = await apiService
-        .getApi()
-        .get("/users/security-settings");
+      const response = await apiService.getApi().get("/users/security-settings");
       if (response.data.success) {
         setSettings(response.data.data);
       }
@@ -59,9 +57,7 @@ export default function PrivacySecurityScreen() {
       setSaving(true);
       const updatedSettings = { ...settings, ...newSettings };
 
-      const response = await apiService
-        .getApi()
-        .put("/users/security-settings", updatedSettings);
+      const response = await apiService.getApi().put("/users/security-settings", updatedSettings);
       if (response.data.success) {
         setSettings(updatedSettings);
         Alert.alert("Success", "Security settings updated successfully!");
@@ -106,16 +102,10 @@ export default function PrivacySecurityScreen() {
             if (value === "DELETE") {
               try {
                 await apiService.getApi().delete("/users/account");
-                Alert.alert(
-                  "Account Deleted",
-                  "Your account has been deleted successfully."
-                );
+                Alert.alert("Account Deleted", "Your account has been deleted successfully.");
                 router.replace("/(auth)/welcome");
               } catch (error) {
-                Alert.alert(
-                  "Error",
-                  "Failed to delete account. Please try again."
-                );
+                Alert.alert("Error", "Failed to delete account. Please try again.");
               }
             } else {
               Alert.alert("Error", "Confirmation text does not match.");
@@ -164,19 +154,11 @@ export default function PrivacySecurityScreen() {
           {options.map((option) => (
             <TouchableOpacity
               key={option.key}
-              style={[
-                styles.optionButton,
-                value === option.key && styles.selectedOption,
-              ]}
+              style={[styles.optionButton, value === option.key && styles.selectedOption]}
               onPress={() => onSelect(option.key)}
               disabled={saving}
             >
-              <Text
-                style={[
-                  styles.optionText,
-                  value === option.key && styles.selectedOptionText,
-                ]}
-              >
+              <Text style={[styles.optionText, value === option.key && styles.selectedOptionText]}>
                 {option.label}
               </Text>
             </TouchableOpacity>
@@ -205,9 +187,7 @@ export default function PrivacySecurityScreen() {
         style={styles.actionIcon}
       />
       <View style={styles.actionContent}>
-        <Text style={[styles.actionTitle, danger && styles.dangerText]}>
-          {title}
-        </Text>
+        <Text style={[styles.actionTitle, danger && styles.dangerText]}>{title}</Text>
         <Text style={styles.actionDescription}>{description}</Text>
       </View>
       <Ionicons name="chevron-forward" size={20} color={Colors.text.disabled} />

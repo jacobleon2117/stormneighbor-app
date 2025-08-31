@@ -6,9 +6,9 @@ function getDatabaseConfig() {
     connectionString: process.env.DATABASE_URL,
     ssl: config.database.ssl
       ? {
-        rejectUnauthorized: false,
-        ca: null,
-      }
+          rejectUnauthorized: false,
+          ca: null,
+        }
       : false,
     max: config.database.poolSize,
     connectionTimeoutMillis: config.database.connectionTimeout,

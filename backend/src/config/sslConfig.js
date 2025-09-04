@@ -168,13 +168,13 @@ class SSLConfiguration {
       return origins.split(",").map((origin) => origin.trim());
     }
 
-    return ["https://yourdomain.com", "https://www.yourdomain.com", "https://app.yourdomain.com"];
+    return ["https://domain.com", "https://www.domain.com", "https://app.domain.com"];
   }
 
   getStagingOrigins() {
     return [
       "https://staging.yourdomain.com",
-      "https://dev.yourdomain.com",
+      "https://dev.domain.com",
       "http://localhost:3000",
       "http://localhost:19006",
     ];

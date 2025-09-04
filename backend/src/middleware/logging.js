@@ -11,33 +11,37 @@ const requestLogger = (req, res, next) => {
 
   req.requestId = requestId;
 
-  logger.info(`[${new Date().toISOString()}] [${requestId}] ${req.method} ${req.path}`, {
-    ip: req.ip || req.connection.remoteAddress,
-    userAgent: req.get("User-Agent"),
-    contentLength: req.get("Content-Length") || 0,
-    ...(process.env.NODE_ENV === "development" && {
-      query: Object.keys(req.query).length > 0 ? req.query : undefined,
-      body: req.method !== "GET" && req.body ? sanitizeLogData(req.body) : undefined,
-    }),
-  });
+  if (process.env.LOG_LEVEL === "debug") {
+    logger.info(`[${new Date().toISOString()}] [${requestId}] ${req.method} ${req.path}`, {
+      ip: req.ip || req.connection.remoteAddress,
+      userAgent: req.get("User-Agent"),
+      contentLength: req.get("Content-Length") || 0,
+      ...(process.env.NODE_ENV === "development" && {
+        query: Object.keys(req.query).length > 0 ? req.query : undefined,
+        body: req.method !== "GET" && req.body ? sanitizeLogData(req.body) : undefined,
+      }),
+    });
+  }
 
   const originalJson = res.json;
   res.json = function (data) {
     const endTime = Date.now();
     const duration = endTime - startTime;
 
-    logger.info(
-      `[${new Date().toISOString()}] [${requestId}] Response ${res.statusCode} - ${duration}ms`,
-      {
-        status: res.statusCode,
-        duration: `${duration}ms`,
-        contentLength: JSON.stringify(data).length,
-        ...(process.env.NODE_ENV === "development" &&
-          res.statusCode >= 400 && {
-            responseData: sanitizeLogData(data),
-          }),
-      }
-    );
+    if (process.env.LOG_LEVEL === "debug" || res.statusCode >= 400) {
+      logger.info(
+        `[${new Date().toISOString()}] [${requestId}] Response ${res.statusCode} - ${duration}ms`,
+        {
+          status: res.statusCode,
+          duration: `${duration}ms`,
+          contentLength: JSON.stringify(data).length,
+          ...(process.env.NODE_ENV === "development" &&
+            res.statusCode >= 400 && {
+              responseData: sanitizeLogData(data),
+            }),
+        }
+      );
+    }
 
     return originalJson.call(this, data);
   };

@@ -1,8 +1,7 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { Colors } from "../../constants/Colors";
 
-const { width: screenWidth } = Dimensions.get("window");
 const PILL_WIDTH = 100;
 const PILL_MARGIN = 12;
 const LEFT_PADDING = 20;

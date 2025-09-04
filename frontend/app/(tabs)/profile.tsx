@@ -24,7 +24,7 @@ import { apiService } from "../../services/api";
 import TempNotificationService from "../../services/tempNotifications";
 import { User } from "../../types";
 import { Header } from "../../components/UI/Header";
-import { TestTube, CheckCircle, XCircle, MessageSquare } from "lucide-react-native";
+import { TestTube, MessageSquare } from "lucide-react-native";
 
 type EditMode = "personal" | "location" | "notifications" | "security" | null;
 
@@ -49,6 +49,7 @@ interface NotificationPreferences {
   emailNotifications: boolean;
   pushNotifications: boolean;
   emergencyAlerts: boolean;
+  weatherAlerts: boolean;
   communityUpdates: boolean;
   postReactions: boolean;
   comments: boolean;
@@ -84,6 +85,7 @@ export default function ProfileScreen() {
     emailNotifications: user?.notificationPreferences?.emailNotifications || true,
     pushNotifications: user?.notificationPreferences?.pushNotifications || true,
     emergencyAlerts: user?.notificationPreferences?.emergencyAlerts || true,
+    weatherAlerts: user?.notificationPreferences?.weatherAlerts || true,
     communityUpdates: user?.notificationPreferences?.communityUpdates || false,
     postReactions: user?.notificationPreferences?.postReactions || false,
     comments: user?.notificationPreferences?.comments || false,
@@ -216,16 +218,19 @@ export default function ProfileScreen() {
     try {
       setLoading(true);
 
-      const response = await apiService.getApi().put("/users/profile", {
+      const response = await apiService.updateProfile({
         firstName: profileForm.firstName,
         lastName: profileForm.lastName,
         phone: profileForm.phone,
         bio: profileForm.bio,
       });
 
-      if (response.data.success) {
+      if (response.success) {
         Alert.alert("Success", "Profile updated successfully!");
         setEditMode(null);
+        const profileResponse = await apiService.getProfile();
+        if (profileResponse.success) {
+        }
       }
     } catch (error: any) {
       console.error("Error updating profile:", error);
@@ -239,9 +244,16 @@ export default function ProfileScreen() {
     try {
       setLoading(true);
 
-      const response = await apiService.getApi().put("/users/location", locationForm);
+      const response = await apiService.updateProfile({
+        address: locationForm.address,
+        locationCity: locationForm.locationCity,
+        addressState: locationForm.addressState,
+        zipCode: locationForm.zipCode,
+        locationRadiusMiles: locationForm.locationRadiusMiles,
+        showCityOnly: locationForm.showCityOnly,
+      });
 
-      if (response.data.success) {
+      if (response.success) {
         Alert.alert("Success", "Location settings updated successfully!");
         setEditMode(null);
       }
@@ -257,11 +269,9 @@ export default function ProfileScreen() {
     try {
       setLoading(true);
 
-      const response = await apiService
-        .getApi()
-        .put("/users/preferences/notifications", notificationPrefs);
+      const response = await apiService.updateNotificationPreferences(notificationPrefs);
 
-      if (response.data.success) {
+      if (response.success) {
         Alert.alert("Success", "Notification preferences updated successfully!");
         setEditMode(null);
       }
@@ -670,14 +680,12 @@ export default function ProfileScreen() {
         showSearch={true}
         showNotifications={true}
         showMessages={true}
-        onSearchPress={() => {
-          Alert.alert("Search Profile", "Search functionality for profile settings coming soon!");
-        }}
+        onSearchPress={() => router.push("/profile/search")}
         onNotificationsPress={() => router.push("/(tabs)/notifications")}
         onMessagesPress={() => router.push("/(tabs)/messages")}
         showMore={false}
       />
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <View style={styles.content}>
         {renderProfileHeader()}
 
         <View style={styles.menuSection}>
@@ -742,7 +750,7 @@ export default function ProfileScreen() {
             style={styles.logoutButton}
           />
         </View>
-      </ScrollView>
+      </View>
 
       {renderPersonalModal()}
       {renderLocationModal()}
@@ -760,31 +768,31 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.surface,
   },
-  scrollView: {
+  content: {
     flex: 1,
   },
   profileHeader: {
     backgroundColor: Colors.background,
-    paddingVertical: 24,
+    paddingVertical: 16,
     paddingHorizontal: 20,
     alignItems: "center",
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
-    marginBottom: 20,
+    marginBottom: 12,
   },
   avatarContainer: {
     position: "relative",
-    marginBottom: 16,
+    marginBottom: 12,
   },
   avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
   },
   avatarPlaceholder: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: Colors.neutral[100],
     alignItems: "center",
     justifyContent: "center",
@@ -808,7 +816,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    borderRadius: 50,
+    borderRadius: 40,
     backgroundColor: "rgba(255, 255, 255, 0.8)",
     alignItems: "center",
     justifyContent: "center",
@@ -870,7 +878,8 @@ const styles = StyleSheet.create({
   },
   dangerZone: {
     paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingVertical: 16,
+    marginTop: "auto",
   },
   logoutButton: {
     alignSelf: "center",

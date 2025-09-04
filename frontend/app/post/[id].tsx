@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -35,7 +35,7 @@ export default function PostDetailScreen() {
       setError("Invalid post ID");
       setLoading(false);
     }
-  }, [postId]);
+  }, [postId, fetchPost]);
 
   useEffect(() => {
     if (error && !loading) {
@@ -48,7 +48,7 @@ export default function PostDetailScreen() {
     }
   }, [error, loading]);
 
-  const fetchPost = async () => {
+  const fetchPost = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -66,7 +66,7 @@ export default function PostDetailScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [postId]);
 
   const handleLike = async (postId: number) => {
     if (!post) return;
@@ -220,7 +220,6 @@ export default function PostDetailScreen() {
             post={post}
             onLike={handleLike}
             onShare={handleShare}
-            onPress={() => {}}
             onMessage={handleMessage}
             currentUserId={user?.id}
           />

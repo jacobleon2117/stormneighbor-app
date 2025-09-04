@@ -9,7 +9,6 @@ import {
   ActivityIndicator,
   RefreshControl,
   Image,
-  Alert,
 } from "react-native";
 import { router } from "expo-router";
 import { MessageCircle } from "lucide-react-native";
@@ -143,9 +142,9 @@ export default function MessagesScreen() {
 
   const renderEmpty = () => (
     <View style={styles.emptyState}>
-      <MessageCircle size={80} color={Colors.text.disabled} />
+      <MessageCircle size={48} color={Colors.text.disabled} />
       <Text style={styles.emptyTitle}>No messages yet</Text>
-      <Text style={styles.emptyDescription}>
+      <Text style={styles.emptyMessage}>
         Start a conversation by messaging someone from their profile or a post!
       </Text>
     </View>
@@ -155,11 +154,57 @@ export default function MessagesScreen() {
     router.back();
   };
 
+  if (loading && !refreshing) {
+    return (
+      <View style={styles.container}>
+        <Header title="Messages" showBackButton={true} onBackPress={handleGoBack} />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.primary[500]} />
+          <Text style={styles.loadingText}>Loading messages...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (error && !refreshing) {
+    return (
+      <View style={styles.container}>
+        <Header title="Messages" showBackButton={true} onBackPress={handleGoBack} />
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorTitle}>Unable to load messages</Text>
+          <Text style={styles.errorMessage}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={() => fetchConversations()}>
+            <Text style={styles.retryButtonText}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <Header title="Messages" showBackButton={true} onBackPress={handleGoBack} />
-
-      <View style={{ flex: 1 }}></View>
+      <View style={styles.safeContent}>
+        <FlatList
+          data={conversations}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={renderConversation}
+          contentContainerStyle={[
+            styles.listContainer,
+            conversations.length === 0 && styles.listEmpty,
+          ]}
+          ListEmptyComponent={renderEmpty}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              colors={[Colors.primary[500]]}
+              tintColor={Colors.primary[500]}
+            />
+          }
+          showsVerticalScrollIndicator={false}
+        />
+      </View>
     </View>
   );
 }
@@ -310,22 +355,22 @@ const styles = StyleSheet.create({
   },
   emptyState: {
     alignItems: "center",
-    padding: 40,
-    flex: 1,
     justifyContent: "center",
+    paddingTop: 80,
+    paddingHorizontal: 32,
   },
   emptyTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
+    fontSize: 20,
+    fontWeight: "600",
     color: Colors.text.primary,
-    marginTop: 20,
-    marginBottom: 10,
+    marginTop: 16,
+    marginBottom: 8,
     textAlign: "center",
   },
-  emptyDescription: {
-    fontSize: 16,
+  emptyMessage: {
+    fontSize: 14,
     color: Colors.text.secondary,
     textAlign: "center",
-    lineHeight: 22,
+    lineHeight: 20,
   },
 });

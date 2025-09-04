@@ -8,11 +8,10 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
-  ActivityIndicator,
   Platform,
 } from "react-native";
 import { router } from "expo-router";
-import { ArrowLeft, MessageSquare, Bug, Lightbulb, Palette, Send } from "lucide-react-native";
+import { ArrowLeft, MessageSquare, Bug, Lightbulb, Palette } from "lucide-react-native";
 import { Colors } from "../constants/Colors";
 import { Button } from "../components/UI/Button";
 import { useAuth } from "../hooks/useAuth";

@@ -226,13 +226,29 @@ export default function NotificationsScreen() {
         title="Notifications"
         showBackButton={true}
         onBackPress={handleGoBack}
-        showSearch={false}
-        showNotifications={false}
-        showMessages={false}
-        showMore={false}
       />
 
-      <View style={{ flex: 1 }}></View>
+      <View style={styles.safeContent}>
+        <FlatList
+          data={filteredNotifications}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={renderNotification}
+          contentContainerStyle={[
+            styles.listContainer,
+            filteredNotifications.length === 0 && styles.listEmpty,
+          ]}
+          ListEmptyComponent={renderEmptyState}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[Colors.primary[500]]}
+              tintColor={Colors.primary[500]}
+            />
+          }
+          showsVerticalScrollIndicator={false}
+        />
+      </View>
     </View>
   );
 }
@@ -388,5 +404,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.text.secondary,
     marginTop: 16,
+  },
+  listEmpty: {
+    flex: 1,
+    justifyContent: "center",
   },
 });

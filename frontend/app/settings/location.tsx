@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   Switch,
   Alert,
-  ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
 import {
@@ -235,8 +234,7 @@ export default function LocationSettingsScreen() {
     key: keyof typeof preferences,
     title: string,
     description: string,
-    icon: React.ComponentType<any>,
-    requiresPermission: boolean = true
+    icon: React.ComponentType<any>
   ) => (
     <View style={styles.settingItem}>
       <View style={styles.settingIcon}>
@@ -428,8 +426,7 @@ export default function LocationSettingsScreen() {
             "shareLocationInPosts",
             "Share Location in Posts",
             "Include your location when creating posts",
-            Eye,
-            false
+            Eye
           )}
         </View>
 

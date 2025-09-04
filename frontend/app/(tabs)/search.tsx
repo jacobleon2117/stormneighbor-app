@@ -146,7 +146,6 @@ export default function SearchScreen() {
       onLike={handleLike}
       onComment={handleComment}
       onShare={handleShare}
-      onPress={handlePostPress}
     />
   );
 
@@ -174,13 +173,53 @@ export default function SearchScreen() {
         title="Search"
         showBackButton={true}
         onBackPress={handleGoBack}
-        showSearch={false}
-        showNotifications={false}
-        showMessages={false}
-        showMore={false}
       />
 
-      <View style={{ flex: 1 }}></View>
+      <View style={styles.safeContent}>
+        <View style={styles.searchContainer}>
+          <View style={styles.searchBar}>
+            <Search size={20} color={Colors.text.disabled} style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search posts, requests, updates..."
+              placeholderTextColor={Colors.text.disabled}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              onSubmitEditing={() => handleSearch(searchQuery)}
+              returnKeyType="search"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
+                <X size={20} color={Colors.text.disabled} />
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              onPress={() => setShowFilters(!showFilters)}
+              style={styles.filterButton}
+            >
+              <Filter size={20} color={Colors.text.disabled} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={Colors.primary[500]} />
+            <Text style={styles.loadingText}>Searching...</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={searchResults}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={renderPost}
+            contentContainerStyle={styles.listContainer}
+            ListEmptyComponent={renderEmptyState}
+            showsVerticalScrollIndicator={false}
+          />
+        )}
+      </View>
     </View>
   );
 }

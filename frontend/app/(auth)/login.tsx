@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -30,7 +30,7 @@ export default function LoginScreen() {
 
   useEffect(() => {
     checkBiometricAndAutoLogin();
-  }, []);
+  }, [checkBiometricAndAutoLogin]);
 
   useEffect(() => {
     const checkAutoFillAndLogin = async () => {
@@ -49,9 +49,9 @@ export default function LoginScreen() {
     };
 
     checkAutoFillAndLogin();
-  }, [email, password, biometricType, isAutoLoggingIn, isLoading]);
+  }, [email, password, biometricType, isAutoLoggingIn, isLoading, login]);
 
-  const checkBiometricAndAutoLogin = async () => {
+  const checkBiometricAndAutoLogin = useCallback(async () => {
     try {
       if (!LocalAuthentication) {
         console.log("LocalAuthentication not available");
@@ -97,7 +97,7 @@ export default function LoginScreen() {
     } catch (error) {
       console.log("Biometric check error:", error);
     }
-  };
+  }, [biometricType, login]);
 
   const validateForm = (): boolean => {
     const newErrors: { email?: string; password?: string } = {};

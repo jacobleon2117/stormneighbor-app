@@ -324,6 +324,12 @@ class ApiService {
     return response.data;
   }
 
+
+  async getAlert(alertId: number) {
+    const response = await this.api.get(`/alerts/${alertId}`);
+    return response.data;
+  }
+
   async searchPosts(query: string, filters?: SearchFilters) {
     const response = await this.api.get("/search", {
       params: { q: query, ...filters },

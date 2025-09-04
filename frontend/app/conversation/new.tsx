@@ -15,14 +15,12 @@ import { useLocalSearchParams, router } from "expo-router";
 import { ArrowLeft, Send } from "lucide-react-native";
 import { Colors } from "../../constants/Colors";
 import { apiService } from "../../services/api";
-import { useAuth } from "../../hooks/useAuth";
 
 export default function NewConversationScreen() {
   const { recipientId, recipientName } = useLocalSearchParams<{
     recipientId: string;
     recipientName: string;
   }>();
-  const { user } = useAuth();
 
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);

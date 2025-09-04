@@ -5,15 +5,14 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  // Dimensions, Currently unused due to commented out code on line 13
 } from "react-native";
 import { Colors } from "../../constants/Colors";
 import { ALERT_COLORS } from "../../constants/AlertColors";
 
-// const { width: screenWidth } = Dimensions.get('window'); (declared but its value is never read, why?)
 const PILL_WIDTH = 80;
 const PILL_MARGIN = 12;
 const LEFT_PADDING = 32;
+const RIGHT_PADDING = 32;
 
 interface WeatherLayer {
   id: string;
@@ -141,7 +140,7 @@ const styles = StyleSheet.create({
     bottom: 110,
     left: 0,
     right: 0,
-    height: 50,
+    height: 56,
     backgroundColor: "transparent",
   },
   scrollView: {
@@ -149,17 +148,18 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingLeft: LEFT_PADDING,
-    paddingRight: LEFT_PADDING,
+    paddingRight: RIGHT_PADDING,
     alignItems: "center",
-    height: 50,
+    height: 56,
   },
   layerPill: {
     backgroundColor: Colors.background,
     borderRadius: 16,
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 10,
     marginRight: PILL_MARGIN,
     minWidth: PILL_WIDTH,
+    minHeight: 36,
     borderWidth: 2,
     shadowColor: "#000",
     shadowOffset: {
@@ -181,6 +181,8 @@ const styles = StyleSheet.create({
   layerText: {
     fontSize: 13,
     fontWeight: "600",
+    textAlign: "center",
+    lineHeight: 16,
     color: Colors.text.secondary,
   },
   layerTextActive: {

@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   Modal,
   ScrollView,
-  SafeAreaView,
 } from "react-native";
 import {
   MapPin,
@@ -14,7 +13,6 @@ import {
   Eye,
   X,
   AlertTriangle,
-  Cloud,
   Users,
   Shield,
   HelpCircle,
@@ -57,7 +55,7 @@ const ALERT_ICONS = {
 };
 
 export default function AlertCard({
-  id,
+  id: _id,
   type,
   title,
   description,

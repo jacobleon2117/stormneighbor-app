@@ -16,9 +16,8 @@ import { useAuth } from "../../hooks/useAuth";
 import { apiService } from "../../services/api";
 
 export default function LocationPermissionsScreen() {
-  const { user, refreshProfile } = useAuth();
+  const { refreshProfile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [permissionStatus, setPermissionStatus] = useState<string | null>(null);
 
   useEffect(() => {
     checkCurrentPermissions();
@@ -26,8 +25,7 @@ export default function LocationPermissionsScreen() {
 
   const checkCurrentPermissions = async () => {
     try {
-      const { status } = await Location.getForegroundPermissionsAsync();
-      setPermissionStatus(status);
+      await Location.getForegroundPermissionsAsync();
     } catch (error) {
       console.error("Error checking location permissions:", error);
     }

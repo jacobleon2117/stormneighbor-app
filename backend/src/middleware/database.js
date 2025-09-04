@@ -20,9 +20,11 @@ const getMonitoredClient = async (req) => {
     const client = await pool.connect();
     dbStats.activeConnections++;
 
-    logger.info(
-      `[${new Date().toISOString()}] [${requestId}] DB Connection acquired - Active: ${dbStats.activeConnections}`
-    );
+    if (process.env.LOG_LEVEL === "debug") {
+      logger.info(
+        `[${new Date().toISOString()}] [${requestId}] DB Connection acquired - Active: ${dbStats.activeConnections}`
+      );
+    }
 
     const originalQuery = client.query.bind(client);
     client.query = async (...args) => {
@@ -30,7 +32,7 @@ const getMonitoredClient = async (req) => {
       dbStats.totalQueries++;
 
       try {
-        if (process.env.NODE_ENV === "development") {
+        if (process.env.LOG_LEVEL === "debug") {
           const queryText = args[0]?.substring(0, 100) + (args[0]?.length > 100 ? "..." : "");
           logger.info(`[${new Date().toISOString()}] [${requestId}] DB Query: ${queryText}`);
         }

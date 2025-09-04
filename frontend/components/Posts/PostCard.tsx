@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   Image,
   Modal,
-  // SafeAreaView, Currently not being used, why?
   Dimensions,
   TouchableWithoutFeedback,
   PanResponder,
@@ -28,7 +27,6 @@ import {
   UserX,
   UserMinus,
   UserPlus,
-  // Info, Currently not being used, why?
   Calendar,
   Megaphone,
   CloudRain,
@@ -91,13 +89,10 @@ interface PostCardProps {
 export function PostCard({
   post,
   onLike,
-  // onComment, Currently not being used, why?
-  // onShare, Currently not being used, why?
   onMessage,
   onReport,
   onBlock,
   onUnfollow,
-  // onHide, Currently not being used, why?
   currentUserId,
   isFollowing = false,
   onFollow,

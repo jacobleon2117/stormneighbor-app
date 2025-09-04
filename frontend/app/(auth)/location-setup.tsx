@@ -31,7 +31,7 @@ export default function LocationSetupScreen() {
     try {
       setIsLoading(true);
 
-      let { status } = await Location.requestForegroundPermissionsAsync();
+      const { status } = await Location.requestForegroundPermissionsAsync();
 
       if (status !== "granted") {
         Alert.alert(

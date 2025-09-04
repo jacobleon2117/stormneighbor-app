@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
-import { Home, MapPin, Navigation, CheckCircle } from "lucide-react-native";
+import { Home, Navigation, CheckCircle } from "lucide-react-native";
 import { Input } from "../../components/UI/Input";
 import { Button } from "../../components/UI/Button";
 import { Colors } from "../../constants/Colors";

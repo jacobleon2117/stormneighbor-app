@@ -10,7 +10,6 @@ import {
   Alert,
   ActivityIndicator,
   Modal,
-  // Dimensions, Currently not being used, why?
 } from "react-native";
 import {
   Sun,
@@ -18,9 +17,6 @@ import {
   CloudRain,
   Zap,
   Snowflake,
-  // Droplets, Currently not being used, why?
-  // Wind, Currently not being used, why?
-  // Eye, Currently not being used, why?
   Plus,
   Minus,
   AlertTriangle,

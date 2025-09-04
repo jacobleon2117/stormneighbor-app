@@ -3,7 +3,10 @@ const DailyRotateFile = require("winston-daily-rotate-file");
 
 // WARNING: Do not redirect server output (console.log) to files
 // This logger already handles file logging with proper rotation
-// Use LOG_LEVEL environment variable to control verbosity
+// Use LOG_LEVEL environment variable to control verbosity:
+//   - warn (default): Only warnings and errors
+//   - info: Includes startup/shutdown info
+//   - debug: Full request/response/database logging (very verbose!)
 
 const logFormat = winston.format.combine(
   winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
@@ -26,8 +29,8 @@ const errorTransport = new DailyRotateFile({
   filename: "logs/error-%DATE%.log",
   datePattern: "YYYY-MM-DD",
   level: "error",
-  maxSize: "10m",
-  maxFiles: "7d",
+  maxSize: "50m",
+  maxFiles: "3d",
   zippedArchive: true,
   createSymlink: true,
   symlinkName: "error-current.log",
@@ -36,15 +39,15 @@ const errorTransport = new DailyRotateFile({
 const combinedTransport = new DailyRotateFile({
   filename: "logs/combined-%DATE%.log",
   datePattern: "YYYY-MM-DD",
-  maxSize: "10m",
-  maxFiles: "7d",
+  maxSize: "50m",
+  maxFiles: "3d",
   zippedArchive: true,
   createSymlink: true,
   symlinkName: "combined-current.log",
 });
 
 const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || (process.env.NODE_ENV === "production" ? "warn" : "info"),
+  level: process.env.LOG_LEVEL || (process.env.NODE_ENV === "production" ? "warn" : "warn"),
   format: logFormat,
   defaultMeta: { service: "stormneighbor-backend" },
   transports: [errorTransport, combinedTransport],

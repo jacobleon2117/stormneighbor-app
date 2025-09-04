@@ -1,9 +1,8 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { Colors } from "../../constants/Colors";
 import { ALERT_COLORS } from "../../constants/AlertColors";
 
-const { width: screenWidth } = Dimensions.get("window");
 const PILL_WIDTH = 100;
 const PILL_MARGIN = 12;
 const LEFT_PADDING = 20;
@@ -129,7 +128,7 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: Colors.surface,
     paddingVertical: 16,
-    minHeight: 70,
+    minHeight: 84,
   },
   scrollView: {
     flex: 1,
@@ -141,32 +140,35 @@ const styles = StyleSheet.create({
   },
   filterPill: {
     backgroundColor: Colors.background,
-    borderRadius: 20,
+    borderRadius: 16,
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 12,
     marginRight: PILL_MARGIN,
     minWidth: PILL_WIDTH,
+    minHeight: 44,
     borderWidth: 2,
-    shadowColor: Colors.neutral[900],
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: 1,
+      height: 2,
     },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
     alignItems: "center",
     justifyContent: "center",
   },
   filterPillActive: {
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 5,
+    borderWidth: 2,
   },
   filterText: {
     fontSize: 14,
     fontWeight: "600",
     textAlign: "center",
+    lineHeight: 18,
   },
   filterTextActive: {
     color: Colors.text.inverse,

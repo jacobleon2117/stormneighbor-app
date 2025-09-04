@@ -324,7 +324,6 @@ class ApiService {
     return response.data;
   }
 
-
   async getAlert(alertId: number) {
     const response = await this.api.get(`/alerts/${alertId}`);
     return response.data;

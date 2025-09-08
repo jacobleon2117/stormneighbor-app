@@ -3,10 +3,8 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   FlatList,
   TouchableOpacity,
-  ActivityIndicator,
   Alert,
   RefreshControl,
 } from "react-native";
@@ -23,7 +21,6 @@ import {
 import { Header } from "../../components/UI/Header";
 import { Colors } from "../../constants/Colors";
 import { apiService } from "../../services/api";
-import { useAuth } from "../../hooks/useAuth";
 
 interface Notification {
   id: number;
@@ -47,16 +44,12 @@ const NOTIFICATION_ICONS = {
 };
 
 export default function NotificationsScreen() {
-  const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [filter, setFilter] = useState<"all" | "unread">("all");
+  const [filter] = useState<"all" | "unread">("all");
 
   const loadNotifications = async (isRefresh = false) => {
     try {
-      if (!isRefresh) setLoading(true);
-
       const response = await apiService.getNotifications();
 
       if (response.success && response.data) {
@@ -68,7 +61,6 @@ export default function NotificationsScreen() {
       console.error("Load notifications error:", error);
       Alert.alert("Error", "Failed to load notifications. Please try again.");
     } finally {
-      setLoading(false);
       if (isRefresh) setRefreshing(false);
     }
   };

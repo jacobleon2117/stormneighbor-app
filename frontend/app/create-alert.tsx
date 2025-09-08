@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
-  ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
 import { ArrowLeft, AlertTriangle, Shield, Users, Megaphone } from "lucide-react-native";

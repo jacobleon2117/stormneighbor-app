@@ -38,12 +38,7 @@ const ALERT_TYPE_MAP: Record<string, string> = {
   system: "system",
 };
 
-const generateDemoAlerts = (
-  latitude?: number,
-  longitude?: number,
-  city?: string,
-  state?: string
-): Alert[] => {
+const generateDemoAlerts = (city?: string, state?: string): Alert[] => {
   const location = city && state ? `${city}, ${state}` : "Your Area";
 
   return [
@@ -162,7 +157,7 @@ export default function AlertsScreen() {
           console.error("API Error details:", apiError.response?.data || apiError.message);
 
           console.log("Using fallback demo alerts due to API error");
-          const demoAlerts = generateDemoAlerts(latitude, longitude, city, state);
+          const demoAlerts = generateDemoAlerts(city, state);
 
           setAlertsState((prev) => ({
             ...prev,

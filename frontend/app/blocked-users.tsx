@@ -135,7 +135,7 @@ export default function BlockedUsersScreen() {
           <Text style={styles.headerTitle}>Blocked Users</Text>
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.primary} />
+          <ActivityIndicator size="large" color={Colors.primary[500]} />
         </View>
       </SafeAreaView>
     );
@@ -160,7 +160,9 @@ export default function BlockedUsersScreen() {
       )}
 
       <View style={styles.searchContainer}>
-        <Ionicons name="search" size={20} color={Colors.text.disabled} style={styles.searchIcon} />
+        <View style={styles.searchIcon}>
+          <Ionicons name="search" size={20} color={Colors.text.disabled} />
+        </View>
         <TextInput
           style={styles.searchInput}
           placeholder="Search blocked users..."
@@ -187,7 +189,11 @@ export default function BlockedUsersScreen() {
         ]}
         ListEmptyComponent={renderEmptyState}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[Colors.primary[500]]}
+          />
         }
       />
     </SafeAreaView>
@@ -197,16 +203,16 @@ export default function BlockedUsersScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background.primary,
+    backgroundColor: Colors.background,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: Colors.background.primary,
+    backgroundColor: Colors.background,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border.primary,
+    borderBottomColor: Colors.border,
   },
   backButton: {
     padding: 8,
@@ -225,21 +231,21 @@ const styles = StyleSheet.create({
   },
   errorContainer: {
     padding: 16,
-    backgroundColor: Colors.background.secondary,
+    backgroundColor: Colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border.primary,
+    borderBottomColor: Colors.border,
     alignItems: "center",
   },
   errorText: {
     fontSize: 14,
-    color: Colors.text.error,
+    color: Colors.error[500],
     textAlign: "center",
     marginBottom: 8,
   },
   retryButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.primary[500],
     borderRadius: 6,
   },
   retryButtonText: {
@@ -253,13 +259,15 @@ const styles = StyleSheet.create({
     margin: 16,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    backgroundColor: Colors.background.secondary,
+    backgroundColor: Colors.surface,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: Colors.border.primary,
+    borderColor: Colors.border,
   },
   searchIcon: {
     marginRight: 8,
+    justifyContent: "center",
+    alignItems: "center",
   },
   searchInput: {
     flex: 1,
@@ -280,7 +288,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border.primary,
+    borderBottomColor: Colors.border,
   },
   userInfo: {
     flexDirection: "row",
@@ -296,7 +304,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   avatarPlaceholder: {
-    backgroundColor: Colors.background.secondary,
+    backgroundColor: Colors.surface,
   },
   userDetails: {
     flex: 1,
@@ -320,7 +328,7 @@ const styles = StyleSheet.create({
   unblockButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: Colors.primary,
+    backgroundColor: Colors.primary[500],
     borderRadius: 6,
   },
   unblockButtonText: {

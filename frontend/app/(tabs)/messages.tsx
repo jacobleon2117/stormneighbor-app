@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
@@ -40,7 +39,6 @@ export default function MessagesScreen() {
     conversations: Conversation[];
     availableUsers: User[];
   }>({ conversations: [], availableUsers: [] });
-  const [searchLoading, setSearchLoading] = useState(false);
 
   const fetchConversations = useCallback(async (isRefresh: boolean = false) => {
     try {
@@ -76,7 +74,6 @@ export default function MessagesScreen() {
     }
 
     try {
-      setSearchLoading(true);
       setSearchActive(true);
 
       const filteredConversations = conversations.filter((conv) =>
@@ -111,7 +108,6 @@ export default function MessagesScreen() {
     } catch (error) {
       console.error("Search error:", error);
     } finally {
-      setSearchLoading(false);
     }
   };
 
@@ -310,7 +306,6 @@ export default function MessagesScreen() {
     <View style={styles.container}>
       <Header title="Messages" showBackButton={true} onBackPress={handleGoBack} />
 
-      {/* Search Bar */}
       <View style={styles.searchContainer}>
         <View style={styles.searchBar}>
           <Search size={20} color={Colors.text.disabled} style={styles.searchIcon} />
@@ -331,7 +326,6 @@ export default function MessagesScreen() {
       </View>
 
       <View style={styles.safeContent}>
-        {/* Available Users Section (when searching) */}
         {hasAvailableUsers && (
           <View style={styles.sectionContainer}>
             <Text style={styles.sectionTitle}>Start New Conversation</Text>
@@ -344,7 +338,6 @@ export default function MessagesScreen() {
           </View>
         )}
 
-        {/* Conversations Section */}
         {(dataToShow.length > 0 || (!searchActive && conversations.length > 0)) && (
           <View style={styles.sectionContainer}>
             {searchActive && dataToShow.length > 0 && (
@@ -372,7 +365,6 @@ export default function MessagesScreen() {
           </View>
         )}
 
-        {/* Search Empty State */}
         {searchActive && dataToShow.length === 0 && !hasAvailableUsers && (
           <View style={styles.emptyState}>
             <Search size={48} color={Colors.text.disabled} />

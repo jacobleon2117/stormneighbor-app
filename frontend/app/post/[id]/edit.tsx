@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { Save, X, Image as ImageIcon, AlertTriangle, HelpCircle } from "lucide-react-native";
+import { Save, AlertTriangle, HelpCircle } from "lucide-react-native";
 import { Header } from "../../../components/UI/Header";
 import { Colors } from "../../../constants/Colors";
 import { apiService } from "../../../services/api";
@@ -50,11 +50,7 @@ export default function EditPostScreen() {
   const [isEmergency, setIsEmergency] = useState(false);
   const [tags, setTags] = useState("");
 
-  useEffect(() => {
-    loadPost();
-  }, [postId]);
-
-  const loadPost = async () => {
+  const loadPost = useCallback(async () => {
     try {
       setLoading(true);
       const response = await apiService.getPost(postId);
@@ -79,7 +75,11 @@ export default function EditPostScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [postId]);
+
+  useEffect(() => {
+    loadPost();
+  }, [loadPost]);
 
   const handleSave = async () => {
     if (!content.trim()) {
@@ -188,7 +188,7 @@ export default function EditPostScreen() {
         title="Edit Post"
         showBackButton={true}
         onBackPress={handleCancel}
-        rightComponent={
+        customRightContent={
           <TouchableOpacity
             style={styles.saveButton}
             onPress={handleSave}

@@ -22,7 +22,6 @@ import { useAuth } from "../../hooks/useAuth";
 import { Colors } from "../../constants/Colors";
 import { apiService } from "../../services/api";
 import TempNotificationService from "../../services/tempNotifications";
-import { User } from "../../types";
 import { Header } from "../../components/UI/Header";
 import { TestTube, MessageSquare } from "lucide-react-native";
 

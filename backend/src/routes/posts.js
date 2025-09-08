@@ -322,4 +322,193 @@ router.get("/test", auth, async (req, res) => {
   }
 });
 
+router.post(
+  "/:postId/save",
+  auth,
+  [param("postId").isInt({ min: 1 }).withMessage("Valid post ID is required")],
+  handleValidationErrors,
+  async (req, res) => {
+    const { pool } = require("../config/database");
+    const client = await pool.connect();
+
+    try {
+      const { postId } = req.params;
+      const userId = req.user.userId;
+
+      const postCheck = await client.query(
+        "SELECT id FROM posts WHERE id = $1 AND is_active = true",
+        [postId]
+      );
+
+      if (postCheck.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Post not found",
+          code: "POST_NOT_FOUND",
+        });
+      }
+
+      const existingSave = await client.query(
+        "SELECT id FROM saved_posts WHERE user_id = $1 AND post_id = $2",
+        [userId, postId]
+      );
+
+      if (existingSave.rows.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Post is already saved",
+          code: "ALREADY_SAVED",
+        });
+      }
+
+      await client.query("INSERT INTO saved_posts (user_id, post_id) VALUES ($1, $2)", [
+        userId,
+        postId,
+      ]);
+
+      res.status(200).json({
+        success: true,
+        message: "Post saved successfully",
+        data: {
+          user_id: userId,
+          post_id: parseInt(postId),
+          saved_at: new Date().toISOString(),
+        },
+      });
+    } catch (error) {
+      logger.error("Save post error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error saving post",
+        code: "INTERNAL_ERROR",
+      });
+    } finally {
+      client.release();
+    }
+  }
+);
+
+router.delete(
+  "/:postId/save",
+  auth,
+  [param("postId").isInt({ min: 1 }).withMessage("Valid post ID is required")],
+  handleValidationErrors,
+  async (req, res) => {
+    const { pool } = require("../config/database");
+    const client = await pool.connect();
+
+    try {
+      const { postId } = req.params;
+      const userId = req.user.userId;
+
+      const existingSave = await client.query(
+        "SELECT id FROM saved_posts WHERE user_id = $1 AND post_id = $2",
+        [userId, postId]
+      );
+
+      if (existingSave.rows.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Post is not saved",
+          code: "NOT_SAVED",
+        });
+      }
+
+      await client.query("DELETE FROM saved_posts WHERE user_id = $1 AND post_id = $2", [
+        userId,
+        postId,
+      ]);
+
+      res.status(200).json({
+        success: true,
+        message: "Post unsaved successfully",
+        data: {
+          user_id: userId,
+          post_id: parseInt(postId),
+          unsaved_at: new Date().toISOString(),
+        },
+      });
+    } catch (error) {
+      logger.error("Unsave post error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error unsaving post",
+        code: "INTERNAL_ERROR",
+      });
+    } finally {
+      client.release();
+    }
+  }
+);
+
+router.get("/saved", auth, async (req, res) => {
+  const { pool } = require("../config/database");
+  const client = await pool.connect();
+
+  try {
+    const userId = req.user.userId;
+    const page = parseInt(req.query.page) || 1;
+    const limit = Math.min(parseInt(req.query.limit) || 20, 50);
+    const offset = (page - 1) * limit;
+
+    const savedPosts = await client.query(
+      `SELECT 
+         p.id,
+         p.title,
+         p.content,
+         p.post_type,
+         p.priority,
+         p.is_emergency,
+         p.tags,
+         p.created_at,
+         p.updated_at,
+         u.first_name,
+         u.last_name,
+         u.profile_image_url,
+         sp.created_at as saved_at,
+         (SELECT COUNT(*) FROM post_reactions WHERE post_id = p.id AND reaction_type = 'like') as like_count,
+         (SELECT COUNT(*) FROM comments WHERE post_id = p.id AND is_active = true) as comment_count,
+         (SELECT reaction_type FROM post_reactions WHERE post_id = p.id AND user_id = $1) as user_reaction
+       FROM saved_posts sp
+       JOIN posts p ON sp.post_id = p.id
+       JOIN users u ON p.user_id = u.id
+       WHERE sp.user_id = $1 AND p.is_active = true AND u.is_active = true
+       ORDER BY sp.created_at DESC
+       LIMIT $2 OFFSET $3`,
+      [userId, limit, offset]
+    );
+
+    const totalCount = await client.query(
+      `SELECT COUNT(*) as count
+       FROM saved_posts sp
+       JOIN posts p ON sp.post_id = p.id
+       JOIN users u ON p.user_id = u.id
+       WHERE sp.user_id = $1 AND p.is_active = true AND u.is_active = true`,
+      [userId]
+    );
+
+    res.status(200).json({
+      success: true,
+      data: {
+        posts: savedPosts.rows,
+        pagination: {
+          page,
+          limit,
+          total: parseInt(totalCount.rows[0].count),
+          hasMore: offset + limit < parseInt(totalCount.rows[0].count),
+        },
+      },
+    });
+  } catch (error) {
+    logger.error("Get saved posts error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching saved posts",
+      code: "INTERNAL_ERROR",
+    });
+  } finally {
+    client.release();
+  }
+});
+
 module.exports = router;

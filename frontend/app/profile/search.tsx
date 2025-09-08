@@ -1,13 +1,5 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  FlatList,
-  TouchableOpacity,
-  ActivityIndicator,
-} from "react-native";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { View, Text, StyleSheet, TextInput, FlatList, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
 import { Search, ChevronRight, FileText, Bookmark, Settings, Clock } from "lucide-react-native";
 import { Colors } from "../../constants/Colors";
@@ -36,17 +28,10 @@ export default function ProfileSearchScreen() {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-  const [loading, setLoading] = useState(false);
   const [userPosts, setUserPosts] = useState<Post[]>([]);
 
-  useEffect(() => {
-    loadUserData();
-  }, []);
-
-  const loadUserData = async () => {
+  const loadUserData = useCallback(async () => {
     try {
-      setLoading(true);
-
       if (user?.id) {
         const response = await apiService.getUserPosts(user.id);
 
@@ -56,50 +41,55 @@ export default function ProfileSearchScreen() {
       }
     } catch (error) {
       console.error("Error loading user data:", error);
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [user?.id]);
 
-  const profileItems: SearchResult[] = [
-    ...userPosts.map((post) => ({
-      id: `post-${post.id}`,
-      title: post.title || post.content.substring(0, 50) + "...",
-      subtitle: `${post.postType.replace("_", " ")} • ${new Date(post.createdAt).toLocaleDateString()}`,
-      section: "Your Posts",
-      icon: FileText,
-      action: () => router.push(`/post/${post.id}`),
-    })),
+  useEffect(() => {
+    loadUserData();
+  }, [loadUserData]);
 
-    {
-      id: "account-settings",
-      title: "Account Settings",
-      subtitle: "Manage your account preferences",
-      section: "Settings",
-      icon: Settings,
-      action: () => router.push("/(tabs)/profile"),
-    },
-    {
-      id: "saved-posts",
-      title: "Saved Posts",
-      subtitle: "View your bookmarked posts",
-      section: "Content",
-      icon: Bookmark,
-      action: () => {
-        router.push("/saved-posts");
+  const profileItems: SearchResult[] = useMemo(
+    () => [
+      ...userPosts.map((post) => ({
+        id: `post-${post.id}`,
+        title: post.title || post.content.substring(0, 50) + "...",
+        subtitle: `${post.postType.replace("_", " ")} • ${new Date(post.createdAt).toLocaleDateString()}`,
+        section: "Your Posts",
+        icon: FileText,
+        action: () => router.push(`/post/${post.id}`),
+      })),
+
+      {
+        id: "account-settings",
+        title: "Account Settings",
+        subtitle: "Manage your account preferences",
+        section: "Settings",
+        icon: Settings,
+        action: () => router.push("/(tabs)/profile"),
       },
-    },
-    {
-      id: "activity-history",
-      title: "Activity History",
-      subtitle: "Your recent activity and interactions",
-      section: "Activity",
-      icon: Clock,
-      action: () => {
-        router.push("/(tabs)/profile");
+      {
+        id: "saved-posts",
+        title: "Saved Posts",
+        subtitle: "View your bookmarked posts",
+        section: "Content",
+        icon: Bookmark,
+        action: () => {
+          router.push("/saved-posts" as any);
+        },
       },
-    },
-  ];
+      {
+        id: "activity-history",
+        title: "Activity History",
+        subtitle: "Your recent activity and interactions",
+        section: "Activity",
+        icon: Clock,
+        action: () => {
+          router.push("/(tabs)/profile");
+        },
+      },
+    ],
+    [userPosts]
+  );
 
   useEffect(() => {
     if (searchQuery.trim()) {
@@ -113,7 +103,7 @@ export default function ProfileSearchScreen() {
     } else {
       setSearchResults([]);
     }
-  }, [searchQuery]);
+  }, [searchQuery, profileItems]);
 
   const handleGoBack = () => {
     router.back();

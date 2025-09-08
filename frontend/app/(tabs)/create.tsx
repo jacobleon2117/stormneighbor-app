@@ -194,8 +194,6 @@ export default function CreateScreen() {
         useNativeDriver: true,
       }).start();
 
-      const selectedQuickAction = quickActions.find((a) => a.id === selectedAction);
-
       const postData = {
         content: postText.trim(),
         postType: getPostTypeFromAction(selectedAction),

@@ -50,64 +50,68 @@ export default function HomeScreen() {
 
   const { user } = useAuth();
 
-  const fetchPosts = async (pageNum: number = 1, isRefresh: boolean = false) => {
-    try {
-      if (pageNum === 1) {
-        setError(null);
-      }
+  const fetchPosts = useCallback(
+    async (pageNum: number = 1, isRefresh: boolean = false) => {
+      try {
+        if (pageNum === 1) {
+          setError(null);
+        }
 
-      const response = await apiService.getPosts({
-        page: pageNum,
-        limit: 20,
-        city: user?.homeCity || user?.locationCity,
-        state: user?.homeState || user?.addressState,
-      });
+        const response = await apiService.getPosts({
+          page: pageNum,
+          limit: 20,
+          city: user?.homeCity || user?.locationCity,
+          state: user?.homeState || user?.addressState,
+        });
 
-      if (response.success && response.data) {
-        const newPosts = response.data.posts || response.data;
+        if (response.success && response.data) {
+          const newPosts = response.data.posts || response.data;
 
-        if (isRefresh || pageNum === 1) {
-          setPosts(newPosts);
+          if (isRefresh || pageNum === 1) {
+            setPosts(newPosts);
+          } else {
+            setPosts((prev) => [...prev, ...newPosts]);
+          }
+
+          if (newPosts.length < 20) {
+            setHasMore(false);
+          }
+
+          setPage(pageNum);
         } else {
-          setPosts((prev) => [...prev, ...newPosts]);
+          throw new Error(response.message || "Failed to load posts");
         }
+      } catch (error: any) {
+        console.error("Error fetching posts:", error);
+        const errorMessage =
+          error.response?.data?.message || error.message || "Failed to load posts";
 
-        if (newPosts.length < 20) {
-          setHasMore(false);
+        if (pageNum === 1) {
+          setError(errorMessage);
+        } else {
+          Alert.alert("Error", "Failed to load more posts");
         }
-
-        setPage(pageNum);
-      } else {
-        throw new Error(response.message || "Failed to load posts");
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+        setLoadingMore(false);
       }
-    } catch (error: any) {
-      console.error("Error fetching posts:", error);
-      const errorMessage = error.response?.data?.message || error.message || "Failed to load posts";
-
-      if (pageNum === 1) {
-        setError(errorMessage);
-      } else {
-        Alert.alert("Error", "Failed to load more posts");
-      }
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-      setLoadingMore(false);
-    }
-  };
+    },
+    [user]
+  );
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
     setHasMore(true);
     fetchPosts(1, true);
-  }, []);
+  }, [fetchPosts]);
 
   const handleLoadMore = useCallback(() => {
     if (!loadingMore && hasMore && posts.length > 0) {
       setLoadingMore(true);
       fetchPosts(page + 1, false);
     }
-  }, [loadingMore, hasMore, page, posts.length]);
+  }, [loadingMore, hasMore, page, posts.length, fetchPosts]);
 
   const handleLike = async (postId: number) => {
     try {
@@ -237,42 +241,45 @@ export default function HomeScreen() {
     ]);
   };
 
-  const handleSearch = async (query: string, filters?: SearchFilters) => {
-    if (!query.trim() && !filters?.types?.length && !filters?.priorities?.length) {
-      setSearchActive(false);
-      setSearchResults([]);
-      return;
-    }
-
-    try {
-      setSearchLoading(true);
-      setSearchActive(true);
-
-      const response = await apiService.searchPosts(query.trim(), {
-        ...searchFilters,
-        ...filters,
-        city: user?.homeCity || user?.locationCity,
-        state: user?.homeState || user?.addressState,
-      });
-
-      if (response.success && response.data) {
-        const results = response.data.posts || response.data;
-        setSearchResults(results);
-
-        if (query.trim()) {
-          setRecentSearches((prev) => {
-            const updated = [query.trim(), ...prev.filter((s) => s !== query.trim())].slice(0, 5);
-            return updated;
-          });
-        }
+  const handleSearch = useCallback(
+    async (query: string, filters?: SearchFilters) => {
+      if (!query.trim() && !filters?.types?.length && !filters?.priorities?.length) {
+        setSearchActive(false);
+        setSearchResults([]);
+        return;
       }
-    } catch (error: any) {
-      console.error("Search error:", error);
-      Alert.alert("Search Error", "Failed to search posts. Please try again.");
-    } finally {
-      setSearchLoading(false);
-    }
-  };
+
+      try {
+        setSearchLoading(true);
+        setSearchActive(true);
+
+        const response = await apiService.searchPosts(query.trim(), {
+          ...searchFilters,
+          ...filters,
+          city: user?.homeCity || user?.locationCity,
+          state: user?.homeState || user?.addressState,
+        });
+
+        if (response.success && response.data) {
+          const results = response.data.posts || response.data;
+          setSearchResults(results);
+
+          if (query.trim()) {
+            setRecentSearches((prev) => {
+              const updated = [query.trim(), ...prev.filter((s) => s !== query.trim())].slice(0, 5);
+              return updated;
+            });
+          }
+        }
+      } catch (error: any) {
+        console.error("Search error:", error);
+        Alert.alert("Search Error", "Failed to search posts. Please try again.");
+      } finally {
+        setSearchLoading(false);
+      }
+    },
+    [searchFilters, user]
+  );
 
   useEffect(() => {
     if (user) {
@@ -280,7 +287,7 @@ export default function HomeScreen() {
     } else {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, fetchPosts]);
 
   useEffect(() => {
     if (searchQuery.trim()) {
@@ -292,7 +299,7 @@ export default function HomeScreen() {
       setSearchActive(false);
       setSearchResults([]);
     }
-  }, [searchQuery]);
+  }, [searchQuery, handleSearch, searchActive, searchFilters]);
 
   useEffect(() => {
     if (params.newPost && params.refresh) {
@@ -337,8 +344,8 @@ export default function HomeScreen() {
           style: "destructive",
           onPress: async () => {
             try {
-              // Note: Block API would need to be implemented on backend
-              Alert.alert("Blocked", "User has been blocked.");
+              await apiService.blockUser(userId);
+              Alert.alert("User Blocked", "The user has been blocked successfully.");
             } catch (error) {
               Alert.alert("Error", "Failed to block user. Please try again.");
             }
@@ -368,8 +375,8 @@ export default function HomeScreen() {
         text: "Unfollow",
         onPress: async () => {
           try {
-            // Note: Follow/unfollow API would need to be implemented on backend
-            Alert.alert("Unfollowed", "You are no longer following this user.");
+            await apiService.unfollowUser(userId);
+            Alert.alert("Success", "You are no longer following this user.");
           } catch (error) {
             Alert.alert("Error", "Failed to unfollow user. Please try again.");
           }
@@ -385,7 +392,7 @@ export default function HomeScreen() {
   const handleSave = async (postId: number) => {
     try {
       const response = await apiService.savePost(postId);
-      
+
       if (response.success) {
         Alert.alert("Saved", "Post has been bookmarked to your saved posts.");
       } else {
@@ -418,14 +425,6 @@ export default function HomeScreen() {
 
   const handleSearchPress = () => {
     router.push("/(tabs)/search");
-  };
-
-  const handleMessagesPress = () => {
-    router.push("/(tabs)/notifications");
-  };
-
-  const handleMorePress = () => {
-    router.push("/(tabs)/profile");
   };
 
   const renderEmpty = () => (

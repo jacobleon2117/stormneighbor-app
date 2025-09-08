@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   FlatList,
   TouchableOpacity,
   TextInput,
@@ -11,35 +10,20 @@ import {
   Alert,
 } from "react-native";
 import { router } from "expo-router";
-import { Search, Filter, X } from "lucide-react-native";
+import { Search, X, Filter } from "lucide-react-native";
 import { Header } from "../../components/UI/Header";
 import { PostCard } from "../../components/Posts/PostCard";
 import { Colors } from "../../constants/Colors";
 import { apiService } from "../../services/api";
 import { Post, SearchFilters } from "../../types";
 import { useAuth } from "../../hooks/useAuth";
-
-const POST_TYPES = [
-  { key: "help_request", label: "Help Request" },
-  { key: "help_offer", label: "Help Offer" },
-  { key: "lost_found", label: "Lost & Found" },
-  { key: "safety_alert", label: "Safety Alert" },
-  { key: "general", label: "General" },
-];
-
-const PRIORITIES = [
-  { key: "urgent", label: "Urgent" },
-  { key: "high", label: "High" },
-  { key: "normal", label: "Normal" },
-  { key: "low", label: "Low" },
-];
+import { SearchFiltersModal } from "../../components/Search/SearchFiltersModal";
 
 export default function SearchScreen() {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Post[]>([]);
   const [loading, setLoading] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
   const [searchFilters, setSearchFilters] = useState<SearchFilters>({
     types: [],
     priorities: [],
@@ -47,6 +31,7 @@ export default function SearchScreen() {
     resolved: "all",
     sortBy: "relevance",
   });
+  const [showFiltersModal, setShowFiltersModal] = useState(false);
 
   const handleSearch = async (query: string, filters?: SearchFilters) => {
     if (!query.trim() && !filters?.types?.length && !filters?.priorities?.length) {
@@ -188,8 +173,8 @@ export default function SearchScreen() {
           style: "destructive",
           onPress: async () => {
             try {
-              // Note: This API endpoint would need to be implemented
-              Alert.alert("Feature Coming Soon", "User blocking functionality is being developed.");
+              await apiService.blockUser(userId);
+              Alert.alert("User Blocked", "The user has been blocked successfully.");
             } catch (error) {
               Alert.alert("Error", "Failed to block user. Please try again.");
             }
@@ -220,8 +205,8 @@ export default function SearchScreen() {
         style: "destructive",
         onPress: async () => {
           try {
-            // Note: This API endpoint would need to be implemented
-            Alert.alert("Feature Coming Soon", "User following functionality is being developed.");
+            await apiService.unfollowUser(userId);
+            Alert.alert("Success", "You are no longer following this user.");
           } catch (error) {
             Alert.alert("Error", "Failed to unfollow user. Please try again.");
           }
@@ -237,7 +222,7 @@ export default function SearchScreen() {
   const handleSave = async (postId: number) => {
     try {
       const response = await apiService.savePost(postId);
-      
+
       if (response.success) {
         Alert.alert("Saved", "Post has been bookmarked to your saved posts.");
       } else {
@@ -252,38 +237,6 @@ export default function SearchScreen() {
   const clearSearch = () => {
     setSearchQuery("");
     setSearchResults([]);
-  };
-
-  const toggleType = (type: string) => {
-    const currentTypes = searchFilters.types || [];
-    const newTypes = currentTypes.includes(type)
-      ? currentTypes.filter((t) => t !== type)
-      : [...currentTypes, type];
-    const newFilters = { ...searchFilters, types: newTypes };
-    setSearchFilters(newFilters);
-    handleSearch(searchQuery, newFilters);
-  };
-
-  const togglePriority = (priority: string) => {
-    const currentPriorities = searchFilters.priorities || [];
-    const newPriorities = currentPriorities.includes(priority)
-      ? currentPriorities.filter((p) => p !== priority)
-      : [...currentPriorities, priority];
-    const newFilters = { ...searchFilters, priorities: newPriorities };
-    setSearchFilters(newFilters);
-    handleSearch(searchQuery, newFilters);
-  };
-
-  const clearAllFilters = () => {
-    const newFilters: SearchFilters = {
-      types: [],
-      priorities: [],
-      emergencyOnly: false,
-      resolved: "all",
-      sortBy: "relevance",
-    };
-    setSearchFilters(newFilters);
-    handleSearch(searchQuery, newFilters);
   };
 
   const renderPost = ({ item }: { item: Post }) => (
@@ -347,8 +300,8 @@ export default function SearchScreen() {
                 <X size={20} color={Colors.text.disabled} />
               </TouchableOpacity>
             )}
-            <TouchableOpacity
-              onPress={() => setShowFilters(!showFilters)}
+            <TouchableOpacity 
+              onPress={() => setShowFiltersModal(true)} 
               style={styles.filterButton}
             >
               <Filter size={20} color={Colors.text.disabled} />
@@ -372,6 +325,19 @@ export default function SearchScreen() {
           />
         )}
       </View>
+      
+      <SearchFiltersModal
+        visible={showFiltersModal}
+        onClose={() => setShowFiltersModal(false)}
+        filters={searchFilters}
+        onFiltersChange={setSearchFilters}
+        onApplyFilters={(filters) => {
+          setSearchFilters(filters);
+          if (searchQuery.trim()) {
+            handleSearch(searchQuery, filters);
+          }
+        }}
+      />
     </View>
   );
 }
@@ -410,6 +376,10 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
   },
   clearButton: {
+    padding: 4,
+    marginLeft: 8,
+  },
+  filterButton: {
     padding: 4,
     marginLeft: 8,
   },

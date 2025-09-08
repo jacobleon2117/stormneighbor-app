@@ -10,7 +10,7 @@ import {
   RefreshControl,
 } from "react-native";
 import { router } from "expo-router";
-import { Bookmark, BookmarkX, ArrowLeft } from "lucide-react-native";
+import { Bookmark } from "lucide-react-native";
 import { Header } from "../components/UI/Header";
 import { PostCard } from "../components/Posts/PostCard";
 import { Colors } from "../constants/Colors";
@@ -84,7 +84,9 @@ export default function SavedPostsScreen() {
             ? {
                 ...post,
                 userReaction: post.userReaction ? null : "like",
-                likesCount: post.userReaction ? post.likesCount - 1 : post.likesCount + 1,
+                likeCount: post.userReaction
+                  ? (post.likeCount || 0) - 1
+                  : (post.likeCount || 0) + 1,
               }
             : post
         )
@@ -98,7 +100,7 @@ export default function SavedPostsScreen() {
     router.push(`/post/${postId}`);
   };
 
-  const handleShare = async (postId: number) => {
+  const handleShare = async (_postId: number) => {
     Alert.alert("Share", "Sharing functionality will be implemented soon.");
   };
 

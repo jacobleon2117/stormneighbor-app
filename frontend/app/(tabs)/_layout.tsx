@@ -68,7 +68,7 @@ export default function TabLayout() {
         options={{
           title: "Post",
           tabBarStyle: { display: "none" },
-          tabBarIcon: ({ focused, color }) => (
+          tabBarIcon: () => (
             <View
               style={{
                 width: 24,

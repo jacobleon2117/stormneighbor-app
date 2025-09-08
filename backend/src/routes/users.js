@@ -797,4 +797,264 @@ router.get("/test/status", async (_req, res) => {
   }
 });
 
+router.post(
+  "/:userId/block",
+  auth,
+  [param("userId").isInt({ min: 1 }).withMessage("Valid user ID is required")],
+  handleValidationErrors,
+  async (req, res) => {
+    const client = await pool.connect();
+
+    try {
+      const { userId } = req.params;
+      const blockerId = req.user.userId;
+
+      if (parseInt(userId) === blockerId) {
+        return res.status(400).json({
+          success: false,
+          message: "Cannot block yourself",
+          code: "INVALID_OPERATION",
+        });
+      }
+
+      const userCheck = await client.query(
+        "SELECT id FROM users WHERE id = $1 AND is_active = true",
+        [userId]
+      );
+
+      if (userCheck.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "User not found",
+          code: "USER_NOT_FOUND",
+        });
+      }
+
+      const existingBlock = await client.query(
+        "SELECT id FROM user_blocks WHERE blocker_id = $1 AND blocked_id = $2",
+        [blockerId, userId]
+      );
+
+      if (existingBlock.rows.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: "User is already blocked",
+          code: "ALREADY_BLOCKED",
+        });
+      }
+
+      await client.query("INSERT INTO user_blocks (blocker_id, blocked_id) VALUES ($1, $2)", [
+        blockerId,
+        userId,
+      ]);
+
+      await client.query(
+        "DELETE FROM user_follows WHERE (follower_id = $1 AND following_id = $2) OR (follower_id = $2 AND following_id = $1)",
+        [blockerId, userId]
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "User blocked successfully",
+        data: {
+          blocker_id: blockerId,
+          blocked_id: parseInt(userId),
+          blocked_at: new Date().toISOString(),
+        },
+      });
+    } catch (error) {
+      logger.error("Block user error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error blocking user",
+        code: "INTERNAL_ERROR",
+      });
+    } finally {
+      client.release();
+    }
+  }
+);
+
+router.delete(
+  "/:userId/block",
+  auth,
+  [param("userId").isInt({ min: 1 }).withMessage("Valid user ID is required")],
+  handleValidationErrors,
+  async (req, res) => {
+    const client = await pool.connect();
+
+    try {
+      const { userId } = req.params;
+      const blockerId = req.user.userId;
+
+      const existingBlock = await client.query(
+        "SELECT id FROM user_blocks WHERE blocker_id = $1 AND blocked_id = $2",
+        [blockerId, userId]
+      );
+
+      if (existingBlock.rows.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "User is not blocked",
+          code: "NOT_BLOCKED",
+        });
+      }
+
+      await client.query("DELETE FROM user_blocks WHERE blocker_id = $1 AND blocked_id = $2", [
+        blockerId,
+        userId,
+      ]);
+
+      res.status(200).json({
+        success: true,
+        message: "User unblocked successfully",
+        data: {
+          blocker_id: blockerId,
+          unblocked_id: parseInt(userId),
+          unblocked_at: new Date().toISOString(),
+        },
+      });
+    } catch (error) {
+      logger.error("Unblock user error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error unblocking user",
+        code: "INTERNAL_ERROR",
+      });
+    } finally {
+      client.release();
+    }
+  }
+);
+
+router.get("/blocked", auth, async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+    const userId = req.user.userId;
+    const page = parseInt(req.query.page) || 1;
+    const limit = Math.min(parseInt(req.query.limit) || 20, 50);
+    const offset = (page - 1) * limit;
+
+    const blockedUsers = await client.query(
+      `SELECT 
+         u.id,
+         u.first_name,
+         u.last_name,
+         u.profile_image_url,
+         u.bio,
+         u.email,
+         ub.created_at as blocked_at
+       FROM user_blocks ub
+       JOIN users u ON ub.blocked_id = u.id
+       WHERE ub.blocker_id = $1 AND u.is_active = true
+       ORDER BY ub.created_at DESC
+       LIMIT $2 OFFSET $3`,
+      [userId, limit, offset]
+    );
+
+    const totalCount = await client.query(
+      `SELECT COUNT(*) as count
+       FROM user_blocks ub
+       JOIN users u ON ub.blocked_id = u.id
+       WHERE ub.blocker_id = $1 AND u.is_active = true`,
+      [userId]
+    );
+
+    res.status(200).json({
+      success: true,
+      data: {
+        blockedUsers: blockedUsers.rows,
+        pagination: {
+          page,
+          limit,
+          total: parseInt(totalCount.rows[0].count),
+          hasMore: offset + limit < parseInt(totalCount.rows[0].count),
+        },
+      },
+    });
+  } catch (error) {
+    logger.error("Get blocked users error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching blocked users",
+      code: "INTERNAL_ERROR",
+    });
+  } finally {
+    client.release();
+  }
+});
+
+router.get(
+  "/:userId/posts",
+  auth,
+  [param("userId").isInt({ min: 1 }).withMessage("Valid user ID is required")],
+  handleValidationErrors,
+  async (req, res) => {
+    const client = await pool.connect();
+
+    try {
+      const { userId } = req.params;
+      const page = parseInt(req.query.page) || 1;
+      const limit = Math.min(parseInt(req.query.limit) || 20, 50);
+      const offset = (page - 1) * limit;
+
+      const posts = await client.query(
+        `SELECT 
+           p.id,
+           p.title,
+           p.content,
+           p.post_type,
+           p.priority,
+           p.is_emergency,
+           p.tags,
+           p.created_at,
+           p.updated_at,
+           u.first_name,
+           u.last_name,
+           u.profile_image_url,
+           (SELECT COUNT(*) FROM post_reactions WHERE post_id = p.id AND reaction_type = 'like') as like_count,
+           (SELECT COUNT(*) FROM comments WHERE post_id = p.id AND is_active = true) as comment_count,
+           (SELECT reaction_type FROM post_reactions WHERE post_id = p.id AND user_id = $2) as user_reaction
+         FROM posts p
+         JOIN users u ON p.user_id = u.id
+         WHERE p.user_id = $1 AND p.is_active = true AND u.is_active = true
+         ORDER BY p.created_at DESC
+         LIMIT $3 OFFSET $4`,
+        [userId, req.user.userId, limit, offset]
+      );
+
+      const totalCount = await client.query(
+        `SELECT COUNT(*) as count
+         FROM posts p
+         JOIN users u ON p.user_id = u.id
+         WHERE p.user_id = $1 AND p.is_active = true AND u.is_active = true`,
+        [userId]
+      );
+
+      res.status(200).json({
+        success: true,
+        data: {
+          posts: posts.rows,
+          pagination: {
+            page,
+            limit,
+            total: parseInt(totalCount.rows[0].count),
+            hasMore: offset + limit < parseInt(totalCount.rows[0].count),
+          },
+        },
+      });
+    } catch (error) {
+      logger.error("Get user posts error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error fetching user posts",
+        code: "INTERNAL_ERROR",
+      });
+    } finally {
+      client.release();
+    }
+  }
+);
+
 module.exports = router;

@@ -35,7 +35,6 @@ afterEach(() => {
 });
 
 afterAll(async () => {
-  // Clear cache cleanup interval to prevent test hanging
   const cache = require("../src/middleware/cache");
   if (cache.cache && cache.cache.clearCleanupInterval) {
     cache.cache.clearCleanupInterval();

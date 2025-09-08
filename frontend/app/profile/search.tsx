@@ -40,7 +40,6 @@ export default function ProfileSearchScreen() {
   const [userPosts, setUserPosts] = useState<Post[]>([]);
 
   useEffect(() => {
-    // Load user's posts for searching
     loadUserData();
   }, []);
 
@@ -48,7 +47,6 @@ export default function ProfileSearchScreen() {
     try {
       setLoading(true);
       // Note: This would typically be a getUserPosts API call
-      // For now, we'll create mock data based on the user
       const mockPosts: Post[] = [
         {
           id: 1,
@@ -73,17 +71,15 @@ export default function ProfileSearchScreen() {
   };
 
   const profileItems: SearchResult[] = [
-    // User's Posts
-    ...userPosts.map(post => ({
+    ...userPosts.map((post) => ({
       id: `post-${post.id}`,
       title: post.title || post.content.substring(0, 50) + "...",
-      subtitle: `${post.postType.replace('_', ' ')} • ${new Date(post.createdAt).toLocaleDateString()}`,
+      subtitle: `${post.postType.replace("_", " ")} • ${new Date(post.createdAt).toLocaleDateString()}`,
       section: "Your Posts",
       icon: FileText,
       action: () => router.push(`/post/${post.id}`),
     })),
-    
-    // Profile Settings
+
     {
       id: "account-settings",
       title: "Account Settings",
@@ -135,7 +131,7 @@ export default function ProfileSearchScreen() {
 
   const renderSearchResult = ({ item }: { item: SearchResult }) => {
     const IconComponent = item.icon || Search;
-    
+
     return (
       <TouchableOpacity style={styles.resultItem} onPress={item.action}>
         <View style={styles.resultIcon}>
@@ -167,11 +163,7 @@ export default function ProfileSearchScreen() {
 
   return (
     <View style={styles.container}>
-      <Header
-        title="Search Settings"
-        showBackButton={true}
-        onBackPress={handleGoBack}
-      />
+      <Header title="Search Settings" showBackButton={true} onBackPress={handleGoBack} />
 
       <View style={styles.searchContainer}>
         <View style={styles.searchBar}>

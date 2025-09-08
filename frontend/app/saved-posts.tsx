@@ -32,17 +32,18 @@ export default function SavedPostsScreen() {
 
       // TODO: Replace with actual API call when backend implements saved posts
       // const response = await apiService.getSavedPosts();
-      
+
       // Mock data for now
       const mockSavedPosts: Post[] = [
         {
           id: 1,
           userId: 2,
           firstName: "Jane",
-          lastName: "Smith", 
+          lastName: "Smith",
           profileImageUrl: null,
           title: "Storm Warning Update",
-          content: "Heavy thunderstorms expected tonight. Make sure to secure outdoor furniture and avoid unnecessary travel.",
+          content:
+            "Heavy thunderstorms expected tonight. Make sure to secure outdoor furniture and avoid unnecessary travel.",
           postType: "safety_alert",
           priority: "high",
           isEmergency: false,
@@ -68,7 +69,8 @@ export default function SavedPostsScreen() {
           firstName: "Mike",
           lastName: "Johnson",
           profileImageUrl: null,
-          content: "Found this lost dog wandering around Oak Street. Very friendly, appears to be a Golden Retriever mix. Please contact if this is your pet!",
+          content:
+            "Found this lost dog wandering around Oak Street. Very friendly, appears to be a Golden Retriever mix. Please contact if this is your pet!",
           postType: "lost_found",
           priority: "normal",
           isEmergency: false,
@@ -82,7 +84,7 @@ export default function SavedPostsScreen() {
           userReaction: null,
           reactions: [],
           location: {
-            city: "Austin", 
+            city: "Austin",
             state: "TX",
             latitude: 30.2672,
             longitude: -97.7431,
@@ -121,7 +123,7 @@ export default function SavedPostsScreen() {
           text: "Remove",
           style: "destructive",
           onPress: () => {
-            setSavedPosts(prev => prev.filter(post => post.id !== postId));
+            setSavedPosts((prev) => prev.filter((post) => post.id !== postId));
             Alert.alert("Removed", "Post has been removed from your saved posts.");
           },
         },
@@ -134,14 +136,12 @@ export default function SavedPostsScreen() {
       await apiService.togglePostReaction(postId);
       setSavedPosts((prev) =>
         prev.map((post) =>
-          post.id === postId 
-            ? { 
-                ...post, 
+          post.id === postId
+            ? {
+                ...post,
                 userReaction: post.userReaction ? null : "like",
-                likesCount: post.userReaction 
-                  ? post.likesCount - 1 
-                  : post.likesCount + 1
-              } 
+                likesCount: post.userReaction ? post.likesCount - 1 : post.likesCount + 1,
+              }
             : post
         )
       );
@@ -155,7 +155,6 @@ export default function SavedPostsScreen() {
   };
 
   const handleShare = async (postId: number) => {
-    // Implementation for sharing
     Alert.alert("Share", "Sharing functionality will be implemented soon.");
   };
 
@@ -170,7 +169,7 @@ export default function SavedPostsScreen() {
       onComment={handleComment}
       onShare={handleShare}
       onPress={handlePostPress}
-      onSave={() => handleUnsavePost(item.id)} // Change to unsave since it's already saved
+      onSave={() => handleUnsavePost(item.id)}
       currentUserId={user?.id}
     />
   );
@@ -192,11 +191,7 @@ export default function SavedPostsScreen() {
   if (loading && !refreshing) {
     return (
       <View style={styles.container}>
-        <Header
-          title="Saved Posts"
-          showBackButton={true}
-          onBackPress={handleGoBack}
-        />
+        <Header title="Saved Posts" showBackButton={true} onBackPress={handleGoBack} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.primary[500]} />
           <Text style={styles.loadingText}>Loading saved posts...</Text>
@@ -208,18 +203,11 @@ export default function SavedPostsScreen() {
   if (error && !refreshing) {
     return (
       <View style={styles.container}>
-        <Header
-          title="Saved Posts"
-          showBackButton={true}
-          onBackPress={handleGoBack}
-        />
+        <Header title="Saved Posts" showBackButton={true} onBackPress={handleGoBack} />
         <View style={styles.errorContainer}>
           <Text style={styles.errorTitle}>Unable to load saved posts</Text>
           <Text style={styles.errorMessage}>{error}</Text>
-          <TouchableOpacity 
-            style={styles.retryButton} 
-            onPress={() => fetchSavedPosts()}
-          >
+          <TouchableOpacity style={styles.retryButton} onPress={() => fetchSavedPosts()}>
             <Text style={styles.retryButtonText}>Try Again</Text>
           </TouchableOpacity>
         </View>
@@ -229,11 +217,7 @@ export default function SavedPostsScreen() {
 
   return (
     <View style={styles.container}>
-      <Header
-        title="Saved Posts"
-        showBackButton={true}
-        onBackPress={handleGoBack}
-      />
+      <Header title="Saved Posts" showBackButton={true} onBackPress={handleGoBack} />
 
       <View style={styles.content}>
         <FlatList

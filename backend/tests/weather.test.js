@@ -11,7 +11,7 @@ describe("Weather System", () => {
 
   describe("GET /api/v1/weather/current", () => {
     it("should validate location parameters", async () => {
-      await request(app).get("/api/v1/weather/current").expect(400); // Missing location parameters
+      await request(app).get("/api/v1/weather/current").expect(400);
 
       await request(app)
         .get("/api/v1/weather/current?latitude=invalid&longitude=-97.7431")
@@ -23,13 +23,13 @@ describe("Weather System", () => {
     });
 
     it("should validate coordinate ranges", async () => {
-      await request(app).get("/api/v1/weather/current?latitude=91&longitude=-97.7431").expect(400); // Latitude out of range
+      await request(app).get("/api/v1/weather/current?latitude=91&longitude=-97.7431").expect(400);
 
-      await request(app).get("/api/v1/weather/current?latitude=30.2672&longitude=181").expect(400); // Longitude out of range
+      await request(app).get("/api/v1/weather/current?latitude=30.2672&longitude=181").expect(400);
 
-      await request(app).get("/api/v1/weather/current?latitude=-91&longitude=-97.7431").expect(400); // Latitude out of range
+      await request(app).get("/api/v1/weather/current?latitude=-91&longitude=-97.7431").expect(400);
 
-      await request(app).get("/api/v1/weather/current?latitude=30.2672&longitude=-181").expect(400); // Longitude out of range
+      await request(app).get("/api/v1/weather/current?latitude=30.2672&longitude=-181").expect(400);
     });
 
     it("should return weather data for valid coordinates", async () => {
@@ -62,7 +62,7 @@ describe("Weather System", () => {
 
   describe("GET /api/v1/weather/forecast", () => {
     it("should validate location parameters", async () => {
-      await request(app).get("/api/v1/weather/forecast").expect(400); // Missing location parameters
+      await request(app).get("/api/v1/weather/forecast").expect(400);
 
       await request(app)
         .get("/api/v1/weather/forecast?latitude=invalid&longitude=-97.7431")
@@ -101,7 +101,7 @@ describe("Weather System", () => {
 
       await request(app)
         .get("/api/v1/weather/forecast?latitude=30.2672&longitude=-97.7431&days=15")
-        .expect(400); // Assuming max 14 days
+        .expect(400);
 
       await request(app)
         .get("/api/v1/weather/forecast?latitude=30.2672&longitude=-97.7431&days=invalid")
@@ -118,7 +118,7 @@ describe("Weather System", () => {
       await request(app)
         .get("/api/v1/weather/alerts?latitude=30.2672&longitude=-97.7431")
         .set("Authorization", "Bearer invalid-token")
-        .expect(401); // Will fail auth, but validates location params
+        .expect(401);
     });
 
     it("should validate location parameters if provided", async () => {
@@ -140,7 +140,7 @@ describe("Weather System", () => {
         await request(app)
           .get(`/api/v1/weather/alerts?severity=${severity}`)
           .set("Authorization", "Bearer invalid-token")
-          .expect(401); // Will fail auth, but validates severity
+          .expect(401);
       }
     });
 
@@ -155,7 +155,7 @@ describe("Weather System", () => {
       await request(app)
         .get("/api/v1/weather/alerts?active=true")
         .set("Authorization", "Bearer invalid-token")
-        .expect(401); // Will fail auth, but validates active param
+        .expect(401);
 
       await request(app)
         .get("/api/v1/weather/alerts?active=false")
@@ -201,7 +201,7 @@ describe("Weather System", () => {
             severity: "moderate",
             description: "Test alert",
           })
-          .expect(401); // Will fail auth, but validates type
+          .expect(401);
       }
     });
 
@@ -229,7 +229,7 @@ describe("Weather System", () => {
             severity: severity,
             description: "Test alert",
           })
-          .expect(401); // Will fail auth, but validates severity
+          .expect(401);
       }
     });
 
@@ -284,7 +284,7 @@ describe("Weather System", () => {
         .send({
           alertType: "storm_warning",
           severity: "moderate",
-          description: "", // Empty description
+          description: "",
         })
         .expect(400);
 
@@ -294,7 +294,7 @@ describe("Weather System", () => {
         .send({
           alertType: "storm_warning",
           severity: "moderate",
-          description: "a".repeat(1001), // Too long
+          description: "a".repeat(1001),
         })
         .expect(400);
     });
@@ -355,7 +355,6 @@ describe("Weather System", () => {
     it("should apply rate limiting to weather requests", async () => {
       const promises = [];
 
-      // Make multiple rapid requests
       for (let i = 0; i < 20; i++) {
         promises.push(
           request(app).get("/api/v1/weather/current?latitude=30.2672&longitude=-97.7431")
@@ -364,7 +363,6 @@ describe("Weather System", () => {
 
       const responses = await Promise.all(promises);
 
-      // Should have some rate limited responses (429)
       const rateLimited = responses.filter((r) => r.status === 429);
       expect(rateLimited.length).toBeGreaterThan(0);
     });
@@ -388,7 +386,6 @@ describe("Weather System", () => {
 
       const secondRequestTime = Date.now() - start2;
 
-      // Second request should be faster due to caching
       expect(secondRequestTime).toBeLessThan(firstRequestTime);
     });
   });

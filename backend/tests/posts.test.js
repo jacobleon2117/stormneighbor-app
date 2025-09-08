@@ -26,7 +26,6 @@ describe("Posts System", () => {
         .post("/api/v1/posts")
         .set("Authorization", "Bearer invalid-token")
         .send({
-          // Missing title
           content: "This is a test post",
           postType: "general",
         })
@@ -37,7 +36,6 @@ describe("Posts System", () => {
         .set("Authorization", "Bearer invalid-token")
         .send({
           title: "Test Post",
-          // Missing content
           postType: "general",
         })
         .expect(400);
@@ -55,7 +53,7 @@ describe("Posts System", () => {
             content: "This is a test post",
             postType: type,
           })
-          .expect(401); // Will fail auth, but validates post type
+          .expect(401);
       }
     });
 
@@ -84,7 +82,7 @@ describe("Posts System", () => {
             postType: "general",
             priority: priority,
           })
-          .expect(401); // Will fail auth, but validates priority
+          .expect(401);
       }
     });
 
@@ -106,7 +104,7 @@ describe("Posts System", () => {
         .post("/api/v1/posts")
         .set("Authorization", "Bearer invalid-token")
         .send({
-          title: "", // Too short
+          title: "",
           content: "This is a test post",
           postType: "general",
         })
@@ -116,7 +114,7 @@ describe("Posts System", () => {
         .post("/api/v1/posts")
         .set("Authorization", "Bearer invalid-token")
         .send({
-          title: "a".repeat(256), // Too long
+          title: "a".repeat(256),
           content: "This is a test post",
           postType: "general",
         })
@@ -129,7 +127,7 @@ describe("Posts System", () => {
         .set("Authorization", "Bearer invalid-token")
         .send({
           title: "Test Post",
-          content: "", // Too short
+          content: "",
           postType: "general",
         })
         .expect(400);
@@ -139,7 +137,7 @@ describe("Posts System", () => {
         .set("Authorization", "Bearer invalid-token")
         .send({
           title: "Test Post",
-          content: "a".repeat(5001), // Too long
+          content: "a".repeat(5001),
           postType: "general",
         })
         .expect(400);
@@ -153,7 +151,7 @@ describe("Posts System", () => {
           title: "Test Post",
           content: "This is a test post",
           postType: "general",
-          latitude: "invalid", // Should be number
+          latitude: "invalid",
           longitude: -97.7431,
         })
         .expect(400);
@@ -166,7 +164,7 @@ describe("Posts System", () => {
           content: "This is a test post",
           postType: "general",
           latitude: 30.2672,
-          longitude: "invalid", // Should be number
+          longitude: "invalid",
         })
         .expect(400);
     });
@@ -192,9 +190,7 @@ describe("Posts System", () => {
 
       await request(app).get("/api/v1/posts?limit=0").expect(400);
 
-      await request(app)
-        .get("/api/v1/posts?limit=101") // Assuming max limit is 100
-        .expect(400);
+      await request(app).get("/api/v1/posts?limit=101").expect(400);
     });
 
     it("should accept location-based filtering", async () => {
@@ -246,8 +242,7 @@ describe("Posts System", () => {
     });
 
     it("should return post details for valid ID", async () => {
-      // This would require a test post to exist
-      // For now, just test the endpoint structure
+      // This needs to require a test post to exist
       const response = await request(app).get("/api/v1/posts/1");
 
       expect([200, 404]).toContain(response.status);
@@ -281,7 +276,7 @@ describe("Posts System", () => {
         .put("/api/v1/posts/1")
         .set("Authorization", "Bearer invalid-token")
         .send({
-          title: "", // Invalid title
+          title: "",
           content: "Updated content",
         })
         .expect(400);
@@ -291,7 +286,7 @@ describe("Posts System", () => {
         .set("Authorization", "Bearer invalid-token")
         .send({
           title: "Updated Post",
-          content: "", // Invalid content
+          content: "",
         })
         .expect(400);
     });
@@ -330,7 +325,7 @@ describe("Posts System", () => {
           .send({
             reactionType: reaction,
           })
-          .expect(401); // Will fail auth, but validates reaction type
+          .expect(401);
       }
     });
 
@@ -375,7 +370,7 @@ describe("Posts System", () => {
           .send({
             reason: reason,
           })
-          .expect(401); // Will fail auth, but validates reason
+          .expect(401);
       }
     });
 
@@ -415,7 +410,6 @@ describe("Posts System", () => {
     it("should apply rate limiting to post creation", async () => {
       const promises = [];
 
-      // Make multiple rapid requests
       for (let i = 0; i < 20; i++) {
         promises.push(
           request(app)
@@ -431,7 +425,6 @@ describe("Posts System", () => {
 
       const responses = await Promise.all(promises);
 
-      // Should have some rate limited responses (429)
       const rateLimited = responses.filter((r) => r.status === 429);
       expect(rateLimited.length).toBeGreaterThan(0);
     });
@@ -447,7 +440,7 @@ describe("Posts System", () => {
           content: "<script>alert('xss')</script>Safe content",
           postType: "general",
         })
-        .expect(401); // Will fail auth, but should sanitize content
+        .expect(401);
     });
 
     it("should sanitize HTML in post title", async () => {
@@ -459,7 +452,7 @@ describe("Posts System", () => {
           content: "Safe content",
           postType: "general",
         })
-        .expect(401); // Will fail auth, but should sanitize title
+        .expect(401);
     });
   });
 });

@@ -11,11 +11,11 @@ describe("Search System", () => {
 
   describe("GET /api/v1/search", () => {
     it("should validate search query", async () => {
-      await request(app).get("/api/v1/search").expect(400); // Missing query parameter
+      await request(app).get("/api/v1/search").expect(400);
 
-      await request(app).get("/api/v1/search?q=").expect(400); // Empty query
+      await request(app).get("/api/v1/search?q=").expect(400);
 
-      await request(app).get("/api/v1/search?q=ab").expect(400); // Query too short
+      await request(app).get("/api/v1/search?q=ab").expect(400);
     });
 
     it("should accept valid search queries", async () => {
@@ -111,11 +111,11 @@ describe("Search System", () => {
 
   describe("GET /api/v1/search/suggestions", () => {
     it("should validate query parameter", async () => {
-      await request(app).get("/api/v1/search/suggestions").expect(400); // Missing query
+      await request(app).get("/api/v1/search/suggestions").expect(400);
 
-      await request(app).get("/api/v1/search/suggestions?q=").expect(400); // Empty query
+      await request(app).get("/api/v1/search/suggestions?q=").expect(400);
 
-      await request(app).get("/api/v1/search/suggestions?q=a").expect(400); // Query too short
+      await request(app).get("/api/v1/search/suggestions?q=a").expect(400);
     });
 
     it("should return search suggestions", async () => {
@@ -133,9 +133,7 @@ describe("Search System", () => {
     it("should validate suggestion limit", async () => {
       await request(app).get("/api/v1/search/suggestions?q=test&limit=0").expect(400);
 
-      await request(app)
-        .get("/api/v1/search/suggestions?q=test&limit=21") // Assuming max 20
-        .expect(400);
+      await request(app).get("/api/v1/search/suggestions?q=test&limit=21").expect(400);
     });
   });
 
@@ -155,7 +153,7 @@ describe("Search System", () => {
         .post("/api/v1/search/saved")
         .set("Authorization", "Bearer invalid-token")
         .send({
-          query: "", // Empty query
+          query: "",
           filters: {},
         })
         .expect(400);
@@ -164,7 +162,7 @@ describe("Search System", () => {
         .post("/api/v1/search/saved")
         .set("Authorization", "Bearer invalid-token")
         .send({
-          query: "ab", // Too short
+          query: "ab",
           filters: {},
         })
         .expect(400);
@@ -176,7 +174,7 @@ describe("Search System", () => {
         .set("Authorization", "Bearer invalid-token")
         .send({
           query: "test search",
-          filters: "invalid", // Should be object
+          filters: "invalid",
         })
         .expect(400);
     });
@@ -192,7 +190,7 @@ describe("Search System", () => {
             postType: "emergency",
           },
         })
-        .expect(401); // Will fail auth, but validates format
+        .expect(401);
     });
   });
 
@@ -205,7 +203,7 @@ describe("Search System", () => {
       await request(app)
         .get("/api/v1/search/saved?page=1&limit=10")
         .set("Authorization", "Bearer invalid-token")
-        .expect(401); // Will fail auth, but validates pagination
+        .expect(401);
     });
   });
 
@@ -243,9 +241,7 @@ describe("Search System", () => {
     it("should validate limit parameter", async () => {
       await request(app).get("/api/v1/search/trending?limit=0").expect(400);
 
-      await request(app)
-        .get("/api/v1/search/trending?limit=51") // Assuming max 50
-        .expect(400);
+      await request(app).get("/api/v1/search/trending?limit=51").expect(400);
     });
 
     it("should accept time period parameter", async () => {
@@ -265,14 +261,12 @@ describe("Search System", () => {
     it("should apply rate limiting to search requests", async () => {
       const promises = [];
 
-      // Make multiple rapid requests
       for (let i = 0; i < 25; i++) {
         promises.push(request(app).get(`/api/v1/search?q=test${i}`));
       }
 
       const responses = await Promise.all(promises);
 
-      // Should have some rate limited responses (429)
       const rateLimited = responses.filter((r) => r.status === 429);
       expect(rateLimited.length).toBeGreaterThan(0);
     });
@@ -280,7 +274,7 @@ describe("Search System", () => {
 
   describe("Input Sanitization", () => {
     it("should sanitize search queries", async () => {
-      await request(app).get("/api/v1/search?q=<script>alert('xss')</script>test").expect(200); // Should sanitize but still search
+      await request(app).get("/api/v1/search?q=<script>alert('xss')</script>test").expect(200);
     });
 
     it("should handle special characters in queries", async () => {

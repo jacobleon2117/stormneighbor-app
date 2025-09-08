@@ -38,7 +38,6 @@ describe("Comments System", () => {
     });
 
     it("should validate comment content", async () => {
-      // Empty content
       await request(app)
         .post("/api/v1/posts/1/comments")
         .set("Authorization", "Bearer invalid-token")
@@ -47,16 +46,14 @@ describe("Comments System", () => {
         })
         .expect(400);
 
-      // Content too long
       await request(app)
         .post("/api/v1/posts/1/comments")
         .set("Authorization", "Bearer invalid-token")
         .send({
-          content: "a".repeat(2001), // Assuming max length is 2000
+          content: "a".repeat(2001),
         })
         .expect(400);
 
-      // Missing content
       await request(app)
         .post("/api/v1/posts/1/comments")
         .set("Authorization", "Bearer invalid-token")
@@ -115,9 +112,7 @@ describe("Comments System", () => {
 
       await request(app).get("/api/v1/posts/1/comments?limit=0").expect(400);
 
-      await request(app)
-        .get("/api/v1/posts/1/comments?limit=101") // Assuming max limit is 100
-        .expect(400);
+      await request(app).get("/api/v1/posts/1/comments?limit=101").expect(400);
     });
 
     it("should accept sort parameters", async () => {
@@ -174,7 +169,6 @@ describe("Comments System", () => {
     });
 
     it("should validate updated content", async () => {
-      // Empty content
       await request(app)
         .put("/api/v1/comments/1")
         .set("Authorization", "Bearer invalid-token")
@@ -183,16 +177,14 @@ describe("Comments System", () => {
         })
         .expect(400);
 
-      // Content too long
       await request(app)
         .put("/api/v1/comments/1")
         .set("Authorization", "Bearer invalid-token")
         .send({
-          content: "a".repeat(2001), // Assuming max length is 2000
+          content: "a".repeat(2001),
         })
         .expect(400);
 
-      // Missing content
       await request(app)
         .put("/api/v1/comments/1")
         .set("Authorization", "Bearer invalid-token")
@@ -249,7 +241,7 @@ describe("Comments System", () => {
           .send({
             reactionType: reaction,
           })
-          .expect(401); // Will fail auth, but validates reaction type
+          .expect(401);
       }
     });
 
@@ -302,7 +294,7 @@ describe("Comments System", () => {
           .send({
             reason: reason,
           })
-          .expect(401); // Will fail auth, but validates reason
+          .expect(401);
       }
     });
 
@@ -333,12 +325,11 @@ describe("Comments System", () => {
           reason: "other",
           additionalDetails: "Some additional details",
         })
-        .expect(401); // Will fail auth, but validates format
+        .expect(401);
     });
 
     it("should prevent self-reporting", async () => {
-      // This test would need to be implemented with actual user context
-      // For now, just test the endpoint structure
+      // This test needs to be implemented with actual user context
       await request(app)
         .post("/api/v1/comments/1/report")
         .set("Authorization", "Bearer invalid-token")
@@ -377,7 +368,6 @@ describe("Comments System", () => {
     it("should apply rate limiting to comment creation", async () => {
       const promises = [];
 
-      // Make multiple rapid requests
       for (let i = 0; i < 30; i++) {
         promises.push(
           request(app)
@@ -391,7 +381,6 @@ describe("Comments System", () => {
 
       const responses = await Promise.all(promises);
 
-      // Should have some rate limited responses (429)
       const rateLimited = responses.filter((r) => r.status === 429);
       expect(rateLimited.length).toBeGreaterThan(0);
     });
@@ -405,7 +394,7 @@ describe("Comments System", () => {
         .send({
           content: "<script>alert('xss')</script>Safe comment content",
         })
-        .expect(401); // Will fail auth, but should sanitize content
+        .expect(401);
     });
 
     it("should handle special characters in content", async () => {
@@ -415,7 +404,7 @@ describe("Comments System", () => {
         .send({
           content: "Comment with special chars: <>&\"'",
         })
-        .expect(401); // Will fail auth, but should handle special chars
+        .expect(401);
     });
 
     it("should preserve safe formatting", async () => {
@@ -425,7 +414,7 @@ describe("Comments System", () => {
         .send({
           content: "Comment with\nnewlines and basic formatting",
         })
-        .expect(401); // Will fail auth, but should preserve safe formatting
+        .expect(401);
     });
   });
 
@@ -438,11 +427,11 @@ describe("Comments System", () => {
           content: "This is a reply to a comment",
           parentCommentId: 1,
         })
-        .expect(401); // Will fail auth, but validates threading
+        .expect(401);
     });
 
     it("should prevent circular reply references", async () => {
-      // This would need more complex testing with actual comment IDs
+      // This needs more complex testing with actual comment IDs
       await request(app)
         .post("/api/v1/posts/1/comments")
         .set("Authorization", "Bearer invalid-token")

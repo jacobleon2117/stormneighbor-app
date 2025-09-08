@@ -33,8 +33,8 @@ interface User {
 export default function FollowersFollowingScreen() {
   const params = useLocalSearchParams();
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'followers' | 'following'>(
-    (params.tab as 'followers' | 'following') || 'followers'
+  const [activeTab, setActiveTab] = useState<"followers" | "following">(
+    (params.tab as "followers" | "following") || "followers"
   );
   const [followers, setFollowers] = useState<User[]>([]);
   const [following, setFollowing] = useState<User[]>([]);
@@ -43,89 +43,92 @@ export default function FollowersFollowingScreen() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const fetchUserData = useCallback(async (isRefresh: boolean = false) => {
-    try {
-      if (!isRefresh) setLoading(true);
-      setError(null);
+  const fetchUserData = useCallback(
+    async (isRefresh: boolean = false) => {
+      try {
+        if (!isRefresh) setLoading(true);
+        setError(null);
 
-      // TODO: Replace with actual API calls when backend implements followers/following
-      // const [followersResponse, followingResponse] = await Promise.all([
-      //   apiService.getFollowers(user?.id),
-      //   apiService.getFollowing(user?.id)
-      // ]);
+        // TODO: Replace with actual API calls when backend implements followers/following
+        // const [followersResponse, followingResponse] = await Promise.all([
+        //   apiService.getFollowers(user?.id),
+        //   apiService.getFollowing(user?.id)
+        // ]);
 
-      // Mock data for now
-      const mockFollowers: User[] = [
-        {
-          id: 2,
-          firstName: "Jane",
-          lastName: "Smith",
-          email: "jane.smith@example.com",
-          profileImageUrl: null,
-          bio: "Local weather enthusiast and community volunteer",
-          followersCount: 24,
-          followingCount: 18,
-          isFollowing: true,
-        },
-        {
-          id: 3,
-          firstName: "Mike",
-          lastName: "Johnson",
-          email: "mike.j@example.com",
-          profileImageUrl: null,
-          bio: "Austin resident, dog lover, always here to help neighbors",
-          followersCount: 12,
-          followingCount: 25,
-          isFollowing: false,
-        },
-        {
-          id: 4,
-          firstName: "Sarah",
-          lastName: "Williams",
-          email: "sarah.w@example.com",
-          profileImageUrl: null,
-          bio: "Community organizer and storm spotter",
-          followersCount: 45,
-          followingCount: 32,
-          isFollowing: true,
-        },
-      ];
+        // Mock data for now
+        const mockFollowers: User[] = [
+          {
+            id: 2,
+            firstName: "Jane",
+            lastName: "Smith",
+            email: "jane.smith@example.com",
+            profileImageUrl: null,
+            bio: "Local weather enthusiast and community volunteer",
+            followersCount: 24,
+            followingCount: 18,
+            isFollowing: true,
+          },
+          {
+            id: 3,
+            firstName: "Mike",
+            lastName: "Johnson",
+            email: "mike.j@example.com",
+            profileImageUrl: null,
+            bio: "Austin resident, dog lover, always here to help neighbors",
+            followersCount: 12,
+            followingCount: 25,
+            isFollowing: false,
+          },
+          {
+            id: 4,
+            firstName: "Sarah",
+            lastName: "Williams",
+            email: "sarah.w@example.com",
+            profileImageUrl: null,
+            bio: "Community organizer and storm spotter",
+            followersCount: 45,
+            followingCount: 32,
+            isFollowing: true,
+          },
+        ];
 
-      const mockFollowing: User[] = [
-        {
-          id: 5,
-          firstName: "David",
-          lastName: "Brown",
-          email: "david.brown@example.com",
-          profileImageUrl: null,
-          bio: "Local emergency coordinator",
-          followersCount: 67,
-          followingCount: 23,
-          isFollowing: true,
-        },
-        {
-          id: 6,
-          firstName: "Emma",
-          lastName: "Davis",
-          email: "emma.davis@example.com",
-          profileImageUrl: null,
-          bio: "Neighborhood watch coordinator",
-          followersCount: 34,
-          followingCount: 41,
-          isFollowing: true,
-        },
-      ];
+        const mockFollowing: User[] = [
+          {
+            id: 5,
+            firstName: "David",
+            lastName: "Brown",
+            email: "david.brown@example.com",
+            profileImageUrl: null,
+            bio: "Local emergency coordinator",
+            followersCount: 67,
+            followingCount: 23,
+            isFollowing: true,
+          },
+          {
+            id: 6,
+            firstName: "Emma",
+            lastName: "Davis",
+            email: "emma.davis@example.com",
+            profileImageUrl: null,
+            bio: "Neighborhood watch coordinator",
+            followersCount: 34,
+            followingCount: 41,
+            isFollowing: true,
+          },
+        ];
 
-      setFollowers(mockFollowers);
-      setFollowing(mockFollowing);
-    } catch (error: any) {
-      console.error("Error fetching user data:", error);
-      setError("Failed to load user data");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [user?.id]);
+        setFollowers(mockFollowers);
+        setFollowing(mockFollowing);
+      } catch (error: any) {
+        console.error("Error fetching user data:", error);
+        setError("Failed to load user data");
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [user?.id]
+  );
 
   useEffect(() => {
     if (user) {
@@ -141,59 +144,54 @@ export default function FollowersFollowingScreen() {
   const handleFollowToggle = async (userId: number, isCurrentlyFollowing: boolean) => {
     try {
       const action = isCurrentlyFollowing ? "Unfollow" : "Follow";
-      
-      Alert.alert(
-        `${action} User`,
-        `Are you sure you want to ${action.toLowerCase()} this user?`,
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: action,
-            onPress: async () => {
-              try {
-                // TODO: Implement actual follow/unfollow API call
-                // await apiService.toggleFollow(userId);
-                
-                // Update local state optimistically
-                setFollowers(prev => 
-                  prev.map(user => 
-                    user.id === userId 
-                      ? { 
-                          ...user, 
-                          isFollowing: !isCurrentlyFollowing,
-                          followersCount: isCurrentlyFollowing 
-                            ? user.followersCount - 1 
-                            : user.followersCount + 1
-                        }
-                      : user
-                  )
-                );
-                
-                setFollowing(prev => 
-                  prev.map(user => 
-                    user.id === userId 
-                      ? { 
-                          ...user, 
-                          isFollowing: !isCurrentlyFollowing,
-                          followersCount: isCurrentlyFollowing 
-                            ? user.followersCount - 1 
-                            : user.followersCount + 1
-                        }
-                      : user
-                  )
-                );
 
-                Alert.alert(
-                  "Success",
-                  `You are now ${isCurrentlyFollowing ? 'not following' : 'following'} this user.`
-                );
-              } catch (error) {
-                Alert.alert("Error", `Failed to ${action.toLowerCase()} user. Please try again.`);
-              }
-            },
+      Alert.alert(`${action} User`, `Are you sure you want to ${action.toLowerCase()} this user?`, [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: action,
+          onPress: async () => {
+            try {
+              // TODO: Implement actual follow/unfollow API call
+              // await apiService.toggleFollow(userId);
+
+              setFollowers((prev) =>
+                prev.map((user) =>
+                  user.id === userId
+                    ? {
+                        ...user,
+                        isFollowing: !isCurrentlyFollowing,
+                        followersCount: isCurrentlyFollowing
+                          ? user.followersCount - 1
+                          : user.followersCount + 1,
+                      }
+                    : user
+                )
+              );
+
+              setFollowing((prev) =>
+                prev.map((user) =>
+                  user.id === userId
+                    ? {
+                        ...user,
+                        isFollowing: !isCurrentlyFollowing,
+                        followersCount: isCurrentlyFollowing
+                          ? user.followersCount - 1
+                          : user.followersCount + 1,
+                      }
+                    : user
+                )
+              );
+
+              Alert.alert(
+                "Success",
+                `You are now ${isCurrentlyFollowing ? "not following" : "following"} this user.`
+              );
+            } catch (error) {
+              Alert.alert("Error", `Failed to ${action.toLowerCase()} user. Please try again.`);
+            }
           },
-        ]
-      );
+        },
+      ]);
     } catch (error) {
       console.error("Error toggling follow:", error);
     }
@@ -240,9 +238,9 @@ export default function FollowersFollowingScreen() {
     ]);
   };
 
-  const currentData = activeTab === 'followers' ? followers : following;
-  const filteredData = searchQuery 
-    ? currentData.filter(user => 
+  const currentData = activeTab === "followers" ? followers : following;
+  const filteredData = searchQuery
+    ? currentData.filter((user) =>
         `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchQuery.toLowerCase())
       )
     : currentData;
@@ -255,9 +253,7 @@ export default function FollowersFollowingScreen() {
             <Image source={{ uri: item.profileImageUrl }} style={styles.avatar} />
           ) : (
             <View style={[styles.avatar, styles.avatarPlaceholder]}>
-              <Text style={styles.avatarText}>
-                {item.firstName.charAt(0).toUpperCase()}
-              </Text>
+              <Text style={styles.avatarText}>{item.firstName.charAt(0).toUpperCase()}</Text>
             </View>
           )}
         </View>
@@ -286,18 +282,13 @@ export default function FollowersFollowingScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[
-            styles.followButton,
-            item.isFollowing && styles.followingButton
-          ]}
+          style={[styles.followButton, item.isFollowing && styles.followingButton]}
           onPress={() => handleFollowToggle(item.id, item.isFollowing || false)}
         >
           {item.isFollowing ? (
             <>
               <UserMinus size={16} color={Colors.text.secondary} />
-              <Text style={[styles.followButtonText, styles.followingButtonText]}>
-                Following
-              </Text>
+              <Text style={[styles.followButtonText, styles.followingButtonText]}>Following</Text>
             </>
           ) : (
             <>
@@ -314,13 +305,12 @@ export default function FollowersFollowingScreen() {
     <View style={styles.emptyState}>
       <Users size={48} color={Colors.text.disabled} />
       <Text style={styles.emptyTitle}>
-        {activeTab === 'followers' ? 'No followers yet' : 'Not following anyone yet'}
+        {activeTab === "followers" ? "No followers yet" : "Not following anyone yet"}
       </Text>
       <Text style={styles.emptyMessage}>
-        {activeTab === 'followers' 
-          ? 'People who follow you will appear here.'
-          : 'Users you follow will appear here. Start connecting with your neighbors!'
-        }
+        {activeTab === "followers"
+          ? "People who follow you will appear here."
+          : "Users you follow will appear here. Start connecting with your neighbors!"}
       </Text>
     </View>
   );
@@ -333,7 +323,7 @@ export default function FollowersFollowingScreen() {
     return (
       <View style={styles.container}>
         <Header
-          title={activeTab === 'followers' ? 'Followers' : 'Following'}
+          title={activeTab === "followers" ? "Followers" : "Following"}
           showBackButton={true}
           onBackPress={handleGoBack}
         />
@@ -349,17 +339,14 @@ export default function FollowersFollowingScreen() {
     return (
       <View style={styles.container}>
         <Header
-          title={activeTab === 'followers' ? 'Followers' : 'Following'}
+          title={activeTab === "followers" ? "Followers" : "Following"}
           showBackButton={true}
           onBackPress={handleGoBack}
         />
         <View style={styles.errorContainer}>
           <Text style={styles.errorTitle}>Unable to load data</Text>
           <Text style={styles.errorMessage}>{error}</Text>
-          <TouchableOpacity 
-            style={styles.retryButton} 
-            onPress={() => fetchUserData()}
-          >
+          <TouchableOpacity style={styles.retryButton} onPress={() => fetchUserData()}>
             <Text style={styles.retryButtonText}>Try Again</Text>
           </TouchableOpacity>
         </View>
@@ -370,32 +357,30 @@ export default function FollowersFollowingScreen() {
   return (
     <View style={styles.container}>
       <Header
-        title={activeTab === 'followers' ? 'Followers' : 'Following'}
+        title={activeTab === "followers" ? "Followers" : "Following"}
         showBackButton={true}
         onBackPress={handleGoBack}
       />
 
-      {/* Tabs */}
       <View style={styles.tabContainer}>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'followers' && styles.activeTab]}
-          onPress={() => setActiveTab('followers')}
+          style={[styles.tab, activeTab === "followers" && styles.activeTab]}
+          onPress={() => setActiveTab("followers")}
         >
-          <Text style={[styles.tabText, activeTab === 'followers' && styles.activeTabText]}>
+          <Text style={[styles.tabText, activeTab === "followers" && styles.activeTabText]}>
             Followers ({followers.length})
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'following' && styles.activeTab]}
-          onPress={() => setActiveTab('following')}
+          style={[styles.tab, activeTab === "following" && styles.activeTab]}
+          onPress={() => setActiveTab("following")}
         >
-          <Text style={[styles.tabText, activeTab === 'following' && styles.activeTabText]}>
+          <Text style={[styles.tabText, activeTab === "following" && styles.activeTabText]}>
             Following ({following.length})
           </Text>
         </TouchableOpacity>
       </View>
 
-      {/* Search */}
       <View style={styles.searchContainer}>
         <View style={styles.searchBar}>
           <Search size={20} color={Colors.text.disabled} style={styles.searchIcon} />
@@ -408,17 +393,13 @@ export default function FollowersFollowingScreen() {
             returnKeyType="search"
           />
           {searchQuery.length > 0 && (
-            <TouchableOpacity
-              onPress={() => setSearchQuery("")}
-              style={styles.clearButton}
-            >
+            <TouchableOpacity onPress={() => setSearchQuery("")} style={styles.clearButton}>
               <X size={20} color={Colors.text.disabled} />
             </TouchableOpacity>
           )}
         </View>
       </View>
 
-      {/* User List */}
       <FlatList
         data={filteredData}
         keyExtractor={(item) => item.id.toString()}

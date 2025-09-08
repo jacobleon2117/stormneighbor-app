@@ -18,7 +18,7 @@ describe("Notifications System", () => {
       await request(app)
         .get("/api/v1/notifications?page=1&limit=10")
         .set("Authorization", "Bearer invalid-token")
-        .expect(401); // Will fail auth, but validates pagination
+        .expect(401);
     });
 
     it("should validate pagination parameters", async () => {
@@ -64,7 +64,7 @@ describe("Notifications System", () => {
         await request(app)
           .get(`/api/v1/notifications?type=${type}`)
           .set("Authorization", "Bearer invalid-token")
-          .expect(401); // Will fail auth, but validates type
+          .expect(401);
       }
     });
 
@@ -82,7 +82,7 @@ describe("Notifications System", () => {
         await request(app)
           .get(`/api/v1/notifications?priority=${priority}`)
           .set("Authorization", "Bearer invalid-token")
-          .expect(401); // Will fail auth, but validates priority
+          .expect(401);
       }
     });
 
@@ -124,7 +124,7 @@ describe("Notifications System", () => {
         .send({
           type: "comment",
         })
-        .expect(401); // Will fail auth, but validates type filter
+        .expect(401);
     });
 
     it("should validate type filter", async () => {
@@ -168,7 +168,7 @@ describe("Notifications System", () => {
         .send({
           type: "comment",
         })
-        .expect(401); // Will fail auth, but validates type filter
+        .expect(401);
     });
 
     it("should accept read status filter for bulk delete", async () => {
@@ -178,7 +178,7 @@ describe("Notifications System", () => {
         .send({
           onlyRead: true,
         })
-        .expect(401); // Will fail auth, but validates filter
+        .expect(401);
     });
 
     it("should validate bulk delete parameters", async () => {
@@ -222,7 +222,7 @@ describe("Notifications System", () => {
         .put("/api/v1/notifications/settings")
         .set("Authorization", "Bearer invalid-token")
         .send({
-          emailNotifications: "invalid", // Should be boolean
+          emailNotifications: "invalid",
           pushNotifications: true,
         })
         .expect(400);
@@ -232,7 +232,7 @@ describe("Notifications System", () => {
         .set("Authorization", "Bearer invalid-token")
         .send({
           emailNotifications: true,
-          pushNotifications: "invalid", // Should be boolean
+          pushNotifications: "invalid",
         })
         .expect(400);
     });
@@ -254,7 +254,7 @@ describe("Notifications System", () => {
           pushNotifications: true,
           types: validSettings,
         })
-        .expect(401); // Will fail auth, but validates structure
+        .expect(401);
     });
 
     it("should validate notification frequency", async () => {
@@ -268,7 +268,7 @@ describe("Notifications System", () => {
             emailNotifications: true,
             frequency: frequency,
           })
-          .expect(401); // Will fail auth, but validates frequency
+          .expect(401);
       }
     });
 
@@ -295,7 +295,7 @@ describe("Notifications System", () => {
             end: "08:00",
           },
         })
-        .expect(401); // Will fail auth, but validates format
+        .expect(401);
 
       await request(app)
         .put("/api/v1/notifications/settings")
@@ -332,7 +332,7 @@ describe("Notifications System", () => {
           .send({
             type: type,
           })
-          .expect(401); // Will fail auth, but validates type
+          .expect(401);
       }
     });
 
@@ -364,7 +364,7 @@ describe("Notifications System", () => {
       await request(app)
         .get("/api/v1/notifications/unread-count?type=comment")
         .set("Authorization", "Bearer invalid-token")
-        .expect(401); // Will fail auth, but validates type filter
+        .expect(401);
     });
 
     it("should validate type filter for count", async () => {
@@ -379,7 +379,6 @@ describe("Notifications System", () => {
     it("should apply rate limiting to notification requests", async () => {
       const promises = [];
 
-      // Make multiple rapid requests
       for (let i = 0; i < 30; i++) {
         promises.push(
           request(app).get("/api/v1/notifications").set("Authorization", "Bearer invalid-token")
@@ -388,7 +387,6 @@ describe("Notifications System", () => {
 
       const responses = await Promise.all(promises);
 
-      // Should have some rate limited responses (429)
       const rateLimited = responses.filter((r) => r.status === 429);
       expect(rateLimited.length).toBeGreaterThan(0);
     });
@@ -396,7 +394,6 @@ describe("Notifications System", () => {
     it("should apply stricter rate limiting to test notifications", async () => {
       const promises = [];
 
-      // Make multiple rapid test notification requests
       for (let i = 0; i < 10; i++) {
         promises.push(
           request(app)
@@ -410,7 +407,6 @@ describe("Notifications System", () => {
 
       const responses = await Promise.all(promises);
 
-      // Should have rate limited responses (429) quickly
       const rateLimited = responses.filter((r) => r.status === 429);
       expect(rateLimited.length).toBeGreaterThan(0);
     });
@@ -433,7 +429,7 @@ describe("Notifications System", () => {
 
     it("should validate bulk operation limits", async () => {
       // Test that bulk operations don't allow excessive deletions
-      // This would need to be implemented with actual data
+      // This needs to be implemented with actual data
       await request(app)
         .delete("/api/v1/notifications/clear")
         .set("Authorization", "Bearer invalid-token")

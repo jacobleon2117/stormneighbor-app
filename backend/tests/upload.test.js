@@ -23,7 +23,6 @@ describe("Upload System", () => {
 
     it("should validate file size limits", async () => {
       // This would need actual file upload testing
-      // For now, test the endpoint structure
       const response = await request(app)
         .post("/api/v1/upload")
         .set("Authorization", "Bearer invalid-token");
@@ -32,7 +31,6 @@ describe("Upload System", () => {
     });
 
     it("should validate file types", async () => {
-      // Test endpoint exists and validates file types
       const response = await request(app)
         .post("/api/v1/upload")
         .set("Authorization", "Bearer invalid-token");
@@ -50,7 +48,7 @@ describe("Upload System", () => {
       await request(app)
         .delete("/api/v1/upload/")
         .set("Authorization", "Bearer invalid-token")
-        .expect(404); // Route not found
+        .expect(404);
     });
   });
 
@@ -70,7 +68,7 @@ describe("Upload System", () => {
       await request(app)
         .get("/api/v1/upload/user/1?page=1&limit=10")
         .set("Authorization", "Bearer invalid-token")
-        .expect(401); // Will fail auth, but validates pagination
+        .expect(401);
     });
   });
 
@@ -78,7 +76,6 @@ describe("Upload System", () => {
     it("should apply rate limiting to uploads", async () => {
       const promises = [];
 
-      // Make multiple rapid requests
       for (let i = 0; i < 15; i++) {
         promises.push(
           request(app).post("/api/v1/upload").set("Authorization", "Bearer invalid-token")
@@ -87,7 +84,6 @@ describe("Upload System", () => {
 
       const responses = await Promise.all(promises);
 
-      // Should have some rate limited responses (429)
       const rateLimited = responses.filter((r) => r.status === 429);
       expect(rateLimited.length).toBeGreaterThan(0);
     });

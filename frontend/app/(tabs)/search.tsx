@@ -153,7 +153,8 @@ export default function SearchScreen() {
       },
       {
         text: "Inappropriate Content",
-        onPress: () => submitReport(postId, "inappropriate", "This post contains inappropriate content"),
+        onPress: () =>
+          submitReport(postId, "inappropriate", "This post contains inappropriate content"),
       },
       {
         text: "Harassment",
@@ -161,7 +162,8 @@ export default function SearchScreen() {
       },
       {
         text: "False Information",
-        onPress: () => submitReport(postId, "misinformation", "This post contains false information"),
+        onPress: () =>
+          submitReport(postId, "misinformation", "This post contains false information"),
       },
     ]);
   };
@@ -229,11 +231,7 @@ export default function SearchScreen() {
   };
 
   const handleEdit = async (postId: number) => {
-    Alert.alert(
-      "Edit Post",
-      "Post editing functionality coming soon.",
-      [{ text: "OK" }]
-    );
+    Alert.alert("Edit Post", "Post editing functionality coming soon.", [{ text: "OK" }]);
     // TODO: Navigate to edit post screen
     // router.push(`/post/${postId}/edit`);
   };
@@ -323,11 +321,7 @@ export default function SearchScreen() {
 
   return (
     <View style={styles.container}>
-      <Header
-        title="Search"
-        showBackButton={true}
-        onBackPress={handleGoBack}
-      />
+      <Header title="Search" showBackButton={true} onBackPress={handleGoBack} />
 
       <View style={styles.safeContent}>
         <View style={styles.searchContainer}>

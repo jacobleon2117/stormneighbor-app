@@ -41,32 +41,29 @@ describe("Users System", () => {
     });
 
     it("should validate profile update data", async () => {
-      // Invalid first name
       await request(app)
         .put("/api/v1/users/profile")
         .set("Authorization", "Bearer invalid-token")
         .send({
-          firstName: "", // Empty first name
+          firstName: "",
           lastName: "Name",
         })
         .expect(400);
 
-      // Invalid last name
       await request(app)
         .put("/api/v1/users/profile")
         .set("Authorization", "Bearer invalid-token")
         .send({
           firstName: "Name",
-          lastName: "", // Empty last name
+          lastName: "",
         })
         .expect(400);
 
-      // Name too long
       await request(app)
         .put("/api/v1/users/profile")
         .set("Authorization", "Bearer invalid-token")
         .send({
-          firstName: "a".repeat(51), // Too long
+          firstName: "a".repeat(51),
           lastName: "Name",
         })
         .expect(400);
@@ -89,7 +86,7 @@ describe("Users System", () => {
         .send({
           firstName: "Test",
           lastName: "User",
-          phone: "123", // Too short
+          phone: "123",
         })
         .expect(400);
     });
@@ -101,7 +98,7 @@ describe("Users System", () => {
         .send({
           firstName: "Test",
           lastName: "User",
-          city: "", // Empty city
+          city: "",
           state: "TX",
         })
         .expect(400);
@@ -113,7 +110,7 @@ describe("Users System", () => {
           firstName: "Test",
           lastName: "User",
           city: "Austin",
-          state: "", // Empty state
+          state: "",
         })
         .expect(400);
     });
@@ -125,7 +122,7 @@ describe("Users System", () => {
         .send({
           firstName: "Test",
           lastName: "User",
-          bio: "a".repeat(501), // Too long
+          bio: "a".repeat(501),
         })
         .expect(400);
     });
@@ -142,7 +139,7 @@ describe("Users System", () => {
           state: "Texas",
           bio: "Updated bio",
         })
-        .expect(401); // Will fail auth, but validates data format
+        .expect(401);
     });
   });
 
@@ -168,7 +165,7 @@ describe("Users System", () => {
         .put("/api/v1/users/preferences")
         .set("Authorization", "Bearer invalid-token")
         .send({
-          emailNotifications: "invalid", // Should be boolean
+          emailNotifications: "invalid",
           pushNotifications: true,
         })
         .expect(400);
@@ -178,7 +175,7 @@ describe("Users System", () => {
         .set("Authorization", "Bearer invalid-token")
         .send({
           emailNotifications: true,
-          pushNotifications: "invalid", // Should be boolean
+          pushNotifications: "invalid",
         })
         .expect(400);
     });
@@ -193,7 +190,7 @@ describe("Users System", () => {
           .send({
             notificationFrequency: frequency,
           })
-          .expect(401); // Will fail auth, but validates frequency
+          .expect(401);
       }
     });
 
@@ -212,7 +209,7 @@ describe("Users System", () => {
         .put("/api/v1/users/preferences")
         .set("Authorization", "Bearer invalid-token")
         .send({
-          locationRadiusMiles: -1, // Invalid radius
+          locationRadiusMiles: -1,
         })
         .expect(400);
 
@@ -220,7 +217,7 @@ describe("Users System", () => {
         .put("/api/v1/users/preferences")
         .set("Authorization", "Bearer invalid-token")
         .send({
-          locationRadiusMiles: 1001, // Too large
+          locationRadiusMiles: 1001,
         })
         .expect(400);
 
@@ -228,7 +225,7 @@ describe("Users System", () => {
         .put("/api/v1/users/preferences")
         .set("Authorization", "Bearer invalid-token")
         .send({
-          locationRadiusMiles: "invalid", // Should be number
+          locationRadiusMiles: "invalid",
         })
         .expect(400);
     });
@@ -252,7 +249,7 @@ describe("Users System", () => {
     });
 
     it("should prevent self-following", async () => {
-      // This would need to be tested with actual user context
+      // This needs to be tested with actual user context
       await request(app)
         .post("/api/v1/users/follow/1")
         .set("Authorization", "Bearer invalid-token")
@@ -287,7 +284,7 @@ describe("Users System", () => {
       await request(app)
         .get("/api/v1/users/followers?page=1&limit=10")
         .set("Authorization", "Bearer invalid-token")
-        .expect(401); // Will fail auth, but validates pagination
+        .expect(401);
     });
 
     it("should validate pagination parameters", async () => {
@@ -312,7 +309,7 @@ describe("Users System", () => {
       await request(app)
         .get("/api/v1/users/following?page=1&limit=10")
         .set("Authorization", "Bearer invalid-token")
-        .expect(401); // Will fail auth, but validates pagination
+        .expect(401);
     });
   });
 
@@ -374,7 +371,7 @@ describe("Users System", () => {
         .post("/api/v1/users/device-token")
         .set("Authorization", "Bearer invalid-token")
         .send({
-          token: "", // Empty token
+          token: "",
           platform: "ios",
         })
         .expect(400);
@@ -400,7 +397,7 @@ describe("Users System", () => {
             token: "device-token-123",
             platform: platform,
           })
-          .expect(401); // Will fail auth, but validates platform
+          .expect(401);
       }
     });
 
@@ -425,7 +422,7 @@ describe("Users System", () => {
       await request(app)
         .delete("/api/v1/users/device-token/")
         .set("Authorization", "Bearer invalid-token")
-        .expect(404); // Route not found for empty token
+        .expect(404);
     });
   });
 
@@ -433,9 +430,9 @@ describe("Users System", () => {
     it("should validate search query", async () => {
       await request(app).get("/api/v1/users/search").expect(400); // Missing query parameter
 
-      await request(app).get("/api/v1/users/search?q=").expect(400); // Empty query
+      await request(app).get("/api/v1/users/search?q=").expect(400);
 
-      await request(app).get("/api/v1/users/search?q=ab").expect(400); // Query too short
+      await request(app).get("/api/v1/users/search?q=ab").expect(400);
     });
 
     it("should accept valid search queries", async () => {
@@ -461,7 +458,6 @@ describe("Users System", () => {
     it("should apply rate limiting to profile updates", async () => {
       const promises = [];
 
-      // Make multiple rapid requests
       for (let i = 0; i < 20; i++) {
         promises.push(
           request(app)
@@ -476,7 +472,6 @@ describe("Users System", () => {
 
       const responses = await Promise.all(promises);
 
-      // Should have some rate limited responses (429)
       const rateLimited = responses.filter((r) => r.status === 429);
       expect(rateLimited.length).toBeGreaterThan(0);
     });
@@ -484,7 +479,6 @@ describe("Users System", () => {
     it("should apply rate limiting to follow/unfollow actions", async () => {
       const promises = [];
 
-      // Make multiple rapid follow requests
       for (let i = 1; i <= 15; i++) {
         promises.push(
           request(app)
@@ -495,7 +489,6 @@ describe("Users System", () => {
 
       const responses = await Promise.all(promises);
 
-      // Should have some rate limited responses (429)
       const rateLimited = responses.filter((r) => r.status === 429);
       expect(rateLimited.length).toBeGreaterThan(0);
     });
@@ -511,7 +504,7 @@ describe("Users System", () => {
           lastName: "<img src=x onerror=alert('xss')>Doe",
           bio: "<script>alert('xss')</script>Safe bio content",
         })
-        .expect(401); // Will fail auth, but should sanitize fields
+        .expect(401);
     });
 
     it("should handle special characters in profile fields", async () => {
@@ -523,7 +516,7 @@ describe("Users System", () => {
           lastName: "O'Connor",
           bio: "Bio with special chars: <>&\"'",
         })
-        .expect(401); // Will fail auth, but should handle special chars
+        .expect(401);
     });
   });
 
@@ -533,7 +526,7 @@ describe("Users System", () => {
         .put("/api/v1/users/preferences")
         .set("Authorization", "Bearer invalid-token")
         .send({
-          showCityOnly: "invalid", // Should be boolean
+          showCityOnly: "invalid",
         })
         .expect(400);
 
@@ -543,7 +536,7 @@ describe("Users System", () => {
         .send({
           showCityOnly: true,
         })
-        .expect(401); // Will fail auth, but validates data type
+        .expect(401);
     });
   });
 });

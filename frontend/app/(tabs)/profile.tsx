@@ -688,8 +688,8 @@ export default function ProfileScreen() {
         onMessagesPress={() => router.push("/(tabs)/messages")}
         showMore={false}
       />
-      <ScrollView 
-        style={styles.content} 
+      <ScrollView
+        style={styles.content}
         showsVerticalScrollIndicator={false}
         bounces={true}
         contentInsetAdjustmentBehavior="automatic"
@@ -778,10 +778,10 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    backgroundColor: Colors.neutral[50], // Changed to grey background
+    backgroundColor: Colors.neutral[50],
   },
   profileHeader: {
-    backgroundColor: Colors.neutral[50], // Remove white background
+    backgroundColor: Colors.neutral[50],
     paddingVertical: 24,
     paddingHorizontal: 20,
     borderBottomWidth: 0.5,
@@ -794,7 +794,7 @@ const styles = StyleSheet.create({
   },
   avatarContainer: {
     position: "relative",
-    marginRight: 16, // Add spacing to the right
+    marginRight: 16,
   },
   avatar: {
     width: 80,
@@ -839,7 +839,7 @@ const styles = StyleSheet.create({
   },
   userInfo: {
     flex: 1,
-    alignItems: "flex-start", // Left align instead of center
+    alignItems: "flex-start",
   },
   userName: {
     fontSize: 24,

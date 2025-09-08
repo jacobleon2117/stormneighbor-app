@@ -12,7 +12,6 @@ function RootLayoutContent() {
   const [hasNavigated, setHasNavigated] = useState(false);
 
   useEffect(() => {
-    // Add a small delay to ensure user data is fully loaded
     const navigationTimer = setTimeout(() => {
       if (!isLoading && !hasNavigated) {
         if (isAuthenticated && user) {
@@ -60,12 +59,11 @@ function RootLayoutContent() {
           }
         }
       }
-    }, 300); // 300ms delay to ensure user data is stable
+    }, 300);
 
     return () => clearTimeout(navigationTimer);
   }, [isAuthenticated, isLoading, hasLoggedOut, user, hasNavigated]);
 
-  // Reset navigation flag when auth state changes
   useEffect(() => {
     setHasNavigated(false);
   }, [isAuthenticated]);

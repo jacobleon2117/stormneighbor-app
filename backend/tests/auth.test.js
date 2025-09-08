@@ -64,7 +64,6 @@ describe("Authentication System", () => {
     });
 
     it("should reject duplicate email registration", async () => {
-      // First registration
       await request(app)
         .post("/api/v1/auth/register")
         .send({
@@ -77,7 +76,6 @@ describe("Authentication System", () => {
         })
         .expect(201);
 
-      // Duplicate registration
       await request(app)
         .post("/api/v1/auth/register")
         .send({
@@ -100,7 +98,7 @@ describe("Authentication System", () => {
           email: "test@stormneighbor.test",
           code: "123456",
         })
-        .expect(400); // Will fail due to invalid code, but validates format
+        .expect(400);
     });
 
     it("should reject invalid email format", async () => {
@@ -126,7 +124,6 @@ describe("Authentication System", () => {
 
   describe("POST /api/v1/auth/login", () => {
     beforeEach(async () => {
-      // Create and verify a test user for login tests
       await request(app).post("/api/v1/auth/register").send({
         email: testUser.email,
         password: testUser.password,
@@ -213,7 +210,7 @@ describe("Authentication System", () => {
           code: "123456",
           newPassword: "NewPassword123!",
         })
-        .expect(400); // Will fail due to invalid code, but validates format
+        .expect(400);
     });
 
     it("should reject invalid email format", async () => {
@@ -300,7 +297,6 @@ describe("Authentication System", () => {
     it("should apply rate limiting to registration endpoint", async () => {
       const promises = [];
 
-      // Make multiple rapid requests
       for (let i = 0; i < 10; i++) {
         promises.push(
           request(app)
@@ -316,7 +312,6 @@ describe("Authentication System", () => {
 
       const responses = await Promise.all(promises);
 
-      // Should have some rate limited responses (429)
       const rateLimited = responses.filter((r) => r.status === 429);
       expect(rateLimited.length).toBeGreaterThan(0);
     });

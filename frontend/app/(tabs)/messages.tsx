@@ -79,15 +79,13 @@ export default function MessagesScreen() {
       setSearchLoading(true);
       setSearchActive(true);
 
-      // Filter existing conversations
-      const filteredConversations = conversations.filter(conv =>
+      const filteredConversations = conversations.filter((conv) =>
         `${conv.otherUser.firstName} ${conv.otherUser.lastName}`
           .toLowerCase()
           .includes(query.toLowerCase())
       );
 
-      // For now, we'll create a mock list of available users
-      // In a real app, this would be an API call to get followers or all users
+      // This needs to be an API call to get followers or all users
       const mockAvailableUsers: User[] = [
         {
           id: 999,
@@ -98,9 +96,10 @@ export default function MessagesScreen() {
         },
       ];
 
-      const availableUsers = mockAvailableUsers.filter(u =>
-        `${u.firstName} ${u.lastName}`.toLowerCase().includes(query.toLowerCase()) &&
-        !conversations.some(conv => conv.otherUser.id === u.id)
+      const availableUsers = mockAvailableUsers.filter(
+        (u) =>
+          `${u.firstName} ${u.lastName}`.toLowerCase().includes(query.toLowerCase()) &&
+          !conversations.some((conv) => conv.otherUser.id === u.id)
       );
 
       setSearchResults({
@@ -126,25 +125,21 @@ export default function MessagesScreen() {
   };
 
   const startConversationWithUser = (user: User) => {
-    Alert.alert(
-      "Start Conversation",
-      `Send a message to ${user.firstName} ${user.lastName}?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Send Message",
-          onPress: () => {
-            router.push({
-              pathname: "/conversation/new" as any,
-              params: {
-                recipientId: user.id,
-                recipientName: `${user.firstName} ${user.lastName}`,
-              },
-            });
-          },
+    Alert.alert("Start Conversation", `Send a message to ${user.firstName} ${user.lastName}?`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Send Message",
+        onPress: () => {
+          router.push({
+            pathname: "/conversation/new" as any,
+            params: {
+              recipientId: user.id,
+              recipientName: `${user.firstName} ${user.lastName}`,
+            },
+          });
         },
-      ]
-    );
+      },
+    ]);
   };
 
   useEffect(() => {
@@ -247,9 +242,7 @@ export default function MessagesScreen() {
           <Image source={{ uri: item.profileImageUrl }} style={styles.avatar} />
         ) : (
           <View style={[styles.avatar, styles.avatarPlaceholder]}>
-            <Text style={styles.avatarText}>
-              {item.firstName.charAt(0).toUpperCase()}
-            </Text>
+            <Text style={styles.avatarText}>{item.firstName.charAt(0).toUpperCase()}</Text>
           </View>
         )}
       </View>
@@ -258,9 +251,7 @@ export default function MessagesScreen() {
         <Text style={styles.userName} numberOfLines={1}>
           {item.firstName} {item.lastName}
         </Text>
-        <Text style={styles.availableUserSubtext}>
-          Tap to start a conversation
-        </Text>
+        <Text style={styles.availableUserSubtext}>Tap to start a conversation</Text>
       </View>
 
       <View style={styles.startConversationButton}>
@@ -316,7 +307,7 @@ export default function MessagesScreen() {
   return (
     <View style={styles.container}>
       <Header title="Messages" showBackButton={true} onBackPress={handleGoBack} />
-      
+
       {/* Search Bar */}
       <View style={styles.searchContainer}>
         <View style={styles.searchBar}>

@@ -307,17 +307,13 @@ export default function HomeScreen() {
   }, [params.newPost, params.refresh]);
 
   const handleReport = async (postId: number) => {
-    Alert.alert(
-      "Report Post",
-      "Why are you reporting this post?",
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Spam", onPress: () => submitReport(postId, "spam") },
-        { text: "Inappropriate", onPress: () => submitReport(postId, "inappropriate") },
-        { text: "Misleading", onPress: () => submitReport(postId, "misleading") },
-        { text: "Other", onPress: () => submitReport(postId, "other") },
-      ]
-    );
+    Alert.alert("Report Post", "Why are you reporting this post?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Spam", onPress: () => submitReport(postId, "spam") },
+      { text: "Inappropriate", onPress: () => submitReport(postId, "inappropriate") },
+      { text: "Misleading", onPress: () => submitReport(postId, "misleading") },
+      { text: "Other", onPress: () => submitReport(postId, "other") },
+    ]);
   };
 
   const submitReport = async (postId: number, reason: string) => {
@@ -353,49 +349,37 @@ export default function HomeScreen() {
   };
 
   const handleHide = async (postId: number) => {
-    Alert.alert(
-      "Hide Post",
-      "Hide this post from your feed?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Hide",
-          onPress: () => {
-            setPosts((currentPosts) => currentPosts.filter((post) => post.id !== postId));
-            Alert.alert("Hidden", "Post has been hidden from your feed.");
-          },
+    Alert.alert("Hide Post", "Hide this post from your feed?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Hide",
+        onPress: () => {
+          setPosts((currentPosts) => currentPosts.filter((post) => post.id !== postId));
+          Alert.alert("Hidden", "Post has been hidden from your feed.");
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleUnfollow = async (userId: number) => {
-    Alert.alert(
-      "Unfollow User",
-      "Stop following this user?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Unfollow",
-          onPress: async () => {
-            try {
-              // Note: Follow/unfollow API would need to be implemented on backend
-              Alert.alert("Unfollowed", "You are no longer following this user.");
-            } catch (error) {
-              Alert.alert("Error", "Failed to unfollow user. Please try again.");
-            }
-          },
+    Alert.alert("Unfollow User", "Stop following this user?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Unfollow",
+        onPress: async () => {
+          try {
+            // Note: Follow/unfollow API would need to be implemented on backend
+            Alert.alert("Unfollowed", "You are no longer following this user.");
+          } catch (error) {
+            Alert.alert("Error", "Failed to unfollow user. Please try again.");
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleEdit = async (postId: number) => {
-    Alert.alert(
-      "Edit Post",
-      "Post editing functionality coming soon.",
-      [{ text: "OK" }]
-    );
+    Alert.alert("Edit Post", "Post editing functionality coming soon.", [{ text: "OK" }]);
     // TODO: Navigate to edit post screen
     // router.push(`/post/${postId}/edit`);
   };
@@ -424,7 +408,7 @@ export default function HomeScreen() {
       onEdit={handleEdit}
       onSave={handleSave}
       currentUserId={user?.id}
-      isFollowing={item.userId === user?.id} // User "follows" their own posts
+      isFollowing={item.userId === user?.id}
     />
   );
 

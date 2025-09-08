@@ -84,7 +84,7 @@ describe("Feedback System", () => {
       });
 
       expect(response.status).toBe(401);
-      await new Promise(resolve => setTimeout(resolve, 100)); // Avoid rate limiting
+      await new Promise((resolve) => setTimeout(resolve, 100));
     }
   });
 

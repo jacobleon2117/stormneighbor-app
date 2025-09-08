@@ -42,8 +42,7 @@ export default function EditPostScreen() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [post, setPost] = useState<Post | null>(null);
-  
-  // Form state
+
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [postType, setPostType] = useState("general");
@@ -59,7 +58,7 @@ export default function EditPostScreen() {
     try {
       setLoading(true);
       const response = await apiService.getPost(postId);
-      
+
       if (response.success && response.data) {
         const postData = response.data;
         setPost(postData);
@@ -74,13 +73,9 @@ export default function EditPostScreen() {
       }
     } catch (error: any) {
       console.error("Error loading post:", error);
-      Alert.alert(
-        "Error", 
-        "Failed to load post data. Please try again.",
-        [
-          { text: "OK", onPress: () => router.back() }
-        ]
-      );
+      Alert.alert("Error", "Failed to load post data. Please try again.", [
+        { text: "OK", onPress: () => router.back() },
+      ]);
     } finally {
       setLoading(false);
     }
@@ -99,29 +94,30 @@ export default function EditPostScreen() {
 
     try {
       setSaving(true);
-      
+
       const updateData = {
         title: title.trim() || undefined,
         content: content.trim(),
         postType,
         priority,
         isEmergency,
-        tags: tags.trim() ? tags.split(",").map(tag => tag.trim()).filter(Boolean) : [],
+        tags: tags.trim()
+          ? tags
+              .split(",")
+              .map((tag) => tag.trim())
+              .filter(Boolean)
+          : [],
       };
 
       // TODO: Replace with actual API call when backend implements post editing
       // const response = await apiService.updatePost(postId, updateData);
-      
+
       // Mock success for now
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      Alert.alert(
-        "Success", 
-        "Your post has been updated successfully.",
-        [
-          { text: "OK", onPress: () => router.back() }
-        ]
-      );
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      Alert.alert("Success", "Your post has been updated successfully.", [
+        { text: "OK", onPress: () => router.back() },
+      ]);
     } catch (error: any) {
       console.error("Error updating post:", error);
       Alert.alert("Error", "Failed to update post. Please try again.");
@@ -132,14 +128,10 @@ export default function EditPostScreen() {
 
   const handleCancel = () => {
     if (hasUnsavedChanges()) {
-      Alert.alert(
-        "Discard Changes",
-        "Are you sure you want to discard your changes?",
-        [
-          { text: "Keep Editing", style: "cancel" },
-          { text: "Discard", style: "destructive", onPress: () => router.back() },
-        ]
-      );
+      Alert.alert("Discard Changes", "Are you sure you want to discard your changes?", [
+        { text: "Keep Editing", style: "cancel" },
+        { text: "Discard", style: "destructive", onPress: () => router.back() },
+      ]);
     } else {
       router.back();
     }
@@ -147,7 +139,7 @@ export default function EditPostScreen() {
 
   const hasUnsavedChanges = () => {
     if (!post) return false;
-    
+
     return (
       title !== (post.title || "") ||
       content !== (post.content || "") ||
@@ -161,11 +153,7 @@ export default function EditPostScreen() {
   if (loading) {
     return (
       <View style={styles.container}>
-        <Header
-          title="Edit Post"
-          showBackButton={true}
-          onBackPress={handleCancel}
-        />
+        <Header title="Edit Post" showBackButton={true} onBackPress={handleCancel} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.primary[500]} />
           <Text style={styles.loadingText}>Loading post...</Text>
@@ -177,20 +165,13 @@ export default function EditPostScreen() {
   if (!post) {
     return (
       <View style={styles.container}>
-        <Header
-          title="Edit Post"
-          showBackButton={true}
-          onBackPress={() => router.back()}
-        />
+        <Header title="Edit Post" showBackButton={true} onBackPress={() => router.back()} />
         <View style={styles.errorContainer}>
           <Text style={styles.errorTitle}>Post Not Found</Text>
           <Text style={styles.errorMessage}>
             The post you're trying to edit could not be found.
           </Text>
-          <TouchableOpacity 
-            style={styles.retryButton} 
-            onPress={() => router.back()}
-          >
+          <TouchableOpacity style={styles.retryButton} onPress={() => router.back()}>
             <Text style={styles.retryButtonText}>Go Back</Text>
           </TouchableOpacity>
         </View>
@@ -199,8 +180,8 @@ export default function EditPostScreen() {
   }
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
+    <KeyboardAvoidingView
+      style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <Header
@@ -218,15 +199,12 @@ export default function EditPostScreen() {
             ) : (
               <Save size={20} color={Colors.text.inverse} />
             )}
-            <Text style={styles.saveButtonText}>
-              {saving ? "Saving..." : "Save"}
-            </Text>
+            <Text style={styles.saveButtonText}>{saving ? "Saving..." : "Save"}</Text>
           </TouchableOpacity>
         }
       />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Title Input */}
         <View style={styles.inputGroup}>
           <Text style={styles.inputLabel}>Title (Optional)</Text>
           <TextInput
@@ -239,7 +217,6 @@ export default function EditPostScreen() {
           />
         </View>
 
-        {/* Content Input */}
         <View style={styles.inputGroup}>
           <Text style={styles.inputLabel}>Content *</Text>
           <TextInput
@@ -252,36 +229,32 @@ export default function EditPostScreen() {
             maxLength={2000}
             textAlignVertical="top"
           />
-          <Text style={styles.characterCount}>
-            {content.length}/2000
-          </Text>
+          <Text style={styles.characterCount}>{content.length}/2000</Text>
         </View>
 
-        {/* Post Type Selection */}
         <View style={styles.inputGroup}>
           <Text style={styles.inputLabel}>Post Type</Text>
-          <ScrollView 
-            horizontal 
+          <ScrollView
+            horizontal
             showsHorizontalScrollIndicator={false}
             style={styles.typeScrollView}
           >
             {POST_TYPES.map((type) => (
               <TouchableOpacity
                 key={type.key}
-                style={[
-                  styles.typeButton,
-                  postType === type.key && styles.selectedTypeButton
-                ]}
+                style={[styles.typeButton, postType === type.key && styles.selectedTypeButton]}
                 onPress={() => setPostType(type.key)}
               >
-                <type.icon 
-                  size={16} 
-                  color={postType === type.key ? Colors.text.inverse : Colors.text.secondary} 
+                <type.icon
+                  size={16}
+                  color={postType === type.key ? Colors.text.inverse : Colors.text.secondary}
                 />
-                <Text style={[
-                  styles.typeButtonText,
-                  postType === type.key && styles.selectedTypeButtonText
-                ]}>
+                <Text
+                  style={[
+                    styles.typeButtonText,
+                    postType === type.key && styles.selectedTypeButtonText,
+                  ]}
+                >
                   {type.label}
                 </Text>
               </TouchableOpacity>
@@ -289,7 +262,6 @@ export default function EditPostScreen() {
           </ScrollView>
         </View>
 
-        {/* Priority Selection */}
         <View style={styles.inputGroup}>
           <Text style={styles.inputLabel}>Priority</Text>
           <View style={styles.priorityContainer}>
@@ -301,20 +273,17 @@ export default function EditPostScreen() {
                   priority === priorityOption.key && {
                     backgroundColor: priorityOption.color + "20",
                     borderColor: priorityOption.color,
-                  }
+                  },
                 ]}
                 onPress={() => setPriority(priorityOption.key)}
               >
-                <View 
+                <View style={[styles.priorityDot, { backgroundColor: priorityOption.color }]} />
+                <Text
                   style={[
-                    styles.priorityDot,
-                    { backgroundColor: priorityOption.color }
-                  ]} 
-                />
-                <Text style={[
-                  styles.priorityButtonText,
-                  priority === priorityOption.key && { color: priorityOption.color }
-                ]}>
+                    styles.priorityButtonText,
+                    priority === priorityOption.key && { color: priorityOption.color },
+                  ]}
+                >
                   {priorityOption.label}
                 </Text>
               </TouchableOpacity>
@@ -322,16 +291,15 @@ export default function EditPostScreen() {
           </View>
         </View>
 
-        {/* Emergency Toggle */}
         <View style={styles.inputGroup}>
           <TouchableOpacity
             style={styles.emergencyToggle}
             onPress={() => setIsEmergency(!isEmergency)}
           >
             <View style={styles.emergencyToggleLeft}>
-              <AlertTriangle 
-                size={20} 
-                color={isEmergency ? Colors.error[500] : Colors.text.secondary} 
+              <AlertTriangle
+                size={20}
+                color={isEmergency ? Colors.error[500] : Colors.text.secondary}
               />
               <View>
                 <Text style={styles.emergencyToggleTitle}>Emergency Alert</Text>
@@ -340,19 +308,12 @@ export default function EditPostScreen() {
                 </Text>
               </View>
             </View>
-            <View style={[
-              styles.toggleSwitch,
-              isEmergency && styles.toggleSwitchActive
-            ]}>
-              <View style={[
-                styles.toggleKnob,
-                isEmergency && styles.toggleKnobActive
-              ]} />
+            <View style={[styles.toggleSwitch, isEmergency && styles.toggleSwitchActive]}>
+              <View style={[styles.toggleKnob, isEmergency && styles.toggleKnobActive]} />
             </View>
           </TouchableOpacity>
         </View>
 
-        {/* Tags Input */}
         <View style={styles.inputGroup}>
           <Text style={styles.inputLabel}>Tags</Text>
           <TextInput
@@ -363,9 +324,7 @@ export default function EditPostScreen() {
             onChangeText={setTags}
             maxLength={200}
           />
-          <Text style={styles.helperText}>
-            Tags help others find your post more easily
-          </Text>
+          <Text style={styles.helperText}>Tags help others find your post more easily</Text>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

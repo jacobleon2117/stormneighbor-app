@@ -313,7 +313,7 @@ router.post(
       const result = await sendEmail(
         to,
         "StormNeighbor Email Service Test",
-        "This is a test email from your StormNeighbor backend. If you received this, your email service is working correctly!"
+        "This is a test email from StormNeighbor backend"
       );
 
       res.json({

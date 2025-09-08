@@ -9,6 +9,7 @@ export interface NotificationPreferences {
   emailNotifications: boolean;
   pushNotifications: boolean;
   emergencyAlerts: boolean;
+  weatherAlerts: boolean;
   communityUpdates: boolean;
   postReactions: boolean;
   comments: boolean;

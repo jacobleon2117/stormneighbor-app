@@ -45,14 +45,24 @@ interface AlertCardProps {
 
 const ALERT_ICONS = {
   severe_weather: AlertTriangle,
+  weather_alert: CloudRain,
+  weather_alerts: CloudRain,
+  community_alert: Users,
   community_alerts: Users,
+  safety_alert: Shield,
   safety_alerts: Shield,
   help_needed: HelpCircle,
+  help_request: HelpCircle,
+  help_offer: Users,
   events: Calendar,
+  event: Calendar,
   questions: MessageSquare,
+  question: MessageSquare,
   announcements: Megaphone,
-  weather_alerts: CloudRain,
-};
+  announcement: Megaphone,
+  general: MessageSquare,
+  lost_found: MapPin,
+} as const;
 
 export default function AlertCard({
   id: _id,
@@ -66,9 +76,9 @@ export default function AlertCard({
 }: AlertCardProps) {
   const [showLocationModal, setShowLocationModal] = useState(false);
 
-  const IconComponent = ALERT_ICONS[type];
-  const alertColor = ALERT_COLORS[type];
-  const badgeText = ALERT_LABELS[type];
+  const IconComponent = ALERT_ICONS[type] || AlertTriangle;
+  const alertColor = ALERT_COLORS[type] || Colors.primary[500];
+  const badgeText = ALERT_LABELS[type] || 'Alert';
 
   const formatTimeAgo = (dateString: string): string => {
     const now = new Date();

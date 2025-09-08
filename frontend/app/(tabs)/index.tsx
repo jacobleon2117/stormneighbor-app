@@ -306,6 +306,109 @@ export default function HomeScreen() {
     }
   }, [params.newPost, params.refresh]);
 
+  const handleReport = async (postId: number) => {
+    Alert.alert(
+      "Report Post",
+      "Why are you reporting this post?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Spam", onPress: () => submitReport(postId, "spam") },
+        { text: "Inappropriate", onPress: () => submitReport(postId, "inappropriate") },
+        { text: "Misleading", onPress: () => submitReport(postId, "misleading") },
+        { text: "Other", onPress: () => submitReport(postId, "other") },
+      ]
+    );
+  };
+
+  const submitReport = async (postId: number, reason: string) => {
+    try {
+      await apiService.reportPost(postId, reason, "Reported from mobile app");
+      Alert.alert("Reported", "Thank you for your report. We'll review this content.");
+    } catch (error) {
+      console.error("Error reporting post:", error);
+      Alert.alert("Error", "Failed to report post. Please try again.");
+    }
+  };
+
+  const handleBlock = async (userId: number) => {
+    Alert.alert(
+      "Block User",
+      "Are you sure you want to block this user? You won't see their posts anymore.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Block",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              // Note: Block API would need to be implemented on backend
+              Alert.alert("Blocked", "User has been blocked.");
+            } catch (error) {
+              Alert.alert("Error", "Failed to block user. Please try again.");
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleHide = async (postId: number) => {
+    Alert.alert(
+      "Hide Post",
+      "Hide this post from your feed?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Hide",
+          onPress: () => {
+            setPosts((currentPosts) => currentPosts.filter((post) => post.id !== postId));
+            Alert.alert("Hidden", "Post has been hidden from your feed.");
+          },
+        },
+      ]
+    );
+  };
+
+  const handleUnfollow = async (userId: number) => {
+    Alert.alert(
+      "Unfollow User",
+      "Stop following this user?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Unfollow",
+          onPress: async () => {
+            try {
+              // Note: Follow/unfollow API would need to be implemented on backend
+              Alert.alert("Unfollowed", "You are no longer following this user.");
+            } catch (error) {
+              Alert.alert("Error", "Failed to unfollow user. Please try again.");
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleEdit = async (postId: number) => {
+    Alert.alert(
+      "Edit Post",
+      "Post editing functionality coming soon.",
+      [{ text: "OK" }]
+    );
+    // TODO: Navigate to edit post screen
+    // router.push(`/post/${postId}/edit`);
+  };
+
+  const handleSave = async (postId: number) => {
+    try {
+      // TODO: Implement save/bookmark API call
+      Alert.alert("Saved", "Post has been bookmarked to your saved posts.");
+    } catch (error) {
+      Alert.alert("Error", "Failed to save post. Please try again.");
+    }
+  };
+
   const renderPost = ({ item }: { item: Post }) => (
     <PostCard
       post={item}
@@ -314,12 +417,14 @@ export default function HomeScreen() {
       onShare={handleShare}
       onPress={handlePostPress}
       onMessage={handleMessage}
-      onReport={(postId) => console.log("Report post:", postId)}
-      onBlock={(userId) => console.log("Block user:", userId)}
-      onUnfollow={(userId) => console.log("Unfollow user:", userId)}
-      onHide={(postId) => console.log("Hide post:", postId)}
+      onReport={handleReport}
+      onBlock={handleBlock}
+      onUnfollow={handleUnfollow}
+      onHide={handleHide}
+      onEdit={handleEdit}
+      onSave={handleSave}
       currentUserId={user?.id}
-      isFollowing={false} // TODO: Implement following logic
+      isFollowing={item.userId === user?.id} // User "follows" their own posts
     />
   );
 

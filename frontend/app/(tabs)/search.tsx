@@ -79,7 +79,7 @@ export default function SearchScreen() {
 
   const handleLike = async (postId: number) => {
     try {
-      await apiService.toggleCommentReaction(postId);
+      await apiService.togglePostReaction(postId);
       setSearchResults((prev) =>
         prev.map((post) =>
           post.id === postId ? { ...post, userReaction: post.userReaction ? null : "like" } : post
@@ -101,6 +101,150 @@ export default function SearchScreen() {
 
   const handlePostPress = (postId: number) => {
     router.push(`/post/${postId}`);
+  };
+
+  const handleMessage = async (userId: number, userName: string) => {
+    try {
+      const conversationsResponse = await apiService.getConversations();
+      if (conversationsResponse.success && conversationsResponse.data) {
+        const existingConversation = conversationsResponse.data.conversations.find(
+          (conv: any) => conv.otherUser.id === userId
+        );
+
+        if (existingConversation) {
+          router.push({
+            pathname: "/conversation/[id]" as any,
+            params: {
+              id: existingConversation.id,
+              userName: userName,
+              userImage: existingConversation.otherUser.profileImageUrl || "",
+            },
+          });
+          return;
+        }
+      }
+    } catch (error) {
+      console.error("Error checking conversations:", error);
+    }
+
+    Alert.alert("Start Conversation", `Send a message to ${userName}?`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Send Message",
+        onPress: () => {
+          router.push({
+            pathname: "/conversation/new" as any,
+            params: {
+              recipientId: userId,
+              recipientName: userName,
+            },
+          });
+        },
+      },
+    ]);
+  };
+
+  const handleReport = async (postId: number) => {
+    Alert.alert("Report Post", "Why are you reporting this post?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Spam",
+        onPress: () => submitReport(postId, "spam", "This post appears to be spam"),
+      },
+      {
+        text: "Inappropriate Content",
+        onPress: () => submitReport(postId, "inappropriate", "This post contains inappropriate content"),
+      },
+      {
+        text: "Harassment",
+        onPress: () => submitReport(postId, "harassment", "This post is harassment or bullying"),
+      },
+      {
+        text: "False Information",
+        onPress: () => submitReport(postId, "misinformation", "This post contains false information"),
+      },
+    ]);
+  };
+
+  const submitReport = async (postId: number, reason: string, description: string) => {
+    try {
+      await apiService.reportPost(postId, reason, description);
+      Alert.alert("Thank you", "Your report has been submitted for review.");
+    } catch (error) {
+      Alert.alert("Error", "Failed to submit report. Please try again.");
+    }
+  };
+
+  const handleBlock = async (userId: number) => {
+    Alert.alert(
+      "Block User",
+      "Are you sure you want to block this user? You won't see their posts or be able to message them.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Block",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              // Note: This API endpoint would need to be implemented
+              Alert.alert("Feature Coming Soon", "User blocking functionality is being developed.");
+            } catch (error) {
+              Alert.alert("Error", "Failed to block user. Please try again.");
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleHide = async (postId: number) => {
+    Alert.alert("Hide Post", "This post will be hidden from your feed.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Hide",
+        onPress: () => {
+          setSearchResults((prev) => prev.filter((post) => post.id !== postId));
+          Alert.alert("Hidden", "This post has been hidden from your search results.");
+        },
+      },
+    ]);
+  };
+
+  const handleUnfollow = async (userId: number) => {
+    Alert.alert("Unfollow User", "Are you sure you want to unfollow this user?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Unfollow",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            // Note: This API endpoint would need to be implemented
+            Alert.alert("Feature Coming Soon", "User following functionality is being developed.");
+          } catch (error) {
+            Alert.alert("Error", "Failed to unfollow user. Please try again.");
+          }
+        },
+      },
+    ]);
+  };
+
+  const handleEdit = async (postId: number) => {
+    Alert.alert(
+      "Edit Post",
+      "Post editing functionality coming soon.",
+      [{ text: "OK" }]
+    );
+    // TODO: Navigate to edit post screen
+    // router.push(`/post/${postId}/edit`);
+  };
+
+  const handleSave = async (postId: number) => {
+    try {
+      // TODO: Implement save/bookmark API call
+      Alert.alert("Saved", "Post has been bookmarked to your saved posts.");
+    } catch (error) {
+      Alert.alert("Error", "Failed to save post. Please try again.");
+    }
   };
 
   const clearSearch = () => {
@@ -146,6 +290,16 @@ export default function SearchScreen() {
       onLike={handleLike}
       onComment={handleComment}
       onShare={handleShare}
+      onPress={handlePostPress}
+      onMessage={handleMessage}
+      onReport={handleReport}
+      onBlock={handleBlock}
+      onUnfollow={handleUnfollow}
+      onHide={handleHide}
+      onEdit={handleEdit}
+      onSave={handleSave}
+      currentUserId={user?.id}
+      isFollowing={item.userId === user?.id}
     />
   );
 

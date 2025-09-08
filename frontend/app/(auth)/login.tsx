@@ -28,29 +28,6 @@ export default function LoginScreen() {
 
   const { login, isLoading, error, clearError } = useAuth();
 
-  useEffect(() => {
-    checkBiometricAndAutoLogin();
-  }, [checkBiometricAndAutoLogin]);
-
-  useEffect(() => {
-    const checkAutoFillAndLogin = async () => {
-      if (email && password && biometricType && !isAutoLoggingIn && !isLoading) {
-        setTimeout(async () => {
-          try {
-            setIsAutoLoggingIn(true);
-            await login(email.trim().toLowerCase(), password);
-            router.replace("/(tabs)");
-          } catch (error) {
-            console.log("Auto-login from auto-fill failed:", error);
-            setIsAutoLoggingIn(false);
-          }
-        }, 500);
-      }
-    };
-
-    checkAutoFillAndLogin();
-  }, [email, password, biometricType, isAutoLoggingIn, isLoading, login]);
-
   const checkBiometricAndAutoLogin = useCallback(async () => {
     try {
       if (!LocalAuthentication) {
@@ -98,6 +75,29 @@ export default function LoginScreen() {
       console.log("Biometric check error:", error);
     }
   }, [biometricType, login]);
+
+  useEffect(() => {
+    checkBiometricAndAutoLogin();
+  }, [checkBiometricAndAutoLogin]);
+
+  useEffect(() => {
+    const checkAutoFillAndLogin = async () => {
+      if (email && password && biometricType && !isAutoLoggingIn && !isLoading) {
+        setTimeout(async () => {
+          try {
+            setIsAutoLoggingIn(true);
+            await login(email.trim().toLowerCase(), password);
+            router.replace("/(tabs)");
+          } catch (error) {
+            console.log("Auto-login from auto-fill failed:", error);
+            setIsAutoLoggingIn(false);
+          }
+        }, 500);
+      }
+    };
+
+    checkAutoFillAndLogin();
+  }, [email, password, biometricType, isAutoLoggingIn, isLoading, login]);
 
   const validateForm = (): boolean => {
     const newErrors: { email?: string; password?: string } = {};

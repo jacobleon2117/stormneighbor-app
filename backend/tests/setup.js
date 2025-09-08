@@ -4,7 +4,7 @@ process.env.DATABASE_URL =
   process.env.DATABASE_URL || "postgresql://postgres:password@localhost:5432/stormneighbor_test";
 process.env.DATABASE_SSL = "false";
 process.env.RESEND_API_KEY = "fake_key_for_testing";
-process.env.FROM_EMAIL = "test@example.com";
+process.env.FROM_EMAIL = "test@stormneighbor.test";
 process.env.FROM_NAME = "StormNeighbor Test";
 process.env.NOAA_API_BASE_URL = "https://api.weather.gov";
 process.env.CLOUDINARY_CLOUD_NAME = "test_cloud";
@@ -35,7 +35,12 @@ afterEach(() => {
 });
 
 afterAll(async () => {
+  // Clear cache cleanup interval to prevent test hanging
   const cache = require("../src/middleware/cache");
+  if (cache.cache && cache.cache.clearCleanupInterval) {
+    cache.cache.clearCleanupInterval();
+  }
+
   const security = require("../src/middleware/security");
 
   try {
@@ -66,7 +71,7 @@ afterAll(async () => {
 
 global.testHelpers = {
   generateTestUser: () => ({
-    email: `test-${Date.now()}@example.com`,
+    email: `test-${Date.now()}@stormneighbor.test`,
     password: "TestPassword123",
     firstName: "Test",
     lastName: "User",

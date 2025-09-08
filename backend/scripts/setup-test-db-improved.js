@@ -190,7 +190,7 @@ async function createTestData(client) {
         email_verified, location_city, address_state,
         created_at
       ) VALUES (
-        'test@example.com', $1, 'Test', 'User',
+        'test@stormneighbor.test', $1, 'Test', 'User',
         true, 'Austin', 'Texas',
         NOW()
       ) ON CONFLICT (email) DO NOTHING
@@ -209,7 +209,7 @@ async function createTestData(client) {
         id, 'Test Post', 'This is a test post for CI/CD', 'general', 'normal',
         'Austin', 'Texas', NOW()
       FROM users 
-      WHERE email = 'test@example.com'
+      WHERE email = 'test@stormneighbor.test'
       ON CONFLICT DO NOTHING
     `);
 

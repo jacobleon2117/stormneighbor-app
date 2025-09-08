@@ -117,6 +117,7 @@ export default function ProfileScreen() {
         emailNotifications: user.notificationPreferences?.emailNotifications ?? true,
         pushNotifications: user.notificationPreferences?.pushNotifications ?? true,
         emergencyAlerts: user.notificationPreferences?.emergencyAlerts ?? true,
+        weatherAlerts: user.notificationPreferences?.weatherAlerts ?? true,
         communityUpdates: user.notificationPreferences?.communityUpdates ?? false,
         postReactions: user.notificationPreferences?.postReactions ?? false,
         comments: user.notificationPreferences?.comments ?? false,
@@ -285,41 +286,43 @@ export default function ProfileScreen() {
 
   const renderProfileHeader = () => (
     <View style={styles.profileHeader}>
-      <TouchableOpacity onPress={handleUpdateProfileImage} style={styles.avatarContainer}>
-        {user?.profileImageUrl && !imageError ? (
-          <Image
-            source={{ uri: user.profileImageUrl }}
-            style={styles.avatar}
-            onError={() => setImageError(true)}
-          />
-        ) : (
-          <View style={styles.avatarPlaceholder}>
-            <Ionicons name="person" size={48} color={Colors.neutral[600]} />
+      <View style={styles.profileContent}>
+        <TouchableOpacity onPress={handleUpdateProfileImage} style={styles.avatarContainer}>
+          {user?.profileImageUrl && !imageError ? (
+            <Image
+              source={{ uri: user.profileImageUrl }}
+              style={styles.avatar}
+              onError={() => setImageError(true)}
+            />
+          ) : (
+            <View style={styles.avatarPlaceholder}>
+              <Ionicons name="person" size={48} color={Colors.neutral[600]} />
+            </View>
+          )}
+          <View style={styles.cameraIcon}>
+            <Ionicons name="camera" size={16} color={Colors.text.inverse} />
           </View>
-        )}
-        <View style={styles.cameraIcon}>
-          <Ionicons name="camera" size={16} color={Colors.text.inverse} />
-        </View>
-        {loading && (
-          <View style={styles.loadingOverlay}>
-            <ActivityIndicator size="small" color={Colors.primary[500]} />
-          </View>
-        )}
-      </TouchableOpacity>
+          {loading && (
+            <View style={styles.loadingOverlay}>
+              <ActivityIndicator size="small" color={Colors.primary[500]} />
+            </View>
+          )}
+        </TouchableOpacity>
 
-      <View style={styles.userInfo}>
-        <Text style={styles.userName}>
-          {user?.firstName} {user?.lastName}
-        </Text>
-        <Text style={styles.userEmail}>{user?.email}</Text>
-        {user?.locationCity && (
-          <View style={styles.locationRow}>
-            <Ionicons name="location" size={14} color={Colors.text.secondary} />
-            <Text style={styles.locationText}>
-              {user.locationCity}, {user.addressState}
-            </Text>
-          </View>
-        )}
+        <View style={styles.userInfo}>
+          <Text style={styles.userName}>
+            {user?.firstName} {user?.lastName}
+          </Text>
+          <Text style={styles.userEmail}>{user?.email}</Text>
+          {user?.locationCity && (
+            <View style={styles.locationRow}>
+              <Ionicons name="location" size={14} color={Colors.text.secondary} />
+              <Text style={styles.locationText}>
+                {user.locationCity}, {user.addressState}
+              </Text>
+            </View>
+          )}
+        </View>
       </View>
     </View>
   );
@@ -685,7 +688,12 @@ export default function ProfileScreen() {
         onMessagesPress={() => router.push("/(tabs)/messages")}
         showMore={false}
       />
-      <View style={styles.content}>
+      <ScrollView 
+        style={styles.content} 
+        showsVerticalScrollIndicator={false}
+        bounces={true}
+        contentInsetAdjustmentBehavior="automatic"
+      >
         {renderProfileHeader()}
 
         <View style={styles.menuSection}>
@@ -750,7 +758,7 @@ export default function ProfileScreen() {
             style={styles.logoutButton}
           />
         </View>
-      </View>
+      </ScrollView>
 
       {renderPersonalModal()}
       {renderLocationModal()}
@@ -770,24 +778,30 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    backgroundColor: Colors.neutral[50], // Changed to grey background
   },
   profileHeader: {
-    backgroundColor: Colors.background,
-    paddingVertical: 16,
+    backgroundColor: Colors.neutral[50], // Remove white background
+    paddingVertical: 24,
     paddingHorizontal: 20,
+    borderBottomWidth: 0.5,
+    borderBottomColor: Colors.neutral[200],
+    marginBottom: 0,
+  },
+  profileContent: {
+    flexDirection: "row",
     alignItems: "center",
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-    marginBottom: 12,
   },
   avatarContainer: {
     position: "relative",
-    marginBottom: 12,
+    marginRight: 16, // Add spacing to the right
   },
   avatar: {
     width: 80,
     height: 80,
     borderRadius: 40,
+    borderWidth: 3,
+    borderColor: Colors.background,
   },
   avatarPlaceholder: {
     width: 80,
@@ -796,6 +810,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.neutral[100],
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 3,
+    borderColor: Colors.background,
   },
   cameraIcon: {
     position: "absolute",
@@ -822,11 +838,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   userInfo: {
-    alignItems: "center",
+    flex: 1,
+    alignItems: "flex-start", // Left align instead of center
   },
   userName: {
-    fontSize: 22,
-    fontWeight: "600",
+    fontSize: 24,
+    fontWeight: "700",
     color: Colors.text.primary,
     marginBottom: 4,
   },
@@ -847,8 +864,17 @@ const styles = StyleSheet.create({
   menuSection: {
     backgroundColor: Colors.background,
     marginHorizontal: 20,
+    marginTop: 20,
     borderRadius: 12,
     overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   menuItem: {
     flexDirection: "row",
@@ -878,8 +904,8 @@ const styles = StyleSheet.create({
   },
   dangerZone: {
     paddingHorizontal: 20,
-    paddingVertical: 16,
-    marginTop: "auto",
+    paddingVertical: 20,
+    marginTop: 20,
   },
   logoutButton: {
     alignSelf: "center",

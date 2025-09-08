@@ -148,7 +148,7 @@ export default function RegisterScreen() {
                 label="Email Address"
                 value={formData.email}
                 onChangeText={(value) => updateFormData("email", value)}
-                placeholder="john.doe@example.com"
+                placeholder="Enter your email address"
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}

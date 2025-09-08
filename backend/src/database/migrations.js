@@ -286,19 +286,18 @@ class DatabaseMigrator {
     }
 
     const template = `-- Migration: ${name}
--- Version: ${version}
--- Created: ${new Date().toISOString()}
+    -- Version: ${version}
+    -- Created: ${new Date().toISOString()}
 
--- Add your SQL commands here
--- Example:
--- CREATE TABLE example_table (
---   id SERIAL PRIMARY KEY,
---   name VARCHAR(255) NOT NULL,
---   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
--- );
+    -- Example:
+    -- CREATE TABLE example_table (
+    --   id SERIAL PRIMARY KEY,
+    --   name VARCHAR(255) NOT NULL,
+    --   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    -- );
 
--- To rollback this migration, create a separate rollback script
-`;
+    -- To rollback this migration, create a separate rollback script
+    `;
 
     fs.writeFileSync(filepath, template);
 

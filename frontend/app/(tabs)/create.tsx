@@ -203,11 +203,8 @@ export default function CreateScreen() {
         isEmergency: selectedAction === "safety_alert",
         tags: selectedAction ? [selectedAction] : [],
         images: selectedImages,
-        // TODO: Backend doesn't support these fields yet, will add later
-        // latitude: selectedLocation.latitude,
-        // longitude: selectedLocation.longitude,
-        // locationName: selectedLocation.name,
-        // privacy: privacyLevel,
+        latitude: selectedLocation?.latitude,
+        longitude: selectedLocation?.longitude,
       };
 
       console.log("Creating post:", postData);

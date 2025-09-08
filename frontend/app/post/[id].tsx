@@ -28,26 +28,6 @@ export default function PostDetailScreen() {
 
   const postId = parseInt(id || "0", 10);
 
-  useEffect(() => {
-    if (postId) {
-      fetchPost();
-    } else {
-      setError("Invalid post ID");
-      setLoading(false);
-    }
-  }, [postId, fetchPost]);
-
-  useEffect(() => {
-    if (error && !loading) {
-      Alert.alert("Error", error || "Post not found", [
-        {
-          text: "Go Back",
-          onPress: () => router.back(),
-        },
-      ]);
-    }
-  }, [error, loading]);
-
   const fetchPost = useCallback(async () => {
     try {
       setLoading(true);
@@ -67,6 +47,26 @@ export default function PostDetailScreen() {
       setLoading(false);
     }
   }, [postId]);
+
+  useEffect(() => {
+    if (postId) {
+      fetchPost();
+    } else {
+      setError("Invalid post ID");
+      setLoading(false);
+    }
+  }, [postId, fetchPost]);
+
+  useEffect(() => {
+    if (error && !loading) {
+      Alert.alert("Error", error || "Post not found", [
+        {
+          text: "Go Back",
+          onPress: () => router.back(),
+        },
+      ]);
+    }
+  }, [error, loading]);
 
   const handleLike = async (postId: number) => {
     if (!post) return;

@@ -128,7 +128,7 @@ async function setupSchema() {
 
       const testUser = await client.query(`
         INSERT INTO users (email, password_hash, first_name, last_name, location_city, address_state, email_verified)
-        VALUES ('test@example.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LeWHH6EjT2j8HsWKa', 'Test', 'User', 'Austin', 'Texas', true)
+        VALUES ('test@stormneighbor.test', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LeWHH6EjT2j8HsWKa', 'Test', 'User', 'Austin', 'Texas', true)
         ON CONFLICT (email) DO NOTHING
         RETURNING id
       `);

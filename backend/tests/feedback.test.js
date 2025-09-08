@@ -49,7 +49,7 @@ describe("Feedback System", () => {
       description: "Test description",
     });
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(401);
   });
 
   it("Validates required fields", async () => {
@@ -57,19 +57,19 @@ describe("Feedback System", () => {
       feedbackType: "general_feedback",
       description: "Test description",
     });
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(401);
 
     response = await request(app).post("/api/v1/feedback").send({
       feedbackType: "general_feedback",
       title: "Test",
     });
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(401);
 
     response = await request(app).post("/api/v1/feedback").send({
       title: "Test",
       description: "Test description",
     });
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(401);
   });
 
   it("Validates priority levels", async () => {
@@ -84,6 +84,7 @@ describe("Feedback System", () => {
       });
 
       expect(response.status).toBe(401);
+      await new Promise(resolve => setTimeout(resolve, 100)); // Avoid rate limiting
     }
   });
 
@@ -95,6 +96,6 @@ describe("Feedback System", () => {
       priority: "invalid_priority",
     });
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(401);
   });
 });

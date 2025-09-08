@@ -23,7 +23,7 @@ import {
   Calendar 
 } from "lucide-react-native";
 import { Colors } from "../../constants/Colors";
-import { ALERT_COLORS } from "../../constants/AlertColors";
+import { ALERT_COLORS, getAlertColor } from "../../constants/AlertColors";
 import { apiService } from "../../services/api";
 import { Alert } from "../../types";
 import { Button } from "../../components/UI/Button";
@@ -165,7 +165,7 @@ export default function AlertDetailScreen() {
   }
 
   const IconComponent = ALERT_ICONS[alert.alertType as keyof typeof ALERT_ICONS] || AlertTriangle;
-  const alertColor = ALERT_COLORS[alert.alertType] || Colors.primary[500];
+  const alertColor = getAlertColor(alert.alertType as keyof typeof ALERT_COLORS);
 
   return (
     <SafeAreaView style={styles.container}>

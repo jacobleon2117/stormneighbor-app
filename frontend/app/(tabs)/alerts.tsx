@@ -206,7 +206,7 @@ export default function AlertsScreen() {
     const latitude = user?.latitude || user?.homeLatitude;
     const longitude = user?.longitude || user?.homeLongitude;
 
-    let weatherSyncInterval: NodeJS.Timeout;
+    let weatherSyncInterval: ReturnType<typeof setInterval>;
     if (latitude && longitude) {
       weatherSyncInterval = setInterval(
         async () => {
@@ -292,7 +292,7 @@ export default function AlertsScreen() {
         <FlatList
           data={data}
           renderItem={renderAlert}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.id.toString()}
           scrollEnabled={false}
         />
       </View>

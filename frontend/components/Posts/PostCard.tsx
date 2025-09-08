@@ -34,6 +34,8 @@ import {
   VolumeX,
   RotateCcw,
   Trash2,
+  Edit3,
+  Bookmark,
 } from "lucide-react-native";
 import { Post } from "../../types";
 import { Colors } from "../../constants/Colors";
@@ -74,6 +76,7 @@ interface PostCardProps {
   onLike?: (postId: number) => void;
   onComment?: (postId: number) => void;
   onShare?: (postId: number) => void;
+  onPress?: (postId: number) => void;
   onMessage?: (userId: number, userName: string) => void;
   onReport?: (postId: number) => void;
   onBlock?: (userId: number) => void;
@@ -82,6 +85,8 @@ interface PostCardProps {
   onFollow?: (userId: number) => void;
   onMute?: (userId: number) => void;
   onDelete?: (postId: number) => void;
+  onEdit?: (postId: number) => void;
+  onSave?: (postId: number) => void;
   currentUserId?: number;
   isFollowing?: boolean;
 }
@@ -89,6 +94,7 @@ interface PostCardProps {
 export function PostCard({
   post,
   onLike,
+  onPress,
   onMessage,
   onReport,
   onBlock,
@@ -96,8 +102,10 @@ export function PostCard({
   currentUserId,
   isFollowing = false,
   onFollow,
-  onMute,
+  onEdit,
+  onSave,
   onDelete,
+  onMute,
 }: PostCardProps) {
   const [imageError, setImageError] = useState(false);
   const [showMoreModal, setShowMoreModal] = useState(false);
@@ -235,7 +243,11 @@ export function PostCard({
   };
 
   return (
-    <View style={styles.card}>
+    <TouchableOpacity 
+      style={styles.card}
+      onPress={() => onPress?.(post.id)}
+      activeOpacity={0.95}
+    >
       <View style={styles.header}>
         <View style={styles.userInfo}>
           <View style={styles.avatar}>
@@ -511,6 +523,17 @@ export function PostCard({
                   </TouchableOpacity>
 
                   <TouchableOpacity
+                    style={styles.modalOption}
+                    onPress={() => {
+                      setShowMoreModal(false);
+                      onSave?.(post.id);
+                    }}
+                  >
+                    <Bookmark size={20} color={Colors.primary[600]} />
+                    <Text style={styles.modalOptionText}>Save Post</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
                     style={styles.modalOptionNoBorder}
                     onPress={() => {
                       closeModalImmediately(setShowMoreModal, moreModalY);
@@ -539,18 +562,31 @@ export function PostCard({
                   )}
 
                   {currentUserId === post.userId && (
-                    <TouchableOpacity
-                      style={styles.modalOptionNoBorder}
-                      onPress={() => {
-                        setShowMoreModal(false);
-                        setShowDeleteModal(true);
-                      }}
-                    >
-                      <Trash2 size={20} color={Colors.error[600]} />
-                      <Text style={[styles.modalOptionText, { color: Colors.error[600] }]}>
-                        Delete Post
-                      </Text>
-                    </TouchableOpacity>
+                    <>
+                      <TouchableOpacity
+                        style={styles.modalOption}
+                        onPress={() => {
+                          setShowMoreModal(false);
+                          onEdit?.(post.id);
+                        }}
+                      >
+                        <Edit3 size={20} color={Colors.primary[600]} />
+                        <Text style={styles.modalOptionText}>Edit Post</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.modalOptionNoBorder}
+                        onPress={() => {
+                          setShowMoreModal(false);
+                          setShowDeleteModal(true);
+                        }}
+                      >
+                        <Trash2 size={20} color={Colors.error[600]} />
+                        <Text style={[styles.modalOptionText, { color: Colors.error[600] }]}>
+                          Delete Post
+                        </Text>
+                      </TouchableOpacity>
+                    </>
                   )}
                 </ScrollView>
               </Animated.View>
@@ -882,7 +918,7 @@ export function PostCard({
           </View>
         </View>
       </Modal>
-    </View>
+    </TouchableOpacity>
   );
 }
 

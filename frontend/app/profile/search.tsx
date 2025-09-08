@@ -6,233 +6,111 @@ import {
   TextInput,
   FlatList,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
-import { Search, ChevronRight } from "lucide-react-native";
+import { Search, ChevronRight, FileText, Bookmark, Settings, Clock } from "lucide-react-native";
 import { Colors } from "../../constants/Colors";
 import { Header } from "../../components/UI/Header";
+import { useAuth } from "../../hooks/useAuth";
+import { apiService } from "../../services/api";
 
 interface SearchResult {
   id: string;
   title: string;
   subtitle: string;
   section: string;
+  icon: any;
   action: () => void;
 }
 
+interface Post {
+  id: number;
+  title?: string;
+  content: string;
+  postType: string;
+  createdAt: string;
+}
+
 export default function ProfileSearchScreen() {
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [userPosts, setUserPosts] = useState<Post[]>([]);
+
+  useEffect(() => {
+    // Load user's posts for searching
+    loadUserData();
+  }, []);
+
+  const loadUserData = async () => {
+    try {
+      setLoading(true);
+      // Note: This would typically be a getUserPosts API call
+      // For now, we'll create mock data based on the user
+      const mockPosts: Post[] = [
+        {
+          id: 1,
+          title: "Weather Update",
+          content: "Severe thunderstorm warning in effect",
+          postType: "safety_alert",
+          createdAt: "2024-01-15T10:00:00Z",
+        },
+        {
+          id: 2,
+          content: "Looking for help with yard cleanup after storm",
+          postType: "help_request",
+          createdAt: "2024-01-14T09:30:00Z",
+        },
+      ];
+      setUserPosts(mockPosts);
+    } catch (error) {
+      console.error("Error loading user data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const profileItems: SearchResult[] = [
+    // User's Posts
+    ...userPosts.map(post => ({
+      id: `post-${post.id}`,
+      title: post.title || post.content.substring(0, 50) + "...",
+      subtitle: `${post.postType.replace('_', ' ')} • ${new Date(post.createdAt).toLocaleDateString()}`,
+      section: "Your Posts",
+      icon: FileText,
+      action: () => router.push(`/post/${post.id}`),
+    })),
+    
+    // Profile Settings
     {
-      id: "personal-info",
-      title: "Personal Information",
-      subtitle: "Edit your name, phone, and bio",
-      section: "Profile",
+      id: "account-settings",
+      title: "Account Settings",
+      subtitle: "Manage your account preferences",
+      section: "Settings",
+      icon: Settings,
+      action: () => router.push("/(tabs)/profile"),
+    },
+    {
+      id: "saved-posts",
+      title: "Saved Posts",
+      subtitle: "View your bookmarked posts",
+      section: "Content",
+      icon: Bookmark,
       action: () => {
-        router.back();
+        router.push("/saved-posts");
+      },
+    },
+    {
+      id: "activity-history",
+      title: "Activity History",
+      subtitle: "Your recent activity and interactions",
+      section: "Activity",
+      icon: Clock,
+      action: () => {
+        // This would navigate to activity history
         router.push("/(tabs)/profile");
-      },
-    },
-    {
-      id: "first-name",
-      title: "First Name",
-      subtitle: "Change your first name",
-      section: "Personal",
-      action: () => {
-        router.back();
-        router.push("/(tabs)/profile");
-      },
-    },
-    {
-      id: "last-name",
-      title: "Last Name",
-      subtitle: "Change your last name",
-      section: "Personal",
-      action: () => {
-        router.back();
-        router.push("/(tabs)/profile");
-      },
-    },
-    {
-      id: "phone",
-      title: "Phone Number",
-      subtitle: "Update your phone number",
-      section: "Personal",
-      action: () => {
-        router.back();
-        router.push("/(tabs)/profile");
-      },
-    },
-    {
-      id: "bio",
-      title: "Bio",
-      subtitle: "Tell your neighbors about yourself",
-      section: "Personal",
-      action: () => {
-        router.back();
-        router.push("/(tabs)/profile");
-      },
-    },
-    {
-      id: "location",
-      title: "Location Settings",
-      subtitle: "Update your address and notification radius",
-      section: "Location",
-      action: () => {
-        router.back();
-        router.push("/(tabs)/profile");
-      },
-    },
-    {
-      id: "address",
-      title: "Address",
-      subtitle: "Change your street address",
-      section: "Location",
-      action: () => {
-        router.back();
-        router.push("/(tabs)/profile");
-      },
-    },
-    {
-      id: "city",
-      title: "City",
-      subtitle: "Update your city",
-      section: "Location",
-      action: () => {
-        router.back();
-        router.push("/(tabs)/profile");
-      },
-    },
-    {
-      id: "state",
-      title: "State",
-      subtitle: "Change your state",
-      section: "Location",
-      action: () => {
-        router.back();
-        router.push("/(tabs)/profile");
-      },
-    },
-    {
-      id: "zip-code",
-      title: "ZIP Code",
-      subtitle: "Update your postal code",
-      section: "Location",
-      action: () => {
-        router.back();
-        router.push("/(tabs)/profile");
-      },
-    },
-    {
-      id: "notification-radius",
-      title: "Notification Radius",
-      subtitle: "Set how far you want to receive alerts",
-      section: "Location",
-      action: () => {
-        router.back();
-        router.push("/(tabs)/profile");
-      },
-    },
-    {
-      id: "privacy",
-      title: "Show City Only",
-      subtitle: "Hide your exact address from other users",
-      section: "Privacy",
-      action: () => {
-        router.back();
-        router.push("/(tabs)/profile");
-      },
-    },
-    {
-      id: "notifications",
-      title: "Notification Settings",
-      subtitle: "Manage your alert preferences",
-      section: "Notifications",
-      action: () => {
-        router.back();
-        router.push("/(tabs)/profile");
-      },
-    },
-    {
-      id: "push-notifications",
-      title: "Push Notifications",
-      subtitle: "Enable or disable push notifications",
-      section: "Notifications",
-      action: () => {
-        router.back();
-        router.push("/(tabs)/profile");
-      },
-    },
-    {
-      id: "email-notifications",
-      title: "Email Notifications",
-      subtitle: "Manage email alert settings",
-      section: "Notifications",
-      action: () => {
-        router.back();
-        router.push("/(tabs)/profile");
-      },
-    },
-    {
-      id: "emergency-alerts",
-      title: "Emergency Alerts",
-      subtitle: "Critical safety notifications",
-      section: "Notifications",
-      action: () => {
-        router.back();
-        router.push("/(tabs)/profile");
-      },
-    },
-    {
-      id: "weather-alerts",
-      title: "Weather Alerts",
-      subtitle: "Severe weather warnings",
-      section: "Notifications",
-      action: () => {
-        router.back();
-        router.push("/(tabs)/profile");
-      },
-    },
-    {
-      id: "community-updates",
-      title: "Community Updates",
-      subtitle: "General community posts",
-      section: "Notifications",
-      action: () => {
-        router.back();
-        router.push("/(tabs)/profile");
-      },
-    },
-    {
-      id: "security",
-      title: "Privacy & Security",
-      subtitle: "Account security settings",
-      section: "Security",
-      action: () => {
-        router.back();
-        router.push("/privacy-security");
-      },
-    },
-    {
-      id: "help",
-      title: "Help & Support",
-      subtitle: "Get help with your account",
-      section: "Support",
-      action: () => {
-        router.back();
-        router.push("/help-support");
-      },
-    },
-    {
-      id: "feedback",
-      title: "App Feedback",
-      subtitle: "Share your thoughts about the app",
-      section: "Support",
-      action: () => {
-        router.back();
-        router.push("/user-feedback");
       },
     },
   ];
@@ -255,16 +133,23 @@ export default function ProfileSearchScreen() {
     router.back();
   };
 
-  const renderSearchResult = ({ item }: { item: SearchResult }) => (
-    <TouchableOpacity style={styles.resultItem} onPress={item.action}>
-      <View style={styles.resultContent}>
-        <Text style={styles.resultTitle}>{item.title}</Text>
-        <Text style={styles.resultSubtitle}>{item.subtitle}</Text>
-        <Text style={styles.resultSection}>{item.section}</Text>
-      </View>
-      <ChevronRight size={20} color={Colors.neutral[400]} />
-    </TouchableOpacity>
-  );
+  const renderSearchResult = ({ item }: { item: SearchResult }) => {
+    const IconComponent = item.icon || Search;
+    
+    return (
+      <TouchableOpacity style={styles.resultItem} onPress={item.action}>
+        <View style={styles.resultIcon}>
+          <IconComponent size={20} color={Colors.primary[500]} />
+        </View>
+        <View style={styles.resultContent}>
+          <Text style={styles.resultTitle}>{item.title}</Text>
+          <Text style={styles.resultSubtitle}>{item.subtitle}</Text>
+          <Text style={styles.resultSection}>{item.section}</Text>
+        </View>
+        <ChevronRight size={20} color={Colors.neutral[400]} />
+      </TouchableOpacity>
+    );
+  };
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
@@ -355,6 +240,15 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
     backgroundColor: Colors.background,
+  },
+  resultIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.primary[50],
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
   },
   resultContent: {
     flex: 1,

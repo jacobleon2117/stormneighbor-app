@@ -329,6 +329,18 @@ class ApiService {
     return response.data;
   }
 
+  async createAlert(alertData: {
+    title: string;
+    description: string;
+    alertType: string;
+    severity: "LOW" | "MODERATE" | "HIGH" | "CRITICAL";
+    startTime?: string;
+    endTime?: string;
+  }) {
+    const response = await this.api.post("/alerts", alertData);
+    return response.data;
+  }
+
   async searchPosts(query: string, filters?: SearchFilters) {
     const response = await this.api.get("/search", {
       params: { q: query, ...filters },

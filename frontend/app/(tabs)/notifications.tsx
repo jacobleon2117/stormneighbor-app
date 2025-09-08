@@ -229,6 +229,25 @@ export default function NotificationsScreen() {
       />
 
       <View style={styles.safeContent}>
+        {/* Header Actions */}
+        {notifications.length > 0 && (
+          <View style={styles.headerActions}>
+            <Text style={styles.notificationCount}>
+              {unreadCount > 0 ? `${unreadCount} unread` : 'All caught up'}
+            </Text>
+            {unreadCount > 0 && (
+              <TouchableOpacity
+                style={styles.markAllButton}
+                onPress={markAllAsRead}
+                activeOpacity={0.7}
+              >
+                <CheckCircle size={16} color={Colors.primary[500]} />
+                <Text style={styles.markAllText}>Mark All Read</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+
         <FlatList
           data={filteredNotifications}
           keyExtractor={(item) => item.id.toString()}
@@ -408,5 +427,34 @@ const styles = StyleSheet.create({
   listEmpty: {
     flex: 1,
     justifyContent: "center",
+  },
+  headerActions: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    backgroundColor: Colors.surface,
+  },
+  notificationCount: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: Colors.text.secondary,
+  },
+  markAllButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: Colors.primary[50],
+    borderRadius: 16,
+  },
+  markAllText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: Colors.primary[500],
+    marginLeft: 4,
   },
 });

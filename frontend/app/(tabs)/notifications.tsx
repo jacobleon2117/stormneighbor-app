@@ -222,18 +222,14 @@ export default function NotificationsScreen() {
 
   return (
     <View style={styles.container}>
-      <Header
-        title="Notifications"
-        showBackButton={true}
-        onBackPress={handleGoBack}
-      />
+      <Header title="Notifications" showBackButton={true} onBackPress={handleGoBack} />
 
       <View style={styles.safeContent}>
         {/* Header Actions */}
         {notifications.length > 0 && (
           <View style={styles.headerActions}>
             <Text style={styles.notificationCount}>
-              {unreadCount > 0 ? `${unreadCount} unread` : 'All caught up'}
+              {unreadCount > 0 ? `${unreadCount} unread` : "All caught up"}
             </Text>
             {unreadCount > 0 && (
               <TouchableOpacity

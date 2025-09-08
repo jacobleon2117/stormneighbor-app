@@ -30,69 +30,13 @@ export default function SavedPostsScreen() {
       if (!isRefresh) setLoading(true);
       setError(null);
 
-      // TODO: Replace with actual API call when backend implements saved posts
-      // const response = await apiService.getSavedPosts();
+      const response = await apiService.getSavedPosts();
 
-      // Mock data for now
-      const mockSavedPosts: Post[] = [
-        {
-          id: 1,
-          userId: 2,
-          firstName: "Jane",
-          lastName: "Smith",
-          profileImageUrl: null,
-          title: "Storm Warning Update",
-          content:
-            "Heavy thunderstorms expected tonight. Make sure to secure outdoor furniture and avoid unnecessary travel.",
-          postType: "safety_alert",
-          priority: "high",
-          isEmergency: false,
-          createdAt: "2024-01-15T18:30:00Z",
-          updatedAt: "2024-01-15T18:30:00Z",
-          images: [],
-          tags: ["weather", "safety"],
-          likesCount: 24,
-          commentsCount: 8,
-          sharesCount: 5,
-          userReaction: null,
-          reactions: [],
-          location: {
-            city: "Austin",
-            state: "TX",
-            latitude: 30.2672,
-            longitude: -97.7431,
-          },
-        },
-        {
-          id: 2,
-          userId: 3,
-          firstName: "Mike",
-          lastName: "Johnson",
-          profileImageUrl: null,
-          content:
-            "Found this lost dog wandering around Oak Street. Very friendly, appears to be a Golden Retriever mix. Please contact if this is your pet!",
-          postType: "lost_found",
-          priority: "normal",
-          isEmergency: false,
-          createdAt: "2024-01-14T10:15:00Z",
-          updatedAt: "2024-01-14T10:15:00Z",
-          images: [],
-          tags: ["lost", "dog", "help"],
-          likesCount: 15,
-          commentsCount: 12,
-          sharesCount: 8,
-          userReaction: null,
-          reactions: [],
-          location: {
-            city: "Austin",
-            state: "TX",
-            latitude: 30.2672,
-            longitude: -97.7431,
-          },
-        },
-      ];
-
-      setSavedPosts(mockSavedPosts);
+      if (response.success && response.data?.posts) {
+        setSavedPosts(response.data.posts);
+      } else {
+        setError("Failed to load saved posts");
+      }
     } catch (error: any) {
       console.error("Error fetching saved posts:", error);
       setError("Failed to load saved posts");

@@ -243,11 +243,7 @@ export function PostCard({
   };
 
   return (
-    <TouchableOpacity 
-      style={styles.card}
-      onPress={() => onPress?.(post.id)}
-      activeOpacity={0.95}
-    >
+    <TouchableOpacity style={styles.card} onPress={() => onPress?.(post.id)} activeOpacity={0.95}>
       <View style={styles.header}>
         <View style={styles.userInfo}>
           <View style={styles.avatar}>

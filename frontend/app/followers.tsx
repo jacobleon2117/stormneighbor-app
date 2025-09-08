@@ -49,76 +49,17 @@ export default function FollowersFollowingScreen() {
         if (!isRefresh) setLoading(true);
         setError(null);
 
-        // TODO: Replace with actual API calls when backend implements followers/following
-        // const [followersResponse, followingResponse] = await Promise.all([
-        //   apiService.getFollowers(user?.id),
-        //   apiService.getFollowing(user?.id)
-        // ]);
+        const [followersResponse, followingResponse] = await Promise.all([
+          apiService.getFollowers(user?.id),
+          apiService.getFollowing(user?.id),
+        ]);
 
-        // Mock data for now
-        const mockFollowers: User[] = [
-          {
-            id: 2,
-            firstName: "Jane",
-            lastName: "Smith",
-            email: "jane.smith@example.com",
-            profileImageUrl: null,
-            bio: "Local weather enthusiast and community volunteer",
-            followersCount: 24,
-            followingCount: 18,
-            isFollowing: true,
-          },
-          {
-            id: 3,
-            firstName: "Mike",
-            lastName: "Johnson",
-            email: "mike.j@example.com",
-            profileImageUrl: null,
-            bio: "Austin resident, dog lover, always here to help neighbors",
-            followersCount: 12,
-            followingCount: 25,
-            isFollowing: false,
-          },
-          {
-            id: 4,
-            firstName: "Sarah",
-            lastName: "Williams",
-            email: "sarah.w@example.com",
-            profileImageUrl: null,
-            bio: "Community organizer and storm spotter",
-            followersCount: 45,
-            followingCount: 32,
-            isFollowing: true,
-          },
-        ];
-
-        const mockFollowing: User[] = [
-          {
-            id: 5,
-            firstName: "David",
-            lastName: "Brown",
-            email: "david.brown@example.com",
-            profileImageUrl: null,
-            bio: "Local emergency coordinator",
-            followersCount: 67,
-            followingCount: 23,
-            isFollowing: true,
-          },
-          {
-            id: 6,
-            firstName: "Emma",
-            lastName: "Davis",
-            email: "emma.davis@example.com",
-            profileImageUrl: null,
-            bio: "Neighborhood watch coordinator",
-            followersCount: 34,
-            followingCount: 41,
-            isFollowing: true,
-          },
-        ];
-
-        setFollowers(mockFollowers);
-        setFollowing(mockFollowing);
+        if (followersResponse.success && followingResponse.success) {
+          setFollowers(followersResponse.data?.followers || []);
+          setFollowing(followingResponse.data?.following || []);
+        } else {
+          setError("Failed to load user data");
+        }
       } catch (error: any) {
         console.error("Error fetching user data:", error);
         setError("Failed to load user data");
@@ -151,36 +92,13 @@ export default function FollowersFollowingScreen() {
           text: action,
           onPress: async () => {
             try {
-              // TODO: Implement actual follow/unfollow API call
-              // await apiService.toggleFollow(userId);
+              if (isCurrentlyFollowing) {
+                await apiService.unfollowUser(userId);
+              } else {
+                await apiService.followUser(userId);
+              }
 
-              setFollowers((prev) =>
-                prev.map((user) =>
-                  user.id === userId
-                    ? {
-                        ...user,
-                        isFollowing: !isCurrentlyFollowing,
-                        followersCount: isCurrentlyFollowing
-                          ? user.followersCount - 1
-                          : user.followersCount + 1,
-                      }
-                    : user
-                )
-              );
-
-              setFollowing((prev) =>
-                prev.map((user) =>
-                  user.id === userId
-                    ? {
-                        ...user,
-                        isFollowing: !isCurrentlyFollowing,
-                        followersCount: isCurrentlyFollowing
-                          ? user.followersCount - 1
-                          : user.followersCount + 1,
-                      }
-                    : user
-                )
-              );
+              await fetchUserData(true);
 
               Alert.alert(
                 "Success",

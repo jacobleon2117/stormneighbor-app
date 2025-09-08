@@ -85,22 +85,24 @@ export default function MessagesScreen() {
           .includes(query.toLowerCase())
       );
 
-      // This needs to be an API call to get followers or all users
-      const mockAvailableUsers: User[] = [
-        {
-          id: 999,
-          firstName: "Sample",
-          lastName: "User",
-          email: "sample@example.com",
-          profileImageUrl: undefined,
-        },
-      ];
+      let availableUsers: User[] = [];
 
-      const availableUsers = mockAvailableUsers.filter(
-        (u) =>
-          `${u.firstName} ${u.lastName}`.toLowerCase().includes(query.toLowerCase()) &&
-          !conversations.some((conv) => conv.otherUser.id === u.id)
-      );
+      if (query.length > 0) {
+        try {
+          const availableUsersResponse = await apiService.getAvailableUsers({
+            query,
+            limit: 10,
+          });
+
+          if (availableUsersResponse.success && availableUsersResponse.data?.users) {
+            availableUsers = availableUsersResponse.data.users.filter(
+              (u: User) => !conversations.some((conv) => conv.otherUser.id === u.id)
+            );
+          }
+        } catch (error) {
+          console.error("Error fetching available users:", error);
+        }
+      }
 
       setSearchResults({
         conversations: filteredConversations,

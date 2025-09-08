@@ -11,16 +11,16 @@ import {
   Share,
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
-import { 
-  ArrowLeft, 
-  Share2, 
-  MapPin, 
-  Clock, 
+import {
+  ArrowLeft,
+  Share2,
+  MapPin,
+  Clock,
   AlertTriangle,
   Shield,
   Users,
   Megaphone,
-  Calendar 
+  Calendar,
 } from "lucide-react-native";
 import { Colors } from "../../constants/Colors";
 import { ALERT_COLORS, getAlertColor } from "../../constants/AlertColors";
@@ -106,11 +106,16 @@ export default function AlertDetailScreen() {
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case "CRITICAL": return Colors.error[500];
-      case "HIGH": return Colors.warning[500];
-      case "MODERATE": return Colors.primary[500];
-      case "LOW": return Colors.neutral[500];
-      default: return Colors.primary[500];
+      case "CRITICAL":
+        return Colors.error[500];
+      case "HIGH":
+        return Colors.warning[500];
+      case "MODERATE":
+        return Colors.primary[500];
+      case "LOW":
+        return Colors.neutral[500];
+      default:
+        return Colors.primary[500];
     }
   };
 
@@ -184,7 +189,7 @@ export default function AlertDetailScreen() {
           <View style={[styles.iconContainer, { backgroundColor: alertColor + "20" }]}>
             <IconComponent size={32} color={alertColor} />
           </View>
-          
+
           <View style={styles.alertInfo}>
             <View style={styles.badges}>
               <View style={[styles.severityBadge, getSeverityBadgeStyle(alert.severity)]}>
@@ -198,15 +203,15 @@ export default function AlertDetailScreen() {
                 </View>
               )}
             </View>
-            
+
             <Text style={styles.alertTitle}>{alert.title}</Text>
-            
+
             <View style={styles.metadata}>
               <View style={styles.metaItem}>
                 <Clock size={16} color={Colors.text.secondary} />
                 <Text style={styles.metaText}>{formatTimeAgo(alert.createdAt)}</Text>
               </View>
-              
+
               {alert.metadata?.areaDesc && (
                 <View style={styles.metaItem}>
                   <MapPin size={16} color={Colors.text.secondary} />

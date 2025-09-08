@@ -379,16 +379,20 @@ export default function HomeScreen() {
   };
 
   const handleEdit = async (postId: number) => {
-    Alert.alert("Edit Post", "Post editing functionality coming soon.", [{ text: "OK" }]);
-    // TODO: Navigate to edit post screen
-    // router.push(`/post/${postId}/edit`);
+    router.push(`/post/${postId}/edit`);
   };
 
   const handleSave = async (postId: number) => {
     try {
-      // TODO: Implement save/bookmark API call
-      Alert.alert("Saved", "Post has been bookmarked to your saved posts.");
-    } catch (error) {
+      const response = await apiService.savePost(postId);
+      
+      if (response.success) {
+        Alert.alert("Saved", "Post has been bookmarked to your saved posts.");
+      } else {
+        throw new Error(response.message || "Failed to save post");
+      }
+    } catch (error: any) {
+      console.error("Error saving post:", error);
       Alert.alert("Error", "Failed to save post. Please try again.");
     }
   };

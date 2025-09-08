@@ -307,6 +307,11 @@ class ApiService {
     return response.data;
   }
 
+  async getUserPosts(userId: number, params?: { page?: number; limit?: number }) {
+    const response = await this.api.get(`/users/${userId}/posts`, { params });
+    return response.data;
+  }
+
   async getCurrentWeather(lat: number, lng: number) {
     const response = await this.api.get("/weather/current", {
       params: { lat, lng },
@@ -530,6 +535,83 @@ class ApiService {
 
   async submitUserFeedback(feedbackData: any) {
     const response = await this.api.post("/feedback", feedbackData);
+    return response.data;
+  }
+
+  async getFollowers(userId?: number, params?: { page?: number; limit?: number }) {
+    const endpoint = userId ? `/users/${userId}/followers` : "/users/followers";
+    const response = await this.api.get(endpoint, { params });
+    return response.data;
+  }
+
+  async getFollowing(userId?: number, params?: { page?: number; limit?: number }) {
+    const endpoint = userId ? `/users/${userId}/following` : "/users/following";
+    const response = await this.api.get(endpoint, { params });
+    return response.data;
+  }
+
+  async followUser(userId: number) {
+    const response = await this.api.post(`/users/${userId}/follow`);
+    return response.data;
+  }
+
+  async unfollowUser(userId: number) {
+    const response = await this.api.delete(`/users/${userId}/follow`);
+    return response.data;
+  }
+
+  async getSavedPosts(params?: { page?: number; limit?: number }) {
+    const response = await this.api.get("/posts/saved", { params });
+    return response.data;
+  }
+
+  async savePost(postId: number) {
+    const response = await this.api.post(`/posts/${postId}/save`);
+    return response.data;
+  }
+
+  async unsavePost(postId: number) {
+    const response = await this.api.delete(`/posts/${postId}/save`);
+    return response.data;
+  }
+
+  async updatePost(
+    postId: number,
+    postData: {
+      title?: string;
+      content?: string;
+      tags?: string[];
+      priority?: string;
+      isEmergency?: boolean;
+      images?: string[];
+    }
+  ) {
+    const response = await this.api.put(`/posts/${postId}`, postData);
+    return response.data;
+  }
+
+  async deletePost(postId: number) {
+    const response = await this.api.delete(`/posts/${postId}`);
+    return response.data;
+  }
+
+  async blockUser(userId: number) {
+    const response = await this.api.post(`/users/${userId}/block`);
+    return response.data;
+  }
+
+  async unblockUser(userId: number) {
+    const response = await this.api.delete(`/users/${userId}/block`);
+    return response.data;
+  }
+
+  async getBlockedUsers(params?: { page?: number; limit?: number }) {
+    const response = await this.api.get("/users/blocked", { params });
+    return response.data;
+  }
+
+  async getAvailableUsers(params?: { page?: number; limit?: number; query?: string }) {
+    const response = await this.api.get("/users/available", { params });
     return response.data;
   }
 

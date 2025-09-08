@@ -1,12 +1,5 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Modal,
-  ScrollView,
-} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView } from "react-native";
 import {
   MapPin,
   Share,
@@ -78,7 +71,7 @@ export default function AlertCard({
 
   const IconComponent = ALERT_ICONS[type] || AlertTriangle;
   const alertColor = ALERT_COLORS[type] || Colors.primary[500];
-  const badgeText = ALERT_LABELS[type] || 'Alert';
+  const badgeText = ALERT_LABELS[type] || "Alert";
 
   const formatTimeAgo = (dateString: string): string => {
     const now = new Date();

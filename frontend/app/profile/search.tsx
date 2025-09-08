@@ -46,23 +46,14 @@ export default function ProfileSearchScreen() {
   const loadUserData = async () => {
     try {
       setLoading(true);
-      // Note: This would typically be a getUserPosts API call
-      const mockPosts: Post[] = [
-        {
-          id: 1,
-          title: "Weather Update",
-          content: "Severe thunderstorm warning in effect",
-          postType: "safety_alert",
-          createdAt: "2024-01-15T10:00:00Z",
-        },
-        {
-          id: 2,
-          content: "Looking for help with yard cleanup after storm",
-          postType: "help_request",
-          createdAt: "2024-01-14T09:30:00Z",
-        },
-      ];
-      setUserPosts(mockPosts);
+
+      if (user?.id) {
+        const response = await apiService.getUserPosts(user.id);
+
+        if (response.success && response.data?.posts) {
+          setUserPosts(response.data.posts);
+        }
+      }
     } catch (error) {
       console.error("Error loading user data:", error);
     } finally {
@@ -105,7 +96,6 @@ export default function ProfileSearchScreen() {
       section: "Activity",
       icon: Clock,
       action: () => {
-        // This would navigate to activity history
         router.push("/(tabs)/profile");
       },
     },

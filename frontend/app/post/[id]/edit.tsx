@@ -109,15 +109,15 @@ export default function EditPostScreen() {
           : [],
       };
 
-      // TODO: Replace with actual API call when backend implements post editing
-      // const response = await apiService.updatePost(postId, updateData);
+      const response = await apiService.updatePost(postId, updateData);
 
-      // Mock success for now
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      Alert.alert("Success", "Your post has been updated successfully.", [
-        { text: "OK", onPress: () => router.back() },
-      ]);
+      if (response.success) {
+        Alert.alert("Success", "Your post has been updated successfully.", [
+          { text: "OK", onPress: () => router.back() },
+        ]);
+      } else {
+        throw new Error(response.message || "Failed to update post");
+      }
     } catch (error: any) {
       console.error("Error updating post:", error);
       Alert.alert("Error", "Failed to update post. Please try again.");

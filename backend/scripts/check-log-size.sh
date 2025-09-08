@@ -1,5 +1,4 @@
 #!/bin/bash
-# Cron job to monitor log file sizes
 
 LOG_DIR="./logs"
 MAX_SIZE_MB=500
@@ -9,7 +8,6 @@ if [ ! -d "$LOG_DIR" ]; then
     exit 1
 fi
 
-# Get current size in MB
 SIZE_KB=$(du -sk "$LOG_DIR" | cut -f1)
 SIZE_MB=$((SIZE_KB / 1024))
 

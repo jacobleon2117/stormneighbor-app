@@ -1,14 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  ScrollView,
-  Alert,
-  ActivityIndicator,
-  Share,
-} from "react-native";
+import { View, Text, StyleSheet, ScrollView, Alert, ActivityIndicator, Share } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import * as Clipboard from "expo-clipboard";
 import { useLocalSearchParams, router } from "expo-router";
 import { PostCard } from "../../components/Posts/PostCard";

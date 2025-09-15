@@ -214,10 +214,13 @@ export default function NotificationsScreen() {
 
   return (
     <View style={styles.container}>
-      <Header title="Notifications" showBackButton={true} onBackPress={handleGoBack} />
-
+      <Header
+        title="Notifications"
+        showBackButton={true}
+        onBackPress={handleGoBack}
+        backgroundColor={Colors.background}
+      />
       <View style={styles.safeContent}>
-        {/* Header Actions */}
         {notifications.length > 0 && (
           <View style={styles.headerActions}>
             <Text style={styles.notificationCount}>
@@ -263,17 +266,17 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.neutral[50],
   },
   safeContent: {
     flex: 1,
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.neutral[50],
   },
   filterContainer: {
     flexDirection: "row",
     paddingHorizontal: 20,
     paddingBottom: 16,
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.neutral[50],
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },

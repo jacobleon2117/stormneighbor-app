@@ -4,13 +4,13 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  SafeAreaView,
   TouchableOpacity,
   RefreshControl,
   Alert,
   ActivityIndicator,
   Modal,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Sun,
   Cloud,
@@ -32,7 +32,6 @@ import { apiService } from "../../services/api";
 import { locationService } from "../../services/locationService";
 import { WeatherData, Alert as WeatherAlert, Post } from "../../types";
 import { useAuth } from "../../hooks/useAuth";
-import { Header } from "../../components/UI/Header";
 import WeatherLegend from "../../components/Weather/WeatherLegend";
 import { router } from "expo-router";
 
@@ -324,9 +323,6 @@ export default function WeatherScreen() {
     loadWeatherData(true);
   }, [loadWeatherData]);
 
-  const handleSearchPress = () => {
-    router.push("/(tabs)/search");
-  };
 
   const handleZoomIn = () => {
     if (mapRef.current) {
@@ -921,16 +917,6 @@ export default function WeatherScreen() {
 
   return (
     <View style={styles.container}>
-      <Header
-        title="Weather"
-        showSearch={true}
-        showNotifications={true}
-        showMessages={true}
-        onSearchPress={handleSearchPress}
-        onNotificationsPress={() => router.push("/(tabs)/notifications")}
-        onMessagesPress={() => router.push("/(tabs)/messages")}
-      />
-
       <View style={styles.mapContainer}>
         <MapView
           ref={mapRef}
@@ -1200,7 +1186,7 @@ const styles = StyleSheet.create({
     flexGrow: 0,
   },
   contentContainer: {
-    paddingTop: 24,
+    paddingTop: 60,
   },
   weatherCard: {
     backgroundColor: Colors.background,

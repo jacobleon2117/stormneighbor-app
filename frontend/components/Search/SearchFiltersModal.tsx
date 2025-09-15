@@ -1,24 +1,10 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  Modal,
-  TouchableOpacity,
-  ScrollView,
-  SafeAreaView,
-} from "react-native";
+import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { X, Filter, RotateCcw } from "lucide-react-native";
 import { Colors } from "../../constants/Colors";
 import { Button } from "../UI/Button";
-
-export interface SearchFilters {
-  types: string[];
-  priorities: string[];
-  emergencyOnly: boolean;
-  resolved: "all" | "resolved" | "unresolved";
-  sortBy: "relevance" | "newest" | "oldest" | "most_liked";
-}
+import { SearchFilters } from "../../types";
 
 interface SearchFiltersModalProps {
   visible: boolean;
@@ -48,9 +34,8 @@ const PRIORITIES = [
 
 const SORT_OPTIONS = [
   { key: "relevance", label: "Most Relevant" },
-  { key: "newest", label: "Newest First" },
-  { key: "oldest", label: "Oldest First" },
-  { key: "most_liked", label: "Most Liked" },
+  { key: "date", label: "By Date" },
+  { key: "popularity", label: "Most Popular" },
 ];
 
 export const SearchFiltersModal: React.FC<SearchFiltersModalProps> = ({
@@ -93,8 +78,8 @@ export const SearchFiltersModal: React.FC<SearchFiltersModalProps> = ({
   };
 
   const hasActiveFilters =
-    localFilters.types.length > 0 ||
-    localFilters.priorities.length > 0 ||
+    (localFilters.types && localFilters.types.length > 0) ||
+    (localFilters.priorities && localFilters.priorities.length > 0) ||
     localFilters.emergencyOnly ||
     localFilters.resolved !== "all" ||
     localFilters.sortBy !== "relevance";
@@ -113,7 +98,7 @@ export const SearchFiltersModal: React.FC<SearchFiltersModalProps> = ({
             <Text style={styles.headerTitle}>Search Filters</Text>
           </View>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <X size={24} color={Colors.text.primary} />
+            <X size={22} color={Colors.text.primary} />
           </TouchableOpacity>
         </View>
 
@@ -126,14 +111,14 @@ export const SearchFiltersModal: React.FC<SearchFiltersModalProps> = ({
                   key={type.key}
                   style={[
                     styles.filterChip,
-                    localFilters.types.includes(type.key) && styles.filterChipActive,
+                    (localFilters.types || []).includes(type.key) && styles.filterChipActive,
                   ]}
-                  onPress={() => toggleArrayFilter(localFilters.types, type.key, "types")}
+                  onPress={() => toggleArrayFilter(localFilters.types || [], type.key, "types")}
                 >
                   <Text
                     style={[
                       styles.filterChipText,
-                      localFilters.types.includes(type.key) && styles.filterChipTextActive,
+                      (localFilters.types || []).includes(type.key) && styles.filterChipTextActive,
                     ]}
                   >
                     {type.label}
@@ -151,20 +136,20 @@ export const SearchFiltersModal: React.FC<SearchFiltersModalProps> = ({
                   key={priority.key}
                   style={[
                     styles.filterChip,
-                    localFilters.priorities.includes(priority.key) && {
+                    (localFilters.priorities || []).includes(priority.key) && {
                       backgroundColor: priority.color + "20",
                       borderColor: priority.color,
                     },
                   ]}
                   onPress={() =>
-                    toggleArrayFilter(localFilters.priorities, priority.key, "priorities")
+                    toggleArrayFilter(localFilters.priorities || [], priority.key, "priorities")
                   }
                 >
                   <View style={[styles.priorityDot, { backgroundColor: priority.color }]} />
                   <Text
                     style={[
                       styles.filterChipText,
-                      localFilters.priorities.includes(priority.key) && {
+                      (localFilters.priorities || []).includes(priority.key) && {
                         color: priority.color,
                         fontWeight: "600",
                       },

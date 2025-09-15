@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   TextInput,
@@ -11,9 +10,15 @@ import {
   Platform,
 } from "react-native";
 import { router } from "expo-router";
-import { ArrowLeft, MessageSquare, Bug, Lightbulb, Palette } from "lucide-react-native";
+import {
+  /* ArrowLeft, - Currently not being used, need to either use it or remove it (if needed later, uncomment) */ MessageSquare,
+  Bug,
+  Lightbulb,
+  Palette,
+} from "lucide-react-native";
 import { Colors } from "../constants/Colors";
 import { Button } from "../components/UI/Button";
+import { Header } from "../components/UI/Header";
 import { useAuth } from "../hooks/useAuth";
 import { apiService } from "../services/api";
 import { UserFeedback } from "../types";
@@ -109,14 +114,8 @@ export default function UserFeedbackScreen() {
   const selectedTypeInfo = FEEDBACK_TYPES.find((type) => type.key === selectedType);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <ArrowLeft size={24} color={Colors.text.primary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>User Feedback</Text>
-        <View style={styles.headerRight} />
-      </View>
+    <View style={styles.container}>
+      <Header title="User Feedback" showBackButton onBackPress={() => router.back()} />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.section}>
@@ -220,7 +219,7 @@ export default function UserFeedbackScreen() {
           </>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -228,30 +227,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: Colors.text.primary,
-  },
-  headerRight: {
-    width: 40,
   },
   content: {
     flex: 1,

@@ -202,7 +202,7 @@ router.get(
           (SELECT COUNT(*) FROM comments WHERE post_id = p.id AND is_active = true) as comment_count
         FROM posts p
         JOIN users u ON p.user_id = u.id
-        WHERE p.user_id = $1 AND p.is_active = true
+        WHERE p.user_id = $1
         ORDER BY p.created_at DESC
         LIMIT $2 OFFSET $3
       `,
@@ -767,6 +767,93 @@ router.get(
   }
 );
 
+router.get("/available", auth, async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+    const currentUserId = req.user.userId;
+    const { page = 1, limit = 20, query } = req.query;
+    const offset = (page - 1) * limit;
+
+    let queryStr = `
+      SELECT
+        u.id,
+        u.first_name,
+        u.last_name,
+        u.profile_image_url,
+        u.location_city as city,
+        u.address_state as state,
+        u.bio
+      FROM users u
+      WHERE u.is_active = true
+        AND u.id != $1
+        AND u.id NOT IN (
+          SELECT blocked_id FROM user_blocks WHERE blocker_id = $1
+          UNION
+          SELECT blocker_id FROM user_blocks WHERE blocked_id = $1
+        )
+    `;
+
+    const params = [currentUserId];
+    let paramCount = 1;
+
+    if (query) {
+      paramCount++;
+      queryStr += ` AND (CONCAT(u.first_name, ' ', u.last_name) ILIKE $${paramCount} OR u.location_city ILIKE $${paramCount})`;
+      params.push(`%${query}%`);
+    }
+
+    queryStr += ` ORDER BY u.first_name, u.last_name LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`;
+    params.push(limit, offset);
+
+    const result = await client.query(queryStr, params);
+
+    let countQuery = `
+      SELECT COUNT(*) as total
+      FROM users u
+      WHERE u.is_active = true
+        AND u.id != $1
+        AND u.id NOT IN (
+          SELECT blocked_id FROM user_blocks WHERE blocker_id = $1
+          UNION
+          SELECT blocker_id FROM user_blocks WHERE blocked_id = $1
+        )
+    `;
+
+    const countParams = [currentUserId];
+
+    if (query) {
+      countQuery += ` AND (CONCAT(u.first_name, ' ', u.last_name) ILIKE $2 OR u.location_city ILIKE $2)`;
+      countParams.push(`%${query}%`);
+    }
+
+    const countResult = await client.query(countQuery, countParams);
+    const total = parseInt(countResult.rows[0].total);
+
+    res.json({
+      success: true,
+      data: {
+        users: result.rows,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          pages: Math.ceil(total / limit),
+        },
+      },
+    });
+  } catch (error) {
+    logger.error("Get available users error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching available users",
+      code: "AVAILABLE_USERS_ERROR",
+    });
+  } finally {
+    client.release();
+  }
+});
+
 router.get("/test/status", async (_req, res) => {
   try {
     const client = await pool.connect();
@@ -1018,7 +1105,7 @@ router.get(
            (SELECT reaction_type FROM post_reactions WHERE post_id = p.id AND user_id = $2) as user_reaction
          FROM posts p
          JOIN users u ON p.user_id = u.id
-         WHERE p.user_id = $1 AND p.is_active = true AND u.is_active = true
+         WHERE p.user_id = $1 AND u.is_active = true
          ORDER BY p.created_at DESC
          LIMIT $3 OFFSET $4`,
         [userId, req.user.userId, limit, offset]
@@ -1028,7 +1115,7 @@ router.get(
         `SELECT COUNT(*) as count
          FROM posts p
          JOIN users u ON p.user_id = u.id
-         WHERE p.user_id = $1 AND p.is_active = true AND u.is_active = true`,
+         WHERE p.user_id = $1 AND u.is_active = true`,
         [userId]
       );
 

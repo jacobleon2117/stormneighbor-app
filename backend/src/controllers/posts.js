@@ -65,9 +65,11 @@ const getPosts = async (req, res) => {
       let paramIndex = 2;
 
       if (userCity && userState) {
-        query += ` AND p.location_city = $${paramIndex} AND p.location_state = $${paramIndex + 1}`;
-        params.push(userCity, userState);
-        paramIndex += 2;
+        query += ` AND p.location_city = $${paramIndex} AND (p.location_state = $${paramIndex + 1} OR p.location_state = $${paramIndex + 2})`;
+        const stateAbbreviation =
+          userState === "Oklahoma" ? "Ok" : userState === "Ok" ? "Oklahoma" : userState;
+        params.push(userCity, userState, stateAbbreviation);
+        paramIndex += 3;
       }
 
       if (postType) {

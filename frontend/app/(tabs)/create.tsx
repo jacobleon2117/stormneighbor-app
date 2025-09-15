@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   TextInput,
   Keyboard,
@@ -17,9 +16,10 @@ import {
   ActivityIndicator,
   Animated,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Header } from "../../components/UI/Header";
+import { ImageViewerModal } from "../../components/UI/ImageViewerModal";
 import { Colors } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
 import { apiService } from "../../services/api";
@@ -69,6 +69,7 @@ export default function CreateScreen() {
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showDiscardModal, setShowDiscardModal] = useState(false);
   const [postStatus, setPostStatus] = useState<"idle" | "posting" | "success">("idle");
+  const [viewingImage, setViewingImage] = useState<string | null>(null);
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const scaleAnim = React.useRef(new Animated.Value(0)).current;
 
@@ -233,7 +234,7 @@ export default function CreateScreen() {
           scaleAnim.setValue(0);
           fadeAnim.setValue(0);
 
-          router.replace("/(tabs)");
+          router.replace("/(tabs)" as any);
         });
       } else {
         throw new Error(response.message || "Failed to create post");
@@ -421,7 +422,7 @@ export default function CreateScreen() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       >
-        <SafeAreaView style={styles.safeContent}>
+        <SafeAreaView style={styles.safeContent} edges={["bottom", "left", "right"]}>
           <TouchableWithoutFeedback
             onPress={() => {
               if (isTyping) {
@@ -432,22 +433,41 @@ export default function CreateScreen() {
             <View style={styles.content}>
               <View style={styles.topButtonRow}>
                 <View style={styles.leftButtons}>
-                  <TouchableOpacity style={styles.locationButton} onPress={handleLocationPress}>
-                    <MapPin size={16} color={Colors.text.secondary} />
-                    <Text style={styles.buttonText} numberOfLines={1}>
-                      {selectedLocation.name.length > 12
-                        ? selectedLocation.name.substring(0, 12) + "..."
-                        : selectedLocation.name}
-                    </Text>
+                  <TouchableOpacity style={styles.iconOnlyButton} onPress={handleLocationPress}>
+                    <MapPin size={20} color={Colors.text.secondary} />
                   </TouchableOpacity>
 
-                  <TouchableOpacity style={styles.privacyButton} onPress={handlePrivacyPress}>
+                  <TouchableOpacity style={styles.iconOnlyButton} onPress={handlePrivacyPress}>
                     {React.createElement(getPrivacyIcon(), {
-                      size: 16,
+                      size: 20,
                       color: Colors.text.secondary,
                     })}
-                    <Text style={styles.buttonText}>{getPrivacyLabel()}</Text>
                   </TouchableOpacity>
+
+                  {selectedAction && (
+                    <View style={styles.selectedActionBadgeInTopRow}>
+                      {(() => {
+                        const action = quickActions.find((a) => a.id === selectedAction);
+                        if (!action) return null;
+                        const IconComponent = action.icon;
+                        return (
+                          <>
+                            <IconComponent size={16} color={action.color} />
+                            <Text style={[styles.badgeTextSmall, { color: action.color }]}>
+                              {action.label}
+                            </Text>
+                            <TouchableOpacity
+                              style={styles.removeBadgeButtonSmall}
+                              onPress={removeSelectedAction}
+                              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            >
+                              <X size={12} color={Colors.text.secondary} />
+                            </TouchableOpacity>
+                          </>
+                        );
+                      })()}
+                    </View>
+                  )}
                 </View>
 
                 <TouchableOpacity
@@ -471,30 +491,6 @@ export default function CreateScreen() {
 
               <View style={styles.contentArea}>
                 <View style={styles.textInputContainer}>
-                  {selectedAction && (
-                    <View style={styles.selectedActionInline}>
-                      {(() => {
-                        const action = quickActions.find((a) => a.id === selectedAction);
-                        if (!action) return null;
-                        const IconComponent = action.icon;
-                        return (
-                          <>
-                            <IconComponent size={16} color={action.color} />
-                            <Text style={[styles.inlineBadgeText, { color: action.color }]}>
-                              {action.label}
-                            </Text>
-                            <TouchableOpacity
-                              style={styles.removeInlineBadgeButton}
-                              onPress={removeSelectedAction}
-                              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                            >
-                              <X size={14} color={Colors.text.secondary} />
-                            </TouchableOpacity>
-                          </>
-                        );
-                      })()}
-                    </View>
-                  )}
                   <TextInput
                     ref={textInputRef}
                     style={[styles.textInput, selectedAction && styles.textInputWithBadge]}
@@ -529,7 +525,9 @@ export default function CreateScreen() {
           >
             {selectedImages.map((imageUri, index) => (
               <View key={index} style={styles.selectedImageWrapper}>
-                <Image source={{ uri: imageUri }} style={styles.selectedImage} />
+                <TouchableOpacity onPress={() => setViewingImage(imageUri)} activeOpacity={0.8}>
+                  <Image source={{ uri: imageUri }} style={styles.selectedImage} />
+                </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.removeImageButton}
                   onPress={() => setSelectedImages((prev) => prev.filter((_, i) => i !== index))}
@@ -618,7 +616,7 @@ export default function CreateScreen() {
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={() => setShowLocationModal(false)}>
-              <X size={24} color={Colors.text.primary} />
+              <X size={22} color={Colors.text.primary} />
             </TouchableOpacity>
             <Text style={styles.modalTitle}>Select Location</Text>
             <TouchableOpacity onPress={() => setShowLocationModal(false)}>
@@ -717,7 +715,7 @@ export default function CreateScreen() {
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={() => setShowPrivacyModal(false)}>
-              <X size={24} color={Colors.text.primary} />
+              <X size={22} color={Colors.text.primary} />
             </TouchableOpacity>
             <Text style={styles.modalTitle}>Who can see this?</Text>
             <TouchableOpacity onPress={() => setShowPrivacyModal(false)}>
@@ -881,7 +879,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingTop: 16,
+    paddingTop: 12,
     paddingBottom: 12,
   },
   leftButtons: {
@@ -909,6 +907,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
     gap: 6,
+  },
+  iconOnlyButton: {
+    alignItems: "center",
+    justifyContent: "center",
+    width: 40,
+    height: 40,
+    backgroundColor: Colors.background,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   buttonText: {
     fontSize: 14,
@@ -1042,6 +1050,28 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
     gap: 6,
   },
+  selectedActionBadgeInTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: Colors.background,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    gap: 6,
+    marginLeft: 8,
+    height: 40,
+  },
+  badgeTextSmall: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  removeBadgeButtonSmall: {
+    marginLeft: 2,
+    padding: 2,
+  },
   moreButtonText: {
     fontSize: 14,
     fontWeight: "500",
@@ -1117,6 +1147,8 @@ const styles = StyleSheet.create({
   selectedImageWrapper: {
     position: "relative",
     marginRight: 8,
+    paddingTop: 8,
+    paddingRight: 8,
   },
   selectedImage: {
     width: 80,
@@ -1126,8 +1158,8 @@ const styles = StyleSheet.create({
   },
   removeImageButton: {
     position: "absolute",
-    top: -6,
-    right: -6,
+    top: 0,
+    right: 0,
     width: 24,
     height: 24,
     borderRadius: 12,

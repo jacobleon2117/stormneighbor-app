@@ -164,7 +164,7 @@ export default function AlertCard({
                 onPress={() => setShowLocationModal(false)}
                 style={styles.closeButton}
               >
-                <X size={24} color={Colors.text.primary} />
+                <X size={22} color={Colors.text.primary} />
               </TouchableOpacity>
             </View>
 

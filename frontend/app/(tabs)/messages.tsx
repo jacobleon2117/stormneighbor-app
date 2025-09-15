@@ -8,24 +8,17 @@ import {
   ActivityIndicator,
   RefreshControl,
   Image,
-  TextInput,
-  Alert,
+  // TextInput, - Currently not being used, need to either use it or remove it (if needed later, uncomment)
+  // Alert, - Currently not being used, need to either use it or remove it (if needed later, uncomment)
 } from "react-native";
 import { router } from "expo-router";
-import { MessageCircle, Search, Plus, X } from "lucide-react-native";
+// import { MessageCircle } from "lucide-react-native"; - Currently not being used, need to either use it or remove it (if needed later, uncomment)
 import { Header } from "../../components/UI/Header";
+import { MessageSearchModal } from "../../components/Messages/MessageSearchModal";
 import { Colors } from "../../constants/Colors";
 import { apiService } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
 import { Conversation } from "../../types";
-
-interface User {
-  id: number;
-  firstName: string;
-  lastName: string;
-  profileImageUrl?: string;
-  email: string;
-}
 
 export default function MessagesScreen() {
   const { user } = useAuth();
@@ -33,12 +26,7 @@ export default function MessagesScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchActive, setSearchActive] = useState(false);
-  const [searchResults, setSearchResults] = useState<{
-    conversations: Conversation[];
-    availableUsers: User[];
-  }>({ conversations: [], availableUsers: [] });
+  const [showSearchModal, setShowSearchModal] = useState(false);
 
   const fetchConversations = useCallback(async (isRefresh: boolean = false) => {
     try {
@@ -65,80 +53,6 @@ export default function MessagesScreen() {
     setRefreshing(true);
     fetchConversations(true);
   }, [fetchConversations]);
-
-  const handleSearch = async (query: string) => {
-    if (!query.trim()) {
-      setSearchActive(false);
-      setSearchResults({ conversations: [], availableUsers: [] });
-      return;
-    }
-
-    try {
-      setSearchActive(true);
-
-      const filteredConversations = conversations.filter((conv) =>
-        `${conv.otherUser.firstName} ${conv.otherUser.lastName}`
-          .toLowerCase()
-          .includes(query.toLowerCase())
-      );
-
-      let availableUsers: User[] = [];
-
-      if (query.length > 0) {
-        try {
-          const availableUsersResponse = await apiService.getAvailableUsers({
-            query,
-            limit: 10,
-          });
-
-          if (availableUsersResponse.success && availableUsersResponse.data?.users) {
-            availableUsers = availableUsersResponse.data.users.filter(
-              (u: User) => !conversations.some((conv) => conv.otherUser.id === u.id)
-            );
-          }
-        } catch (error) {
-          console.error("Error fetching available users:", error);
-        }
-      }
-
-      setSearchResults({
-        conversations: filteredConversations,
-        availableUsers: availableUsers,
-      });
-    } catch (error) {
-      console.error("Search error:", error);
-    } finally {
-    }
-  };
-
-  const handleSearchChange = (text: string) => {
-    setSearchQuery(text);
-    handleSearch(text);
-  };
-
-  const clearSearch = () => {
-    setSearchQuery("");
-    setSearchActive(false);
-    setSearchResults({ conversations: [], availableUsers: [] });
-  };
-
-  const startConversationWithUser = (user: User) => {
-    Alert.alert("Start Conversation", `Send a message to ${user.firstName} ${user.lastName}?`, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Send Message",
-        onPress: () => {
-          router.push({
-            pathname: "/conversation/new" as any,
-            params: {
-              recipientId: user.id,
-              recipientName: `${user.firstName} ${user.lastName}`,
-            },
-          });
-        },
-      },
-    ]);
-  };
 
   useEffect(() => {
     if (user) {
@@ -229,45 +143,6 @@ export default function MessagesScreen() {
     );
   };
 
-  const renderAvailableUser = ({ item }: { item: User }) => (
-    <TouchableOpacity
-      style={styles.availableUserItem}
-      onPress={() => startConversationWithUser(item)}
-      activeOpacity={0.7}
-    >
-      <View style={styles.avatarContainer}>
-        {item.profileImageUrl ? (
-          <Image source={{ uri: item.profileImageUrl }} style={styles.avatar} />
-        ) : (
-          <View style={[styles.avatar, styles.avatarPlaceholder]}>
-            <Text style={styles.avatarText}>{item.firstName.charAt(0).toUpperCase()}</Text>
-          </View>
-        )}
-      </View>
-
-      <View style={styles.conversationContent}>
-        <Text style={styles.userName} numberOfLines={1}>
-          {item.firstName} {item.lastName}
-        </Text>
-        <Text style={styles.availableUserSubtext}>Tap to start a conversation</Text>
-      </View>
-
-      <View style={styles.startConversationButton}>
-        <Plus size={20} color={Colors.primary[500]} />
-      </View>
-    </TouchableOpacity>
-  );
-
-  const renderEmpty = () => (
-    <View style={styles.emptyState}>
-      <MessageCircle size={48} color={Colors.text.disabled} />
-      <Text style={styles.emptyTitle}>No messages yet</Text>
-      <Text style={styles.emptyMessage}>
-        Start a conversation by messaging someone from their profile or a post!
-      </Text>
-    </View>
-  );
-
   const handleGoBack = () => {
     router.back();
   };
@@ -299,82 +174,43 @@ export default function MessagesScreen() {
     );
   }
 
-  const dataToShow = searchActive ? searchResults.conversations : conversations;
-  const hasAvailableUsers = searchActive && searchResults.availableUsers.length > 0;
-
   return (
     <View style={styles.container}>
-      <Header title="Messages" showBackButton={true} onBackPress={handleGoBack} />
-
-      <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <Search size={20} color={Colors.text.disabled} style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search conversations..."
-            placeholderTextColor={Colors.text.disabled}
-            value={searchQuery}
-            onChangeText={handleSearchChange}
-            returnKeyType="search"
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
-              <X size={20} color={Colors.text.disabled} />
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
+      <Header
+        title="Messages"
+        showBackButton={true}
+        onBackPress={handleGoBack}
+        showSearch={true}
+        onSearchPress={() => setShowSearchModal(true)}
+      />
 
       <View style={styles.safeContent}>
-        {hasAvailableUsers && (
-          <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>Start New Conversation</Text>
-            <FlatList
-              data={searchResults.availableUsers}
-              keyExtractor={(item) => `user-${item.id}`}
-              renderItem={renderAvailableUser}
-              showsVerticalScrollIndicator={false}
+        <FlatList
+          data={conversations}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={renderConversation}
+          contentContainerStyle={[
+            styles.listContainer,
+            conversations.length === 0 && styles.listEmpty,
+          ]}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              colors={[Colors.primary[500]]}
+              tintColor={Colors.primary[500]}
             />
-          </View>
-        )}
-
-        {(dataToShow.length > 0 || (!searchActive && conversations.length > 0)) && (
-          <View style={styles.sectionContainer}>
-            {searchActive && dataToShow.length > 0 && (
-              <Text style={styles.sectionTitle}>Conversations</Text>
-            )}
-            <FlatList
-              data={dataToShow}
-              keyExtractor={(item) => item.id.toString()}
-              renderItem={renderConversation}
-              contentContainerStyle={[
-                styles.listContainer,
-                dataToShow.length === 0 && styles.listEmpty,
-              ]}
-              ListEmptyComponent={!searchActive ? renderEmpty : undefined}
-              refreshControl={
-                <RefreshControl
-                  refreshing={refreshing}
-                  onRefresh={handleRefresh}
-                  colors={[Colors.primary[500]]}
-                  tintColor={Colors.primary[500]}
-                />
-              }
-              showsVerticalScrollIndicator={false}
-            />
-          </View>
-        )}
-
-        {searchActive && dataToShow.length === 0 && !hasAvailableUsers && (
-          <View style={styles.emptyState}>
-            <Search size={48} color={Colors.text.disabled} />
-            <Text style={styles.emptyTitle}>No results found</Text>
-            <Text style={styles.emptyMessage}>
-              Try searching for a different name or start a new conversation.
-            </Text>
-          </View>
-        )}
+          }
+          showsVerticalScrollIndicator={false}
+        />
       </View>
+
+      <MessageSearchModal
+        visible={showSearchModal}
+        onClose={() => setShowSearchModal(false)}
+        conversations={conversations}
+        onSelectConversation={handleConversationPress}
+      />
     </View>
   );
 }
@@ -542,62 +378,5 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary,
     textAlign: "center",
     lineHeight: 20,
-  },
-  searchContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.neutral[50],
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: Colors.text.primary,
-  },
-  clearButton: {
-    padding: 4,
-  },
-  sectionContainer: {
-    flex: 1,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.text.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: Colors.neutral[50],
-  },
-  availableUserItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    backgroundColor: Colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  availableUserSubtext: {
-    fontSize: 14,
-    color: Colors.primary[500],
-    fontWeight: "500",
-  },
-  startConversationButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.primary[50],
-    alignItems: "center",
-    justifyContent: "center",
   },
 });

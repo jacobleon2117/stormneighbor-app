@@ -39,6 +39,8 @@ import {
 } from "lucide-react-native";
 import { Post } from "../../types";
 import { Colors } from "../../constants/Colors";
+import ReportModal from "../UI/ReportModal";
+import { apiService } from "../../services/api";
 
 const { height: screenHeight } = Dimensions.get("window");
 
@@ -96,7 +98,7 @@ export function PostCard({
   onLike,
   onPress,
   onMessage,
-  onReport,
+  onReport: _onReport,
   onBlock,
   onUnfollow,
   currentUserId,
@@ -113,6 +115,10 @@ export function PostCard({
   const [showHideModal, setShowHideModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+
+  const handleReportSubmit = async (category: string, description: string) => {
+    await apiService.reportPost(post.id, category, description);
+  };
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const openModal = (
@@ -140,7 +146,6 @@ export function PostCard({
   const commentModalY = React.useRef(new Animated.Value(0)).current;
   const moreModalY = React.useRef(new Animated.Value(0)).current;
   const hideModalY = React.useRef(new Animated.Value(0)).current;
-  const reportModalY = React.useRef(new Animated.Value(0)).current;
   const shareModalY = React.useRef(new Animated.Value(0)).current;
 
   const commentPanResponder = createSwipeDownPanResponder(commentModalY, () =>
@@ -148,9 +153,6 @@ export function PostCard({
   );
   const morePanResponder = createSwipeDownPanResponder(moreModalY, () => setShowMoreModal(false));
   const hidePanResponder = createSwipeDownPanResponder(hideModalY, () => setShowHideModal(false));
-  const reportPanResponder = createSwipeDownPanResponder(reportModalY, () =>
-    setShowReportModal(false)
-  );
   const sharePanResponder = createSwipeDownPanResponder(shareModalY, () =>
     setShowShareModal(false)
   );
@@ -238,7 +240,7 @@ export function PostCard({
 
   const handleBackToMore = () => {
     closeModalImmediately(setShowHideModal, hideModalY);
-    closeModalImmediately(setShowReportModal, reportModalY);
+    setShowReportModal(false);
     setShowMoreModal(true);
   };
 
@@ -660,136 +662,13 @@ export function PostCard({
         </TouchableWithoutFeedback>
       </Modal>
 
-      <Modal
+      <ReportModal
         visible={showReportModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => closeModalImmediately(setShowReportModal, reportModalY)}
-      >
-        <TouchableWithoutFeedback
-          onPress={() => closeModalImmediately(setShowReportModal, reportModalY)}
-        >
-          <View style={styles.modalOverlayTransparent}>
-            <TouchableWithoutFeedback onPress={() => {}}>
-              <Animated.View
-                style={[
-                  styles.modalContainer,
-                  { height: screenHeight * 0.5 },
-                  { transform: [{ translateY: reportModalY }] },
-                ]}
-              >
-                <View style={styles.modalHeaderContainer} {...reportPanResponder.panHandlers}>
-                  <View style={styles.modalHandleContainer}>
-                    <View style={styles.modalHandle} />
-                  </View>
-                  <View style={styles.modalHeader}>
-                    <TouchableOpacity style={styles.backButton} onPress={handleBackToMore}>
-                      <ArrowLeft size={20} color={Colors.text.primary} />
-                    </TouchableOpacity>
-                    <Text style={styles.modalTitle}>Report Post</Text>
-                    <View style={styles.backButton} />
-                  </View>
-                </View>
-                <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
-                  <TouchableOpacity
-                    style={styles.modalOption}
-                    onPress={() => {
-                      setShowReportModal(false);
-                      onReport?.(post.id);
-                    }}
-                  >
-                    <Text style={styles.modalOptionText}>I just don't like it</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.modalOption}
-                    onPress={() => {
-                      setShowReportModal(false);
-                      onReport?.(post.id);
-                    }}
-                  >
-                    <Text style={styles.modalOptionText}>Bullying or unwanted content</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.modalOption}
-                    onPress={() => {
-                      setShowReportModal(false);
-                      onReport?.(post.id);
-                    }}
-                  >
-                    <Text style={styles.modalOptionText}>
-                      Suicide, self injury or eating disorders
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.modalOption}
-                    onPress={() => {
-                      setShowReportModal(false);
-                      onReport?.(post.id);
-                    }}
-                  >
-                    <Text style={styles.modalOptionText}>Violence, hate or exploitation</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.modalOption}
-                    onPress={() => {
-                      setShowReportModal(false);
-                      onReport?.(post.id);
-                    }}
-                  >
-                    <Text style={styles.modalOptionText}>
-                      Selling or promoting restricted items
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.modalOption}
-                    onPress={() => {
-                      setShowReportModal(false);
-                      onReport?.(post.id);
-                    }}
-                  >
-                    <Text style={styles.modalOptionText}>Nudity or sexual activity</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.modalOption}
-                    onPress={() => {
-                      setShowReportModal(false);
-                      onReport?.(post.id);
-                    }}
-                  >
-                    <Text style={styles.modalOptionText}>Scam, fraud or spam</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.modalOption}
-                    onPress={() => {
-                      setShowReportModal(false);
-                      onReport?.(post.id);
-                    }}
-                  >
-                    <Text style={styles.modalOptionText}>Intellectual property</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.modalOption}
-                    onPress={() => {
-                      setShowReportModal(false);
-                      onReport?.(post.id);
-                    }}
-                  >
-                    <Text style={styles.modalOptionText}>I want to request a community note</Text>
-                  </TouchableOpacity>
-                </ScrollView>
-              </Animated.View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
+        onClose={() => setShowReportModal(false)}
+        onSubmit={handleReportSubmit}
+        title="Report Post"
+        type="post"
+      />
 
       <Modal
         visible={showShareModal}

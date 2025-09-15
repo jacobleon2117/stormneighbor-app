@@ -10,7 +10,7 @@ import {
   Alert,
 } from "react-native";
 import { router } from "expo-router";
-import { Search, X, Filter } from "lucide-react-native";
+import { Search, X, Filter, ArrowLeft } from "lucide-react-native";
 import { Header } from "../../components/UI/Header";
 import { PostCard } from "../../components/Posts/PostCard";
 import { Colors } from "../../constants/Colors";
@@ -278,36 +278,42 @@ export default function SearchScreen() {
 
   return (
     <View style={styles.container}>
-      <Header title="Search" showBackButton={true} onBackPress={handleGoBack} />
+      <View style={styles.safeHeader}>
+        <View style={styles.header}>
+          <View style={styles.headerContent}>
+            <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
+              <ArrowLeft size={22} color={Colors.text.primary} />
+            </TouchableOpacity>
 
-      <View style={styles.safeContent}>
-        <View style={styles.searchContainer}>
-          <View style={styles.searchBar}>
-            <Search size={20} color={Colors.text.disabled} style={styles.searchIcon} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search posts, requests, updates..."
-              placeholderTextColor={Colors.text.disabled}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              onSubmitEditing={() => handleSearch(searchQuery)}
-              returnKeyType="search"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
-                <X size={20} color={Colors.text.disabled} />
-              </TouchableOpacity>
-            )}
-            <TouchableOpacity 
-              onPress={() => setShowFiltersModal(true)} 
-              style={styles.filterButton}
-            >
-              <Filter size={20} color={Colors.text.disabled} />
+            <View style={styles.searchContainer}>
+              <Search size={20} color={Colors.text.disabled} style={styles.searchIcon} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search posts, users, alerts..."
+                placeholderTextColor={Colors.text.disabled}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                onSubmitEditing={() => handleSearch(searchQuery)}
+                returnKeyType="search"
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoFocus
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
+                  <X size={20} color={Colors.text.disabled} />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            <TouchableOpacity onPress={() => setShowFiltersModal(true)} style={styles.filterButton}>
+              <Filter size={20} color={Colors.text.primary} />
             </TouchableOpacity>
           </View>
         </View>
+      </View>
+
+      <View style={styles.safeContent}>
 
         {loading ? (
           <View style={styles.loadingContainer}>
@@ -325,7 +331,7 @@ export default function SearchScreen() {
           />
         )}
       </View>
-      
+
       <SearchFiltersModal
         visible={showFiltersModal}
         onClose={() => setShowFiltersModal(false)}
@@ -345,47 +351,56 @@ export default function SearchScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.background,
   },
-  safeContent: {
-    flex: 1,
-    backgroundColor: Colors.surface,
+  safeHeader: {
+    backgroundColor: Colors.background,
+    paddingTop: 50,
   },
-  searchContainer: {
+  header: {
     paddingHorizontal: 20,
     paddingBottom: 16,
-    backgroundColor: Colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
-  searchBar: {
+  headerContent: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    height: 44,
+    marginTop: 8,
+    gap: 16,
+  },
+  backButton: {
+    padding: 8,
+  },
+  searchContainer: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: Colors.neutral[50],
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    height: 48,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   searchIcon: {
-    marginRight: 12,
+    marginRight: 8,
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
     color: Colors.text.primary,
-    paddingVertical: 0,
   },
   clearButton: {
     padding: 4,
     marginLeft: 8,
   },
   filterButton: {
-    padding: 4,
-    marginLeft: 8,
+    padding: 8,
   },
-  filterButton: {
-    padding: 4,
-    marginLeft: 8,
+  safeContent: {
+    flex: 1,
+    backgroundColor: Colors.neutral[50],
   },
   activeFilters: {
     paddingHorizontal: 20,

@@ -6,12 +6,13 @@ import {
   Modal,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView,
   Image,
   ActivityIndicator,
   Alert,
   FlatList,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 import { X, MapPin, Calendar, MoreHorizontal, Grid3X3, Users } from "lucide-react-native";
 import { Colors } from "../../constants/Colors";
 import { Button } from "../UI/Button";
@@ -47,6 +48,7 @@ const TABS: TabType[] = [
 ];
 
 export const UserProfileModal: React.FC<UserProfileModalProps> = ({ visible, userId, onClose }) => {
+  const router = useRouter();
   const { user: currentUser } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(false);
@@ -61,39 +63,43 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ visible, use
 
     try {
       setLoading(true);
-      // Create a mock profile for now since backend getUser endpoint doesn't exist
-      const mockProfile: UserProfile = {
-        id: userId,
-        email: `user${userId}@example.com`,
-        firstName: "User",
-        lastName: `${userId}`,
-        bio: "StormNeighbor community member",
-        profileImageUrl: undefined,
-        locationCity: "Unknown City",
-        addressState: "Unknown State",
-        showCityOnly: true,
-        emailVerified: true,
-        isActive: true,
-        notificationPreferences: {
-          emailNotifications: true,
-          pushNotifications: true,
-          emergencyAlerts: true,
-          weatherAlerts: true,
-          communityUpdates: true,
-          postReactions: true,
-          comments: true,
-          quietHoursEnabled: false,
-        },
-        postCount: 0,
-        followersCount: 0,
-        followingCount: 0,
-        isFollowing: false,
-        isBlocked: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      setProfile(mockProfile);
+      const response = await apiService.getApi().get(`/users/${userId}`);
+      if (response.data.success && response.data.data) {
+        const userData = response.data.data;
+        const userProfile: UserProfile = {
+          id: userData.id,
+          email: userData.email,
+          firstName: userData.first_name,
+          lastName: userData.last_name,
+          bio: userData.bio,
+          profileImageUrl: userData.profile_image_url,
+          locationCity: userData.city,
+          addressState: userData.state,
+          showCityOnly: userData.show_city_only,
+          emailVerified: userData.email_verified,
+          isActive: true,
+          notificationPreferences: {
+            emailNotifications: false,
+            pushNotifications: false,
+            emergencyAlerts: false,
+            weatherAlerts: false,
+            communityUpdates: false,
+            postReactions: false,
+            comments: false,
+            quietHoursEnabled: false,
+          },
+          postCount: userData.post_count || 0,
+          followersCount: userData.followers_count || 0,
+          followingCount: userData.following_count || 0,
+          isFollowing: false,
+          isBlocked: false,
+          createdAt: userData.created_at,
+          updatedAt: userData.updated_at,
+        };
+        setProfile(userProfile);
+      } else {
+        throw new Error("User not found");
+      }
     } catch (error) {
       console.error("Error loading user profile:", error);
       Alert.alert("Error", "Failed to load user profile");
@@ -190,9 +196,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ visible, use
         {
           text: "Send Message",
           onPress: () => {
-            // Navigate to conversation
+            router.push(`/conversation/${profile.id}`);
             onClose();
-            // Implementation would navigate to messages
           },
         },
       ]
@@ -250,10 +255,18 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ visible, use
     ]);
   };
 
-  const submitReport = async (_reason: string, _description: string) => {
+  const submitReport = async (reason: string, description: string) => {
+    if (!userId) return;
     try {
-      // Implementation would call report user API
-      Alert.alert("Thank you", "Your report has been submitted for review.");
+      const response = await apiService.getApi().post(`/users/${userId}/report`, {
+        reason,
+        description,
+      });
+      if (response.data.success) {
+        Alert.alert("Thank you", "Your report has been submitted for review.");
+      } else {
+        Alert.alert("Error", response.data.message || "Failed to submit report.");
+      }
     } catch (error) {
       Alert.alert("Error", "Failed to submit report. Please try again.");
     }
@@ -385,7 +398,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ visible, use
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <X size={24} color={Colors.text.primary} />
+            <X size={22} color={Colors.text.primary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Profile</Text>
           <TouchableOpacity onPress={handleReport} style={styles.moreButton}>

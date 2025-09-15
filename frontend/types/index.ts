@@ -218,6 +218,7 @@ export interface Conversation {
   id: number;
   lastMessageAt: string;
   unreadCount: number;
+  messageCount?: number;
   otherUser: {
     id: number;
     firstName: string;

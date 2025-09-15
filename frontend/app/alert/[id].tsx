@@ -3,13 +3,13 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
   Alert as AlertDialog,
   Share,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, router } from "expo-router";
 import {
   ArrowLeft,
@@ -138,7 +138,7 @@ export default function AlertDetailScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <ArrowLeft size={24} color={Colors.text.primary} />
+            <ArrowLeft size={22} color={Colors.text.primary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Alert Details</Text>
         </View>
@@ -155,7 +155,7 @@ export default function AlertDetailScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <ArrowLeft size={24} color={Colors.text.primary} />
+            <ArrowLeft size={22} color={Colors.text.primary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Alert Details</Text>
         </View>
@@ -176,7 +176,7 @@ export default function AlertDetailScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <ArrowLeft size={24} color={Colors.text.primary} />
+          <ArrowLeft size={22} color={Colors.text.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Alert Details</Text>
         <TouchableOpacity style={styles.shareButton} onPress={handleShare}>

@@ -17,6 +17,8 @@
     "db:setup": "node scripts/test-setup.js schema",
     "db:test": "node scripts/test-setup.js",
     "db:migrate": "node src/scripts/migrate.js",
+    "logs:clean": "rm -rf logs/*.log && echo 'Log files cleaned'",
+    "logs:check": "du -sh logs/ 2>/dev/null || echo 'No logs directory found'",
     "env:check": "node -e \"require('./src/config/validateEnv')()\"",
     "env:validate": "node src/scripts/validateEnv.js",
     "build": "echo \"Build step - validating environment\" && npm run env:check",
@@ -26,8 +28,6 @@
     "ci:test": "npm run lint:check && npm run format:check && npm run test:coverage",
     "backup:create": "node scripts/backup-manager.js create",
     "clean": "rm -rf node_modules coverage .nyc_output *.log",
-    "logs:clean": "rm -rf logs/*.log && echo 'Log files cleaned'",
-    "logs:check": "du -sh logs/ 2>/dev/null || echo 'No logs directory found'",
     "reset": "npm run clean && npm install && npm run db:setup"
   },
   "dependencies": {
@@ -117,7 +117,7 @@
   "author": "Jacob Leon",
   "license": "MIT",
   "engines": {
-    "node": "20.17.0",
+    "node": ">=20.17.0",
     "npm": ">=11.5.2"
   },
   "repository": {

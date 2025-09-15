@@ -1,7 +1,16 @@
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "strict": true
+    "strict": true,
+    "types": []
   },
+  "exclude": [
+    "node_modules",
+    "**/node_modules/*",
+    "**/babel__generator",
+    "**/graceful-fs",
+    "**/hammerjs",
+    "**/istanbul-lib-coverage"
+  ],
   "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"]
 }

@@ -3,6 +3,7 @@
     "name": "StormNeighbor",
     "slug": "stormneighbor",
     "version": "1.0.0",
+    "projectId": "d70787df-3bf8-4a6a-bfd2-38da1f1065b9",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
@@ -18,20 +19,22 @@
         "NSCameraUsageDescription": "This app uses camera to take photos for posts",
         "NSPhotoLibraryUsageDescription": "This app accesses photo library to select images for posts",
         "NSLocationWhenInUseUsageDescription": "This app uses location to show nearby posts and weather information",
-        "NSUserNotificationsUsageDescription": "This app sends notifications for emergency alerts and important community updates"
+        "NSUserNotificationsUsageDescription": "This app sends notifications for emergency alerts and important community updates",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "package": "com.stormneighbor.app",
       "edgeToEdgeEnabled": true,
       "permissions": [
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION",
-        "NOTIFICATIONS",
-        "INTERNET"
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.NOTIFICATIONS",
+        "android.permission.INTERNET",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -39,7 +42,14 @@
     },
     "plugins": ["expo-router", "expo-image-picker", "expo-location", "expo-notifications"],
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": true,
+      "reactCanary": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "d70787df-3bf8-4a6a-bfd2-38da1f1065b9"
+      }
     }
   }
 }

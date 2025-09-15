@@ -234,6 +234,18 @@ class ApiService {
     return response.data;
   }
 
+  async updateLocation(locationData: {
+    address: string;
+    locationCity: string;
+    addressState: string;
+    zipCode: string;
+    locationRadiusMiles: number;
+    showCityOnly: boolean;
+  }) {
+    const response = await this.api.put("/auth/location", locationData);
+    return response.data;
+  }
+
   async updateNotificationPreferences(notificationPreferences: NotificationPreferences) {
     try {
       const response = await this.api.put("/auth/notification-preferences", {

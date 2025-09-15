@@ -83,6 +83,23 @@ function RootLayoutContent() {
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Screen name="personal-information" options={{ headerShown: false }} />
+        <Stack.Screen name="location-settings" options={{ headerShown: false }} />
+        <Stack.Screen name="notification-settings" options={{ headerShown: false }} />
+        <Stack.Screen name="help-support" options={{ headerShown: false }} />
+        <Stack.Screen name="user-feedback" options={{ headerShown: false }} />
+        <Stack.Screen name="privacy-security" options={{ headerShown: false }} />
+        <Stack.Screen name="blocked-users" options={{ headerShown: false }} />
+        <Stack.Screen name="followers" options={{ headerShown: false }} />
+        <Stack.Screen name="saved-posts" options={{ headerShown: false }} />
+        <Stack.Screen name="post/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="post/[id]/edit" options={{ headerShown: false }} />
+        <Stack.Screen name="conversation/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="conversation/new" options={{ headerShown: false }} />
+        <Stack.Screen name="alert/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="create-alert" options={{ headerShown: false }} />
+        <Stack.Screen name="profile/search" options={{ headerShown: false }} />
+        <Stack.Screen name="settings/location" options={{ headerShown: false }} />
       </Stack>
     </>
   );

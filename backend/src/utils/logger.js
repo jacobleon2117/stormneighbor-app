@@ -29,8 +29,8 @@ const errorTransport = new DailyRotateFile({
   filename: "logs/error-%DATE%.log",
   datePattern: "YYYY-MM-DD",
   level: "error",
-  maxSize: "50m",
-  maxFiles: "3d",
+  maxSize: "5m",
+  maxFiles: "1d",
   zippedArchive: true,
   createSymlink: true,
   symlinkName: "error-current.log",
@@ -39,18 +39,24 @@ const errorTransport = new DailyRotateFile({
 const combinedTransport = new DailyRotateFile({
   filename: "logs/combined-%DATE%.log",
   datePattern: "YYYY-MM-DD",
-  maxSize: "50m",
-  maxFiles: "3d",
+  maxSize: "5m",
+  maxFiles: "1d",
   zippedArchive: true,
   createSymlink: true,
   symlinkName: "combined-current.log",
 });
 
+const transports = [];
+
+if (process.env.DISABLE_FILE_LOGGING !== "true") {
+  transports.push(errorTransport, combinedTransport);
+}
+
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || (process.env.NODE_ENV === "production" ? "warn" : "warn"),
   format: logFormat,
   defaultMeta: { service: "stormneighbor-backend" },
-  transports: [errorTransport, combinedTransport],
+  transports,
 });
 
 if (process.env.NODE_ENV !== "production") {
@@ -72,12 +78,17 @@ const cleanupLargeLogs = () => {
       files.forEach((file) => {
         const filePath = path.join(logsDir, file);
         const stats = fs.statSync(filePath);
-        if (stats.size > 100 * 1024 * 1024) {
+        if (stats.size > 10 * 1024 * 1024) {
           fs.writeFileSync(
             filePath,
-            `[TRUNCATED: File was ${(stats.size / 1024 / 1024).toFixed(2)}MB]\n`
+            `[TRUNCATED: File was ${(stats.size / 1024 / 1024).toFixed(2)}MB on ${new Date().toISOString()}]\n`
           );
           console.warn(`Truncated large log file: ${filePath}`);
+        }
+        const twoDaysAgo = Date.now() - 2 * 24 * 60 * 60 * 1000;
+        if (stats.mtime.getTime() < twoDaysAgo && !file.includes("current")) {
+          fs.unlinkSync(filePath);
+          console.warn(`Deleted old log file: ${filePath}`);
         }
       });
     }

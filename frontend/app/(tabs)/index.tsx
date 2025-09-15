@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   FlatList,
-  SafeAreaView,
   RefreshControl,
   ActivityIndicator,
   Alert,
@@ -12,8 +11,9 @@ import {
   Modal,
   Share,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import * as Clipboard from "expo-clipboard";
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { Search, X } from "lucide-react-native";
 import { PostCard } from "../../components/Posts/PostCard";
 import { useAuth } from "../../hooks/useAuth";
@@ -289,6 +289,14 @@ export default function HomeScreen() {
     }
   }, [user, fetchPosts]);
 
+  useFocusEffect(
+    useCallback(() => {
+      if (user && !searchActive) {
+        fetchPosts(1, true);
+      }
+    }, [user, searchActive, fetchPosts])
+  );
+
   useEffect(() => {
     if (searchQuery.trim()) {
       const delayedSearch = setTimeout(() => {
@@ -300,18 +308,6 @@ export default function HomeScreen() {
       setSearchResults([]);
     }
   }, [searchQuery, handleSearch, searchActive, searchFilters]);
-
-  useEffect(() => {
-    if (params.newPost && params.refresh) {
-      try {
-        const newPost = JSON.parse(params.newPost as string);
-        setPosts((currentPosts) => [newPost, ...currentPosts]);
-        router.setParams({ newPost: undefined, refresh: undefined });
-      } catch (error) {
-        console.error("Error parsing new post:", error);
-      }
-    }
-  }, [params.newPost, params.refresh]);
 
   const handleReport = async (postId: number) => {
     Alert.alert("Report Post", "Why are you reporting this post?", [
@@ -498,7 +494,7 @@ export default function HomeScreen() {
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={() => setShowFilters(false)}>
-              <X size={24} color={Colors.text.primary} />
+              <X size={22} color={Colors.text.primary} />
             </TouchableOpacity>
             <Text style={styles.modalTitle}>Search Filters</Text>
             <TouchableOpacity onPress={clearAllFilters}>
@@ -641,10 +637,11 @@ export default function HomeScreen() {
         onNotificationsPress={() => router.push("/(tabs)/notifications")}
         onMessagesPress={() => router.push("/(tabs)/messages")}
       />
+
       <FlatList
         data={currentData}
         renderItem={renderPost}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item, index) => (item.id ? item.id.toString() : `post-${index}`)}
         contentContainerStyle={styles.contentContainer}
         ListEmptyComponent={() => {
           if (searchActive && !searchLoading) {

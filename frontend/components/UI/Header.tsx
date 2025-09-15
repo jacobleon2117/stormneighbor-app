@@ -1,5 +1,6 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Search, MessageCircle, MoreHorizontal, ArrowLeft, X, Bell } from "lucide-react-native";
 import { Colors } from "../../constants/Colors";
 
@@ -89,21 +90,21 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <View style={[styles.headerContainer, { backgroundColor }]}>
-      <SafeAreaView>
+    <SafeAreaView style={{ backgroundColor }} edges={["top"]}>
+      <View style={styles.headerContainer}>
         <View style={styles.headerContent}>
           {renderLeftContent()}
           <Text style={styles.title}>{title}</Text>
           {renderRightContent()}
         </View>
-      </SafeAreaView>
-    </View>
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   headerContainer: {
-    paddingHorizontal: 32,
+    paddingHorizontal: 20,
     paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
@@ -112,6 +113,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    height: 44,
     marginTop: 8,
   },
   title: {

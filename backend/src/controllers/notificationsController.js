@@ -307,15 +307,21 @@ const getNotificationPreferences = async (req, res) => {
         preferences = result.rows[0];
       }
 
-      delete preferences.id;
-      delete preferences.user_id;
-      delete preferences.created_at;
-      delete preferences.updated_at;
+      const mappedPreferences = {
+        emailNotifications: preferences.email_enabled ?? false,
+        pushNotifications: preferences.push_enabled ?? false,
+        emergencyAlerts: preferences.emergency_alerts ?? false,
+        weatherAlerts: preferences.weather_alerts ?? false,
+        communityUpdates: preferences.community_updates ?? false,
+        postReactions: preferences.post_reactions ?? false,
+        comments: preferences.post_comments ?? false,
+        quietHoursEnabled: preferences.quiet_hours_enabled ?? false,
+      };
 
       res.json({
         success: true,
         message: "Notification preferences retrieved successfully",
-        data: { preferences },
+        data: { preferences: mappedPreferences },
       });
     } finally {
       client.release();

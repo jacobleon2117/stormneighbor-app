@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   TextInput,
@@ -263,8 +262,8 @@ export default function HelpSupportScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Header title="Help & Support" showBackButton />
+    <View style={styles.container}>
+      <Header title="Help & Support" showBackButton onBackPress={() => router.back()} />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {!showContactForm ? (
@@ -353,14 +352,14 @@ export default function HelpSupportScreen() {
           renderContactForm()
         )}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.background,
   },
   content: {
     flex: 1,

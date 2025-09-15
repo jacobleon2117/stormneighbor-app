@@ -19,10 +19,7 @@ export default function TabLayout() {
           height: 64,
           marginHorizontal: 32,
           shadowColor: "#000",
-          shadowOffset: {
-            width: 0,
-            height: 8,
-          },
+          shadowOffset: { width: 0, height: 8 },
           shadowOpacity: 0.1,
           shadowRadius: 16,
           elevation: 12,
@@ -43,10 +40,7 @@ export default function TabLayout() {
           flex: 1,
           height: "100%",
         },
-        tabBarIconStyle: {
-          marginBottom: 0,
-          marginTop: 4,
-        },
+        tabBarIconStyle: { marginBottom: 0, marginTop: 4 },
       }}
     >
       <Tabs.Screen
@@ -98,27 +92,12 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <User size={20} color={color} />,
         }}
       />
-      <Tabs.Screen
-        name="search"
-        options={{
-          href: null,
-          tabBarStyle: { display: "none" },
-        }}
-      />
+      <Tabs.Screen name="search" options={{ href: null, tabBarStyle: { display: "none" } }} />
       <Tabs.Screen
         name="notifications"
-        options={{
-          href: null,
-          tabBarStyle: { display: "none" },
-        }}
+        options={{ href: null, tabBarStyle: { display: "none" } }}
       />
-      <Tabs.Screen
-        name="messages"
-        options={{
-          href: null,
-          tabBarStyle: { display: "none" },
-        }}
-      />
+      <Tabs.Screen name="messages" options={{ href: null, tabBarStyle: { display: "none" } }} />
     </Tabs>
   );
 }

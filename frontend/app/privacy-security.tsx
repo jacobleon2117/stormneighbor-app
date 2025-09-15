@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   Switch,
@@ -98,15 +97,17 @@ export default function PrivacySecurityScreen() {
         {
           text: "Delete Account",
           style: "destructive",
-          onPress: async (value) => {
+          onPress: (value?: string) => {
             if (value === "DELETE") {
-              try {
-                await apiService.getApi().delete("/users/account");
-                Alert.alert("Account Deleted", "Your account has been deleted successfully.");
-                router.replace("/(auth)/welcome");
-              } catch (error) {
-                Alert.alert("Error", "Failed to delete account. Please try again.");
-              }
+              (async () => {
+                try {
+                  await apiService.getApi().delete("/users/account");
+                  Alert.alert("Account Deleted", "Your account has been deleted successfully.");
+                  router.replace("/(auth)/welcome");
+                } catch (error) {
+                  Alert.alert("Error", "Failed to delete account. Please try again.");
+                }
+              })();
             } else {
               Alert.alert("Error", "Confirmation text does not match.");
             }
@@ -196,19 +197,19 @@ export default function PrivacySecurityScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <Header title="Privacy & Security" showBackButton />
+      <View style={styles.container}>
+        <Header title="Privacy & Security" showBackButton onBackPress={() => router.back()} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.primary[500]} />
           <Text style={styles.loadingText}>Loading settings</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Header title="Privacy & Security" showBackButton />
+    <View style={styles.container}>
+      <Header title="Privacy & Security" showBackButton onBackPress={() => router.back()} />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.section}>
@@ -295,14 +296,14 @@ export default function PrivacySecurityScreen() {
           <Text style={styles.savingText}>Saving...</Text>
         </View>
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.background,
   },
   content: {
     flex: 1,

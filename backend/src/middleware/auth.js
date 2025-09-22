@@ -2,10 +2,18 @@ const tokenService = require("../services/tokenService");
 const { pool } = require("../config/database");
 const logger = require("../utils/logger");
 
+const fetchUserById = async (userId) => {
+  const result = await pool.query(
+    "SELECT id, email, email_verified, first_name, last_name, is_active FROM users WHERE id = $1",
+    [userId]
+  );
+  return result.rows[0] || null;
+};
+
 const auth = async (req, res, next) => {
   try {
     const authHeader = req.header("Authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    if (!authHeader?.startsWith("Bearer ")) {
       return res.status(401).json({
         success: false,
         message: "No token provided, authorization denied",
@@ -15,70 +23,53 @@ const auth = async (req, res, next) => {
 
     const token = authHeader.replace("Bearer ", "");
 
+    let decoded;
     try {
-      const decoded = await tokenService.verifyAccessToken(token);
-
-      const client = await pool.connect();
-      try {
-        const userResult = await client.query(
-          "SELECT id, email, email_verified, first_name, last_name, is_active FROM users WHERE id = $1",
-          [decoded.userId]
-        );
-
-        if (userResult.rows.length === 0) {
-          return res.status(401).json({
-            success: false,
-            message: "Token is not valid - user not found",
-            code: "USER_NOT_FOUND",
-          });
-        }
-
-        const user = userResult.rows[0];
-
-        if (!user.is_active) {
-          return res.status(401).json({
-            success: false,
-            message: "Account has been deactivated",
-            code: "ACCOUNT_DEACTIVATED",
-          });
-        }
-
-        req.user = {
-          userId: decoded.userId,
-          email: user.email,
-          isVerified: user.email_verified,
-          firstName: user.first_name,
-          lastName: user.last_name,
-          isActive: user.is_active,
-        };
-
-        next();
-      } finally {
-        client.release();
-      }
+      decoded = await tokenService.verifyAccessToken(token);
     } catch (jwtError) {
-      if (jwtError.name === "TokenExpiredError") {
-        return res.status(401).json({
-          success: false,
-          message: "Access token has expired",
-          code: "TOKEN_EXPIRED",
-        });
-      } else if (jwtError.name === "JsonWebTokenError") {
-        return res.status(401).json({
-          success: false,
-          message: "Invalid token format",
-          code: "INVALID_TOKEN",
-        });
-      } else {
-        return res.status(401).json({
-          success: false,
-          message: "Token verification failed",
-          code: "TOKEN_INVALID",
-        });
-      }
+      logger.warn("JWT verification failed:", jwtError.stack);
+      const codeMap = {
+        TokenExpiredError: "TOKEN_EXPIRED",
+        JsonWebTokenError: "INVALID_TOKEN",
+      };
+      return res.status(401).json({
+        success: false,
+        message:
+          jwtError.name === "TokenExpiredError" ? "Access token has expired" : "Invalid token",
+        code: codeMap[jwtError.name] || "TOKEN_INVALID",
+      });
     }
+
+    const user = await fetchUserById(decoded.userId);
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "Token is not valid - user not found",
+        code: "USER_NOT_FOUND",
+      });
+    }
+
+    if (!user.is_active) {
+      return res.status(401).json({
+        success: false,
+        message: "Account has been deactivated",
+        code: "ACCOUNT_DEACTIVATED",
+      });
+    }
+
+    req.user = {
+      userId: user.id,
+      email: user.email,
+      isVerified: user.email_verified,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      isActive: user.is_active,
+    };
+
+    next();
   } catch (error) {
-    logger.error("Auth middleware error:", error);
+    logger.error("Auth middleware error:", error.stack);
     res.status(500).json({
       success: false,
       message: "Server error in authentication",
@@ -91,7 +82,7 @@ const optionalAuth = async (req, _res, next) => {
   try {
     const authHeader = req.header("Authorization");
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    if (!authHeader?.startsWith("Bearer ")) {
       req.user = null;
       return next();
     }
@@ -100,29 +91,19 @@ const optionalAuth = async (req, _res, next) => {
 
     try {
       const decoded = await tokenService.verifyAccessToken(token);
+      const user = await fetchUserById(decoded.userId);
 
-      const client = await pool.connect();
-      try {
-        const userResult = await client.query(
-          "SELECT id, email, email_verified, first_name, last_name, is_active FROM users WHERE id = $1",
-          [decoded.userId]
-        );
-
-        if (userResult.rows.length > 0 && userResult.rows[0].is_active) {
-          const user = userResult.rows[0];
-          req.user = {
-            userId: decoded.userId,
-            email: user.email,
-            isVerified: user.email_verified,
-            firstName: user.first_name,
-            lastName: user.last_name,
-            isActive: user.is_active,
-          };
-        } else {
-          req.user = null;
-        }
-      } finally {
-        client.release();
+      if (user && user.is_active) {
+        req.user = {
+          userId: user.id,
+          email: user.email,
+          isVerified: user.email_verified,
+          firstName: user.first_name,
+          lastName: user.last_name,
+          isActive: user.is_active,
+        };
+      } else {
+        req.user = null;
       }
     } catch (jwtError) {
       req.user = null;
@@ -130,7 +111,7 @@ const optionalAuth = async (req, _res, next) => {
 
     next();
   } catch (error) {
-    logger.error("Optional auth middleware error:", error);
+    logger.error("Optional auth middleware error:", error.stack);
     req.user = null;
     next();
   }

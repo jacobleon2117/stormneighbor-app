@@ -1,5 +1,6 @@
 const fs = require("fs").promises;
 const path = require("path");
+const { randomUUID } = require("crypto");
 const logger = require("../utils/logger");
 
 class FeedbackLogger {
@@ -26,7 +27,7 @@ class FeedbackLogger {
 
       const enhancedFeedback = {
         ...feedbackData,
-        id: `feedback_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: `feedback_${randomUUID()}`,
         submittedAt: timestamp.toISOString(),
         submittedAtFormatted: timestamp.toLocaleString("en-US", {
           timeZone: "America/Chicago",
@@ -67,8 +68,9 @@ class FeedbackLogger {
       try {
         const existingContent = await fs.readFile(filePath, "utf8");
         existingData = JSON.parse(existingContent);
-      } catch (error) {
-        // File doesn"t exist or is empty, start with empty array
+        if (!Array.isArray(existingData)) existingData = [];
+      } catch {
+        existingData = [];
       }
 
       existingData.push(feedbackData);
@@ -85,7 +87,7 @@ class FeedbackLogger {
       let existingContent = "";
       try {
         existingContent = await fs.readFile(filePath, "utf8");
-      } catch (error) {
+      } catch {
         const dateStr = feedbackData.submittedAt.split("T")[0];
         existingContent = `# Feedback Log - ${dateStr}\n\n`;
       }
@@ -102,7 +104,7 @@ class FeedbackLogger {
       let existingContent = "";
       try {
         existingContent = await fs.readFile(filePath, "utf8");
-      } catch (error) {
+      } catch {
         existingContent = `# StormNeighbor App - User Feedback Summary\n\n*Last updated: ${new Date().toLocaleString()}*\n\n## Recent Feedback\n\n`;
       }
 
@@ -124,32 +126,32 @@ class FeedbackLogger {
   }
 
   formatAsMarkdown(feedbackData) {
-    const typeEmojis = {
+    const typeLabels = {
       bug_report: "Bug",
       feature_request: "Feature",
       general_feedback: "General",
       ui_ux_feedback: "UI/UX",
     };
 
-    const priorityEmojis = {
+    const priorityLabels = {
       low: "Low",
       normal: "Normal",
       high: "High",
     };
 
-    return `## ${typeEmojis[feedbackData.feedbackType] || "Feedback Data"} ${feedbackData.title}
+    return `## ${typeLabels[feedbackData.feedbackType] || "Feedback"} - ${feedbackData.title}
 
-**Type:** ${feedbackData.feedbackType.replace("_", " ").toUpperCase()}  
-**Priority:** ${priorityEmojis[feedbackData.priority] || "Feedback Priority"} ${feedbackData.priority.toUpperCase()}  
-**User ID:** ${feedbackData.userId || "Unknown"}  
-**Submitted:** ${feedbackData.submittedAtFormatted}  
-**App Version:** ${feedbackData.appVersion || "Not specified"}  
-**Device:** ${feedbackData.deviceInfo || "Not specified"}
+    **Type:** ${feedbackData.feedbackType.replace("_", " ").toUpperCase()}  
+    **Priority:** ${priorityLabels[feedbackData.priority] || "Normal"}  
+    **User ID:** ${feedbackData.userId || "Unknown"}  
+    **Submitted:** ${feedbackData.submittedAtFormatted}  
+    **App Version:** ${feedbackData.appVersion || "Not specified"}  
+    **Device:** ${feedbackData.deviceInfo || "Not specified"}
 
-### Description
-${feedbackData.description}
+    ### Description
+    ${feedbackData.description}
 
-**Feedback ID:** \`${feedbackData.id}\``;
+    **Feedback ID:** \`${feedbackData.id}\``;
   }
 
   async getFeedbackStats() {
@@ -172,7 +174,6 @@ ${feedbackData.description}
 
       allFeedback.forEach((feedback) => {
         stats.byType[feedback.feedbackType] = (stats.byType[feedback.feedbackType] || 0) + 1;
-
         stats.byPriority[feedback.priority] = (stats.byPriority[feedback.priority] || 0) + 1;
 
         const feedbackDate = new Date(feedback.submittedAt);

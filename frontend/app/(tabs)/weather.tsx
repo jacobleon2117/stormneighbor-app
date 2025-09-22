@@ -323,7 +323,6 @@ export default function WeatherScreen() {
     loadWeatherData(true);
   }, [loadWeatherData]);
 
-
   const handleZoomIn = () => {
     if (mapRef.current) {
       const newRegion = {
@@ -852,17 +851,21 @@ export default function WeatherScreen() {
           </View>
 
           <View style={styles.topRight}>
-            <WeatherIcon size={28} color={Colors.primary[500]} />
-            <Text style={styles.compactCondition} numberOfLines={2} ellipsizeMode="tail">
-              {weather.current?.shortForecast || weather.condition}
-            </Text>
-            <Text style={styles.highLowText}>
-              {weather.forecast && weather.forecast.length > 0
-                ? `H: ${weather.forecast.find((p) => p.isDaytime)?.temperature || "N/A"}° L: ${
-                    weather.forecast.find((p) => !p.isDaytime)?.temperature || "N/A"
-                  }°`
-                : "H: N/A° L: N/A°"}
-            </Text>
+            <View style={styles.conditionsRow}>
+              <WeatherIcon size={28} color={Colors.primary[500]} style={styles.weatherIcon} />
+              <View style={styles.conditionsText}>
+                <Text style={styles.compactCondition} numberOfLines={2} ellipsizeMode="tail">
+                  {weather.current?.shortForecast || weather.condition}
+                </Text>
+                <Text style={styles.highLowText}>
+                  {weather.forecast && weather.forecast.length > 0
+                    ? `H: ${weather.forecast.find((p) => p.isDaytime)?.temperature || "N/A"}° L: ${
+                        weather.forecast.find((p) => !p.isDaytime)?.temperature || "N/A"
+                      }°`
+                    : "H: N/A° L: N/A°"}
+                </Text>
+              </View>
+            </View>
           </View>
         </View>
 
@@ -1186,7 +1189,7 @@ const styles = StyleSheet.create({
     flexGrow: 0,
   },
   contentContainer: {
-    paddingTop: 60,
+    paddingTop: 80,
   },
   weatherCard: {
     backgroundColor: Colors.background,
@@ -1432,7 +1435,19 @@ const styles = StyleSheet.create({
   topRight: {
     alignItems: "flex-end",
     flex: 1,
-    maxWidth: 150,
+    maxWidth: 180,
+  },
+  conditionsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 4,
+  },
+  weatherIcon: {
+    alignSelf: "center",
+  },
+  conditionsText: {
+    alignItems: "flex-start",
   },
   bottomRow: {
     flexDirection: "row",
@@ -1534,7 +1549,7 @@ const styles = StyleSheet.create({
   zoomControls: {
     position: "absolute",
     right: 20,
-    top: 235,
+    top: 275,
     gap: 8,
     zIndex: 10,
     alignItems: "center",

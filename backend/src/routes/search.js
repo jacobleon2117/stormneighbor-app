@@ -4,105 +4,44 @@ const { auth } = require("../middleware/auth");
 const { adminAuth } = require("../middleware/adminAuth");
 const { handleValidationErrors } = require("../middleware/validation");
 const { cacheConfigs } = require("../middleware/cache");
-const {
-  searchPosts,
-  getSearchSuggestions,
-  getTrendingSearches,
-  searchUsers,
-  saveSearch,
-  getSavedSearches,
-  executeSavedSearch,
-  deleteSavedSearch,
-  getSearchAnalytics,
-  testSearchSystem,
-} = require("../controllers/searchController");
+const searchController = require("../controllers/searchController");
 
 const router = express.Router();
 
+const optionalQueryTrimmedString = (name, maxLength) =>
+  query(name).optional().trim().isLength({ max: maxLength });
+const optionalQueryInt = (name, min, max) => query(name).optional().isInt({ min, max });
+
 const searchPostsValidation = [
-  query("q")
-    .optional()
-    .trim()
-    .isLength({ max: 200 })
-    .withMessage("Query must be less than 200 characters"),
-  query("query")
-    .optional()
-    .trim()
-    .isLength({ max: 200 })
-    .withMessage("Query must be less than 200 characters"),
-  query("city")
-    .optional()
-    .trim()
-    .isLength({ max: 100 })
-    .withMessage("City must be less than 100 characters"),
-  query("state")
-    .optional()
-    .trim()
-    .isLength({ max: 50 })
-    .withMessage("State must be less than 50 characters"),
-  query("types").optional().isString().withMessage("Types must be a comma-separated string"),
-  query("priorities")
-    .optional()
-    .isString()
-    .withMessage("Priorities must be a comma-separated string"),
-  query("dateFrom").optional().isISO8601().withMessage("Invalid dateFrom format"),
-  query("dateTo").optional().isISO8601().withMessage("Invalid dateTo format"),
-  query("emergencyOnly").optional().isBoolean().withMessage("emergencyOnly must be a boolean"),
-  query("resolved")
-    .optional()
-    .isIn(["all", "resolved", "unresolved"])
-    .withMessage("Invalid resolved filter"),
-  query("sortBy")
-    .optional()
-    .isIn(["relevance", "date", "popularity"])
-    .withMessage("Invalid sort option"),
-  query("limit")
-    .optional()
-    .isInt({ min: 1, max: 100 })
-    .withMessage("Limit must be between 1 and 100"),
-  query("offset").optional().isInt({ min: 0 }).withMessage("Offset must be non-negative"),
+  query("q").optional().trim().isLength({ max: 200 }),
+  query("query").optional().trim().isLength({ max: 200 }),
+  optionalQueryTrimmedString("city", 100),
+  optionalQueryTrimmedString("state", 50),
+  query("types").optional().isString(),
+  query("priorities").optional().isString(),
+  query("dateFrom").optional().isISO8601(),
+  query("dateTo").optional().isISO8601(),
+  query("emergencyOnly").optional().isBoolean(),
+  query("resolved").optional().isIn(["all", "resolved", "unresolved"]),
+  query("sortBy").optional().isIn(["relevance", "date", "popularity"]),
+  optionalQueryInt("limit", 1, 100),
+  optionalQueryInt("offset", 0, 1000),
 ];
 
-const searchSuggestionsValidation = [
-  query("q")
-    .isLength({ min: 2, max: 100 })
-    .withMessage("Query must be between 2 and 100 characters"),
-  query("city").optional().trim().isLength({ max: 100 }),
-  query("state").optional().trim().isLength({ max: 50 }),
-  query("limit")
-    .optional()
-    .isInt({ min: 1, max: 50 })
-    .withMessage("Limit must be between 1 and 50"),
+const queryWithCityState = [
+  optionalQueryTrimmedString("city", 100),
+  optionalQueryTrimmedString("state", 50),
 ];
+const queryWithLimit = (name = "limit", min = 1, max = 50) => [optionalQueryInt(name, min, max)];
 
-const saveSearchValidation = [
-  body("name")
-    .trim()
-    .isLength({ min: 1, max: 100 })
-    .withMessage("Name must be between 1 and 100 characters"),
-  body("description")
-    .optional()
-    .trim()
-    .isLength({ max: 500 })
-    .withMessage("Description must be less than 500 characters"),
-  body("query")
-    .optional()
-    .trim()
-    .isLength({ max: 200 })
-    .withMessage("Query must be less than 200 characters"),
-  body("filters").optional().isObject().withMessage("Filters must be an object"),
-];
+const quickSearchMiddleware =
+  (overrides = {}) =>
+  (req, _res, next) => {
+    req.query = { ...req.query, ...overrides };
+    next();
+  };
 
-const searchUsersValidation = [
-  query("q")
-    .isLength({ min: 2, max: 100 })
-    .withMessage("Query must be between 2 and 100 characters"),
-  query("city").optional().trim().isLength({ max: 100 }),
-  query("state").optional().trim().isLength({ max: 50 }),
-  query("limit").optional().isInt({ min: 1, max: 50 }),
-];
-
-router.get("/test-system", testSearchSystem);
+router.get("/test-system", searchController.testSearchSystem);
 
 router.get(
   "/",
@@ -110,124 +49,103 @@ router.get(
   searchPostsValidation,
   handleValidationErrors,
   cacheConfigs.shortTerm,
-  searchPosts
+  searchController.searchPosts
 );
 
 router.get(
   "/suggestions",
-  searchSuggestionsValidation,
+  [
+    query("q")
+      .isLength({ min: 2, max: 100 })
+      .withMessage("Query must be between 2 and 100 characters"),
+    ...queryWithCityState,
+    ...queryWithLimit(),
+  ],
   handleValidationErrors,
   cacheConfigs.static,
-  getSearchSuggestions
+  searchController.getSearchSuggestions
 );
 
 router.get(
   "/trending",
-  [
-    query("city").optional().trim().isLength({ max: 100 }),
-    query("state").optional().trim().isLength({ max: 50 }),
-    query("limit").optional().isInt({ min: 1, max: 50 }),
-  ],
+  [...queryWithCityState, ...queryWithLimit()],
   handleValidationErrors,
   cacheConfigs.static,
-  getTrendingSearches
+  searchController.getTrendingSearches
 );
 
 router.get(
   "/users",
   auth,
-  searchUsersValidation,
+  [...queryWithCityState, ...queryWithLimit()],
   handleValidationErrors,
   cacheConfigs.shortTerm,
-  searchUsers
+  searchController.searchUsers
 );
 
-router.get("/saved", auth, getSavedSearches);
-
-router.post("/saved", auth, saveSearchValidation, handleValidationErrors, saveSearch);
+router.get("/saved", auth, searchController.getSavedSearches);
+router.post(
+  "/saved",
+  auth,
+  [
+    body("name").trim().isLength({ min: 1, max: 100 }),
+    body("description").optional().trim().isLength({ max: 500 }),
+    body("query").optional().trim().isLength({ max: 200 }),
+    body("filters").optional().isObject(),
+  ],
+  handleValidationErrors,
+  searchController.saveSearch
+);
 
 router.get(
   "/saved/:id/execute",
   auth,
-  [param("id").isInt().withMessage("Valid saved search ID is required")],
+  [param("id").isInt()],
   handleValidationErrors,
-  executeSavedSearch
+  searchController.executeSavedSearch
 );
-
 router.delete(
   "/saved/:id",
   auth,
-  [param("id").isInt().withMessage("Valid saved search ID is required")],
+  [param("id").isInt()],
   handleValidationErrors,
-  deleteSavedSearch
+  searchController.deleteSavedSearch
 );
 
 router.get(
   "/analytics",
   auth,
   adminAuth,
-  [
-    query("city").optional().trim().isLength({ max: 100 }),
-    query("state").optional().trim().isLength({ max: 50 }),
-    query("days")
-      .optional()
-      .isInt({ min: 1, max: 365 })
-      .withMessage("Days must be between 1 and 365"),
-  ],
+  [...queryWithCityState, query("days").optional().isInt({ min: 1, max: 365 })],
   handleValidationErrors,
-  getSearchAnalytics
+  searchController.getSearchAnalytics
 );
 
 router.get(
   "/quick/emergency",
   auth,
-  [
-    query("city").optional().trim().isLength({ max: 100 }),
-    query("state").optional().trim().isLength({ max: 50 }),
-    query("limit").optional().isInt({ min: 1, max: 50 }),
-  ],
+  [...queryWithCityState, ...queryWithLimit()],
   handleValidationErrors,
-  async (req, _res, next) => {
-    req.query.emergencyOnly = "true";
-    req.query.sortBy = "date";
-    next();
-  },
-  searchPosts
+  quickSearchMiddleware({ emergencyOnly: "true", sortBy: "date" }),
+  searchController.searchPosts
 );
 
 router.get(
   "/quick/help-requests",
   auth,
-  [
-    query("city").optional().trim().isLength({ max: 100 }),
-    query("state").optional().trim().isLength({ max: 50 }),
-    query("limit").optional().isInt({ min: 1, max: 50 }),
-  ],
+  [...queryWithCityState, ...queryWithLimit()],
   handleValidationErrors,
-  async (req, _res, next) => {
-    req.query.types = "help_request";
-    req.query.resolved = "unresolved";
-    req.query.sortBy = "date";
-    next();
-  },
-  searchPosts
+  quickSearchMiddleware({ types: "help_request", resolved: "unresolved", sortBy: "date" }),
+  searchController.searchPosts
 );
 
 router.get(
   "/quick/help-offers",
   auth,
-  [
-    query("city").optional().trim().isLength({ max: 100 }),
-    query("state").optional().trim().isLength({ max: 50 }),
-    query("limit").optional().isInt({ min: 1, max: 50 }),
-  ],
+  [...queryWithCityState, ...queryWithLimit()],
   handleValidationErrors,
-  async (req, _res, next) => {
-    req.query.types = "help_offer";
-    req.query.sortBy = "date";
-    next();
-  },
-  searchPosts
+  quickSearchMiddleware({ types: "help_offer", sortBy: "date" }),
+  searchController.searchPosts
 );
 
 router.post(
@@ -252,9 +170,8 @@ router.post(
     body("pagination.offset").optional().isInt({ min: 0 }),
   ],
   handleValidationErrors,
-  async (req, _res, next) => {
+  (req, _res, next) => {
     const { query, location, filters, sorting, pagination } = req.body;
-
     req.query = {
       q: query,
       city: location?.city,
@@ -270,10 +187,9 @@ router.post(
       limit: pagination?.limit,
       offset: pagination?.offset,
     };
-
     next();
   },
-  searchPosts
+  searchController.searchPosts
 );
 
 module.exports = router;

@@ -1,9 +1,13 @@
 const logger = require("../utils/logger");
 
 class WeatherCacheService {
-  constructor() {
+  constructor(options = {}) {
     this.cache = new Map();
-    this.cacheTimeout = 30 * 60 * 1000;
+    this.cacheTimeout = options.cacheTimeout || 30 * 60 * 1000;
+    this.forecastDays = options.forecastDays || 7;
+    this.cleanupInterval = options.cleanupInterval || 15 * 60 * 1000;
+
+    setInterval(() => this.cleanup(), this.cleanupInterval);
   }
 
   getCacheKey(lat, lng) {
@@ -13,29 +17,21 @@ class WeatherCacheService {
   getCachedWeather(lat, lng) {
     const key = this.getCacheKey(lat, lng);
     const cached = this.cache.get(key);
+    if (!cached) return null;
 
-    if (!cached) {
-      return null;
-    }
-
-    const now = Date.now();
-    if (now - cached.timestamp > this.cacheTimeout) {
+    if (Date.now() - cached.timestamp > this.cacheTimeout) {
       this.cache.delete(key);
       return null;
     }
 
-    logger.info(`Weather cache hit for ${lat}, ${lng}`);
+    logger.info(`Weather cache hit: ${lat}, ${lng}`);
     return cached.data;
   }
 
   cacheWeatherData(lat, lng, data) {
     const key = this.getCacheKey(lat, lng);
-    this.cache.set(key, {
-      data: data,
-      timestamp: Date.now(),
-    });
-
-    logger.info(`Weather data cached for ${lat}, ${lng}`);
+    this.cache.set(key, { data, timestamp: Date.now() });
+    logger.info(`Weather cached: ${lat}, ${lng}`);
   }
 
   generateFallbackWeather(lat, lng) {
@@ -46,6 +42,41 @@ class WeatherCacheService {
     const hour = now.getHours();
     const isDaytime = hour >= 6 && hour < 20;
 
+    const { baseTemp, tempVariation, commonConditions } = this.getSeasonalDefaults(latitude, month);
+
+    const temperature = Math.max(
+      0,
+      Math.min(120, baseTemp + Math.floor(Math.random() * tempVariation) - tempVariation / 2)
+    );
+    const condition = commonConditions[Math.floor(Math.random() * commonConditions.length)];
+    const windSpeed = this.randomChoice(["5 mph", "8 mph", "12 mph", "15 mph", "18 mph"]);
+    const windDirection = this.randomChoice(["N", "NE", "E", "SE", "S", "SW", "W", "NW"]);
+
+    const fallbackData = {
+      location: { latitude, longitude },
+      current: {
+        temperature,
+        temperatureUnit: "F",
+        windSpeed,
+        windDirection,
+        shortForecast: condition,
+        detailedForecast: `${condition} with temps around ${temperature}°F. Wind ${windDirection} at ${windSpeed}.`,
+        icon: `https://api.weather.gov/icons/land/${isDaytime ? "day" : "night"}/few?size=medium`,
+        isDaytime,
+      },
+      forecast: this.generateForecast(temperature, condition),
+      lastUpdated: now.toISOString(),
+      source: "FALLBACK_DATA",
+      note: "Weather service temporarily unavailable. Showing estimated data.",
+    };
+
+    logger.info(
+      `Fallback weather generated: ${latitude}, ${longitude} - ${temperature}°F, ${condition}`
+    );
+    return fallbackData;
+  }
+
+  getSeasonalDefaults(latitude, month) {
     let baseTemp, tempVariation, commonConditions;
 
     if (latitude >= 45) {
@@ -72,45 +103,12 @@ class WeatherCacheService {
       commonConditions = ["Partly Cloudy", "Scattered Showers", "Humid"];
     }
 
-    const tempOffset = Math.floor(Math.random() * tempVariation) - tempVariation / 2;
-    const temperature = Math.max(0, Math.min(120, baseTemp + tempOffset));
-
-    const condition = commonConditions[Math.floor(Math.random() * commonConditions.length)];
-
-    const windSpeeds = ["5 mph", "8 mph", "12 mph", "15 mph", "18 mph"];
-    const windDirections = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
-    const windSpeed = windSpeeds[Math.floor(Math.random() * windSpeeds.length)];
-    const windDirection = windDirections[Math.floor(Math.random() * windDirections.length)];
-
-    const fallbackData = {
-      location: {
-        latitude,
-        longitude,
-      },
-      current: {
-        temperature,
-        temperatureUnit: "F",
-        windSpeed,
-        windDirection,
-        shortForecast: condition,
-        detailedForecast: `${condition} with temperatures around ${temperature}°F. Wind ${windDirection} at ${windSpeed}.`,
-        icon: `https://api.weather.gov/icons/land/${isDaytime ? "day" : "night"}/few?size=medium`,
-        isDaytime,
-      },
-      forecast: this.generateForecast(temperature, condition),
-      lastUpdated: now.toISOString(),
-      source: "FALLBACK_DATA",
-      note: "Weather service temporarily unavailable. Showing estimated data based on location and season.",
-    };
-
-    logger.info(
-      `Generated fallback weather for ${latitude}, ${longitude}: ${temperature}°F, ${condition}`
-    );
-    return fallbackData;
+    return { baseTemp, tempVariation, commonConditions };
   }
 
   generateForecast(baseTemp, currentCondition) {
-    const days = [
+    const forecast = [];
+    const daysOfWeek = [
       "Today",
       "Tomorrow",
       "Tuesday",
@@ -120,31 +118,26 @@ class WeatherCacheService {
       "Saturday",
       "Sunday",
     ];
-    const conditions = [
+    const possibleConditions = [
       "Clear",
       "Partly Cloudy",
       "Mostly Cloudy",
       "Light Rain",
       "Scattered Clouds",
     ];
-    const forecast = [];
 
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < this.forecastDays; i++) {
       const tempVariation = Math.floor(Math.random() * 10) - 5;
-      const dayTemp = Math.max(
-        20,
-        Math.min(110, baseTemp + tempVariation + Math.floor(Math.random() * 6) - 3)
-      );
-      const condition =
-        i === 0 ? currentCondition : conditions[Math.floor(Math.random() * conditions.length)];
+      const dayTemp = Math.max(20, Math.min(110, baseTemp + tempVariation + this.randomInt(-3, 3)));
+      const condition = i === 0 ? currentCondition : this.randomChoice(possibleConditions);
 
       forecast.push({
-        name: i < days.length ? days[i] : `Day ${i + 1}`,
+        name: i < daysOfWeek.length ? daysOfWeek[i] : `Day ${i + 1}`,
         temperature: dayTemp,
         temperatureUnit: "F",
         shortForecast: condition,
-        windSpeed: `${Math.floor(Math.random() * 15) + 5} mph`,
-        windDirection: ["N", "S", "E", "W", "NW", "SW"][Math.floor(Math.random() * 6)],
+        windSpeed: `${this.randomInt(5, 20)} mph`,
+        windDirection: this.randomChoice(["N", "S", "E", "W", "NW", "SW"]),
       });
     }
 
@@ -162,9 +155,15 @@ class WeatherCacheService {
       }
     }
 
-    if (removed > 0) {
-      logger.info(`Cleaned up ${removed} expired weather cache entries`);
-    }
+    if (removed > 0) logger.info(`Cleaned up ${removed} expired weather cache entries`);
+  }
+
+  randomChoice(array) {
+    return array[Math.floor(Math.random() * array.length)];
+  }
+
+  randomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 
   getStats() {

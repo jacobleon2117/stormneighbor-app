@@ -91,7 +91,7 @@ class EnvironmentValidator {
         default: "*",
         description: "CORS allowed origins",
         validator: (value) => value === "*" || value.startsWith("http"),
-        errorMessage: "CORS_ORIGIN must be " * " or a valid HTTP(S) URL",
+        errorMessage: 'CORS_ORIGIN must be "*" or a valid HTTP(S) URL',
       },
 
       RATE_LIMIT_WINDOW_MS: {
@@ -123,7 +123,7 @@ class EnvironmentValidator {
     this.silent = silent || process.env.NODE_ENV === "test";
 
     if (!this.silent) {
-      logger.info("WORKING: Validating environment configuration\n");
+      logger.info("INFO: Validating environment configuration\n");
     }
 
     this.checkEnvFile();
@@ -154,7 +154,7 @@ class EnvironmentValidator {
       if (process.env.NODE_ENV === "production") {
         this.errors.push("ERROR: .env file not found in production environment");
       } else {
-        this.warnings.push("WORKING: .env file not found (using system environment variables)");
+        this.warnings.push("WARNING: .env file not found (using system environment variables)");
       }
     } else if (!this.silent) {
       logger.info("SUCCESS: .env file found");
@@ -179,9 +179,7 @@ class EnvironmentValidator {
       this.warnings.push(`WARNING: Using default value for ${varName}: ${value}`);
     }
 
-    if (!value) {
-      return;
-    }
+    if (!value) return;
 
     if (config.validator && !config.validator(value)) {
       this.errors.push(`ERROR: Invalid ${varName}: ${config.errorMessage}`);
@@ -189,6 +187,7 @@ class EnvironmentValidator {
     }
 
     this.config[varName] = value;
+
     if (!this.silent) {
       logger.info(`SUCCESS: ${varName}: ${this.maskSensitive(varName, value)}`);
     }
@@ -196,7 +195,7 @@ class EnvironmentValidator {
 
   validateCombinations() {
     const firebaseVars = ["FIREBASE_PROJECT_ID", "FIREBASE_PRIVATE_KEY", "FIREBASE_CLIENT_EMAIL"];
-    const providedFirebaseVars = firebaseVars.filter((varName) => process.env[varName]);
+    const providedFirebaseVars = firebaseVars.filter((v) => !!process.env[v]);
 
     if (providedFirebaseVars.length > 0 && providedFirebaseVars.length < firebaseVars.length) {
       this.warnings.push(
@@ -205,7 +204,7 @@ class EnvironmentValidator {
     }
 
     const cloudinaryVars = ["CLOUDINARY_CLOUD_NAME", "CLOUDINARY_API_KEY", "CLOUDINARY_API_SECRET"];
-    const providedCloudinaryVars = cloudinaryVars.filter((varName) => process.env[varName]);
+    const providedCloudinaryVars = cloudinaryVars.filter((v) => !!process.env[v]);
 
     if (
       providedCloudinaryVars.length > 0 &&
@@ -231,8 +230,7 @@ class EnvironmentValidator {
 
       if (process.env.CORS_ORIGIN === "*") {
         this.warnings.push(
-          "WARNING: CORS_ORIGIN is set to " *
-            " in production - consider restricting to specific domains"
+          'WARNING: CORS_ORIGIN is set to "*" in production - consider restricting to specific domains'
         );
       }
     }
@@ -257,7 +255,7 @@ class EnvironmentValidator {
   }
 
   reportResults() {
-    logger.info("\nWORKING: Environment Validation Results:");
+    logger.info("\nINFO: Environment Validation Results:");
 
     if (this.errors.length === 0) {
       logger.info("SUCCESS: Environment configuration is valid!\n");
@@ -275,7 +273,7 @@ class EnvironmentValidator {
 
     logger.info(`INFO: Environment: ${process.env.NODE_ENV || "development"}`);
     logger.info(`INFO: Port: ${process.env.PORT || "3000"}`);
-    logger.info(`INFO:  Database: ${process.env.DATABASE_URL ? "Configured" : "Not configured"}`);
+    logger.info(`INFO: Database: ${process.env.DATABASE_URL ? "Configured" : "Not configured"}`);
     logger.info(`INFO: JWT: ${process.env.JWT_SECRET ? "Configured" : "Not configured"}`);
     logger.info(
       `INFO: Push Notifications: ${process.env.FIREBASE_PROJECT_ID ? "Enabled" : "Disabled"}`

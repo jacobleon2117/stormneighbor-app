@@ -6,7 +6,7 @@ import { ALERT_COLORS } from "../../constants/AlertColors";
 const PILL_WIDTH = 80;
 const PILL_MARGIN = 12;
 const LEFT_PADDING = 32;
-const RIGHT_PADDING = 32;
+const RIGHT_PADDING = 20;
 
 interface WeatherLayer {
   id: string;
@@ -21,6 +21,11 @@ interface WeatherLegendProps {
 
 export default function WeatherLegend({ onLayerToggle, weatherLayers }: WeatherLegendProps) {
   const layers: WeatherLayer[] = [
+    {
+      id: "all",
+      name: "All",
+      color: Colors.primary[600],
+    },
     {
       id: "precipitation",
       name: "Rain",
@@ -65,6 +70,21 @@ export default function WeatherLegend({ onLayerToggle, weatherLayers }: WeatherL
       id: "help_needed",
       name: "Help",
       color: ALERT_COLORS.help_needed,
+    },
+    {
+      id: "events",
+      name: "Events",
+      color: ALERT_COLORS.events,
+    },
+    {
+      id: "questions",
+      name: "Questions",
+      color: ALERT_COLORS.questions,
+    },
+    {
+      id: "announcements",
+      name: "News",
+      color: ALERT_COLORS.announcements,
     },
   ];
 

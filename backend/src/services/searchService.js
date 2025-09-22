@@ -28,7 +28,7 @@ class SearchService {
       const params = [];
       let paramIndex = 1;
 
-      if (query && query.trim()) {
+      if (query?.trim()) {
         whereConditions.push(
           `(p.title ILIKE '%' || $${paramIndex} || '%' OR p.content ILIKE '%' || $${paramIndex} || '%')`
         );
@@ -41,19 +41,20 @@ class SearchService {
         params.push(city);
         paramIndex++;
       }
+
       if (state) {
         whereConditions.push(`p.location_state = $${paramIndex}`);
         params.push(state);
         paramIndex++;
       }
 
-      if (postTypes && postTypes.length > 0) {
+      if (postTypes?.length) {
         whereConditions.push(`p.post_type = ANY($${paramIndex})`);
         params.push(postTypes);
         paramIndex++;
       }
 
-      if (priorities && priorities.length > 0) {
+      if (priorities?.length) {
         whereConditions.push(`p.priority = ANY($${paramIndex})`);
         params.push(priorities);
         paramIndex++;
@@ -96,7 +97,7 @@ class SearchService {
         orderBy =
           `
           (COALESCE(cc.comment_count, 0) + COALESCE(rc.reaction_count, 0)) DESC,
-          ` + orderBy;
+        ` + orderBy;
       }
 
       const result = await client.query(
@@ -131,7 +132,6 @@ class SearchService {
       );
 
       const executionTime = Date.now() - startTime;
-
       await this.updateSearchQueryStats(client, query, result.rows.length, executionTime);
 
       return {
@@ -154,8 +154,8 @@ class SearchService {
             profileImage: row.author_image,
           },
           matchScore: parseFloat(row.match_score),
-          commentCount: parseInt(row.comment_count),
-          reactionCount: parseInt(row.reaction_count),
+          commentCount: parseInt(row.comment_count, 10),
+          reactionCount: parseInt(row.reaction_count, 10),
         })),
         meta: {
           query,
@@ -172,23 +172,16 @@ class SearchService {
 
   static async getSearchSuggestions(partialQuery, city, state, limit = 10) {
     const client = await pool.connect();
-
     try {
       const suggestionsResult = await client.query(
         `
-        SELECT 
-          suggestion_text,
-          suggestion_type,
-          category,
-          search_count
+        SELECT suggestion_text, suggestion_type, category, search_count
         FROM search_suggestions
         WHERE suggestion_text ILIKE $1
         AND is_approved = true
         AND (city IS NULL OR city = $2)
         AND (state IS NULL OR state = $3)
-        ORDER BY 
-          search_count DESC,
-          click_through_rate DESC
+        ORDER BY search_count DESC, click_through_rate DESC
         LIMIT $4
       `,
         [`${partialQuery}%`, city, state, limit]
@@ -196,10 +189,7 @@ class SearchService {
 
       const popularResult = await client.query(
         `
-        SELECT 
-          search_term as suggestion_text, 
-          'popular' as suggestion_type,
-          search_count
+        SELECT search_term as suggestion_text, 'popular' as suggestion_type, search_count
         FROM trending_searches
         WHERE search_count > 5
         AND (city IS NULL OR city = $1)
@@ -223,16 +213,10 @@ class SearchService {
 
   static async getTrendingSearches(city, state, limit = 10) {
     const client = await pool.connect();
-
     try {
       const result = await client.query(
         `
-        SELECT 
-          search_term,
-          category,
-          search_count,
-          trend_score,
-          sentiment
+        SELECT search_term, category, search_count, trend_score, sentiment
         FROM trending_searches
         WHERE is_trending = true
         AND (city IS NULL OR city = $1)
@@ -287,15 +271,13 @@ class SearchService {
 
   static async getSavedSearches(userId) {
     const client = await pool.connect();
-
     try {
       const result = await client.query(
         `
-        SELECT 
-          id, name, description, query_text, filters,
-          notify_new_results, notification_frequency,
-          total_results, last_result_count, last_executed,
-          created_at, updated_at
+        SELECT id, name, description, query_text, filters,
+               notify_new_results, notification_frequency,
+               total_results, last_result_count, last_executed,
+               created_at, updated_at
         FROM saved_searches
         WHERE user_id = $1 AND is_active = true
         ORDER BY updated_at DESC
@@ -328,38 +310,29 @@ class SearchService {
 
   static async executeSavedSearch(userId, savedSearchId) {
     const client = await pool.connect();
-
     try {
       const savedSearchResult = await client.query(
         `
-        SELECT query_text, filters FROM saved_searches
+        SELECT query_text, filters
+        FROM saved_searches
         WHERE id = $1 AND user_id = $2 AND is_active = true
       `,
         [savedSearchId, userId]
       );
 
-      if (savedSearchResult.rows.length === 0) {
-        throw new Error("Saved search not found");
-      }
+      if (!savedSearchResult.rows.length) throw new Error("Saved search not found");
 
       const { query_text, filters } = savedSearchResult.rows[0];
 
-      const searchResults = await this.searchPosts(
-        {
-          query: query_text,
-          ...filters,
-        },
-        userId
-      );
+      const searchResults = await this.searchPosts({ query: query_text, ...filters }, userId);
 
       await client.query(
         `
         UPDATE saved_searches 
-        SET 
-          last_executed = NOW(),
-          last_result_count = $1,
-          total_results = total_results + $1,
-          updated_at = NOW()
+        SET last_executed = NOW(),
+            last_result_count = $1,
+            total_results = total_results + $1,
+            updated_at = NOW()
         WHERE id = $2
       `,
         [searchResults.posts.length, savedSearchId]
@@ -373,23 +346,16 @@ class SearchService {
 
   static async searchUsers(query, city, state, limit = 10) {
     const client = await pool.connect();
-
     try {
       const result = await client.query(
         `
-        SELECT 
-          id, first_name, last_name, profile_image_url, bio,
-          location_city, address_state,
-          1.0 as match_score
+        SELECT id, first_name, last_name, profile_image_url, bio,
+               location_city, address_state, 1.0 as match_score
         FROM users
         WHERE is_active = true
-        AND (
-          first_name ILIKE $1 OR
-          last_name ILIKE $1 OR
-          COALESCE(bio, '') ILIKE $1
-        )
-        AND (location_city = $2 OR $2 IS NULL)
-        AND (address_state = $3 OR $3 IS NULL)
+          AND (first_name ILIKE $1 OR last_name ILIKE $1 OR COALESCE(bio, '') ILIKE $1)
+          AND (location_city = $2 OR $2 IS NULL)
+          AND (address_state = $3 OR $3 IS NULL)
         ORDER BY first_name, last_name
         LIMIT $4
       `,
@@ -415,21 +381,16 @@ class SearchService {
 
   static async getSearchAnalytics(city, state, days = 7) {
     const client = await pool.connect();
-
     try {
       const popularTerms = await client.query(
         `
-        SELECT 
-          query_text,
-          COUNT(*) as search_count,
-          AVG(results_count) as avg_results,
-          COUNT(DISTINCT user_id) as unique_users
+        SELECT query_text, COUNT(*) as search_count, AVG(results_count) as avg_results,
+               COUNT(DISTINCT user_id) as unique_users
         FROM search_queries
         WHERE created_at >= NOW() - INTERVAL '${parseInt(days)} days'
-        AND (search_city = $1 OR $1 IS NULL)
-        AND (search_state = $2 OR $2 IS NULL)
-        AND query_text IS NOT NULL
-        AND query_text != ''
+          AND (search_city = $1 OR $1 IS NULL)
+          AND (search_state = $2 OR $2 IS NULL)
+          AND query_text IS NOT NULL AND query_text != ''
         GROUP BY query_text
         HAVING COUNT(*) > 1
         ORDER BY search_count DESC
@@ -440,15 +401,12 @@ class SearchService {
 
       const searchVolume = await client.query(
         `
-        SELECT 
-          DATE(created_at) as date,
-          COUNT(*) as search_count,
-          COUNT(DISTINCT user_id) as unique_users,
-          AVG(results_count) as avg_results
+        SELECT DATE(created_at) as date, COUNT(*) as search_count,
+               COUNT(DISTINCT user_id) as unique_users, AVG(results_count) as avg_results
         FROM search_queries
         WHERE created_at >= NOW() - INTERVAL '${parseInt(days)} days'
-        AND (search_city = $1 OR $1 IS NULL)
-        AND (search_state = $2 OR $2 IS NULL)
+          AND (search_city = $1 OR $1 IS NULL)
+          AND (search_state = $2 OR $2 IS NULL)
         GROUP BY DATE(created_at)
         ORDER BY date DESC
       `,
@@ -460,10 +418,10 @@ class SearchService {
         SELECT query_text, COUNT(*) as frequency
         FROM search_queries
         WHERE results_count = 0
-        AND created_at >= NOW() - INTERVAL '${parseInt(days)} days'
-        AND (search_city = $1 OR $1 IS NULL)
-        AND (search_state = $2 OR $2 IS NULL)
-        AND query_text IS NOT NULL
+          AND created_at >= NOW() - INTERVAL '${parseInt(days)} days'
+          AND (search_city = $1 OR $1 IS NULL)
+          AND (search_state = $2 OR $2 IS NULL)
+          AND query_text IS NOT NULL
         GROUP BY query_text
         ORDER BY frequency DESC
         LIMIT 10
@@ -484,19 +442,18 @@ class SearchService {
   }
 
   static async logSearchQuery(client, userId, query, filters, city, state) {
-    if (userId) {
-      try {
-        await client.query(
-          `
-          INSERT INTO search_queries (
-            user_id, query_text, filters, search_city, search_state, source
-          ) VALUES ($1, $2, $3, $4, $5, $6)
-        `,
-          [userId, query, JSON.stringify(filters), city, state, "manual"]
-        );
-      } catch (error) {
-        logger.error("Error logging search query:", error.message);
-      }
+    if (!userId) return;
+
+    try {
+      await client.query(
+        `
+        INSERT INTO search_queries (user_id, query_text, filters, search_city, search_state, source)
+        VALUES ($1, $2, $3, $4, $5, $6)
+      `,
+        [userId, query, JSON.stringify(filters), city, state, "manual"]
+      );
+    } catch (error) {
+      logger.error("Error logging search query:", error.message);
     }
   }
 
@@ -509,7 +466,7 @@ class SearchService {
         UPDATE search_queries 
         SET results_count = $1, execution_time_ms = $2
         WHERE query_text = $3 
-        AND created_at >= NOW() - INTERVAL '1 minute'
+          AND created_at >= NOW() - INTERVAL '1 minute'
         ORDER BY created_at DESC
         LIMIT 1
       `,

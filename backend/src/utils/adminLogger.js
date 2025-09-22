@@ -1,18 +1,6 @@
 const { pool } = require("../config/database");
 const logger = require("../utils/logger");
 
-/**
- * Log admin actions for audit trail
- * @param {number} adminId
- * @param {string} actionType
- * @param {string} targetType
- * @param {number|null} targetId
- * @param {object} details
- * @param {string} ipAddress
- * @param {string} userAgent
- * @param {boolean} success
- * @param {string|null} errorMessage
- */
 const logAdminAction = async (
   adminId,
   actionType,
@@ -25,7 +13,6 @@ const logAdminAction = async (
   errorMessage = null
 ) => {
   const client = await pool.connect();
-
   try {
     await client.query(
       `
@@ -60,59 +47,41 @@ const logAdminAction = async (
   }
 };
 
-/**
- * Get admin action history for a specific admin or target
- * @param {object} filters
- * @param {number} filters.adminId
- * @param {string} filters.targetType
- * @param {number} filters.targetId
- * @param {string} filters.actionType
- * @param {Date} filters.startDate
- * @param {Date} filters.endDate
- * @param {number} filters.limit
- * @param {number} filters.offset
- */
 const getAdminActionHistory = async (filters = {}) => {
   const client = await pool.connect();
-
   try {
-    let whereClause = "";
+    let whereClause = "WHERE 1=1";
     const params = [];
     let paramCount = 0;
 
     if (filters.adminId) {
       paramCount++;
-      whereClause += ` AND admin_id = $${paramCount}`;
+      whereClause += ` AND aa.admin_id = $${paramCount}`;
       params.push(filters.adminId);
     }
-
     if (filters.targetType) {
       paramCount++;
-      whereClause += ` AND target_type = $${paramCount}`;
+      whereClause += ` AND aa.target_type = $${paramCount}`;
       params.push(filters.targetType);
     }
-
     if (filters.targetId) {
       paramCount++;
-      whereClause += ` AND target_id = ${paramCount}`;
+      whereClause += ` AND aa.target_id = $${paramCount}`;
       params.push(filters.targetId);
     }
-
     if (filters.actionType) {
       paramCount++;
-      whereClause += ` AND action_type = ${paramCount}`;
+      whereClause += ` AND aa.action_type = $${paramCount}`;
       params.push(filters.actionType);
     }
-
     if (filters.startDate) {
       paramCount++;
-      whereClause += ` AND created_at >= ${paramCount}`;
+      whereClause += ` AND aa.created_at >= $${paramCount}`;
       params.push(filters.startDate);
     }
-
     if (filters.endDate) {
       paramCount++;
-      whereClause += ` AND created_at <= ${paramCount}`;
+      whereClause += ` AND aa.created_at <= $${paramCount}`;
       params.push(filters.endDate);
     }
 
@@ -131,9 +100,9 @@ const getAdminActionHistory = async (filters = {}) => {
         u.username as admin_username
       FROM admin_actions aa
       LEFT JOIN users u ON aa.admin_id = u.id
-      WHERE 1=1 ${whereClause}
+      ${whereClause}
       ORDER BY aa.created_at DESC
-      LIMIT ${paramCount - 1} OFFSET ${paramCount}
+      LIMIT $${paramCount - 1} OFFSET $${paramCount}
     `,
       params
     );
@@ -147,14 +116,8 @@ const getAdminActionHistory = async (filters = {}) => {
   }
 };
 
-/**
- * Get admin action statistics
- * @param {Date} startDate
- * @param {Date} endDate
- */
 const getAdminActionStats = async (startDate, endDate) => {
   const client = await pool.connect();
-
   try {
     const stats = await client.query(
       `

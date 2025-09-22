@@ -3,9 +3,10 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-nati
 import { Colors } from "../../constants/Colors";
 import { ALERT_COLORS } from "../../constants/AlertColors";
 
-const PILL_WIDTH = 100;
+const PILL_WIDTH = 80;
 const PILL_MARGIN = 12;
-const LEFT_PADDING = 20;
+const LEFT_PADDING = 32;
+const RIGHT_PADDING = 20;
 
 interface AlertFilter {
   id: string;
@@ -24,6 +25,26 @@ export default function AlertsSlider({ onFilterChange, activeFilter }: AlertsSli
       id: "all",
       name: "All",
       color: Colors.primary[600],
+    },
+    {
+      id: "precipitation",
+      name: "Rain",
+      color: "#3b82f6",
+    },
+    {
+      id: "clouds",
+      name: "Clouds",
+      color: "#6b7280",
+    },
+    {
+      id: "wind",
+      name: "Wind",
+      color: "#10b981",
+    },
+    {
+      id: "temperature",
+      name: "Temp",
+      color: "#f59e0b",
     },
     {
       id: "severe_weather",
@@ -82,6 +103,7 @@ export default function AlertsSlider({ onFilterChange, activeFilter }: AlertsSli
   const renderFilter = (filter: AlertFilter) => {
     const isActive = activeFilter === filter.id;
     const lightBorderColor = getLighterColor(filter.color, 0.4);
+    const mediumBorderColor = getLighterColor(filter.color, 0.7);
 
     return (
       <TouchableOpacity
@@ -97,7 +119,7 @@ export default function AlertsSlider({ onFilterChange, activeFilter }: AlertsSli
         <Text
           style={[
             styles.filterText,
-            !isActive && { color: filter.color },
+            !isActive && { color: mediumBorderColor },
             isActive && styles.filterTextActive,
           ]}
         >
@@ -128,24 +150,25 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: Colors.surface,
     paddingVertical: 16,
-    minHeight: 84,
+    height: 88,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     paddingLeft: LEFT_PADDING,
-    paddingRight: LEFT_PADDING,
+    paddingRight: RIGHT_PADDING,
     alignItems: "center",
+    height: 56,
   },
   filterPill: {
     backgroundColor: Colors.background,
     borderRadius: 16,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 10,
     marginRight: PILL_MARGIN,
     minWidth: PILL_WIDTH,
-    minHeight: 44,
+    minHeight: 36,
     borderWidth: 2,
     shadowColor: "#000",
     shadowOffset: {
@@ -165,12 +188,13 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   filterText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
     textAlign: "center",
-    lineHeight: 18,
+    lineHeight: 16,
+    color: Colors.text.secondary,
   },
   filterTextActive: {
-    color: Colors.text.inverse,
+    color: Colors.background,
   },
 });

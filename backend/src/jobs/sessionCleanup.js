@@ -1,25 +1,26 @@
 const cron = require("node-cron");
 const tokenService = require("../services/tokenService");
 const logger = require("../utils/logger");
+const cronParser = require("cron-parser");
 
 class SessionCleanupJob {
   constructor() {
     this.isRunning = false;
     this.cronJob = null;
     this.startupTimeout = null;
+    this.cronExpression = "0 2 * * *";
   }
 
   start() {
     logger.info("Starting session cleanup job");
 
     this.cronJob = cron.schedule(
-      "0 2 * * *",
+      this.cronExpression,
       async () => {
         if (this.isRunning) {
-          logger.info("Session cleanup already running, skipping");
+          logger.info("Session cleanup already running, skipping this schedule");
           return;
         }
-
         await this.runCleanup();
       },
       {
@@ -32,23 +33,37 @@ class SessionCleanupJob {
 
     this.startupTimeout = setTimeout(() => {
       this.startupTimeout = null;
-      this.runCleanup();
+      this.runCleanup().catch((err) => {
+        logger.error("Startup session cleanup failed:", err);
+      });
     }, 5000);
   }
 
-  async runCleanup() {
-    this.isRunning = true;
+  async runCleanup(retryCount = 0) {
+    const maxRetries = 2;
     const startTime = Date.now();
 
+    if (this.isRunning) {
+      logger.info("Cleanup already running, skipping invocation");
+      return;
+    }
+
+    this.isRunning = true;
     try {
       logger.info("Starting session cleanup...");
-
-      await tokenService.cleanupExpiredSessions();
-
+      const cleanedCount = await tokenService.cleanupExpiredSessions();
       const duration = Date.now() - startTime;
-      logger.info(`SUCCESS: Session cleanup completed in ${duration}ms`);
+
+      logger.info(
+        `SUCCESS: Session cleanup completed in ${duration}ms. Sessions removed: ${cleanedCount || 0}`
+      );
     } catch (error) {
       logger.error("ERROR: Session cleanup failed:", error);
+
+      if (retryCount < maxRetries) {
+        logger.info(`Retrying session cleanup (${retryCount + 1}/${maxRetries})...`);
+        return this.runCleanup(retryCount + 1);
+      }
     } finally {
       this.isRunning = false;
     }
@@ -58,7 +73,6 @@ class SessionCleanupJob {
     if (this.isRunning) {
       throw new Error("Cleanup is already running");
     }
-
     return this.runCleanup();
   }
 
@@ -74,14 +88,25 @@ class SessionCleanupJob {
     if (this.cronJob) {
       this.cronJob.stop();
       this.cronJob = null;
+      logger.info("Cron job stopped");
     }
   }
 
   getStatus() {
+    let nextRun = null;
+    if (this.cronJob) {
+      try {
+        const interval = cronParser.parseExpression(this.cronExpression, { tz: "UTC" });
+        nextRun = interval.next().toString();
+      } catch (err) {
+        logger.error("Failed to calculate next run time:", err);
+      }
+    }
+
     return {
       scheduled: !!this.cronJob,
       running: this.isRunning,
-      nextRun: this.cronJob ? "Daily at 2:00 AM UTC" : null,
+      nextRun,
       startupPending: !!this.startupTimeout,
     };
   }

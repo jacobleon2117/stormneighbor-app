@@ -18,7 +18,10 @@ const createAlertValidation = [
   body("severity")
     .isIn(["CRITICAL", "HIGH", "MODERATE", "LOW"])
     .withMessage("Invalid severity level"),
-  body("alertType").trim().isLength({ min: 1, max: 100 }).withMessage("Alert type is required"),
+  body("alertType")
+    .trim()
+    .isLength({ min: 1, max: 100 })
+    .withMessage("Alert type is required and must be less than 100 characters"),
   body("startTime").optional().isISO8601().withMessage("Invalid start time format"),
   body("endTime").optional().isISO8601().withMessage("Invalid end time format"),
   body("metadata").optional().isObject().withMessage("Metadata must be an object"),

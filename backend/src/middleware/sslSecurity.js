@@ -7,90 +7,37 @@ class SSLSecurityMiddleware {
     this.isStaging = process.env.NODE_ENV === "staging";
     this.forceHTTPS = process.env.FORCE_HTTPS !== "false";
     this.trustedProxies = this.parseTrustedProxies();
-    this.securityHeadersConfig = this.getSecurityHeaders();
   }
 
   parseTrustedProxies() {
     const proxies = process.env.TRUSTED_PROXIES;
     if (!proxies) return ["127.0.0.1", "::1"];
-
     return proxies
       .split(",")
-      .map((proxy) => proxy.trim())
+      .map((p) => p.trim())
       .filter(Boolean);
-  }
-
-  httpsEnforcement() {
-    return (req, res, next) => {
-      if (!this.isProduction && !this.isStaging) {
-        return next();
-      }
-
-      if (!this.forceHTTPS) {
-        return next();
-      }
-
-      const isSecure = this.isRequestSecure(req);
-
-      if (!isSecure) {
-        const httpsUrl = `https://${req.get("host")}${req.originalUrl}`;
-
-        logger.info(`[SSL] Redirecting HTTP to HTTPS: ${req.originalUrl}`);
-
-        return res.status(301).redirect(httpsUrl);
-      }
-
-      next();
-    };
   }
 
   isRequestSecure(req) {
     if (req.secure) return true;
 
-    const forwardedProto = req.get("x-forwarded-proto");
-    if (forwardedProto === "https") return true;
+    const proto = req.get("x-forwarded-proto")?.toLowerCase();
+    if (proto === "https") return true;
 
-    const forwardedSsl = req.get("x-forwarded-ssl");
-    if (forwardedSsl === "on") return true;
-
-    const frontEndHttps = req.get("front-end-https");
-    if (frontEndHttps === "on") return true;
+    if (req.get("x-forwarded-ssl") === "on") return true;
+    if (req.get("front-end-https") === "on") return true;
 
     const cfVisitor = req.get("cf-visitor");
-    if (cfVisitor) {
-      try {
-        const visitor = JSON.parse(cfVisitor);
-        if (visitor.scheme === "https") return true;
-      } catch (e) {
-        // Invalid JSON, ignore
+    try {
+      const visitor = JSON.parse(cfVisitor);
+      if (visitor.scheme === "https") return true;
+    } catch (err) {
+      if (process.env.NODE_ENV === "development") {
+        console.warn("Invalid cf-visitor header JSON:", err.message);
       }
     }
 
     return false;
-  }
-
-  getSecurityHeaders() {
-    const nonce = this.generateNonce();
-
-    return {
-      "Strict-Transport-Security": this.getHSTSHeader(),
-      "Content-Security-Policy": this.getCSPHeader(nonce),
-      "X-Frame-Options": "DENY",
-      "X-Content-Type-Options": "nosniff",
-      "X-XSS-Protection": "1; mode=block",
-      "Referrer-Policy": "strict-origin-when-cross-origin",
-      "Permissions-Policy": this.getPermissionsPolicyHeader(),
-      "Cross-Origin-Embedder-Policy": "require-corp",
-      "Cross-Origin-Opener-Policy": "same-origin",
-      "Cross-Origin-Resource-Policy": "same-origin",
-      Server: "StormNeighbor",
-      "Cache-Control": "no-store, no-cache, must-revalidate, private",
-      Pragma: "no-cache",
-      Expires: "0",
-      "X-Download-Options": "noopen",
-      "X-DNS-Prefetch-Control": "off",
-      "X-Permitted-Cross-Domain-Policies": "none",
-    };
   }
 
   generateNonce() {
@@ -98,20 +45,16 @@ class SSLSecurityMiddleware {
   }
 
   getHSTSHeader() {
-    if (this.isProduction) {
-      return "max-age=31536000; includeSubDomains; preload";
-    } else if (this.isStaging) {
-      return "max-age=2592000; includeSubDomains";
-    } else {
-      return "max-age=300";
-    }
+    if (this.isProduction) return "max-age=31536000; includeSubDomains; preload";
+    if (this.isStaging) return "max-age=2592000; includeSubDomains";
+    return "max-age=300";
   }
 
   getCSPHeader(nonce) {
-    const baseCSP = {
+    const csp = {
       "default-src": ["'self'"],
       "script-src": ["'self'", `'nonce-${nonce}'`, "https://cdnjs.cloudflare.com"],
-      "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      "style-src": ["'self'", "https://fonts.googleapis.com"],
       "img-src": [
         "'self'",
         "data:",
@@ -126,17 +69,15 @@ class SSLSecurityMiddleware {
         ...(this.isProduction ? [] : ["http://localhost:*"]),
       ],
       "font-src": ["'self'", "https://fonts.gstatic.com"],
-      "media-src": ["'self'"],
       "object-src": ["'none'"],
       "frame-src": ["'none'"],
       "worker-src": ["'self'"],
-      "manifest-src": ["'self'"],
       "base-uri": ["'self'"],
       "form-action": ["'self'"],
     };
 
-    return Object.entries(baseCSP)
-      .map(([directive, sources]) => `${directive} ${sources.join(" ")}`)
+    return Object.entries(csp)
+      .map(([dir, src]) => `${dir} ${src.join(" ")}`)
       .join("; ");
   }
 
@@ -158,21 +99,51 @@ class SSLSecurityMiddleware {
   }
 
   securityHeaders() {
-    return (_req, res, next) => {
-      Object.entries(this.securityHeadersConfig).forEach(([header, value]) => {
-        res.setHeader(header, value);
-      });
+    return (req, res, next) => {
+      const nonce = this.generateNonce();
+      const headers = {
+        "Strict-Transport-Security": this.getHSTSHeader(),
+        "Content-Security-Policy": this.getCSPHeader(nonce),
+        "X-Frame-Options": "DENY",
+        "X-Content-Type-Options": "nosniff",
+        "X-XSS-Protection": "1; mode=block",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "Permissions-Policy": this.getPermissionsPolicyHeader(),
+        "Cross-Origin-Embedder-Policy": "require-corp",
+        "Cross-Origin-Opener-Policy": "same-origin",
+        "Cross-Origin-Resource-Policy": "same-origin",
+        "Cache-Control": "no-store, no-cache, must-revalidate, private",
+        Pragma: "no-cache",
+        Expires: "0",
+        "X-Download-Options": "noopen",
+        "X-DNS-Prefetch-Control": "off",
+        "X-Permitted-Cross-Domain-Policies": "none",
+      };
 
+      Object.entries(headers).forEach(([h, v]) => res.setHeader(h, v));
       res.removeHeader("X-Powered-By");
       res.removeHeader("Server");
+
+      req.cspNonce = nonce;
 
       next();
     };
   }
 
+  httpsEnforcement() {
+    return (req, res, next) => {
+      if (!this.forceHTTPS || (!this.isProduction && !this.isStaging)) return next();
+      if (this.isRequestSecure(req)) return next();
+
+      const httpsUrl = `https://${req.get("host")}${req.originalUrl}`;
+      logger.info(`[SSL] Redirecting HTTP to HTTPS: ${req.originalUrl} -> ${httpsUrl}`);
+      res.status(301).redirect(httpsUrl);
+    };
+  }
+
   sslHealthCheck() {
     return (req, _res, next) => {
-      const sslInfo = {
+      req.sslInfo = {
         secure: this.isRequestSecure(req),
         protocol: req.protocol,
         headers: {
@@ -182,22 +153,6 @@ class SSLSecurityMiddleware {
         },
         timestamp: new Date().toISOString(),
       };
-
-      req.sslInfo = sslInfo;
-
-      next();
-    };
-  }
-
-  requireHTTPS(paths = []) {
-    return (req, res, next) => {
-      const requiresHTTPS = paths.length === 0 || paths.some((path) => req.path.startsWith(path));
-
-      if (requiresHTTPS && !this.isRequestSecure(req)) {
-        const httpsUrl = `https://${req.get("host")}${req.originalUrl}`;
-        return res.status(301).redirect(httpsUrl);
-      }
-
       next();
     };
   }
@@ -213,55 +168,32 @@ class SSLSecurityMiddleware {
           protocol: req.protocol,
           headers: req.sslInfo || {},
         },
-        security: {
-          hstsEnabled: !!this.getHSTSHeader(),
-          cspEnabled: true,
-          frameGuardEnabled: true,
-          xssProtectionEnabled: true,
-        },
-        headers: Object.keys(this.securityHeadersConfig),
+        headers: Object.keys(this.securityHeadersConfig || {}),
         recommendations: this.getSecurityRecommendations(req),
       };
-
-      res.json({
-        success: true,
-        message: "Security audit completed",
-        data: audit,
-      });
+      res.json({ success: true, message: "Security audit completed", data: audit });
     };
   }
 
   getSecurityRecommendations(req) {
-    const recommendations = [];
-
-    if (!this.isRequestSecure(req)) {
-      recommendations.push("Use HTTPS for all requests");
-    }
-
-    if (!this.forceHTTPS && this.isProduction) {
-      recommendations.push("Enable HTTPS enforcement in production");
-    }
-
-    if (!process.env.TRUSTED_PROXIES && this.isProduction) {
-      recommendations.push("Configure trusted proxies for production");
-    }
-
-    return recommendations;
+    const recs = [];
+    if (!this.isRequestSecure(req)) recs.push("Use HTTPS for all requests");
+    if (!this.forceHTTPS && this.isProduction) recs.push("Enable HTTPS enforcement in production");
+    if (!process.env.TRUSTED_PROXIES && this.isProduction) recs.push("Configure trusted proxies");
+    return recs;
   }
 
   initialize(app) {
-    logger.info("WORKING: Initializing SSL/TLS Security");
+    logger.info("Initializing SSL/TLS Security Middleware");
 
     app.use(this.sslHealthCheck());
     app.use(this.httpsEnforcement());
     app.use(this.securityHeaders());
-
     app.get("/security-audit", this.securityAudit());
 
-    logger.info(`SUCCESS: SSL/TLS Security initialized for ${process.env.NODE_ENV} environment`);
-    logger.info(` HTTPS Enforcement: ${this.forceHTTPS ? "ENABLED" : "DISABLED"}`);
-    logger.info(` HSTS: ${this.getHSTSHeader()}`);
-    logger.info(` Trusted Proxies: ${this.trustedProxies.join(", ")}`);
+    logger.info(`HTTPS Enforcement: ${this.forceHTTPS ? "ENABLED" : "DISABLED"}`);
+    logger.info(`HSTS: ${this.getHSTSHeader()}`);
+    logger.info(`Trusted Proxies: ${this.trustedProxies.join(", ")}`);
   }
 }
 

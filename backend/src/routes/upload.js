@@ -13,65 +13,30 @@ const logger = require("../utils/logger");
 
 const router = express.Router();
 
-router.post(
-  "/profile",
-  auth,
-  (req, res, next) => {
-    profileImageUpload.single("image")(req, res, (err) => {
-      if (err) {
-        logger.error("Multer profile upload error:", err.message);
-        return res.status(400).json({
-          success: false,
-          message: err.message.includes("File too large")
-            ? "Image file too large. Maximum size is 5MB."
-            : err.message,
-        });
-      }
-      next();
-    });
-  },
-  uploadProfileImage
-);
+const handleUpload = (uploadMiddleware, maxSizeMB) => (req, res, next) => {
+  uploadMiddleware.single("image")(req, res, (err) => {
+    if (err) {
+      logger.error(`Multer upload error: ${err.message}`);
 
-router.post(
-  "/post/:postId",
-  auth,
-  (req, res, next) => {
-    postImageUpload.single("image")(req, res, (err) => {
-      if (err) {
-        logger.error("Multer post upload error:", err.message);
-        return res.status(400).json({
-          success: false,
-          message: err.message.includes("File too large")
-            ? "Image file too large. Maximum size is 10MB."
-            : err.message,
-        });
+      let message = err.message;
+      if (err.code === "LIMIT_FILE_SIZE") {
+        message = `Image file too large. Maximum size is ${maxSizeMB}MB.`;
       }
-      next();
-    });
-  },
-  uploadPostImage
-);
 
-router.post(
-  "/comment/:commentId",
-  auth,
-  (req, res, next) => {
-    commentImageUpload.single("image")(req, res, (err) => {
-      if (err) {
-        logger.error("Multer comment upload error:", err.message);
-        return res.status(400).json({
-          success: false,
-          message: err.message.includes("File too large")
-            ? "Image file too large. Maximum size is 5MB."
-            : err.message,
-        });
-      }
-      next();
-    });
-  },
-  uploadCommentImage
-);
+      return res.status(400).json({
+        success: false,
+        message,
+      });
+    }
+    next();
+  });
+};
+
+router.post("/profile", auth, handleUpload(profileImageUpload, 5), uploadProfileImage);
+
+router.post("/post/:postId", auth, handleUpload(postImageUpload, 10), uploadPostImage);
+
+router.post("/comment/:commentId", auth, handleUpload(commentImageUpload, 5), uploadCommentImage);
 
 router.delete("/image/:publicId", auth, deleteImageById);
 

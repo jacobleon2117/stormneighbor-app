@@ -78,7 +78,6 @@ interface PostCardProps {
   onLike?: (postId: number) => void;
   onComment?: (postId: number) => void;
   onShare?: (postId: number) => void;
-  onPress?: (postId: number) => void;
   onMessage?: (userId: number, userName: string) => void;
   onReport?: (postId: number) => void;
   onBlock?: (userId: number) => void;
@@ -96,7 +95,6 @@ interface PostCardProps {
 export function PostCard({
   post,
   onLike,
-  onPress,
   onMessage,
   onReport: _onReport,
   onBlock,
@@ -245,7 +243,7 @@ export function PostCard({
   };
 
   return (
-    <TouchableOpacity style={styles.card} onPress={() => onPress?.(post.id)} activeOpacity={0.95}>
+    <View style={styles.card}>
       <View style={styles.header}>
         <View style={styles.userInfo}>
           <View style={styles.avatar}>
@@ -330,7 +328,7 @@ export function PostCard({
 
       {post.images && post.images.length > 0 && (
         <View style={styles.imagesContainer}>
-          <Image source={{ uri: post.images[0] }} style={styles.postImage} resizeMode="contain" />
+          <Image source={{ uri: post.images[0] }} style={styles.postImage} resizeMode="cover" />
           {post.images.length > 1 && (
             <View style={styles.imageOverlay}>
               <Text style={styles.imageCount}>+{post.images.length - 1}</Text>
@@ -793,7 +791,7 @@ export function PostCard({
           </View>
         </View>
       </Modal>
-    </TouchableOpacity>
+    </View>
   );
 }
 
@@ -931,15 +929,13 @@ const styles = StyleSheet.create({
   imagesContainer: {
     position: "relative",
     marginBottom: 12,
-    marginHorizontal: -16,
-    borderRadius: 0,
+    marginHorizontal: 0,
+    borderRadius: 8,
     overflow: "hidden",
   },
   postImage: {
     width: "100%",
-    height: undefined,
-    aspectRatio: 1.5,
-    maxHeight: 300,
+    aspectRatio: 1,
     borderRadius: 8,
   },
   imageOverlay: {

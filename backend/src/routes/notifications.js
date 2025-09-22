@@ -20,6 +20,7 @@ const router = express.Router();
 
 const deviceRegistrationValidation = [
   body("deviceToken")
+    .trim()
     .isString()
     .isLength({ min: 140 })
     .withMessage("Valid device token is required"),
@@ -28,15 +29,17 @@ const deviceRegistrationValidation = [
     .optional()
     .isIn(["ios", "android", "web"])
     .withMessage("Platform must be ios, android, or web"),
-  body("deviceInfo.version").optional().isString().withMessage("Version must be a string"),
+  body("deviceInfo.version").optional().trim().isString().withMessage("Version must be a string"),
 ];
 
 const testNotificationValidation = [
   body("title")
+    .trim()
     .isString()
     .isLength({ min: 1, max: 100 })
     .withMessage("Title is required and must be 1-100 characters"),
   body("body")
+    .trim()
     .isString()
     .isLength({ min: 1, max: 255 })
     .withMessage("Body is required and must be 1-255 characters"),
@@ -49,14 +52,17 @@ const testNotificationValidation = [
 
 const topicNotificationValidation = [
   body("topic")
+    .trim()
     .isString()
     .matches(/^[a-zA-Z0-9-_.~%]+$/)
     .withMessage("Topic must contain only valid characters"),
   body("title")
+    .trim()
     .isString()
     .isLength({ min: 1, max: 100 })
     .withMessage("Title is required and must be 1-100 characters"),
   body("body")
+    .trim()
     .isString()
     .isLength({ min: 1, max: 255 })
     .withMessage("Body is required and must be 1-255 characters"),
@@ -65,6 +71,7 @@ const topicNotificationValidation = [
 
 const topicValidation = [
   body("topic")
+    .trim()
     .isString()
     .matches(/^[a-zA-Z0-9-_.~%]+$/)
     .withMessage("Topic must contain only valid characters"),
@@ -73,13 +80,10 @@ const topicValidation = [
 router.use(auth);
 
 router.post("/register", deviceRegistrationValidation, handleValidationErrors, registerDevice);
-
 router.delete("/register", removeDevice);
-
 router.get("/devices", getUserDevices);
 
 router.post("/subscribe", topicValidation, handleValidationErrors, subscribeToTopic);
-
 router.post("/unsubscribe", topicValidation, handleValidationErrors, unsubscribeFromTopic);
 
 router.get("/status", getServiceStatus);
@@ -105,12 +109,10 @@ router.post(
 router.get(
   "/stats",
   requirePermission("notifications", "read"),
-  [
-    query("days")
-      .optional()
-      .isInt({ min: 1, max: 365 })
-      .withMessage("Days must be between 1 and 365"),
-  ],
+  query("days")
+    .optional()
+    .isInt({ min: 1, max: 365 })
+    .withMessage("Days must be between 1 and 365"),
   handleValidationErrors,
   getNotificationStats
 );

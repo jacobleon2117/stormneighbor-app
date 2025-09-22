@@ -36,8 +36,10 @@ function validateEnvironment() {
   const present = [];
   const warnings = [];
 
+  const nodeEnv = (process.env.NODE_ENV || "development").toLowerCase();
+
   requiredEnvVars.forEach((envVar) => {
-    if (!process.env[envVar]) {
+    if (!process.env[envVar]?.trim()) {
       missing.push(envVar);
     } else {
       present.push(envVar);
@@ -45,43 +47,55 @@ function validateEnvironment() {
   });
 
   optionalEnvVars.forEach((envVar) => {
-    if (process.env[envVar]) {
+    if (process.env[envVar]?.trim()) {
       present.push(envVar);
     }
   });
 
   if (process.env.RESEND_API_KEY && !process.env.RESEND_API_KEY.startsWith("re_")) {
-    warnings.push(
-      "WARNING: RESEND_API_KEY should start with 're_' (please verify this is a valid Resend API key)"
-    );
+    warnings.push("RESEND_API_KEY should start with 're_' (verify this is a valid Resend API key)");
   }
 
-  if (process.env.FROM_EMAIL && !process.env.FROM_EMAIL.includes("@")) {
-    warnings.push("WARNING: FROM_EMAIL appears to be invalid (should be a valid email address)");
+  if (process.env.FROM_EMAIL && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(process.env.FROM_EMAIL)) {
+    warnings.push("FROM_EMAIL appears invalid (should be a proper email address)");
   }
 
   if (process.env.CLOUDINARY_API_KEY && !/^\d+$/.test(process.env.CLOUDINARY_API_KEY)) {
-    warnings.push("WARNING: CLOUDINARY_API_KEY should be numeric (please verify this is correct)");
+    warnings.push("CLOUDINARY_API_KEY should be numeric (verify this is correct)");
   }
 
   if (process.env.JWT_SECRET && process.env.JWT_SECRET.length < 32) {
     warnings.push(
-      "WARNING: JWT_SECRET is quite short (consider using a longer secret for better security)"
+      "JWT_SECRET is short (consider using at least 32 characters for better security)"
     );
   }
 
-  if (process.env.NODE_ENV === "production" && process.env.DATABASE_SSL !== "true") {
-    warnings.push("WARNING: DATABASE_SSL should be 'true' in production for security");
+  if (nodeEnv === "production" && process.env.DATABASE_SSL !== "true") {
+    warnings.push("DATABASE_SSL should be 'true' in production for secure connections");
   }
 
-  if (process.env.NODE_ENV === "production") {
+  if (nodeEnv === "production") {
     const productionRequired = ["DATABASE_URL", "JWT_SECRET"];
     productionRequired.forEach((envVar) => {
-      if (!process.env[envVar]) {
+      if (!process.env[envVar]?.trim()) {
         missing.push(`${envVar} (CRITICAL FOR PRODUCTION)`);
       }
     });
   }
+
+  [
+    "PORT",
+    "DB_POOL_SIZE",
+    "DB_CONNECTION_TIMEOUT",
+    "DB_IDLE_TIMEOUT",
+    "RATE_LIMIT_WINDOW_MS",
+    "RATE_LIMIT_MAX_REQUESTS",
+    "CACHE_TTL",
+  ].forEach((varName) => {
+    if (process.env[varName] && isNaN(Number(process.env[varName]))) {
+      warnings.push(`${varName} should be a numeric value`);
+    }
+  });
 
   if (missing.length > 0) {
     logger.error("ERROR: Missing required environment variables:");
@@ -98,11 +112,10 @@ function validateEnvironment() {
     warnings.forEach((warning) => logger.warn(`   - ${warning}`));
   }
 
-  logger.info(`WORKING: Environment validated (${present.length} variables configured);`);
+  logger.info(`WORKING: Environment validated (${present.length} variables configured)`);
+  logger.info(`Environment: ${nodeEnv}`);
 
-  logger.info(`Environment: ${process.env.NODE_ENV}`);
-
-  if (process.env.NODE_ENV === "development") {
+  if (nodeEnv === "development") {
     logger.info("Development mode settings:");
     logger.info(`INFO: Client URL: ${process.env.CLIENT_URL || "http://localhost:19006"}`);
     logger.info(`INFO: Database SSL: ${process.env.DATABASE_SSL || "false"}`);
@@ -110,8 +123,8 @@ function validateEnvironment() {
 
   logger.info("\nConfigured services:");
   logger.info(`INFO: Database: ${process.env.DATABASE_URL ? "SUCCESS" : "ERROR"}`);
-  logger.info(`INFO: Email (Resend);: ${process.env.RESEND_API_KEY ? "SUCCESS" : "ERROR"}`);
-  logger.info(`INFO: Weather (NOAA);: ${process.env.NOAA_API_BASE_URL ? "SUCCESS" : "ERROR"}`);
+  logger.info(`INFO: Email (Resend): ${process.env.RESEND_API_KEY ? "SUCCESS" : "ERROR"}`);
+  logger.info(`INFO: Weather (NOAA): ${process.env.NOAA_API_BASE_URL ? "SUCCESS" : "ERROR"}`);
   logger.info(
     `Images (Cloudinary): ${
       process.env.CLOUDINARY_CLOUD_NAME &&

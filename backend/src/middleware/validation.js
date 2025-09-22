@@ -1,6 +1,13 @@
 const { validationResult } = require("express-validator");
 const logger = require("../utils/logger");
 
+const buildErrorResponse = (errors, message = "Validation failed") => ({
+  success: false,
+  message,
+  errors,
+  errorCount: errors.length,
+});
+
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
 
@@ -16,80 +23,46 @@ const handleValidationErrors = (req, res, next) => {
       logger.info("Validation errors:", formattedErrors);
     }
 
-    return res.status(400).json({
-      success: false,
-      message: "Validation failed",
-      errors: formattedErrors,
-      errorCount: formattedErrors.length,
-    });
+    return res.status(400).json(buildErrorResponse(formattedErrors));
   }
 
   next();
 };
 
-const validateRequiredFields = (fields) => {
-  return (req, res, next) => {
-    const missing = [];
-    const empty = [];
+const validateRequiredFields = (fields) => (req, res, next) => {
+  const errors = [];
 
-    fields.forEach((field) => {
-      const value = req.body[field];
-
-      if (value === undefined || value === null) {
-        missing.push(field);
-      } else if (typeof value === "string" && value.trim() === "") {
-        empty.push(field);
-      }
-    });
-
-    if (missing.length > 0 || empty.length > 0) {
-      const errors = [];
-
-      missing.forEach((field) => {
-        errors.push({
-          field,
-          message: `${field} is required`,
-          value: null,
-          location: "body",
-        });
-      });
-
-      empty.forEach((field) => {
-        errors.push({
-          field,
-          message: `${field} cannot be empty`,
-          value: req.body[field],
-          location: "body",
-        });
-      });
-
-      return res.status(400).json({
-        success: false,
-        message: "Required fields missing or empty",
-        errors,
-        errorCount: errors.length,
-      });
+  fields.forEach((field) => {
+    const value = req.body?.[field];
+    if (value === null) {
+      errors.push({ field, message: `${field} is required`, value: null, location: "body" });
+    } else if (typeof value === "string" && value.trim() === "") {
+      errors.push({ field, message: `${field} cannot be empty`, value, location: "body" });
     }
+  });
 
-    next();
-  };
+  if (errors.length > 0)
+    return res.status(400).json(buildErrorResponse(errors, "Required fields missing or empty"));
+
+  next();
 };
 
 const validateAuthToken = (req, res, next) => {
-  const token = req.header("Authorization");
+  const token = req.header("Authorization")?.trim();
 
   if (!token || !token.startsWith("Bearer ")) {
-    return res.status(401).json({
-      success: false,
-      message: "Access denied. Valid token required.",
-      errors: [
-        {
-          field: "authorization",
-          message: "Bearer token required in Authorization header",
-          location: "header",
-        },
-      ],
-    });
+    return res.status(401).json(
+      buildErrorResponse(
+        [
+          {
+            field: "authorization",
+            message: "Bearer token required in Authorization header",
+            location: "header",
+          },
+        ],
+        "Access denied. Valid token required."
+      )
+    );
   }
 
   next();
@@ -103,50 +76,54 @@ const validateFileUpload = (options = {}) => {
   } = options;
 
   return (req, res, next) => {
-    if (required && !req.file) {
-      return res.status(400).json({
-        success: false,
-        message: "File upload required",
-        errors: [
-          {
-            field: "file",
-            message: "No file uploaded",
-            location: "file",
-          },
-        ],
-      });
+    const file = req.file;
+
+    if (required && !file) {
+      return res.status(400).json(
+        buildErrorResponse(
+          [
+            {
+              field: "file",
+              message: "No file uploaded",
+              location: "file",
+            },
+          ],
+          "File upload required"
+        )
+      );
     }
 
-    if (req.file) {
-      if (req.file.size > maxSize) {
-        return res.status(400).json({
-          success: false,
-          message: "File too large",
-          errors: [
-            {
-              field: "file",
-              message: `File size must be less than ${Math.round(maxSize / 1024 / 1024)}MB`,
-              value: `${Math.round(req.file.size / 1024 / 1024)}MB`,
-              location: "file",
-            },
-          ],
-        });
+    if (file) {
+      if (file.size > maxSize) {
+        return res.status(400).json(
+          buildErrorResponse(
+            [
+              {
+                field: "file",
+                message: `File size must be less than ${Math.round(maxSize / 1024 / 1024)}MB`,
+                value: `${Math.round(file.size / 1024 / 1024)}MB`,
+                location: "file",
+              },
+            ],
+            "File too large"
+          )
+        );
       }
 
-      const allowedTypesSet = new Set(allowedTypes);
-      if (!allowedTypesSet.has(req.file.mimetype)) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid file type",
-          errors: [
-            {
-              field: "file",
-              message: `File type must be one of: ${allowedTypes.join(", ")}`,
-              value: req.file.mimetype,
-              location: "file",
-            },
-          ],
-        });
+      if (!new Set(allowedTypes).has(file.mimetype)) {
+        return res.status(400).json(
+          buildErrorResponse(
+            [
+              {
+                field: "file",
+                message: `File type must be one of: ${allowedTypes.join(", ")}`,
+                value: file.mimetype,
+                location: "file",
+              },
+            ],
+            "Invalid file type"
+          )
+        );
       }
     }
 
@@ -156,10 +133,9 @@ const validateFileUpload = (options = {}) => {
 
 const validateCoordinates = (req, res, next) => {
   const { latitude, longitude } = req.body;
-
   const errors = [];
 
-  if (latitude !== undefined && latitude !== null) {
+  if (latitude !== null) {
     const lat = parseFloat(latitude);
     if (isNaN(lat) || lat < -90 || lat > 90) {
       errors.push({
@@ -171,7 +147,7 @@ const validateCoordinates = (req, res, next) => {
     }
   }
 
-  if (longitude !== undefined && longitude !== null) {
+  if (longitude !== null) {
     const lng = parseFloat(longitude);
     if (isNaN(lng) || lng < -180 || lng > 180) {
       errors.push({
@@ -183,23 +159,17 @@ const validateCoordinates = (req, res, next) => {
     }
   }
 
-  if (errors.length > 0) {
-    return res.status(400).json({
-      success: false,
-      message: "Invalid coordinates",
-      errors,
-      errorCount: errors.length,
-    });
-  }
+  if (errors.length > 0)
+    return res.status(400).json(buildErrorResponse(errors, "Invalid coordinates"));
 
   next();
 };
 
 const validatePagination = (req, res, next) => {
-  const { limit, offset } = req.query;
   const errors = [];
+  const { limit, offset } = req.query;
 
-  if (limit !== undefined) {
+  if (limit !== null) {
     const limitNum = parseInt(limit);
     if (isNaN(limitNum) || limitNum < 1 || limitNum > 100) {
       errors.push({
@@ -211,7 +181,7 @@ const validatePagination = (req, res, next) => {
     }
   }
 
-  if (offset !== undefined) {
+  if (offset !== null) {
     const offsetNum = parseInt(offset);
     if (isNaN(offsetNum) || offsetNum < 0) {
       errors.push({
@@ -223,42 +193,37 @@ const validatePagination = (req, res, next) => {
     }
   }
 
-  if (errors.length > 0) {
-    return res.status(400).json({
-      success: false,
-      message: "Invalid pagination parameters",
-      errors,
-      errorCount: errors.length,
-    });
-  }
+  if (errors.length > 0)
+    return res.status(400).json(buildErrorResponse(errors, "Invalid pagination parameters"));
 
   next();
 };
 
-const validateIdParam = (paramName = "id") => {
-  return (req, res, next) => {
-    const id = req.params[paramName];
+const validateIdParam =
+  (paramName = "id") =>
+  (req, res, next) => {
+    const id = req.params?.[paramName];
     const idNum = parseInt(id);
 
     if (!id || isNaN(idNum) || idNum < 1) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid ID parameter",
-        errors: [
-          {
-            field: paramName,
-            message: `${paramName} must be a positive integer`,
-            value: id,
-            location: "params",
-          },
-        ],
-      });
+      return res.status(400).json(
+        buildErrorResponse(
+          [
+            {
+              field: paramName,
+              message: `${paramName} must be a positive integer`,
+              value: id,
+              location: "params",
+            },
+          ],
+          "Invalid ID parameter"
+        )
+      );
     }
 
     req.params[`${paramName}Num`] = idNum;
     next();
   };
-};
 
 module.exports = {
   handleValidationErrors,

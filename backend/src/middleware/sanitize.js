@@ -6,48 +6,38 @@ const logger = require("../utils/logger");
 const window = new JSDOM("").window;
 const DOMPurify = createDOMPurify(window);
 
+const sanitizeObject = (obj) => {
+  if (obj === null) return obj;
+  if (Array.isArray(obj)) return obj.map(sanitizeObject);
+
+  if (typeof obj === "object") {
+    for (const key in obj) {
+      obj[key] = sanitizeObject(obj[key]);
+    }
+    return obj;
+  }
+
+  if (typeof obj === "string") {
+    const sanitized = DOMPurify.sanitize(obj, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] })
+      .replace(/\p{Cc}/gu, "")
+      .trim();
+
+    return sanitized;
+  }
+
+  return obj;
+};
+
 const sanitizeInput = (req, _res, next) => {
   try {
-    if (req.body && typeof req.body === "object") {
-      req.body = sanitizeObject(req.body);
-    }
-    if (req.query && typeof req.query === "object") {
-      req.query = sanitizeObject(req.query);
-    }
-    if (req.params && typeof req.params === "object") {
-      req.params = sanitizeObject(req.params);
-    }
+    if (req.body && typeof req.body === "object") req.body = sanitizeObject(req.body);
+    if (req.query && typeof req.query === "object") req.query = sanitizeObject(req.query);
+    if (req.params && typeof req.params === "object") req.params = sanitizeObject(req.params);
     next();
   } catch (error) {
     logger.error("Input sanitization error:", error);
-    next();
+    next(error);
   }
-};
-
-const sanitizeObject = (obj) => {
-  if (obj === null || obj === undefined) return obj;
-  if (Array.isArray(obj)) return obj.map((item) => sanitizeObject(item));
-  if (typeof obj === "object") {
-    const sanitized = {};
-    for (const [key, value] of Object.entries(obj)) {
-      sanitized[key] = sanitizeObject(value);
-    }
-    return sanitized;
-  }
-  if (typeof obj === "string") {
-    return DOMPurify.sanitize(obj, {
-      ALLOWED_TAGS: [],
-      ALLOWED_ATTR: [],
-    })
-      .split("")
-      .filter((char) => {
-        const code = char.charCodeAt(0);
-        return code >= 32 && code !== 127;
-      })
-      .join("")
-      .trim();
-  }
-  return obj;
 };
 
 const sanitizeSensitive = (req, _res, next) => {
@@ -55,12 +45,12 @@ const sanitizeSensitive = (req, _res, next) => {
     const sensitiveFields = ["password", "currentPassword", "newPassword"];
     if (req.body && typeof req.body === "object") {
       sensitiveFields.forEach((field) => {
-        if (req.body[field] && typeof req.body[field] === "string") {
-          req.body[field] = req.body[field]
-            .split("")
+        if (typeof req.body[field] === "string") {
+          const str = req.body[field];
+          req.body[field] = Array.from(str)
             .filter((char) => {
               const code = char.charCodeAt(0);
-              return code >= 32 && code !== 127 && !"<>\"'&".includes(char);
+              return code >= 32 && code !== 127 && !/["<>'&]/.test(char);
             })
             .join("")
             .trim();
@@ -70,43 +60,33 @@ const sanitizeSensitive = (req, _res, next) => {
     next();
   } catch (error) {
     logger.error("Sensitive field sanitization error:", error);
-    next();
+    next(error);
   }
 };
 
 const sanitizeFileMetadata = (req, _res, next) => {
   try {
     const cleanFilename = (name) => {
-      let sanitized = DOMPurify.sanitize(name, {
-        ALLOWED_TAGS: [],
-        ALLOWED_ATTR: [],
-      });
+      if (!name) return "";
+      let sanitized = DOMPurify.sanitize(name, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] })
+        .replace(/\p{Cc}/gu, "")
+        .trim();
 
-      sanitized = Array.from(sanitized)
-        .filter((char) => {
-          const code = char.charCodeAt(0);
-          return code >= 32 && code !== 127;
-        })
-        .join("");
-
+      sanitized = sanitized.replace(/[<>:"/\\|?*\s]+/g, "_");
       return path.basename(sanitized);
     };
 
-    if (req.file?.originalname) {
-      req.file.originalname = cleanFilename(req.file.originalname);
-    }
+    if (req.file?.originalname) req.file.originalname = cleanFilename(req.file.originalname);
     if (Array.isArray(req.files)) {
       req.files.forEach((file) => {
-        if (file.originalname) {
-          file.originalname = cleanFilename(file.originalname);
-        }
+        if (file.originalname) file.originalname = cleanFilename(file.originalname);
       });
     }
 
     next();
   } catch (error) {
     logger.error("File metadata sanitization error:", error);
-    next();
+    next(error);
   }
 };
 

@@ -19,7 +19,6 @@ import {
 import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Header } from "../../components/UI/Header";
-import { ImageViewerModal } from "../../components/UI/ImageViewerModal";
 import { Colors } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
 import { apiService } from "../../services/api";
@@ -41,6 +40,8 @@ import {
   Users,
   UserCheck,
 } from "lucide-react-native";
+
+const MAX_IMAGES = 5;
 
 export default function CreateScreen() {
   const { user } = useAuth();
@@ -149,15 +150,24 @@ export default function CreateScreen() {
 
   const toggleQuickActions = () => {
     if (showQuickActions) {
+      // Switching from Quick Actions to Keyboard
       setShowQuickActions(false);
+      // Shorter delay for smoother transition
       setTimeout(() => {
         textInputRef.current?.focus();
-      }, 100);
+      }, 50);
     } else {
+      // Switching from Keyboard to Quick Actions
       if (isTyping) {
+        // Dismiss keyboard first, then show quick actions after a brief delay
         Keyboard.dismiss();
+        setTimeout(() => {
+          setShowQuickActions(true);
+        }, 50);
+      } else {
+        // If not typing, show quick actions immediately
+        setShowQuickActions(true);
       }
-      setShowQuickActions(true);
     }
   };
 
@@ -174,8 +184,8 @@ export default function CreateScreen() {
   };
 
   const handleCreatePost = async () => {
-    if (!postText.trim()) {
-      Alert.alert("Error", "Please enter some text for your post.");
+    if (!postText.trim() && selectedImages.length === 0) {
+      Alert.alert("Error", "Please enter some text or add an image for your post.");
       return;
     }
 
@@ -294,11 +304,33 @@ export default function CreateScreen() {
 
   const handleGalleryPress = async () => {
     try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== "granted") {
+      // Check current permission status first
+      const { status: currentStatus } = await ImagePicker.getMediaLibraryPermissionsAsync();
+
+      let permissionStatus = currentStatus;
+
+      // If not granted, request permission
+      if (currentStatus !== "granted") {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        permissionStatus = status;
+      }
+
+      if (permissionStatus === "denied") {
+        Alert.alert(
+          "Photo Library Access Denied",
+          "You've denied access to your photo library. To select images, please enable photo library access in your device settings.",
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Open Settings", onPress: () => console.log("Open settings - implement if needed") }
+          ]
+        );
+        return;
+      }
+
+      if (permissionStatus !== "granted") {
         Alert.alert(
           "Permission Required",
-          "Please allow access to your photo library to select images."
+          "Please allow access to your photo library to select images for your posts."
         );
         return;
       }
@@ -312,7 +344,33 @@ export default function CreateScreen() {
 
       if (!result.canceled && result.assets) {
         const imageUris = result.assets.map((asset) => asset.uri);
-        setSelectedImages((prev) => [...prev, ...imageUris].slice(0, 5));
+        const currentCount = selectedImages.length;
+        const availableSlots = MAX_IMAGES - currentCount;
+
+        if (availableSlots <= 0) {
+          Alert.alert(
+            "Image Limit Reached",
+            `You can only add up to ${MAX_IMAGES} images per post. Please remove some images first.`
+          );
+          return;
+        }
+
+        const imagesToAdd = imageUris.slice(0, availableSlots);
+        const totalAfterAdd = currentCount + imagesToAdd.length;
+
+        setSelectedImages((prev) => [...prev, ...imagesToAdd]);
+
+        if (imageUris.length > availableSlots) {
+          Alert.alert(
+            "Some Images Not Added",
+            `Only ${availableSlots} of ${imageUris.length} selected images were added. You can add up to ${MAX_IMAGES} images total per post.`
+          );
+        } else if (totalAfterAdd === MAX_IMAGES) {
+          Alert.alert(
+            "Image Limit Reached",
+            `You've reached the maximum of ${MAX_IMAGES} images for this post.`
+          );
+        }
       }
 
       setTimeout(() => {
@@ -320,20 +378,45 @@ export default function CreateScreen() {
       }, 100);
     } catch (error) {
       console.error("Error selecting images:", error);
-      Alert.alert("Error", "Failed to select images from gallery.");
+      Alert.alert("Error", "Failed to select images from gallery. Please try again.");
     }
   };
 
   const handleCameraPress = async () => {
     try {
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert("Permission Required", "Please allow camera access to take photos.");
+      // Check current permission status first
+      const { status: currentStatus } = await ImagePicker.getCameraPermissionsAsync();
+
+      let permissionStatus = currentStatus;
+
+      // If not granted, request permission
+      if (currentStatus !== "granted") {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        permissionStatus = status;
+      }
+
+      if (permissionStatus === "denied") {
+        Alert.alert(
+          "Camera Access Denied",
+          "You've denied camera access. To take photos, please enable camera access in your device settings.",
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Open Settings", onPress: () => console.log("Open settings - implement if needed") }
+          ]
+        );
+        return;
+      }
+
+      if (permissionStatus !== "granted") {
+        Alert.alert(
+          "Permission Required",
+          "Please allow camera access to take photos for your posts."
+        );
         return;
       }
 
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         quality: 0.7,
         aspect: [1, 1],
         allowsEditing: true,
@@ -341,7 +424,24 @@ export default function CreateScreen() {
 
       if (!result.canceled && result.assets && result.assets[0]) {
         const newImage = result.assets[0].uri;
-        setSelectedImages((prev) => [...prev, newImage].slice(0, 5));
+        const currentCount = selectedImages.length;
+
+        if (currentCount >= MAX_IMAGES) {
+          Alert.alert(
+            "Image Limit Reached",
+            `You can only add up to ${MAX_IMAGES} images per post. Please remove some images first.`
+          );
+          return;
+        }
+
+        setSelectedImages((prev) => [...prev, newImage]);
+
+        if (currentCount + 1 === MAX_IMAGES) {
+          Alert.alert(
+            "Image Limit Reached",
+            `You've reached the maximum of ${MAX_IMAGES} images for this post.`
+          );
+        }
       }
 
       setTimeout(() => {
@@ -349,7 +449,7 @@ export default function CreateScreen() {
       }, 100);
     } catch (error) {
       console.error("Error taking photo:", error);
-      Alert.alert("Error", "Failed to take photo.");
+      Alert.alert("Error", "Failed to take photo. Please try again.");
     }
   };
 
@@ -374,18 +474,6 @@ export default function CreateScreen() {
     }
   };
 
-  const getPrivacyLabel = () => {
-    switch (privacyLevel) {
-      case "public":
-        return "Public";
-      case "neighbors":
-        return "Neighbors";
-      case "friends":
-        return "Friends";
-      default:
-        return "Neighbors";
-    }
-  };
 
   const handleClosePress = () => {
     const hasContent = postText.trim() || selectedImages.length > 0 || selectedAction;
@@ -404,6 +492,25 @@ export default function CreateScreen() {
     setShowQuickActions(true);
     setShowDiscardModal(false);
     router.back();
+  };
+
+  const handleRemoveImage = (index: number) => {
+    console.log(`Removing image at index ${index}`);
+    const wasTyping = isTyping;
+
+    setSelectedImages((prev) => {
+      const newImages = prev.filter((_, i) => i !== index);
+      console.log(`Images before: ${prev.length}, after: ${newImages.length}`);
+      return newImages;
+    });
+
+    // Keep keyboard visible if user was typing
+    if (wasTyping) {
+      // Use a shorter timeout and ensure focus is maintained
+      setTimeout(() => {
+        textInputRef.current?.focus();
+      }, 10);
+    }
   };
 
   return (
@@ -425,6 +532,7 @@ export default function CreateScreen() {
         <SafeAreaView style={styles.safeContent} edges={["bottom", "left", "right"]}>
           <TouchableWithoutFeedback
             onPress={() => {
+              // Only dismiss keyboard if tapping in empty space, not on buttons/images
               if (isTyping) {
                 Keyboard.dismiss();
               }
@@ -473,15 +581,15 @@ export default function CreateScreen() {
                 <TouchableOpacity
                   style={[
                     styles.postButton,
-                    (!postText.trim() || isPosting) && styles.postButtonDisabled,
+                    (!postText.trim() && selectedImages.length === 0 || isPosting) && styles.postButtonDisabled,
                   ]}
                   onPress={handleCreatePost}
-                  disabled={!postText.trim() || isPosting}
+                  disabled={(!postText.trim() && selectedImages.length === 0) || isPosting}
                 >
                   <Text
                     style={[
                       styles.postButtonText,
-                      (!postText.trim() || isPosting) && styles.postButtonTextDisabled,
+                      (!postText.trim() && selectedImages.length === 0 || isPosting) && styles.postButtonTextDisabled,
                     ]}
                   >
                     Post
@@ -493,7 +601,7 @@ export default function CreateScreen() {
                 <View style={styles.textInputContainer}>
                   <TextInput
                     ref={textInputRef}
-                    style={[styles.textInput, selectedAction && styles.textInputWithBadge]}
+                    style={styles.textInput}
                     multiline
                     placeholder="What's happening in your neighborhood?"
                     placeholderTextColor={Colors.text.disabled}
@@ -510,34 +618,47 @@ export default function CreateScreen() {
       </KeyboardAvoidingView>
 
       {selectedImages.length > 0 && (
-        <View
-          style={[
-            styles.selectedImagesFloating,
-            {
-              bottom: showQuickActions ? 372 : keyboardHeight > 0 ? keyboardHeight + 72 : 112,
-            },
-          ]}
-        >
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.imagesScrollView}
+        <TouchableWithoutFeedback>
+          <View
+            style={[
+              styles.selectedImagesFloating,
+              {
+                bottom: showQuickActions ? 372 : keyboardHeight > 0 ? keyboardHeight + 72 : 112,
+              },
+            ]}
           >
-            {selectedImages.map((imageUri, index) => (
-              <View key={index} style={styles.selectedImageWrapper}>
-                <TouchableOpacity onPress={() => setViewingImage(imageUri)} activeOpacity={0.8}>
-                  <Image source={{ uri: imageUri }} style={styles.selectedImage} />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.removeImageButton}
-                  onPress={() => setSelectedImages((prev) => prev.filter((_, i) => i !== index))}
-                >
-                  <X size={16} color={Colors.text.inverse} />
-                </TouchableOpacity>
-              </View>
-            ))}
-          </ScrollView>
-        </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.imagesScrollView}
+            >
+              {selectedImages.map((imageUri, index) => (
+                <View key={index} style={styles.selectedImageWrapper}>
+                  <View style={styles.imageViewWrapper}>
+                    <TouchableOpacity
+                      onPress={() => setViewingImage(imageUri)}
+                      activeOpacity={0.8}
+                      style={styles.imageViewTouchable}
+                    >
+                      <Image source={{ uri: imageUri }} style={styles.selectedImage} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.removeImageButton}
+                      onPress={() => {
+                        console.log('Remove button pressed for image', index);
+                        handleRemoveImage(index);
+                      }}
+                      activeOpacity={0.8}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <X size={14} color="#FFFFFF" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        </TouchableWithoutFeedback>
       )}
 
       <View
@@ -550,9 +671,18 @@ export default function CreateScreen() {
       >
         <View style={styles.mediaButtons}>
           <View style={styles.leftMediaButtons}>
-            <TouchableOpacity style={styles.mediaButton} onPress={handleGalleryPress}>
-              <Gallery size={20} color={Colors.text.secondary} />
-            </TouchableOpacity>
+            <View style={styles.mediaButtonWithCounter}>
+              <TouchableOpacity style={styles.mediaButton} onPress={handleGalleryPress}>
+                <Gallery size={20} color={Colors.text.secondary} />
+              </TouchableOpacity>
+              {selectedImages.length > 0 && (
+                <View style={styles.imageCounter}>
+                  <Text style={styles.imageCounterText}>
+                    {selectedImages.length}/{MAX_IMAGES}
+                  </Text>
+                </View>
+              )}
+            </View>
 
             <TouchableOpacity style={styles.mediaButton} onPress={handleCameraPress}>
               <Camera size={20} color={Colors.text.secondary} />
@@ -854,6 +984,38 @@ export default function CreateScreen() {
           </View>
         </Animated.View>
       )}
+
+      {/* Image Viewer Modal */}
+      <Modal
+        visible={!!viewingImage}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setViewingImage(null)}
+      >
+        <View style={styles.imageViewerOverlay}>
+          <TouchableOpacity
+            style={styles.imageViewerCloseArea}
+            onPress={() => setViewingImage(null)}
+            activeOpacity={1}
+          >
+            <View style={styles.imageViewerContent}>
+              <TouchableOpacity
+                style={styles.imageViewerCloseButton}
+                onPress={() => setViewingImage(null)}
+              >
+                <X size={24} color={Colors.text.inverse} />
+              </TouchableOpacity>
+              {viewingImage && (
+                <Image
+                  source={{ uri: viewingImage }}
+                  style={styles.fullScreenImage}
+                  resizeMode="contain"
+                />
+              )}
+            </View>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -978,9 +1140,6 @@ const styles = StyleSheet.create({
     textAlignVertical: "top",
     padding: 0,
   },
-  textInputWithBadge: {
-    marginTop: 8,
-  },
   selectedActionInline: {
     flexDirection: "row",
     alignItems: "center",
@@ -1028,6 +1187,27 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
+  },
+  mediaButtonWithCounter: {
+    position: "relative",
+  },
+  imageCounter: {
+    position: "absolute",
+    top: -8,
+    right: -8,
+    backgroundColor: Colors.primary[500],
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    minWidth: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  imageCounterText: {
+    color: Colors.text.inverse,
+    fontSize: 10,
+    fontWeight: "600",
+    lineHeight: 12,
   },
   mediaButton: {
     width: 40,
@@ -1147,8 +1327,18 @@ const styles = StyleSheet.create({
   selectedImageWrapper: {
     position: "relative",
     marginRight: 8,
-    paddingTop: 8,
-    paddingRight: 8,
+  },
+  imageViewWrapper: {
+    position: "relative",
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+  },
+  imageViewTouchable: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    overflow: "hidden",
   },
   selectedImage: {
     width: 80,
@@ -1158,19 +1348,14 @@ const styles = StyleSheet.create({
   },
   removeImageButton: {
     position: "absolute",
-    top: 0,
-    right: 0,
+    top: 4,
+    right: 4,
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: Colors.error[600],
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
     zIndex: 10,
   },
   modalContainer: {
@@ -1358,5 +1543,40 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: Colors.text.inverse,
+  },
+  imageViewerOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.9)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  imageViewerCloseArea: {
+    flex: 1,
+    width: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  imageViewerContent: {
+    flex: 1,
+    width: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+    position: "relative",
+  },
+  imageViewerCloseButton: {
+    position: "absolute",
+    top: 50,
+    right: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 10,
+  },
+  fullScreenImage: {
+    width: "90%",
+    height: "80%",
   },
 });

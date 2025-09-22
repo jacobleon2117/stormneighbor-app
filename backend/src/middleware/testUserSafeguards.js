@@ -1,8 +1,24 @@
 const rateLimit = require("express-rate-limit");
 const logger = require("../utils/logger");
 
+const createRateLimiter = ({ windowMs, max, message, serviceName }) => {
+  return rateLimit({
+    windowMs,
+    max,
+    message,
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req, res) => {
+      logger.warn(
+        `RATE_LIMIT_HIT: ${serviceName} - User: ${req.user?.userId || "anonymous"} - IP: ${req.ip} - Time: ${new Date().toISOString()}`
+      );
+      res.status(429).json(message);
+    },
+  });
+};
+
 const testUserLimits = {
-  weather: rateLimit({
+  weather: createRateLimiter({
     windowMs: 15 * 60 * 1000,
     max: 10,
     message: {
@@ -10,11 +26,10 @@ const testUserLimits = {
       message: "Weather API limit reached. Please wait 15 minutes.",
       type: "RATE_LIMIT_WEATHER",
     },
-    standardHeaders: true,
-    legacyHeaders: false,
+    serviceName: "weather",
   }),
 
-  general: rateLimit({
+  general: createRateLimiter({
     windowMs: 15 * 60 * 1000,
     max: 50,
     message: {
@@ -22,11 +37,10 @@ const testUserLimits = {
       message: "API limit reached. Please wait before making more requests.",
       type: "RATE_LIMIT_GENERAL",
     },
-    standardHeaders: true,
-    legacyHeaders: false,
+    serviceName: "general",
   }),
 
-  posts: rateLimit({
+  posts: createRateLimiter({
     windowMs: 5 * 60 * 1000,
     max: 3,
     message: {
@@ -34,11 +48,10 @@ const testUserLimits = {
       message: "Post limit reached. Please wait 5 minutes before posting again.",
       type: "RATE_LIMIT_POSTS",
     },
-    standardHeaders: true,
-    legacyHeaders: false,
+    serviceName: "posts",
   }),
 
-  uploads: rateLimit({
+  uploads: createRateLimiter({
     windowMs: 10 * 60 * 1000,
     max: 5,
     message: {
@@ -46,15 +59,17 @@ const testUserLimits = {
       message: "Upload limit reached. Please wait 10 minutes.",
       type: "RATE_LIMIT_UPLOADS",
     },
-    standardHeaders: true,
-    legacyHeaders: false,
+    serviceName: "uploads",
   }),
 };
 
 const trackAPIUsage = (service) => {
   return (req, res, next) => {
+    const userId = req.user?.userId || "anonymous";
+    const ip = req.ip;
+
     logger.info(
-      `API_USAGE: ${service} - User: ${req.user?.userId || "anonymous"} - IP: ${req.ip} - Time: ${new Date().toISOString()}`
+      `API_USAGE: ${service} - User: ${userId} - IP: ${ip} - Time: ${new Date().toISOString()}`
     );
 
     res.setHeader("X-API-Service", service);
@@ -69,10 +84,12 @@ const costMonitor = (_req, res, next) => {
 
   res.on("finish", () => {
     const duration = Date.now() - startTime;
-    const service = res.getHeader("X-API-Service");
+    const service = res.getHeader("X-API-Service") || "unknown";
 
     if (duration > 1000 || service === "weather") {
-      logger.info(`COST_MONITOR: ${service} took ${duration}ms - Status: ${res.statusCode}`);
+      logger.info(
+        `COST_MONITOR: ${service} - Duration: ${duration}ms - Status: ${res.statusCode} - Time: ${new Date().toISOString()}`
+      );
     }
   });
 

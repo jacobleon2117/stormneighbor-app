@@ -29,8 +29,8 @@ const testCloudinaryConnection = async () => {
     return true;
   } catch (error) {
     logger.error("ERROR: Cloudinary connection failed:", error.message);
-    if (error.http_code === 401) {
-      logger.error("INFO: Check your API credentials");
+    if (error.http_code === 401 || error.http_code === 403) {
+      logger.error("INFO: Check your API credentials or permissions");
     }
     return false;
   }
@@ -113,7 +113,7 @@ const postImageUpload = multer({
     files: 1,
   },
   fileFilter: (_req, file, cb) => {
-    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif", "webp"];
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {

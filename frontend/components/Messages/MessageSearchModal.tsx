@@ -12,7 +12,7 @@ import {
   Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowLeft, Search } from "lucide-react-native";
+import { ArrowLeft, Search, X } from "lucide-react-native";
 import { Colors } from "../../constants/Colors";
 import { Conversation } from "../../types";
 
@@ -118,7 +118,20 @@ export const MessageSearchModal: React.FC<MessageSearchModalProps> = ({
         keyExtractor={(item) => `suggested-${item.id}`}
         renderItem={(props) => renderConversationItem(props, false)}
         showsVerticalScrollIndicator={false}
+        ListEmptyComponent={renderEmptyState}
       />
+    </View>
+  );
+
+  const renderEmptyState = () => (
+    <View style={styles.emptyState}>
+      <Search size={48} color={Colors.text.disabled} />
+      <Text style={styles.emptyTitle}>
+        {searchQuery ? "No conversations found" : "Search conversations"}
+      </Text>
+      <Text style={styles.emptyMessage}>
+        {searchQuery ? "Try adjusting your search terms" : "Find conversations with your neighbors"}
+      </Text>
     </View>
   );
 
@@ -147,15 +160,24 @@ export const MessageSearchModal: React.FC<MessageSearchModalProps> = ({
                   onChangeText={setSearchQuery}
                   autoFocus
                   returnKeyType="search"
+                  autoCapitalize="none"
+                  autoCorrect={false}
                 />
+                {searchQuery.length > 0 && (
+                  <TouchableOpacity onPress={() => setSearchQuery("")} style={styles.clearButton}>
+                    <X size={20} color={Colors.text.disabled} />
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
           </View>
         </View>
 
         <View style={styles.content}>
-          {renderRecentlyOpened()}
-          {renderSuggested()}
+          <View style={styles.searchContent}>
+            {renderRecentlyOpened()}
+            {renderSuggested()}
+          </View>
         </View>
       </SafeAreaView>
     </Modal>
@@ -205,8 +227,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.text.primary,
   },
+  clearButton: {
+    padding: 4,
+    marginLeft: 8,
+  },
   content: {
     flex: 1,
+    backgroundColor: Colors.neutral[50],
+  },
+  searchContent: {
+    padding: 20,
+    paddingBottom: 100,
   },
   section: {
     marginBottom: 24,
@@ -226,6 +257,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
+    marginBottom: 8,
+    borderRadius: 12,
   },
   avatarContainer: {
     marginRight: 12,
@@ -262,5 +295,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.primary[600],
     fontWeight: "500",
+  },
+  emptyState: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingTop: 80,
+    paddingHorizontal: 32,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: Colors.text.primary,
+    marginTop: 16,
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  emptyMessage: {
+    fontSize: 14,
+    color: Colors.text.secondary,
+    textAlign: "center",
+    lineHeight: 20,
   },
 });

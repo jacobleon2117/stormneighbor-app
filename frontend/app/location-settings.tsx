@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, ScrollView, Switch, Alert, TextInput, TouchableOpacity } from "react-native";
-import { Search, X } from "lucide-react-native";
+import { View, Text, StyleSheet, ScrollView, Switch, Alert } from "react-native";
 import { router } from "expo-router";
 import { Header } from "../components/UI/Header";
 import { Input } from "../components/UI/Input";
@@ -21,8 +20,6 @@ interface LocationForm {
 export default function LocationSettingsScreen() {
   const { user, refreshProfile } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showSearch, setShowSearch] = useState(false);
   const [locationForm, setLocationForm] = useState<LocationForm>({
     address: "",
     locationCity: "",
@@ -74,71 +71,11 @@ export default function LocationSettingsScreen() {
     }
   };
 
-  const getFilteredContent = () => {
-    if (!searchQuery.trim()) return null;
-
-    const searchableItems = [
-      { label: "Street Address", content: "address location" },
-      { label: "City", content: "city location" },
-      { label: "State", content: "state location" },
-      { label: "ZIP Code", content: "zip postal code" },
-      { label: "Notification Radius", content: "radius distance notifications" },
-      { label: "Show City Only", content: "privacy city visibility" },
-      { label: "Privacy", content: "privacy security address sharing" },
-    ];
-
-    const filtered = searchableItems.filter(item =>
-      item.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.content.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
-    return filtered.length > 0 ? filtered : null;
-  };
-
   return (
     <View style={styles.container}>
-      <Header
-        title="Location Settings"
-        showBackButton
-        onBackPress={() => router.back()}
-        showSearch
-        onSearchPress={() => setShowSearch(!showSearch)}
-      />
-
-      {showSearch && (
-        <View style={styles.searchContainer}>
-          <View style={styles.searchInputContainer}>
-            <Search size={20} color={Colors.text.secondary} style={styles.searchIcon} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search location settings"
-              placeholderTextColor={Colors.text.secondary}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              autoFocus
-            />
-            <TouchableOpacity onPress={() => { setShowSearch(false); setSearchQuery(""); }}>
-              <X size={20} color={Colors.text.secondary} />
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
+      <Header title="Location Settings" showBackButton onBackPress={() => router.back()} />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {showSearch && searchQuery.trim() && (
-          <View style={styles.searchResults}>
-            {getFilteredContent() ? (
-              getFilteredContent()!.map((item, index) => (
-                <View key={index} style={styles.searchResultItem}>
-                  <Text style={styles.searchResultLabel}>{item.label}</Text>
-                </View>
-              ))
-            ) : (
-              <Text style={styles.noResultsText}>No matching settings found</Text>
-            )}
-          </View>
-        )}
-
         <View style={styles.section}>
           <View style={styles.infoBox}>
             <Text style={styles.infoText}>
@@ -348,52 +285,5 @@ const styles = StyleSheet.create({
   footerButton: {
     flex: 1,
     height: 48,
-  },
-  searchContainer: {
-    backgroundColor: Colors.background,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-  },
-  searchInputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.neutral[50],
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    height: 44,
-    gap: 8,
-  },
-  searchIcon: {
-    marginLeft: 4,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: Colors.text.primary,
-    height: "100%",
-  },
-  searchResults: {
-    backgroundColor: Colors.background,
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  searchResultItem: {
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.neutral[200],
-  },
-  searchResultLabel: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: Colors.text.primary,
-  },
-  noResultsText: {
-    fontSize: 16,
-    color: Colors.text.secondary,
-    textAlign: "center",
-    paddingVertical: 20,
   },
 });

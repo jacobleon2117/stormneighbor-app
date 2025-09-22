@@ -17,6 +17,7 @@ class DatabaseBackupService {
       monthly: process.env.BACKUP_MONTHLY_SCHEDULE || "0 4 1 * *",
     };
 
+    this.cronTasks = [];
     this.initializeBackupDirectory();
   }
 
@@ -45,12 +46,11 @@ class DatabaseBackupService {
 
     try {
       const dbUrl = new URL(process.env.DATABASE_URL);
-
       const password = dbUrl.password ? decodeURIComponent(dbUrl.password) : null;
       const username = dbUrl.username || "postgres";
       const database = dbUrl.pathname.slice(1);
 
-      logger.info(`Connecting to: ${dbUrl.hostname}:${dbUrl.port || 5432} as ${username}`);
+      const tempFile = this.compressionEnabled ? filepath.replace(".gz", "") : filepath;
 
       const pgDumpOptions = [
         "--verbose",
@@ -58,32 +58,21 @@ class DatabaseBackupService {
         "--no-acl",
         "--no-owner",
         "--format=custom",
-        "--file=" + (this.compressionEnabled ? filepath.replace(".gz", "") : filepath),
+        `--file=${tempFile}`,
         `--host=${dbUrl.hostname}`,
         `--port=${dbUrl.port || 5432}`,
         `--username=${username}`,
         `--dbname=${database}`,
       ];
 
-      if (options.schemaOnly) {
-        pgDumpOptions.push("--schema-only");
-      }
-
-      if (options.dataOnly) {
-        pgDumpOptions.push("--data-only");
-      }
-
-      if (options.excludeTables) {
-        options.excludeTables.forEach((table) => {
-          pgDumpOptions.push(`--exclude-table=${table}`);
-        });
-      }
+      if (options.schemaOnly) pgDumpOptions.push("--schema-only");
+      if (options.dataOnly) pgDumpOptions.push("--data-only");
+      if (options.excludeTables)
+        options.excludeTables.forEach((table) => pgDumpOptions.push(`--exclude-table=${table}`));
 
       await this.executePgDump(pgDumpOptions, password);
 
-      if (this.compressionEnabled) {
-        await this.compressBackup(filepath.replace(".gz", ""), filepath);
-      }
+      if (this.compressionEnabled) await this.compressBackup(tempFile, filepath);
 
       const stats = await fs.stat(filepath);
       const duration = Date.now() - startTime;
@@ -105,12 +94,8 @@ class DatabaseBackupService {
         duration: `${duration}ms`,
       });
 
-      if (this.remoteUpload) {
-        await this.uploadToRemoteStorage(filepath, backupInfo);
-      }
-
+      if (this.remoteUpload) await this.uploadToRemoteStorage(filepath, backupInfo);
       await this.cleanupOldBackups();
-
       await this.logBackupCompletion(backupInfo);
 
       return backupInfo;
@@ -120,7 +105,7 @@ class DatabaseBackupService {
       try {
         await fs.unlink(filepath);
       } catch (cleanupError) {
-        logger.error("Failed to cleanup incomplete backup file:", cleanupError);
+        logger.warn("Failed to remove incomplete backup file:", cleanupError.message);
       }
 
       const backupInfo = {
@@ -137,115 +122,83 @@ class DatabaseBackupService {
     }
   }
 
-  async executePgDump(options, password) {
+  executePgDump(options, password) {
     return new Promise((resolve, reject) => {
       const env = { ...process.env };
-      if (password) {
-        env.PGPASSWORD = password;
-      }
+      if (password) env.PGPASSWORD = password;
 
-      const pgDump = spawn("pg_dump", options, {
-        env,
-        stdio: ["ignore", "pipe", "pipe"],
-      });
+      const pgDump = spawn("pg_dump", options, { env, stdio: ["ignore", "pipe", "pipe"] });
+      let stdout = "",
+        stderr = "";
 
-      let stdout = "";
-      let stderr = "";
+      pgDump.stdout.on("data", (data) => (stdout += data.toString()));
+      pgDump.stderr.on("data", (data) => (stderr += data.toString()));
 
-      pgDump.stdout.on("data", (data) => {
-        stdout += data.toString();
-      });
+      pgDump.on("close", (code) =>
+        code === 0
+          ? resolve({ stdout, stderr })
+          : reject(new Error(`pg_dump failed with code ${code}: ${stderr}`))
+      );
 
-      pgDump.stderr.on("data", (data) => {
-        stderr += data.toString();
-      });
-
-      pgDump.on("close", (code) => {
-        if (code === 0) {
-          resolve({ stdout, stderr });
-        } else {
-          reject(new Error(`pg_dump failed with code ${code}: ${stderr}`));
-        }
-      });
-
-      pgDump.on("error", (error) => {
-        reject(new Error(`pg_dump execution failed: ${error.message}`));
-      });
+      pgDump.on("error", (err) => reject(new Error(`pg_dump execution failed: ${err.message}`)));
     });
   }
 
-  async compressBackup(inputPath, _outputPath) {
+  compressBackup(inputPath, _outputPath) {
     return new Promise((resolve, reject) => {
       const gzip = spawn("gzip", ["-9", inputPath]);
 
-      gzip.on("close", (code) => {
-        if (code === 0) {
-          resolve();
-        } else {
-          reject(new Error(`Compression failed with code ${code}`));
-        }
-      });
-
+      gzip.on("close", (code) =>
+        code === 0 ? resolve() : reject(new Error(`Compression failed with code ${code}`))
+      );
       gzip.on("error", reject);
     });
   }
 
-  async uploadToRemoteStorage(_filepath, _backupInfo) {
+  uploadToRemoteStorage(_filepath, _backupInfo) {
     logger.info("Remote upload not configured - implement uploadToRemoteStorage method");
   }
 
   async cleanupOldBackups() {
     try {
       const files = await fs.readdir(this.backupDir);
-      const backupFiles = files
+      const backups = files
         .filter(
           (file) =>
             file.includes("stormneighbor_") && (file.endsWith(".sql") || file.endsWith(".gz"))
         )
-        .map((file) => ({
-          name: file,
-          path: path.join(this.backupDir, file),
-        }));
+        .map((file) => ({ name: file, path: path.join(this.backupDir, file) }));
 
-      if (backupFiles.length <= this.maxBackups) {
-        return;
-      }
+      if (backups.length <= this.maxBackups) return;
 
-      const fileStats = await Promise.all(
-        backupFiles.map(async (file) => ({
-          ...file,
-          stats: await fs.stat(file.path),
-        }))
+      const filesWithStats = await Promise.all(
+        backups.map(async (file) => ({ ...file, stats: await fs.stat(file.path) }))
       );
 
-      fileStats.sort((a, b) => a.stats.mtime - b.stats.mtime);
+      filesWithStats.sort((a, b) => a.stats.mtime - b.stats.mtime);
 
-      const filesToDelete = fileStats.slice(0, fileStats.length - this.maxBackups);
-
-      for (const file of filesToDelete) {
+      const toDelete = filesWithStats.slice(0, filesWithStats.length - this.maxBackups);
+      for (const file of toDelete) {
         await fs.unlink(file.path);
         logger.info(`Deleted old backup: ${file.name}`);
       }
-
-      logger.info(`Cleanup completed: ${filesToDelete.length} old backups removed`);
     } catch (error) {
       logger.error("Backup cleanup failed:", error);
     }
   }
 
   async logBackupCompletion(backupInfo) {
-    const logEntry = {
-      timestamp: backupInfo.timestamp,
-      type: backupInfo.type,
-      filename: backupInfo.filename,
-      success: backupInfo.success,
-      size: backupInfo.size || null,
-      duration: backupInfo.duration,
-      error: backupInfo.error || null,
-    };
-
     const logFile = path.join(this.backupDir, "backup.log");
-    const logLine = JSON.stringify(logEntry) + "\n";
+    const logLine =
+      JSON.stringify({
+        timestamp: backupInfo.timestamp,
+        type: backupInfo.type,
+        filename: backupInfo.filename,
+        success: backupInfo.success,
+        size: backupInfo.size || null,
+        duration: backupInfo.duration,
+        error: backupInfo.error || null,
+      }) + "\n";
 
     try {
       await fs.appendFile(logFile, logLine);
@@ -253,27 +206,25 @@ class DatabaseBackupService {
       logger.error("Failed to write backup log:", error);
     }
 
-    logger.info("Backup logged:", logEntry);
+    logger.info("Backup logged:", backupInfo);
   }
 
   async restoreBackup(backupFile, options = {}) {
     const startTime = Date.now();
-    logger.info(`Starting database restore from: ${backupFile}`);
+    logger.info(`Starting restore from: ${backupFile}`);
 
     try {
       const backupPath = path.isAbsolute(backupFile)
         ? backupFile
         : path.join(this.backupDir, backupFile);
-
       await fs.access(backupPath);
 
       const dbUrl = new URL(process.env.DATABASE_URL);
-
       const password = dbUrl.password ? decodeURIComponent(dbUrl.password) : null;
       const username = dbUrl.username || "postgres";
       const database = dbUrl.pathname.slice(1);
 
-      const pgRestoreOptions = [
+      const restoreOptions = [
         "--verbose",
         "--clean",
         "--no-acl",
@@ -285,74 +236,55 @@ class DatabaseBackupService {
         backupPath,
       ];
 
-      if (options.schemaOnly) {
-        pgRestoreOptions.push("--schema-only");
-      }
+      if (options.schemaOnly) restoreOptions.push("--schema-only");
+      if (options.dataOnly) restoreOptions.push("--data-only");
 
-      if (options.dataOnly) {
-        pgRestoreOptions.push("--data-only");
-      }
+      await this.executePgRestore(restoreOptions, password);
 
-      await this.executePgRestore(pgRestoreOptions, password);
       const duration = Date.now() - startTime;
-
-      logger.info(`Database restore completed successfully in ${duration}ms`);
+      logger.info(`Restore completed in ${duration}ms`);
       return { success: true, duration, file: backupFile };
     } catch (error) {
-      logger.error("Database restore failed:", error);
+      logger.error("Restore failed:", error);
       throw error;
     }
   }
 
-  async executePgRestore(options, password) {
+  executePgRestore(options, password) {
     return new Promise((resolve, reject) => {
       const env = { ...process.env };
-      if (password) {
-        env.PGPASSWORD = password;
-      }
+      if (password) env.PGPASSWORD = password;
 
-      const pgRestore = spawn("pg_restore", options, {
-        env,
-        stdio: ["ignore", "pipe", "pipe"],
-      });
+      const pgRestore = spawn("pg_restore", options, { env, stdio: ["ignore", "pipe", "pipe"] });
+      let stdout = "",
+        stderr = "";
 
-      let stdout = "";
-      let stderr = "";
+      pgRestore.stdout.on("data", (data) => (stdout += data.toString()));
+      pgRestore.stderr.on("data", (data) => (stderr += data.toString()));
 
-      pgRestore.stdout.on("data", (data) => {
-        stdout += data.toString();
-      });
+      pgRestore.on("close", (code) =>
+        code === 0
+          ? resolve({ stdout, stderr })
+          : reject(new Error(`pg_restore failed with code ${code}: ${stderr}`))
+      );
 
-      pgRestore.stderr.on("data", (data) => {
-        stderr += data.toString();
-      });
-
-      pgRestore.on("close", (code) => {
-        if (code === 0) {
-          resolve({ stdout, stderr });
-        } else {
-          reject(new Error(`pg_restore failed with code ${code}: ${stderr}`));
-        }
-      });
-
-      pgRestore.on("error", (error) => {
-        reject(new Error(`pg_restore execution failed: ${error.message}`));
-      });
+      pgRestore.on("error", (err) =>
+        reject(new Error(`pg_restore execution failed: ${err.message}`))
+      );
     });
   }
 
   async listBackups() {
     try {
       const files = await fs.readdir(this.backupDir);
-      const backupFiles = files.filter(
-        (file) => file.includes("stormneighbor_") && (file.endsWith(".sql") || file.endsWith(".gz"))
-      );
-
-      const backups = await Promise.all(
-        backupFiles.map(async (file) => {
+      const backups = files
+        .filter(
+          (file) =>
+            file.includes("stormneighbor_") && (file.endsWith(".sql") || file.endsWith(".gz"))
+        )
+        .map(async (file) => {
           const filepath = path.join(this.backupDir, file);
           const stats = await fs.stat(filepath);
-
           return {
             filename: file,
             size: stats.size,
@@ -366,10 +298,9 @@ class DatabaseBackupService {
                   : "manual",
             compressed: file.endsWith(".gz"),
           };
-        })
-      );
+        });
 
-      return backups.sort((a, b) => b.created - a.created);
+      return (await Promise.all(backups)).sort((a, b) => b.created - a.created);
     } catch (error) {
       logger.error("Failed to list backups:", error);
       return [];
@@ -377,40 +308,28 @@ class DatabaseBackupService {
   }
 
   startScheduledBackups() {
-    logger.info("Starting scheduled backup tasks...");
-
-    cron.schedule(this.schedules.daily, () => {
-      logger.info("Running scheduled daily backup...");
-      this.createBackup("daily").catch((error) => {
-        logger.error("Scheduled daily backup failed:", error);
+    ["daily", "weekly", "monthly"].forEach((type) => {
+      const task = cron.schedule(this.schedules[type], () => {
+        logger.info(`Running scheduled ${type} backup...`);
+        this.createBackup(type).catch((err) =>
+          logger.error(`Scheduled ${type} backup failed:`, err)
+        );
       });
+      this.cronTasks.push(task);
     });
 
-    cron.schedule(this.schedules.weekly, () => {
-      logger.info("Running scheduled weekly backup...");
-      this.createBackup("weekly").catch((error) => {
-        logger.error("Scheduled weekly backup failed:", error);
-      });
-    });
-
-    cron.schedule(this.schedules.monthly, () => {
-      logger.info("Running scheduled monthly backup...");
-      this.createBackup("monthly").catch((error) => {
-        logger.error("Scheduled monthly backup failed:", error);
-      });
-    });
-
-    logger.info("Backup schedules configured:", this.schedules);
+    logger.info("Scheduled backup tasks configured:", this.schedules);
   }
 
   stopScheduledBackups() {
-    cron.destroy();
+    this.cronTasks.forEach((task) => task.stop());
+    this.cronTasks = [];
     logger.info("All scheduled backup tasks stopped");
   }
 
   async getBackupStats() {
     const backups = await this.listBackups();
-    const totalSize = backups.reduce((sum, backup) => sum + backup.size, 0);
+    const totalSize = backups.reduce((sum, b) => sum + b.size, 0);
 
     return {
       totalBackups: backups.length,

@@ -6,10 +6,9 @@ import {
   ScrollView,
   TextInput,
   Alert,
-  TouchableOpacity,
-  // ActivityIndicator, - Currently not being used, need to either use it or remove it (if needed later, uncomment)
+  // TouchableOpacity, - Currently not being used, need to either use it or remove it (if needed later, uncomment).
+  // ActivityIndicator, - Currently not being used, need to either use it or remove it (if needed later, uncomment).
 } from "react-native";
-import { Search, X } from "lucide-react-native";
 import { router } from "expo-router";
 import { Header } from "../components/UI/Header";
 import { Input } from "../components/UI/Input";
@@ -29,8 +28,6 @@ interface ProfileForm {
 export default function PersonalInformationScreen() {
   const { user, refreshProfile } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showSearch, setShowSearch] = useState(false);
   const [profileForm, setProfileForm] = useState<ProfileForm>({
     firstName: "",
     lastName: "",
@@ -86,12 +83,6 @@ export default function PersonalInformationScreen() {
     { key: "email", label: "Email", component: "input" },
   ];
 
-  const filteredFields = formFields.filter(
-    (field) =>
-      field.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      field.key.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
   const renderField = (field: any) => {
     const commonProps = {
       label: field.label,
@@ -115,38 +106,11 @@ export default function PersonalInformationScreen() {
 
   return (
     <View style={styles.container}>
-      <Header
-        title="Personal Information"
-        showBackButton
-        onBackPress={() => router.back()}
-        showSearch
-        onSearchPress={() => setShowSearch(!showSearch)}
-      />
-
-      {showSearch && (
-        <View style={styles.searchContainer}>
-          <View style={styles.searchBar}>
-            <Search size={20} color={Colors.text.disabled} style={styles.searchIcon} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search profile settings..."
-              placeholderTextColor={Colors.text.disabled}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              autoFocus
-            />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery("")} style={styles.clearButton}>
-                <X size={20} color={Colors.text.disabled} />
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
-      )}
+      <Header title="Personal Information" showBackButton onBackPress={() => router.back()} />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.section}>
-          {(searchQuery ? filteredFields : formFields).map((field) => (
+          {formFields.map((field) => (
             <View key={field.key}>
               {field.key === "bio" ? (
                 <View style={styles.inputGroup}>
@@ -175,12 +139,6 @@ export default function PersonalInformationScreen() {
               )}
             </View>
           ))}
-
-          {searchQuery && filteredFields.length === 0 && (
-            <View style={styles.noResults}>
-              <Text style={styles.noResultsText}>No settings found for "{searchQuery}"</Text>
-            </View>
-          )}
         </View>
       </ScrollView>
 
@@ -274,41 +232,5 @@ const styles = StyleSheet.create({
   footerButton: {
     flex: 1,
     height: 48,
-  },
-  searchContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-    backgroundColor: Colors.background,
-  },
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.neutral[50],
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: Colors.text.primary,
-  },
-  clearButton: {
-    padding: 4,
-  },
-  noResults: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 40,
-  },
-  noResultsText: {
-    fontSize: 16,
-    color: Colors.text.secondary,
-    textAlign: "center",
   },
 });

@@ -1,10 +1,16 @@
+const crypto = require("crypto");
+const { validationResult } = require("express-validator");
 const rateLimit = require("express-rate-limit");
-const { pool } = require("../config/database");
+const RedisStore = require("rate-limit-redis").default;
+const Redis = require("ioredis");
+const createDOMPurify = require("isomorphic-dompurify");
+const { JSDOM } = require("jsdom");
 const logger = require("../utils/logger");
 
-const bruteForceStore = new Map();
-const suspiciousIPs = new Set();
-const accountLockouts = new Map();
+const window = new JSDOM("").window;
+const DOMPurify = createDOMPurify(window);
+
+const redisClient = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
 
 class SecurityMiddleware {
   constructor() {
@@ -12,127 +18,92 @@ class SecurityMiddleware {
     this.LOCKOUT_DURATION = 15 * 60 * 1000;
     this.MAX_PASSWORD_RESET_ATTEMPTS = 3;
     this.SUSPICIOUS_ACTIVITY_THRESHOLD = 10;
-    this.IP_WHITELIST = new Set(process.env.ADMIN_IP_WHITELIST?.split(",") || []);
     this.requestCounts = new Map();
   }
 
-  getClientIP(req) {
-    return (
-      req.ip ||
-      req.connection?.remoteAddress ||
-      req.socket?.remoteAddress ||
-      req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
-      req.headers["x-real-ip"] ||
-      "unknown"
-    );
-  }
-
-  logSecurityEvent(req, eventType, details = {}) {
-    const logEntry = {
-      timestamp: new Date().toISOString(),
-      eventType,
-      ip: this.getClientIP(req),
-      userAgent: req.get("User-Agent"),
-      endpoint: req.path,
-      method: req.method,
-      userId: req.user?.userId,
-      ...details,
-    };
-
-    logger.warn(`[SECURITY] ${eventType}:`, JSON.stringify(logEntry, null, 2));
-
-    if (process.env.NODE_ENV === "production") {
-      this.saveSecurityLog(logEntry);
-    }
-  }
-
-  async saveSecurityLog(logEntry) {
-    try {
-      const client = await pool.connect();
-      try {
-        await client.query(
-          `
-          INSERT INTO security_logs (event_type, ip_address, user_id, details, created_at)
-          VALUES ($1, $2, $3, $4, NOW())
-        `,
-          [logEntry.eventType, logEntry.ip, logEntry.userId, JSON.stringify(logEntry)]
-        );
-      } finally {
-        client.release();
-      }
-    } catch (error) {
-      logger.error("Failed to save security log:", error.message);
-    }
-  }
-
-  loginBruteForceProtection() {
-    return async (req, res, next) => {
-      const { email } = req.body;
-      const clientIP = this.getClientIP(req);
-      const key = `${email}:${clientIP}`;
-
-      if (accountLockouts.has(email)) {
-        const lockData = accountLockouts.get(email);
-        if (Date.now() < lockData.expiresAt) {
-          return res.status(429).json({
-            success: false,
-            message: `Account temporarily locked. Try again in ${Math.ceil((lockData.expiresAt - Date.now()) / 60000)} minutes.`,
-            code: "ACCOUNT_LOCKED",
-            retryAfter: Math.ceil((lockData.expiresAt - Date.now()) / 1000),
-          });
-        } else {
-          accountLockouts.delete(email);
+  sanitizeInput() {
+    return (req, _res, next) => {
+      const sanitizeObject = (obj) => {
+        if (obj === null || obj === undefined) return obj;
+        if (Array.isArray(obj)) return obj.map(sanitizeObject);
+        if (typeof obj === "object") {
+          return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, sanitizeObject(v)]));
         }
-      }
-
-      const attempts = bruteForceStore.get(key) || { count: 0, firstAttempt: Date.now() };
-
-      if (attempts.count >= this.MAX_LOGIN_ATTEMPTS) {
-        const timeSinceFirst = Date.now() - attempts.firstAttempt;
-        if (timeSinceFirst < this.LOCKOUT_DURATION) {
-          accountLockouts.set(email, {
-            expiresAt: Date.now() + this.LOCKOUT_DURATION,
-            attempts: attempts.count,
-          });
-
-          this.logSecurityEvent(req, "BRUTE_FORCE_DETECTED", {
-            email,
-            attempts: attempts.count,
-            timeWindow: timeSinceFirst,
-          });
-
-          return res.status(429).json({
-            success: false,
-            message: "Too many failed login attempts. Account temporarily locked.",
-            code: "BRUTE_FORCE_DETECTED",
-            retryAfter: Math.ceil(this.LOCKOUT_DURATION / 1000),
-          });
-        } else {
-          bruteForceStore.delete(key);
+        if (typeof obj === "string") {
+          return DOMPurify.sanitize(obj, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] })
+            .split("")
+            .filter((c) => {
+              const code = c.charCodeAt(0);
+              return code >= 32 && code !== 127;
+            })
+            .join("")
+            .trim();
         }
-      }
-
-      const originalJson = res.json;
-      res.json = function (data) {
-        if (
-          data.success === false &&
-          data.message &&
-          data.message.includes("Invalid credentials")
-        ) {
-          attempts.count++;
-          attempts.lastAttempt = Date.now();
-          bruteForceStore.set(key, attempts);
-
-          data.attemptsRemaining = Math.max(
-            0,
-            SecurityMiddleware.prototype.MAX_LOGIN_ATTEMPTS - attempts.count
-          );
-        } else if (data.success === true) {
-          bruteForceStore.delete(key);
-        }
-
-        return originalJson.call(this, data);
+        return obj;
       };
+
+      if (req.body && typeof req.body === "object") req.body = sanitizeObject(req.body);
+      if (req.query && typeof req.query === "object") req.query = sanitizeObject(req.query);
+      if (req.params && typeof req.params === "object") req.params = sanitizeObject(req.params);
+
+      next();
+    };
+  }
+
+  handleValidationErrors() {
+    return (req, res, next) => {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        const formatted = errors.array().map((e) => ({
+          field: e.path || e.param,
+          message: e.msg,
+          value: e.value,
+          location: e.location,
+        }));
+        if (process.env.NODE_ENV === "development") logger.info("Validation errors:", formatted);
+        return res.status(400).json({
+          success: false,
+          message: "Validation failed",
+          errors: formatted,
+          errorCount: formatted.length,
+        });
+      }
+      next();
+    };
+  }
+
+  generateNonce() {
+    return crypto.randomBytes(16).toString("base64");
+  }
+
+  securityHeaders() {
+    return (req, res, next) => {
+      const nonce = this.generateNonce();
+      req.cspNonce = nonce;
+
+      const headers = {
+        "Strict-Transport-Security":
+          process.env.NODE_ENV === "production"
+            ? "max-age=31536000; includeSubDomains; preload"
+            : "max-age=300",
+        "Content-Security-Policy": `default-src 'self'; script-src 'self' 'nonce-${nonce}'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'; object-src 'none'; frame-src 'none';`,
+        "X-Frame-Options": "DENY",
+        "X-Content-Type-Options": "nosniff",
+        "X-XSS-Protection": "1; mode=block",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+        "Cross-Origin-Embedder-Policy": "require-corp",
+        "Cross-Origin-Opener-Policy": "same-origin",
+        "Cross-Origin-Resource-Policy": "same-origin",
+        Server: "StormNeighbor",
+        "Cache-Control": "no-store, no-cache, must-revalidate, private",
+        Pragma: "no-cache",
+        Expires: "0",
+      };
+
+      Object.entries(headers).forEach(([k, v]) => res.setHeader(k, v));
+      res.removeHeader("X-Powered-By");
+      res.removeHeader("Server");
 
       next();
     };
@@ -140,260 +111,115 @@ class SecurityMiddleware {
 
   passwordResetProtection() {
     return rateLimit({
+      store: new RedisStore({ sendCommand: (...args) => redisClient.call(...args) }),
       windowMs: 60 * 60 * 1000,
       max: this.MAX_PASSWORD_RESET_ATTEMPTS,
-      keyGenerator: (req) => {
-        return `pwd_reset:${req.body.email || req.ip}`;
-      },
+      keyGenerator: (req) => `pwd_reset:${req.body.email || req.ip}`,
       message: {
         success: false,
-        message: "Too many password reset requests. Please try again later.",
+        message: "Too many password reset requests",
         code: "PASSWORD_RESET_LIMIT",
-      },
-      standardHeaders: true,
-      legacyHeaders: false,
-      handler: (req, res) => {
-        this.logSecurityEvent(req, "PASSWORD_RESET_ABUSE", {
-          email: req.body.email,
-          attempts: this.MAX_PASSWORD_RESET_ATTEMPTS,
-        });
-
-        res.status(429).json({
-          success: false,
-          message: "Too many password reset requests. Please try again later.",
-          code: "PASSWORD_RESET_LIMIT",
-        });
       },
     });
   }
 
   registrationProtection() {
     return rateLimit({
+      store: new RedisStore({ sendCommand: (...args) => redisClient.call(...args) }),
       windowMs: 15 * 60 * 1000,
       max: 3,
-      keyGenerator: (req) => this.getClientIP(req),
+      keyGenerator: (req) => req.ip,
       message: {
         success: false,
-        message: "Too many registration attempts from this IP. Please try again later.",
+        message: "Too many registration attempts",
         code: "REGISTRATION_LIMIT",
       },
-      standardHeaders: true,
-      legacyHeaders: false,
     });
   }
 
-  apiAbuseDetection() {
+  loginBruteForceProtection() {
     return async (req, res, next) => {
-      const clientIP = this.getClientIP(req);
-      const userId = req.user?.userId;
+      const { email } = req.body;
+      if (!email) return next();
+      const key = `login:${email}:${req.ip}`;
+      const attempts = parseInt(await redisClient.get(key)) || 0;
 
-      const key = userId || clientIP;
-      const now = Date.now();
-      const windowMs = 60 * 1000;
-
-      if (!this.requestCounts) {
-        this.requestCounts = new Map();
-      }
-
-      const requests = this.requestCounts.get(key) || [];
-
-      const recentRequests = requests.filter((time) => now - time < windowMs);
-
-      if (recentRequests.length > this.SUSPICIOUS_ACTIVITY_THRESHOLD) {
-        suspiciousIPs.add(clientIP);
-
-        this.logSecurityEvent(req, "API_ABUSE_DETECTED", {
-          userId,
-          requestCount: recentRequests.length,
-          windowMs,
-        });
-
+      if (attempts >= this.MAX_LOGIN_ATTEMPTS) {
         return res.status(429).json({
           success: false,
-          message: "Suspicious activity detected. Please slow down.",
-          code: "API_ABUSE",
+          message: "Too many failed login attempts. Account temporarily locked.",
+          code: "BRUTE_FORCE_DETECTED",
         });
       }
 
-      recentRequests.push(now);
-      this.requestCounts.set(key, recentRequests);
-
-      next();
-    };
-  }
-
-  enhancedInputValidation() {
-    return (req, res, next) => {
-      const suspiciousPatterns = [
-        /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
-        /javascript:/gi,
-        /on\w+\s*=/gi,
-        /data:\s*text\/html/gi,
-        /vbscript:/gi,
-      ];
-
-      const checkInput = (obj, path = "") => {
-        if (typeof obj === "string") {
-          for (const pattern of suspiciousPatterns) {
-            if (pattern.test(obj)) {
-              this.logSecurityEvent(req, "XSS_ATTEMPT_DETECTED", {
-                path,
-                value: obj.substring(0, 100),
-                pattern: pattern.toString(),
-              });
-
-              return res.status(400).json({
-                success: false,
-                message: "Invalid input detected",
-                code: "INVALID_INPUT",
-              });
-            }
-          }
-        } else if (typeof obj === "object" && obj !== null) {
-          for (const [key, value] of Object.entries(obj)) {
-            const result = checkInput(value, `${path}.${key}`);
-            if (result) return result;
-          }
+      const originalJson = res.json.bind(res);
+      res.json = async (data) => {
+        if (data.success === false && data.message?.includes("Invalid credentials")) {
+          await redisClient.multi().incr(key).pexpire(key, this.LOCKOUT_DURATION).exec();
+        } else if (data.success === true) {
+          await redisClient.del(key);
         }
-      };
-
-      if (req.body) {
-        const result = checkInput(req.body, "body");
-        if (result) return result;
-      }
-
-      if (req.query) {
-        const result = checkInput(req.query, "query");
-        if (result) return result;
-      }
-
-      next();
-    };
-  }
-
-  sqlInjectionDetection() {
-    return (req, res, next) => {
-      const sqlPatterns = [
-        /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION|SCRIPT)\b)/gi,
-        /(\b(OR|AND)\s+\d+\s*=\s*\d+)/gi,
-        /(--|\/\*|\*\/|;)/g,
-        /(\b(CONCAT|CHAR|ASCII|SUBSTRING)\s*\()/gi,
-        /(\b(INFORMATION_SCHEMA|SYSOBJECTS|SYSCOLUMNS)\b)/gi,
-        /(0x[0-9A-Fa-f]+)/g,
-      ];
-
-      const checkForSQLInjection = (obj, path = "") => {
-        if (typeof obj === "string") {
-          for (const pattern of sqlPatterns) {
-            if (pattern.test(obj)) {
-              this.logSecurityEvent(req, "SQL_INJECTION_ATTEMPT", {
-                path,
-                value: obj.substring(0, 100),
-                pattern: pattern.toString(),
-              });
-
-              return res.status(400).json({
-                success: false,
-                message: "Invalid input detected",
-                code: "SECURITY_VIOLATION",
-              });
-            }
-          }
-        } else if (typeof obj === "object" && obj !== null) {
-          for (const [key, value] of Object.entries(obj)) {
-            const result = checkForSQLInjection(value, `${path}.${key}`);
-            if (result) return result;
-          }
-        }
-      };
-
-      if (req.body) {
-        const result = checkForSQLInjection(req.body, "body");
-        if (result) return result;
-      }
-
-      if (req.query) {
-        const result = checkForSQLInjection(req.query, "query");
-        if (result) return result;
-      }
-
-      next();
-    };
-  }
-
-  contentSecurityPolicy() {
-    return (_req, res, next) => {
-      res.setHeader(
-        "Content-Security-Policy",
-        "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https:; font-src 'self' https:; object-src 'none'; media-src 'self'; frame-src 'none';"
-      );
-      next();
-    };
-  }
-
-  auditLogger() {
-    return (req, res, next) => {
-      const startTime = Date.now();
-
-      const originalJson = res.json;
-      res.json = function (data) {
-        const responseTime = Date.now() - startTime;
-
-        if (req.method !== "GET" || res.statusCode >= 400) {
-          logger.info(
-            `[AUDIT] ${req.method} ${req.path} - Status: ${res.statusCode} - Time: ${responseTime}ms - IP: ${req.ip} - User: ${req.user?.userId || "anonymous"}`
-          );
-        }
-
-        return originalJson.call(this, data);
+        return originalJson(data);
       };
 
       next();
     };
   }
 
-  cleanup() {
-    const now = Date.now();
+  validateCoordinates() {
+    return (req, res, next) => {
+      const errors = [];
+      const { latitude, longitude } = req.body;
+      if (
+        latitude !== undefined &&
+        (isNaN(parseFloat(latitude)) || latitude < -90 || latitude > 90)
+      )
+        errors.push({
+          field: "latitude",
+          message: "Latitude must be -90 to 90",
+          value: latitude,
+          location: "body",
+        });
+      if (
+        longitude !== undefined &&
+        (isNaN(parseFloat(longitude)) || longitude < -180 || longitude > 180)
+      )
+        errors.push({
+          field: "longitude",
+          message: "Longitude must be -180 to 180",
+          value: longitude,
+          location: "body",
+        });
+      if (errors.length)
+        return res.status(400).json({
+          success: false,
+          message: "Invalid coordinates",
+          errors,
+          errorCount: errors.length,
+        });
+      next();
+    };
+  }
 
-    for (const [key, attempts] of bruteForceStore.entries()) {
-      if (now - attempts.firstAttempt > this.LOCKOUT_DURATION) {
-        bruteForceStore.delete(key);
+  requireAuthToken() {
+    return (req, res, next) => {
+      const token = req.header("Authorization");
+      if (!token || !token.startsWith("Bearer ")) {
+        return res.status(401).json({
+          success: false,
+          message: "Access denied. Valid token required.",
+          errors: [
+            {
+              field: "authorization",
+              message: "Bearer token required in Authorization header",
+              location: "header",
+            },
+          ],
+        });
       }
-    }
-
-    for (const [email, lockData] of accountLockouts.entries()) {
-      if (now > lockData.expiresAt) {
-        accountLockouts.delete(email);
-      }
-    }
-
-    if (this.requestCounts) {
-      for (const [key, requests] of this.requestCounts.entries()) {
-        const recentRequests = requests.filter((time) => now - time < 60000);
-        if (recentRequests.length === 0) {
-          this.requestCounts.delete(key);
-        } else {
-          this.requestCounts.set(key, recentRequests);
-        }
-      }
-    }
+      next();
+    };
   }
 }
 
-const securityMiddleware = new SecurityMiddleware();
-
-const cleanupInterval = setInterval(
-  () => {
-    securityMiddleware.cleanup();
-  },
-  5 * 60 * 1000
-);
-
-securityMiddleware.clearCleanupInterval = () => {
-  if (cleanupInterval) {
-    clearInterval(cleanupInterval);
-    logger.info("Security middleware cleanup interval cleared");
-  }
-};
-
-module.exports = securityMiddleware;
+module.exports = new SecurityMiddleware();

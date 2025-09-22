@@ -1,6 +1,7 @@
 const { Pool } = require("pg");
 require("dotenv").config();
 const logger = require("../utils/logger");
+const process = require("process");
 
 const getDatabaseConfig = () => {
   const isProduction = process.env.NODE_ENV === "production";
@@ -11,21 +12,18 @@ const getDatabaseConfig = () => {
 
   if (isProduction || isStaging || process.env.DATABASE_SSL === "true") {
     sslConfig = {
-      rejectUnauthorized: false,
+      rejectUnauthorized: process.env.NODE_ENV === "production",
     };
   }
 
-  const poolConfig = {
+  return {
     connectionString: process.env.DATABASE_URL,
     ssl: sslConfig,
     max: isTest ? 2 : isProduction ? 20 : 5,
     connectionTimeoutMillis: isTest ? 5000 : 15000,
     idleTimeoutMillis: isTest ? 10000 : 30000,
-    acquireTimeoutMillis: isTest ? 10000 : 60000,
     family: 4,
   };
-
-  return poolConfig;
 };
 
 const pool = new Pool(getDatabaseConfig());
@@ -42,9 +40,9 @@ const testConnection = async () => {
 
     try {
       const postgisResult = await client.query("SELECT PostGIS_Version() as version");
-      logger.info("PostGIS version:", postgisResult.rows[0].version);
+      logger.info("INFO: PostGIS version:", postgisResult.rows[0].version);
     } catch (postgisError) {
-      logger.info("INFO: PostGIS not available (OK for testing);");
+      logger.info("INFO: PostGIS not available (OK for testing)");
     }
 
     logger.info("Pool status:", {
@@ -71,9 +69,7 @@ const testConnection = async () => {
 
     return false;
   } finally {
-    if (client) {
-      client.release();
-    }
+    if (client) client.release();
   }
 };
 
@@ -81,7 +77,6 @@ const enablePostGIS = async () => {
   let client;
   try {
     client = await pool.connect();
-
     await client.query("CREATE EXTENSION IF NOT EXISTS postgis;");
     await client.query("CREATE EXTENSION IF NOT EXISTS postgis_topology;");
 
@@ -89,12 +84,10 @@ const enablePostGIS = async () => {
     return true;
   } catch (error) {
     logger.warn("WARNING: PostGIS not available:", error.message);
-    logger.warn("INFO: This is OK (city/state matching will work without PostGIS);");
+    logger.warn("INFO: This is OK (city/state matching will work without PostGIS)");
     return false;
   } finally {
-    if (client) {
-      client.release();
-    }
+    if (client) client.release();
   }
 };
 
@@ -108,10 +101,8 @@ const gracefulShutdown = async () => {
   }
 };
 
-if (process.env.NODE_ENV === "test") {
-  process.on("SIGTERM", gracefulShutdown);
-  process.on("SIGINT", gracefulShutdown);
-}
+process.on("SIGTERM", gracefulShutdown);
+process.on("SIGINT", gracefulShutdown);
 
 pool.on("connect", () => {
   logger.info("SUCCESS: New database client connected");
@@ -119,6 +110,7 @@ pool.on("connect", () => {
 
 pool.on("error", (err) => {
   logger.error("ERROR: Unexpected database error:", err.message);
+  logger.debug(err.stack);
 });
 
 module.exports = {

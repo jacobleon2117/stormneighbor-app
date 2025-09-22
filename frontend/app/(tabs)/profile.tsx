@@ -237,7 +237,6 @@ export default function ProfileScreen() {
             "Share your thoughts to help improve the app",
             () => router.push("/user-feedback")
           )}
-
         </View>
 
         <View style={styles.dangerZone}>

@@ -1,12 +1,14 @@
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 const { pool } = require("../config/database");
 const logger = require("../utils/logger");
 
 class DatabaseMigrator {
-  constructor() {
+  constructor({ silent = false } = {}) {
     this.migrationsPath = path.join(__dirname, "../../migrations");
     this.currentVersion = null;
+    this.silent = silent;
   }
 
   async initialize() {
@@ -81,7 +83,7 @@ class DatabaseMigrator {
         const match = file.match(/^(\d{14})_(.+)\.sql$/);
         if (!match) {
           if (!this.silent) {
-            console.warn(
+            logger.warn(
               `WARNING: Invalid migration file name: ${file} (expected: YYYYMMDDHHMMSS_name.sql)`
             );
           }
@@ -100,14 +102,6 @@ class DatabaseMigrator {
     return migrations;
   }
 
-  async getPendingMigrations() {
-    const available = await this.getAvailableMigrations();
-    const applied = await this.getAppliedMigrations();
-    const appliedVersions = new Set(applied.map((m) => m.version));
-
-    return available.filter((migration) => !appliedVersions.has(migration.version));
-  }
-
   async getAppliedMigrations() {
     const client = await pool.connect();
 
@@ -124,8 +118,17 @@ class DatabaseMigrator {
     }
   }
 
+  async getPendingMigrations() {
+    const available = await this.getAvailableMigrations();
+    const applied = await this.getAppliedMigrations();
+    const appliedVersions = new Set(applied.map((m) => m.version));
+
+    return available
+      .filter((migration) => !appliedVersions.has(migration.version))
+      .sort((a, b) => a.version.localeCompare(b.version));
+  }
+
   calculateChecksum(content) {
-    const crypto = require("crypto");
     return crypto.createHash("sha256").update(content).digest("hex");
   }
 
@@ -178,7 +181,7 @@ class DatabaseMigrator {
         logger.error("Failed to record migration failure:", recordError);
       }
 
-      logger.error(`ERROR: Migration ${migration.version} failed:`, error.message);
+      logger.error(`ERROR: Migration ${migration.version} failed: ${error.message}`);
       throw error;
     } finally {
       client.release();
@@ -195,7 +198,7 @@ class DatabaseMigrator {
       return { applied: 0, skipped: 0 };
     }
 
-    logger.info(`INFO: Found ${pending.length} pending migration(s);`);
+    logger.info(`INFO: Found ${pending.length} pending migration(s)`);
 
     let applied = 0;
     const skipped = 0;
@@ -265,9 +268,9 @@ class DatabaseMigrator {
     if (issues.length === 0) {
       logger.info("SUCCESS: All migrations validated successfully");
     } else {
-      logger.info(`WARNING: Found ${issues.length} validation issue(s);:`);
+      logger.warn(`WARNING: Found ${issues.length} validation issue(s)`);
       issues.forEach((issue) => {
-        logger.info(`  - ${issue.type}: ${issue.message}`);
+        logger.warn(`  - ${issue.type}: ${issue.message}`);
       });
     }
 
@@ -297,7 +300,7 @@ class DatabaseMigrator {
     -- );
 
     -- To rollback this migration, create a separate rollback script
-    `;
+`;
 
     fs.writeFileSync(filepath, template);
 

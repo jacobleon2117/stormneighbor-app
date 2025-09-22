@@ -12,6 +12,8 @@ const dbStats = {
   startTime: Date.now(),
 };
 
+const SLOW_QUERY_MS = parseInt(process.env.SLOW_QUERY_THRESHOLD_MS) || 1000;
+
 const getMonitoredClient = async (req) => {
   const requestId = req?.requestId || "unknown";
   const startTime = Date.now();
@@ -41,36 +43,30 @@ const getMonitoredClient = async (req) => {
         const queryDuration = Date.now() - queryStart;
 
         dbStats.queryTimes.push(queryDuration);
-        if (dbStats.queryTimes.length > 100) {
-          dbStats.queryTimes.shift();
-        }
+        if (dbStats.queryTimes.length > 100) dbStats.queryTimes.shift();
 
         dbStats.averageQueryTime =
           dbStats.queryTimes.reduce((a, b) => a + b, 0) / dbStats.queryTimes.length;
 
-        if (queryDuration > 1000) {
+        if (queryDuration > SLOW_QUERY_MS) {
           dbStats.slowQueries++;
-          console.warn(
-            `[${new Date().toISOString()}] [${requestId}] SLOW QUERY (${queryDuration}ms):`,
-            {
-              query: args[0]?.substring(0, 200),
-              duration: `${queryDuration}ms`,
-              rowCount: result.rowCount,
-            }
+          logger.warn(
+            `[${new Date().toISOString()}] [${requestId}] SLOW QUERY (${queryDuration}ms): ${args[0]?.substring(
+              0,
+              200
+            )} | Rows: ${result.rowCount}`
           );
         }
 
-        logger.info(
-          `[${new Date().toISOString()}] [${requestId}] DB Query completed - ${queryDuration}ms, ${result.rowCount} rows`
-        );
         return result;
       } catch (queryError) {
         dbStats.errors++;
-        logger.error(`[${new Date().toISOString()}] [${requestId}] DB Query error:`, {
-          message: queryError.message,
-          query: args[0]?.substring(0, 200),
-          duration: `${Date.now() - queryStart}ms`,
-        });
+        logger.error(
+          `[${new Date().toISOString()}] [${requestId}] DB Query error (${
+            Date.now() - queryStart
+          }ms):`,
+          { message: queryError.message, query: args[0]?.substring(0, 200) }
+        );
         throw queryError;
       }
     };
@@ -85,9 +81,8 @@ const getMonitoredClient = async (req) => {
       );
 
       if (err) {
-        console.error(
-          `[${new Date().toISOString()}] [${requestId}] DB Connection released with error:`,
-          err.message
+        logger.error(
+          `[${new Date().toISOString()}] [${requestId}] DB Connection error on release: ${err.message}`
         );
       }
 
@@ -97,9 +92,8 @@ const getMonitoredClient = async (req) => {
     return client;
   } catch (connectionError) {
     dbStats.connectionErrors++;
-    console.error(
-      `[${new Date().toISOString()}] [${requestId}] DB Connection error:`,
-      connectionError.message
+    logger.error(
+      `[${new Date().toISOString()}] [${requestId}] DB Connection error: ${connectionError.message}`
     );
     throw connectionError;
   }
@@ -117,8 +111,8 @@ const checkDatabaseHealth = async () => {
       try {
         const postgisResult = await client.query("SELECT PostGIS_Version() as version");
         postgisVersion = postgisResult.rows[0].version;
-      } catch (postgisError) {
-        logger.info("PostGIS not available:", postgisError.message);
+      } catch (_) {
+        postgisVersion = "not available";
       }
 
       const statsResult = await client.query(`
@@ -191,31 +185,20 @@ const databaseMiddleware = (req, _res, next) => {
   next();
 };
 
-pool.on("connect", (_client) => {
-  logger.info(`[${new Date().toISOString()}] DB Pool: New client connected`);
-});
-
-pool.on("acquire", (_client) => {
-  logger.info(`[${new Date().toISOString()}] DB Pool: Client acquired from pool`);
-});
-
-pool.on("release", (err, _client) => {
-  if (err) {
-    console.error(
-      `[${new Date().toISOString()}] DB Pool: Client released with error:`,
-      err.message
-    );
-  } else {
-    logger.info(`[${new Date().toISOString()}] DB Pool: Client released back to pool`);
-  }
-});
-
-pool.on("remove", (_client) => {
-  logger.info(`[${new Date().toISOString()}] DB Pool: Client removed from pool`);
-});
-
+pool.on("connect", (_client) =>
+  logger.info(`[${new Date().toISOString()}] DB Pool: New client connected`)
+);
+pool.on("acquire", (_client) =>
+  logger.info(`[${new Date().toISOString()}] DB Pool: Client acquired from pool`)
+);
+pool.on("release", (_client) =>
+  logger.info(`[${new Date().toISOString()}] DB Pool: Client released back to pool`)
+);
+pool.on("remove", (_client) =>
+  logger.info(`[${new Date().toISOString()}] DB Pool: Client removed from pool`)
+);
 pool.on("error", (err, _client) => {
-  logger.error(`[${new Date().toISOString()}] DB Pool: Unexpected error:`, err.message);
+  logger.error(`[${new Date().toISOString()}] DB Pool: Unexpected error: ${err.message}`);
   dbStats.connectionErrors++;
 });
 

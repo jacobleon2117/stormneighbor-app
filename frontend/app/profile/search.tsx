@@ -1,9 +1,18 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { View, Text, StyleSheet, TextInput, FlatList, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
-import { Search, ChevronRight, FileText, Bookmark, Settings, Clock } from "lucide-react-native";
+import {
+  Search,
+  ChevronRight,
+  FileText,
+  Bookmark,
+  Settings,
+  Clock,
+  ArrowLeft,
+  X,
+} from "lucide-react-native";
 import { Colors } from "../../constants/Colors";
-import { Header } from "../../components/UI/Header";
+// import { Header } from "../../components/UI/Header"; - Currently not being used, need to either use it or remove it (if needed later, uncomment).
 import { useAuth } from "../../hooks/useAuth";
 import { apiService } from "../../services/api";
 
@@ -143,31 +152,46 @@ export default function ProfileSearchScreen() {
 
   return (
     <View style={styles.container}>
-      <Header title="Search Settings" showBackButton={true} onBackPress={handleGoBack} />
+      <View style={styles.safeHeader}>
+        <View style={styles.header}>
+          <View style={styles.headerContent}>
+            <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
+              <ArrowLeft size={22} color={Colors.text.primary} />
+            </TouchableOpacity>
 
-      <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <Search size={20} color={Colors.text.disabled} style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search profile settings..."
-            placeholderTextColor={Colors.text.disabled}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            autoFocus
-            returnKeyType="search"
-          />
+            <View style={styles.searchContainer}>
+              <Search size={20} color={Colors.text.disabled} style={styles.searchIcon} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search profile settings..."
+                placeholderTextColor={Colors.text.disabled}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                returnKeyType="search"
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoFocus
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity onPress={() => setSearchQuery("")} style={styles.clearButton}>
+                  <X size={20} color={Colors.text.disabled} />
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
         </View>
       </View>
 
-      <FlatList
-        data={searchResults}
-        renderItem={renderSearchResult}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContainer}
-        ListEmptyComponent={renderEmptyState}
-        showsVerticalScrollIndicator={false}
-      />
+      <View style={styles.safeContent}>
+        <FlatList
+          data={searchResults}
+          renderItem={renderSearchResult}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContainer}
+          ListEmptyComponent={renderEmptyState}
+          showsVerticalScrollIndicator={false}
+        />
+      </View>
     </View>
   );
 }
@@ -175,34 +199,57 @@ export default function ProfileSearchScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.background,
   },
-  searchContainer: {
+  safeHeader: {
+    backgroundColor: Colors.background,
+    paddingTop: 50,
+  },
+  header: {
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
-  searchBar: {
+  headerContent: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    height: 44,
+    marginTop: 8,
+    gap: 16,
+  },
+  backButton: {
+    padding: 8,
+  },
+  searchContainer: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.background,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    backgroundColor: Colors.neutral[50],
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   searchIcon: {
-    marginRight: 12,
+    marginRight: 8,
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
     color: Colors.text.primary,
   },
+  clearButton: {
+    padding: 4,
+    marginLeft: 8,
+  },
+  safeContent: {
+    flex: 1,
+    backgroundColor: Colors.neutral[50],
+  },
   listContainer: {
-    paddingTop: 8,
+    padding: 20,
+    paddingBottom: 100,
   },
   resultItem: {
     flexDirection: "row",
@@ -212,6 +259,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
     backgroundColor: Colors.background,
+    marginBottom: 8,
+    borderRadius: 12,
   },
   resultIcon: {
     width: 40,

@@ -1,8 +1,9 @@
 require("dotenv").config();
+const fs = require("fs");
 
 class SSLConfiguration {
   constructor() {
-    this.environment = process.env.NODE_ENV || "development";
+    this.environment = (process.env.NODE_ENV || "development").toLowerCase();
     this.isProduction = this.environment === "production";
     this.isStaging = this.environment === "staging";
     this.isDevelopment = this.environment === "development";
@@ -11,15 +12,10 @@ class SSLConfiguration {
   getSSLConfig() {
     return {
       forceHTTPS: this.getHTTPSEnforcement(),
-
       trustedProxies: this.getTrustedProxies(),
-
       sslSettings: this.getSSLSettings(),
-
       hstsConfig: this.getHSTSConfig(),
-
       certificateConfig: this.getCertificateConfig(),
-
       corsConfig: this.getCORSConfig(),
     };
   }
@@ -72,8 +68,7 @@ class SSLConfiguration {
 
   getSSLSettings() {
     return {
-      minVersion: this.isProduction ? "TLSv1.2" : "TLSv1.0",
-
+      minVersion: "TLSv1.2",
       ciphers: this.isProduction
         ? [
             "ECDHE-RSA-AES128-GCM-SHA256",
@@ -82,11 +77,8 @@ class SSLConfiguration {
             "ECDHE-RSA-AES256-SHA384",
           ].join(":")
         : null,
-
       honorCipherOrder: this.isProduction,
-
       sessionTimeout: this.isProduction ? 300 : 3600,
-
       enableOCSP: this.isProduction,
     };
   }
@@ -115,19 +107,32 @@ class SSLConfiguration {
     };
   }
 
-  getCertificateConfig() {
-    return {
-      certPath: process.env.SSL_CERT_PATH,
-      keyPath: process.env.SSL_KEY_PATH,
-      caPath: process.env.SSL_CA_PATH,
+  getHSTSHeader() {
+    const config = this.getHSTSConfig();
+    let header = `max-age=${config.maxAge}`;
+    if (config.includeSubDomains) header += "; includeSubDomains";
+    if (config.preload) header += "; preload";
+    return header;
+  }
 
+  getCertificateConfig() {
+    const certPath = process.env.SSL_CERT_PATH;
+    const keyPath = process.env.SSL_KEY_PATH;
+    const caPath = process.env.SSL_CA_PATH;
+
+    return {
+      certPath,
+      keyPath,
+      caPath,
       acmeEnabled: process.env.ACME_ENABLED === "true",
       acmeDirectory: process.env.ACME_DIRECTORY || "/etc/letsencrypt/live",
-
       rejectUnauthorized: this.isProduction,
-
       autoRenew: process.env.SSL_AUTO_RENEW === "true",
-      renewalDays: parseInt(process.env.SSL_RENEWAL_DAYS) || 30,
+      renewalDays: parseInt(process.env.SSL_RENEWAL_DAYS, 10) || 30,
+      pathsExist:
+        (certPath ? fs.existsSync(certPath) : true) &&
+        (keyPath ? fs.existsSync(keyPath) : true) &&
+        (caPath ? fs.existsSync(caPath) : true),
     };
   }
 
@@ -140,34 +145,19 @@ class SSLConfiguration {
     };
 
     if (this.isProduction) {
-      return {
-        ...baseConfig,
-        origin: this.getProductionOrigins(),
-        optionsSuccessStatus: 200,
-      };
+      return { ...baseConfig, origin: this.getProductionOrigins(), optionsSuccessStatus: 200 };
     }
 
     if (this.isStaging) {
-      return {
-        ...baseConfig,
-        origin: this.getStagingOrigins(),
-      };
+      return { ...baseConfig, origin: this.getStagingOrigins() };
     }
 
-    return {
-      ...baseConfig,
-      origin: "*",
-      credentials: false,
-    };
+    return { ...baseConfig, origin: "*", credentials: false };
   }
 
   getProductionOrigins() {
     const origins = process.env.ALLOWED_ORIGINS;
-
-    if (origins) {
-      return origins.split(",").map((origin) => origin.trim());
-    }
-
+    if (origins) return origins.split(",").map((o) => o.trim());
     return ["https://domain.com", "https://www.domain.com", "https://app.domain.com"];
   }
 
@@ -184,7 +174,6 @@ class SSLConfiguration {
     const headers = {
       "X-Content-Type-Options": "nosniff",
       "X-Frame-Options": "DENY",
-      "X-XSS-Protection": "1; mode=block",
       "Referrer-Policy": "strict-origin-when-cross-origin",
       "X-Download-Options": "noopen",
       "X-DNS-Prefetch-Control": "off",
@@ -203,54 +192,31 @@ class SSLConfiguration {
     return headers;
   }
 
-  getHSTSHeader() {
-    const config = this.getHSTSConfig();
-    let header = `max-age=${config.maxAge}`;
-
-    if (config.includeSubDomains) {
-      header += "; includeSubDomains";
-    }
-
-    if (config.preload) {
-      header += "; preload";
-    }
-
-    return header;
-  }
-
   validateConfig() {
     const config = this.getSSLConfig();
     const issues = [];
 
     if (this.isProduction) {
-      if (!config.forceHTTPS) {
-        issues.push("HTTPS enforcement should be enabled in production");
-      }
-
-      if (!config.hstsConfig.includeSubDomains) {
+      if (!config.forceHTTPS) issues.push("HTTPS enforcement should be enabled in production");
+      if (!config.hstsConfig.includeSubDomains)
         issues.push("HSTS should include subdomains in production");
-      }
-
-      if (config.hstsConfig.maxAge < 31536000) {
+      if (config.hstsConfig.maxAge < 31536000)
         issues.push("HSTS max-age should be at least 1 year in production");
-      }
     }
 
     const certConfig = config.certificateConfig;
     if (certConfig.certPath && !certConfig.keyPath) {
       issues.push("SSL certificate path specified but no key path");
     }
+    if (!certConfig.pathsExist) {
+      issues.push("One or more SSL certificate/key/CA paths do not exist");
+    }
 
-    return {
-      valid: issues.length === 0,
-      issues,
-      config,
-    };
+    return { valid: issues.length === 0, issues, config };
   }
 
   getConfigSummary() {
     const config = this.getSSLConfig();
-
     return {
       environment: this.environment,
       httpsEnforced: config.forceHTTPS,

@@ -21,6 +21,7 @@ router.use(adminAuth);
 const createBackupValidation = [
   body("type")
     .optional()
+    .trim()
     .isIn(["manual", "daily", "weekly", "monthly", "test"])
     .withMessage("Type must be one of: manual, daily, weekly, monthly, test"),
   body("schemaOnly").optional().isBoolean().withMessage("schemaOnly must be a boolean"),

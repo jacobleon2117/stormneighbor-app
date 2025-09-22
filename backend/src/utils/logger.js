@@ -1,12 +1,7 @@
+const fs = require("fs");
+const path = require("path");
 const winston = require("winston");
 const DailyRotateFile = require("winston-daily-rotate-file");
-
-// WARNING: Do not redirect server output (console.log) to files
-// This logger already handles file logging with proper rotation
-// Use LOG_LEVEL environment variable to control verbosity:
-//   - warn (default): Only warnings and errors
-//   - info: Includes startup/shutdown info
-//   - debug: Full request/response/database logging (very verbose!)
 
 const logFormat = winston.format.combine(
   winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
@@ -47,13 +42,12 @@ const combinedTransport = new DailyRotateFile({
 });
 
 const transports = [];
-
 if (process.env.DISABLE_FILE_LOGGING !== "true") {
   transports.push(errorTransport, combinedTransport);
 }
 
 const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || (process.env.NODE_ENV === "production" ? "warn" : "warn"),
+  level: process.env.LOG_LEVEL || (process.env.NODE_ENV === "production" ? "warn" : "info"),
   format: logFormat,
   defaultMeta: { service: "stormneighbor-backend" },
   transports,
@@ -68,32 +62,31 @@ if (process.env.NODE_ENV === "test") {
 }
 
 const cleanupLargeLogs = () => {
-  const fs = require("fs");
-  const path = require("path");
   const logsDir = "logs";
-
   try {
     if (fs.existsSync(logsDir)) {
       const files = fs.readdirSync(logsDir);
       files.forEach((file) => {
         const filePath = path.join(logsDir, file);
         const stats = fs.statSync(filePath);
+
         if (stats.size > 10 * 1024 * 1024) {
           fs.writeFileSync(
             filePath,
             `[TRUNCATED: File was ${(stats.size / 1024 / 1024).toFixed(2)}MB on ${new Date().toISOString()}]\n`
           );
-          console.warn(`Truncated large log file: ${filePath}`);
+          logger.warn(`Truncated large log file: ${filePath}`);
         }
+
         const twoDaysAgo = Date.now() - 2 * 24 * 60 * 60 * 1000;
         if (stats.mtime.getTime() < twoDaysAgo && !file.includes("current")) {
           fs.unlinkSync(filePath);
-          console.warn(`Deleted old log file: ${filePath}`);
+          logger.warn(`Deleted old log file: ${filePath}`);
         }
       });
     }
   } catch (error) {
-    console.warn("Could not perform log cleanup:", error.message);
+    logger.warn(`Log cleanup failed: ${error.message}`);
   }
 };
 

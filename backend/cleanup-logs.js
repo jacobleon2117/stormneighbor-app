@@ -69,7 +69,7 @@ findLogFiles("./");
 
 console.log("\nLog cleanup complete");
 console.log("\nTips to prevent future log bloat:");
-console.log('   • LOG_LEVEL is now set to "warn" (only warnings and errors)');
-console.log("   • Log files are limited to 5MB each");
-console.log("   • Logs are kept for only 1 day");
-console.log("   • Run this script periodically if needed");
+console.log(' LOG_LEVEL is now set to "warn" (only warnings and errors)');
+console.log(" Log files are limited to 5MB each");
+console.log(" Logs are kept for only 1 day");
+console.log(" Run this script periodically if needed");

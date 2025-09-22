@@ -1,8 +1,10 @@
 const crypto = require("crypto");
 const logger = require("../utils/logger");
+
 class InMemoryCache {
-  constructor() {
+  constructor({ maxSize = 1000, cleanupIntervalMs = 5 * 60 * 1000 } = {}) {
     this.cache = new Map();
+    this.maxSize = maxSize;
     this.stats = {
       hits: 0,
       misses: 0,
@@ -12,7 +14,7 @@ class InMemoryCache {
       startTime: Date.now(),
     };
 
-    this.cleanupInterval = setInterval(() => this.cleanup(), 5 * 60 * 1000);
+    this.cleanupInterval = setInterval(() => this.cleanup(), cleanupIntervalMs);
   }
 
   clearCleanupInterval() {
@@ -31,7 +33,6 @@ class InMemoryCache {
       accept: req.get("Accept"),
       userAgent: req.get("User-Agent")?.substring(0, 50),
     };
-
     return crypto.createHash("md5").update(JSON.stringify(keyData)).digest("hex");
   }
 
@@ -62,21 +63,20 @@ class InMemoryCache {
       lastAccessed: Date.now(),
       expiresAt: Date.now() + ttlMs,
       ttl: ttlMs,
+      size: Buffer.byteLength(JSON.stringify(data)),
     };
 
     this.cache.set(key, entry);
     this.stats.sets++;
 
-    if (this.cache.size > 1000) {
+    if (this.cache.size > this.maxSize) {
       this.evictOldest();
     }
   }
 
   delete(key) {
     const deleted = this.cache.delete(key);
-    if (deleted) {
-      this.stats.deletes++;
-    }
+    if (deleted) this.stats.deletes++;
     return deleted;
   }
 
@@ -120,6 +120,7 @@ class InMemoryCache {
     if (oldestKey) {
       this.cache.delete(oldestKey);
       this.stats.evictions++;
+      logger.info(`[${new Date().toISOString()}] Evicted oldest cache entry: ${oldestKey}`);
     }
   }
 
@@ -133,43 +134,37 @@ class InMemoryCache {
       hitRate:
         totalRequests > 0 ? ((this.stats.hits / totalRequests) * 100).toFixed(2) + "%" : "0%",
       uptime: `${Math.floor(uptime / 1000 / 60)} minutes`,
-      memoryUsage: `${(JSON.stringify([...this.cache.values()]).length / 1024 / 1024).toFixed(2)}MB`,
+      memoryUsage: `${(Array.from(this.cache.values()).reduce((acc, e) => acc + e.size, 0) / 1024 / 1024).toFixed(2)}MB`,
     };
   }
 }
 
-const cache = new InMemoryCache();
+const cache = new InMemoryCache({ maxSize: 1000 });
 
-const createCacheMiddleware = (options = {}) => {
-  const {
+const createCacheMiddleware =
+  ({
     ttl = 300000,
     skipCache = false,
     skipOnError = true,
     onlyForGET = true,
     keyGenerator = null,
-  } = options;
-
-  return (req, res, next) => {
-    if (skipCache || (onlyForGET && req.method !== "GET")) {
-      return next();
-    }
+  } = {}) =>
+  (req, res, next) => {
+    if (skipCache || (onlyForGET && req.method !== "GET")) return next();
 
     const cacheKey = keyGenerator ? keyGenerator(req) : cache.generateKey(req);
     const requestId = req.requestId || "unknown";
 
     const cachedData = cache.get(cacheKey);
-
     if (cachedData) {
       logger.info(
         `[${new Date().toISOString()}] [${requestId}] Cache HIT: ${req.method} ${req.path}`
       );
-
       res.set({
         "X-Cache": "HIT",
         "X-Cache-Key": cacheKey.substring(0, 8),
-        "Cache-Control": "public, max-age=300",
+        "Cache-Control": `public, max-age=${ttl / 1000}`,
       });
-
       return res.json(cachedData);
     }
 
@@ -182,34 +177,24 @@ const createCacheMiddleware = (options = {}) => {
       if (res.statusCode >= 200 && res.statusCode < 300) {
         try {
           cache.set(cacheKey, data, ttl);
-          logger.info(
-            `[${new Date().toISOString()}] [${requestId}] Cached response: ${req.method} ${req.path} (TTL: ${ttl / 1000}s)`
-          );
-
           res.set({
             "X-Cache": "MISS",
             "X-Cache-Key": cacheKey.substring(0, 8),
             "Cache-Control": `public, max-age=${ttl / 1000}`,
           });
-        } catch (cacheError) {
-          if (!skipOnError) {
-            console.error(
-              `[${new Date().toISOString()}] [${requestId}] Cache error:`,
-              cacheError.message
-            );
-          }
+        } catch (err) {
+          if (!skipOnError) logger.error(`[${requestId}] Cache set error: ${err.stack}`);
         }
       }
-
       return originalJson.call(this, data);
     };
 
     next();
   };
-};
 
-const invalidateCache = (patterns = []) => {
-  return (req, res, next) => {
+const invalidateCache =
+  (patterns = []) =>
+  (req, res, next) => {
     const originalJson = res.json;
 
     res.json = function (data) {
@@ -222,18 +207,14 @@ const invalidateCache = (patterns = []) => {
         let invalidated = 0;
 
         if (patterns.length === 0) {
-          const sizeBefore = cache.cache.size;
+          invalidated = cache.cache.size;
           cache.clear();
-          invalidated = sizeBefore;
         } else {
           for (const [key, entry] of cache.cache.entries()) {
             const shouldInvalidate = patterns.some((pattern) => {
-              if (typeof pattern === "string") {
+              if (typeof pattern === "string")
                 return entry.data && JSON.stringify(entry.data).includes(pattern);
-              }
-              if (pattern instanceof RegExp) {
-                return pattern.test(key);
-              }
+              if (pattern instanceof RegExp) return pattern.test(key);
               return false;
             });
 
@@ -244,11 +225,10 @@ const invalidateCache = (patterns = []) => {
           }
         }
 
-        if (invalidated > 0) {
+        if (invalidated > 0)
           logger.info(
             `[${new Date().toISOString()}] [${requestId}] Cache invalidated: ${invalidated} entries`
           );
-        }
       }
 
       return originalJson.call(this, data);
@@ -256,72 +236,16 @@ const invalidateCache = (patterns = []) => {
 
     next();
   };
-};
 
-const cacheConfigs = {
-  weather: createCacheMiddleware({
-    ttl: 10 * 60 * 1000,
-    keyGenerator: (req) => `weather:${req.query.lat}:${req.query.lng}`,
-  }),
-
-  profile: createCacheMiddleware({
-    ttl: 5 * 60 * 1000,
-    keyGenerator: (req) => `profile:${req.user?.userId || "anonymous"}`,
-  }),
-
-  posts: createCacheMiddleware({
-    ttl: 2 * 60 * 1000,
-    keyGenerator: (req) => `posts:${req.user?.userId}:${JSON.stringify(req.query)}`,
-  }),
-
-  static: createCacheMiddleware({
-    ttl: 30 * 60 * 1000,
-  }),
-
-  shortTerm: createCacheMiddleware({
-    ttl: 60 * 1000,
-  }),
-};
-
-const getCacheStats = (_req, res) => {
-  const stats = cache.getStats();
-
-  res.json({
-    success: true,
-    message: "Cache statistics",
-    data: {
-      cache: stats,
-      configuration: {
-        maxSize: 1000,
-        cleanupInterval: "5 minutes",
-        defaultTTL: "5 minutes",
-      },
-      recommendations: {
-        hitRate: stats.hitRate,
-        status:
-          parseFloat(stats.hitRate) > 80
-            ? "excellent"
-            : parseFloat(stats.hitRate) > 60
-              ? "good"
-              : parseFloat(stats.hitRate) > 40
-                ? "fair"
-                : "poor",
-      },
-    },
-  });
-};
-
+const getCacheStats = (_req, res) =>
+  res.json({ success: true, message: "Cache statistics", data: cache.getStats() });
 const clearCache = (_req, res) => {
   const sizeBefore = cache.cache.size;
   cache.clear();
-
   res.json({
     success: true,
     message: "Cache cleared successfully",
-    data: {
-      entriesRemoved: sizeBefore,
-      cacheSize: cache.cache.size,
-    },
+    data: { entriesRemoved: sizeBefore, cacheSize: cache.cache.size },
   });
 };
 
@@ -329,7 +253,6 @@ module.exports = {
   cache,
   createCacheMiddleware,
   invalidateCache,
-  cacheConfigs,
   getCacheStats,
   clearCache,
 };

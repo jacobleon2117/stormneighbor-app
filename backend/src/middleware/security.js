@@ -1,8 +1,6 @@
 const crypto = require("crypto");
 const { validationResult } = require("express-validator");
 const rateLimit = require("express-rate-limit");
-const RedisStore = require("rate-limit-redis").default;
-const Redis = require("ioredis");
 const createDOMPurify = require("isomorphic-dompurify");
 const { JSDOM } = require("jsdom");
 const logger = require("../utils/logger");
@@ -10,7 +8,49 @@ const logger = require("../utils/logger");
 const window = new JSDOM("").window;
 const DOMPurify = createDOMPurify(window);
 
-const redisClient = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
+// Optional Redis setup - falls back to memory if Redis is unavailable
+let redisClient = null;
+let RedisStore = null;
+let redisInitialized = false;
+
+function initializeRedis() {
+  if (redisInitialized) return;
+  redisInitialized = true;
+
+  try {
+    const Redis = require("ioredis");
+    RedisStore = require("rate-limit-redis").default;
+
+    redisClient = new Redis(process.env.REDIS_URL || "redis://localhost:6379", {
+      retryDelayOnFailover: 100,
+      maxRetriesPerRequest: 1,
+      lazyConnect: true,
+      connectTimeout: 1000,
+      enableOfflineQueue: false,
+    });
+
+    let errorLogged = false;
+    redisClient.on('error', () => {
+      if (!errorLogged) {
+        logger.info('Redis unavailable, using memory-based rate limiting');
+        errorLogged = true;
+      }
+      redisClient = null;
+    });
+
+    redisClient.on('connect', () => {
+      logger.info('Redis connected for rate limiting');
+    });
+
+  } catch (error) {
+    logger.info('Redis not available, using memory-based rate limiting');
+  }
+}
+
+// Only initialize Redis if explicitly enabled
+if (process.env.ENABLE_REDIS === 'true') {
+  initializeRedis();
+}
 
 class SecurityMiddleware {
   constructor() {
@@ -110,8 +150,7 @@ class SecurityMiddleware {
   }
 
   passwordResetProtection() {
-    return rateLimit({
-      store: new RedisStore({ sendCommand: (...args) => redisClient.call(...args) }),
+    const config = {
       windowMs: 60 * 60 * 1000,
       max: this.MAX_PASSWORD_RESET_ATTEMPTS,
       keyGenerator: (req) => `pwd_reset:${req.body.email || req.ip}`,
@@ -120,12 +159,20 @@ class SecurityMiddleware {
         message: "Too many password reset requests",
         code: "PASSWORD_RESET_LIMIT",
       },
-    });
+    };
+
+    if (redisClient && RedisStore) {
+      config.store = new RedisStore({ sendCommand: (...args) => redisClient.call(...args) });
+      logger.info('Using Redis store for password reset protection');
+    } else {
+      logger.info('Using memory store for password reset protection');
+    }
+
+    return rateLimit(config);
   }
 
   registrationProtection() {
-    return rateLimit({
-      store: new RedisStore({ sendCommand: (...args) => redisClient.call(...args) }),
+    const config = {
       windowMs: 15 * 60 * 1000,
       max: 3,
       keyGenerator: (req) => req.ip,
@@ -134,33 +181,72 @@ class SecurityMiddleware {
         message: "Too many registration attempts",
         code: "REGISTRATION_LIMIT",
       },
-    });
+    };
+
+    if (redisClient && RedisStore) {
+      config.store = new RedisStore({ sendCommand: (...args) => redisClient.call(...args) });
+      logger.info('Using Redis store for registration protection');
+    } else {
+      logger.info('Using memory store for registration protection');
+    }
+
+    return rateLimit(config);
   }
 
   loginBruteForceProtection() {
     return async (req, res, next) => {
       const { email } = req.body;
       if (!email) return next();
+
       const key = `login:${email}:${req.ip}`;
-      const attempts = parseInt(await redisClient.get(key)) || 0;
+      let attempts = 0;
 
-      if (attempts >= this.MAX_LOGIN_ATTEMPTS) {
-        return res.status(429).json({
-          success: false,
-          message: "Too many failed login attempts. Account temporarily locked.",
-          code: "BRUTE_FORCE_DETECTED",
-        });
-      }
-
-      const originalJson = res.json.bind(res);
-      res.json = async (data) => {
-        if (data.success === false && data.message?.includes("Invalid credentials")) {
-          await redisClient.multi().incr(key).pexpire(key, this.LOCKOUT_DURATION).exec();
-        } else if (data.success === true) {
-          await redisClient.del(key);
+      try {
+        if (redisClient) {
+          attempts = parseInt(await redisClient.get(key)) || 0;
+        } else {
+          // Fallback to memory-based tracking (not persistent but better than nothing)
+          const memKey = `${email}:${req.ip}`;
+          attempts = this.requestCounts.get(memKey) || 0;
         }
-        return originalJson(data);
-      };
+
+        if (attempts >= this.MAX_LOGIN_ATTEMPTS) {
+          return res.status(429).json({
+            success: false,
+            message: "Too many failed login attempts. Account temporarily locked.",
+            code: "BRUTE_FORCE_DETECTED",
+          });
+        }
+
+        const originalJson = res.json.bind(res);
+        res.json = async (data) => {
+          try {
+            if (data.success === false && data.message?.includes("Invalid credentials")) {
+              if (redisClient) {
+                await redisClient.multi().incr(key).pexpire(key, this.LOCKOUT_DURATION).exec();
+              } else {
+                const memKey = `${email}:${req.ip}`;
+                const newCount = (this.requestCounts.get(memKey) || 0) + 1;
+                this.requestCounts.set(memKey, newCount);
+                // Clean up memory after lockout period
+                setTimeout(() => this.requestCounts.delete(memKey), this.LOCKOUT_DURATION);
+              }
+            } else if (data.success === true) {
+              if (redisClient) {
+                await redisClient.del(key);
+              } else {
+                const memKey = `${email}:${req.ip}`;
+                this.requestCounts.delete(memKey);
+              }
+            }
+          } catch (error) {
+            logger.error('Error in login brute force protection:', error);
+          }
+          return originalJson(data);
+        };
+      } catch (error) {
+        logger.error('Error in login brute force protection setup:', error);
+      }
 
       next();
     };

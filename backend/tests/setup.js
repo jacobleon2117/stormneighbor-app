@@ -68,7 +68,16 @@ afterAll(async () => {
   cleanupHandlers = [];
 });
 
-global.testHelpers = {
+const testHelpers = {
+  createTestUser: () => ({
+    email: `test-${Date.now()}@stormneighbor.test`,
+    password: "TestPassword123",
+    firstName: "Test",
+    lastName: "User",
+    city: "Austin",
+    state: "Texas",
+  }),
+
   generateTestUser: () => ({
     email: `test-${Date.now()}@stormneighbor.test`,
     password: "TestPassword123",
@@ -119,6 +128,10 @@ global.testHelpers = {
     }));
   },
 };
+
+// Make testHelpers available globally and as export
+global.testHelpers = testHelpers;
+module.exports = { testHelpers };
 
 process.on("unhandledRejection", (reason, promise) => {
   console.error("Unhandled Rejection at:", promise, "reason:", reason);

@@ -115,7 +115,6 @@
     "postgresql",
     "postgis",
     "real-time",
-    "socket.io",
     "ci-cd",
     "backup"
   ],

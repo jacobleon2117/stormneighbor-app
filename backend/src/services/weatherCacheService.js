@@ -7,7 +7,16 @@ class WeatherCacheService {
     this.forecastDays = options.forecastDays || 7;
     this.cleanupInterval = options.cleanupInterval || 15 * 60 * 1000;
 
-    setInterval(() => this.cleanup(), this.cleanupInterval);
+    if (process.env.NODE_ENV !== "test") {
+      this.intervalId = setInterval(() => this.cleanup(), this.cleanupInterval);
+    }
+  }
+
+  clearCleanupInterval() {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
+    }
   }
 
   getCacheKey(lat, lng) {

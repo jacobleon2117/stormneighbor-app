@@ -26,7 +26,7 @@ const getDevBaseUrl = () => {
 export const API_CONFIG = {
   BASE_URL:
     process.env.EXPO_PUBLIC_API_BASE_URL ||
-    (ENV.isDevelopment ? getDevBaseUrl() : "https://stormneighbor-api.onrender.com/api/v1"),
+    (ENV.isDevelopment ? getDevBaseUrl() : "http://localhost:3000/api/v1"),
   TIMEOUT: parseInt(process.env.EXPO_PUBLIC_API_TIMEOUT || "30000", 10),
 } as const;
 

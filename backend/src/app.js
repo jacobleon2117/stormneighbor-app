@@ -102,7 +102,7 @@ app.use(
 app.use(securityMiddleware.sanitizeInput());
 app.use(securityMiddleware.securityHeaders());
 app.use(securityMiddleware.loginBruteForceProtection());
-app.use(securityMiddleware.requireAuthToken());
+// Note: requireAuthToken should not be applied globally - it's applied per route via the auth middleware
 app.use(requestLogger);
 app.use(performanceMonitor);
 app.use(analyticsTracker.middleware);

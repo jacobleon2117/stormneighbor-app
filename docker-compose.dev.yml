@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  # Development Backend with hot reload
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+      target: development
+    environment:
+      - NODE_ENV=development
+      - DEBUG=app:*
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/tests:/app/tests
+      - /app/node_modules
+    command: npm run dev
+    ports:
+      - "3000:3000"
+      - "9229:9229"  # Debug port
+
+  # Development database with exposed ports
+  db:
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=stormneighbor_dev
+      - POSTGRES_USER=stormneighbor
+      - POSTGRES_PASSWORD=dev123
+
+  # Development Redis
+  redis:
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass dev123
+
+# Remove nginx from development
+profiles: []

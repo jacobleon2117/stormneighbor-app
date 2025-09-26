@@ -14,7 +14,9 @@ class InMemoryCache {
       startTime: Date.now(),
     };
 
-    this.cleanupInterval = setInterval(() => this.cleanup(), cleanupIntervalMs);
+    if (process.env.NODE_ENV !== "test") {
+      this.cleanupInterval = setInterval(() => this.cleanup(), cleanupIntervalMs);
+    }
   }
 
   clearCleanupInterval() {
@@ -249,10 +251,19 @@ const clearCache = (_req, res) => {
   });
 };
 
+const cacheConfigs = {
+  shortTerm: createCacheMiddleware({ ttl: 60000 }),
+  medium: createCacheMiddleware({ ttl: 300000 }),
+  longTerm: createCacheMiddleware({ ttl: 900000 }),
+  static: createCacheMiddleware({ ttl: 3600000 }),
+  none: (req, res, next) => next(),
+};
+
 module.exports = {
   cache,
   createCacheMiddleware,
   invalidateCache,
   getCacheStats,
   clearCache,
+  cacheConfigs,
 };

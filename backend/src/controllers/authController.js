@@ -935,9 +935,9 @@ const logout = async (req, res) => {
 
     if (refreshToken) {
       try {
-        await tokenService.revokeSession(refreshToken);
+        await tokenService.revokeRefreshToken(refreshToken);
       } catch (error) {
-        logger.error("Error revoking session:", error);
+        logger.error("Error revoking refresh token:", error);
       }
     }
 
@@ -1050,7 +1050,7 @@ const revokeSession = async (req, res) => {
           });
         }
 
-        const revoked = await tokenService.revokeSession(refreshToken);
+        const revoked = await tokenService.revokeRefreshToken(refreshToken);
 
         if (revoked) {
           res.json({

@@ -347,16 +347,46 @@ export default function WeatherScreen() {
     }
   };
 
-  const handleMyLocation = () => {
-    if (mapRef.current && location) {
-      const userRegion = {
-        latitude: location.latitude,
-        longitude: location.longitude,
-        latitudeDelta: 0.0922,
-        longitudeDelta: 0.0421,
-      };
-      setMapRegion(userRegion);
-      mapRef.current.animateToRegion(userRegion, 500);
+  const handleMyLocation = async () => {
+    try {
+      const hasPermission = await requestLocationPermission();
+      if (!hasPermission) {
+        Alert.alert(
+          "Permission Required",
+          "Location permission is needed to navigate to your current location."
+        );
+        return;
+      }
+
+      const currentLocation = await locationService.getCurrentLocation();
+      if (currentLocation && mapRef.current) {
+        const userRegion = {
+          latitude: currentLocation.coords.latitude,
+          longitude: currentLocation.coords.longitude,
+          latitudeDelta: 0.0922,
+          longitudeDelta: 0.0421,
+        };
+        setMapRegion(userRegion);
+        mapRef.current.animateToRegion(userRegion, 500);
+
+        // Update location state to reflect current position
+        const address = await locationService.reverseGeocode(
+          currentLocation.coords.latitude,
+          currentLocation.coords.longitude
+        );
+        setLocation({
+          latitude: currentLocation.coords.latitude,
+          longitude: currentLocation.coords.longitude,
+          city: address?.city || "Current Location",
+          state: address?.region || "Unknown",
+          source: "current",
+        });
+      } else {
+        Alert.alert("Error", "Unable to get your current location. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error getting current location:", error);
+      Alert.alert("Error", "Failed to get your current location. Please try again.");
     }
   };
 

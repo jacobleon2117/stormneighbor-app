@@ -11,6 +11,9 @@ import {
   PanResponder,
   Animated,
   ScrollView,
+  Share as RNShare,
+  Clipboard,
+  Alert,
 } from "react-native";
 import {
   HelpCircle,
@@ -240,6 +243,41 @@ export function PostCard({
     closeModalImmediately(setShowHideModal, hideModalY);
     setShowReportModal(false);
     setShowMoreModal(true);
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      const postUrl = `https://stormneighbor.app/post/${post.id}`;
+      await Clipboard.setString(postUrl);
+      Alert.alert("Copied!", "Post link copied to clipboard");
+      closeModalImmediately(setShowShareModal, shareModalY);
+    } catch (error) {
+      Alert.alert("Error", "Failed to copy link");
+    }
+  };
+
+  const handleShareMore = async () => {
+    try {
+      const postUrl = `https://stormneighbor.app/post/${post.id}`;
+      const shareMessage = `Check out this post: "${post.title || post.content.substring(0, 50)}..." - ${postUrl}`;
+
+      await RNShare.share({
+        message: shareMessage,
+        url: postUrl,
+        title: post.title || "StormNeighbor Post",
+      });
+      closeModalImmediately(setShowShareModal, shareModalY);
+    } catch (error) {
+      console.log("Share cancelled or failed:", error);
+    }
+  };
+
+  const handleShareToMessages = () => {
+    // This would integrate with the existing messaging system
+    closeModalImmediately(setShowShareModal, shareModalY);
+    if (onMessage) {
+      onMessage(post.userId, `${post.firstName} ${post.lastName}`);
+    }
   };
 
   return (
@@ -714,14 +752,14 @@ export function PostCard({
                       showsHorizontalScrollIndicator={false}
                       contentContainerStyle={styles.shareOptionsContent}
                     >
-                      <TouchableOpacity style={styles.shareOption}>
+                      <TouchableOpacity style={styles.shareOption} onPress={handleShareToMessages}>
                         <View style={styles.shareOptionIcon}>
                           <MessageCircle size={24} color={Colors.primary[600]} />
                         </View>
                         <Text style={styles.shareOptionText}>Messages</Text>
                       </TouchableOpacity>
 
-                      <TouchableOpacity style={styles.shareOption}>
+                      <TouchableOpacity style={styles.shareOption} onPress={handleCopyLink}>
                         <View style={styles.shareOptionIcon}>
                           <Share size={24} color={Colors.neutral[600]} />
                         </View>
@@ -742,7 +780,7 @@ export function PostCard({
                         <Text style={styles.shareOptionText}>Instagram</Text>
                       </TouchableOpacity>
 
-                      <TouchableOpacity style={styles.shareOption}>
+                      <TouchableOpacity style={styles.shareOption} onPress={handleShareMore}>
                         <View style={styles.shareOptionIcon}>
                           <Share size={24} color={Colors.primary[600]} />
                         </View>

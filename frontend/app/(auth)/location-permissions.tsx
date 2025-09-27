@@ -56,7 +56,7 @@ export default function LocationPermissionsScreen() {
 
       await refreshProfile();
 
-      router.push("/(auth)/home-address-setup");
+      router.push("/(auth)/location-setup");
     } catch (error) {
       console.error("Error requesting location permissions:", error);
       Alert.alert(
@@ -95,10 +95,10 @@ export default function LocationPermissionsScreen() {
       });
 
       await refreshProfile();
-      router.push("/(auth)/home-address-setup");
+      router.push("/(auth)/location-setup");
     } catch (error) {
       console.error("Error saving location preferences:", error);
-      router.push("/(auth)/home-address-setup");
+      router.push("/(auth)/location-setup");
     }
   };
 

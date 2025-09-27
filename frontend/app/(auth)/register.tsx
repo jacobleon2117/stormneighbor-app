@@ -102,6 +102,9 @@ export default function RegisterScreen() {
         phone: formData.phone.trim() ? formData.phone.replace(/[\s\-\(\)\+]/g, "") : undefined,
         password: formData.password,
       });
+
+      // Navigate to location permissions setup after successful registration
+      router.push("/(auth)/location-permissions");
     } catch (error) {
       console.error("Registration error in component:", error);
     }
@@ -173,6 +176,8 @@ export default function RegisterScreen() {
                   placeholder="Create a strong password"
                   secureTextEntry={!showPassword}
                   error={errors.password}
+                  textContentType="none"
+                  autoComplete="off"
                   required
                 />
                 <TouchableOpacity
@@ -195,6 +200,8 @@ export default function RegisterScreen() {
                   placeholder="Confirm your password"
                   secureTextEntry={!showConfirmPassword}
                   error={errors.confirmPassword}
+                  textContentType="none"
+                  autoComplete="off"
                   required
                 />
                 <TouchableOpacity

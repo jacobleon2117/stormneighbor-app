@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as Clipboard from "expo-clipboard";
-import { router, useLocalSearchParams, useFocusEffect } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { Search, X } from "lucide-react-native";
 import { PostCard } from "../../components/Posts/PostCard";
 import { useAuth } from "../../hooks/useAuth";
@@ -25,7 +25,6 @@ import { Button } from "../../components/UI/Button";
 import { Header } from "../../components/UI/Header";
 
 export default function HomeScreen() {
-  const params = useLocalSearchParams();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -194,10 +193,6 @@ export default function HomeScreen() {
         },
       },
     ]);
-  };
-
-  const handlePostPress = (postId: number) => {
-    router.push(`/post/${postId}`);
   };
 
   const handleMessage = async (userId: number, userName: string) => {
@@ -406,7 +401,6 @@ export default function HomeScreen() {
       onLike={handleLike}
       onComment={handleComment}
       onShare={handleShare}
-      onPress={handlePostPress}
       onMessage={handleMessage}
       onReport={handleReport}
       onBlock={handleBlock}

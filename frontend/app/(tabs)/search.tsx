@@ -11,7 +11,6 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { Search, X, Filter, ArrowLeft } from "lucide-react-native";
-import { Header } from "../../components/UI/Header";
 import { PostCard } from "../../components/Posts/PostCard";
 import { Colors } from "../../constants/Colors";
 import { apiService } from "../../services/api";
@@ -82,10 +81,6 @@ export default function SearchScreen() {
   const handleShare = (postId: number) => {
     const shareUrl = `https://stormneighbor.app/post/${postId}`;
     Alert.alert("Share Post", shareUrl);
-  };
-
-  const handlePostPress = (postId: number) => {
-    router.push(`/post/${postId}`);
   };
 
   const handleMessage = async (userId: number, userName: string) => {
@@ -245,7 +240,6 @@ export default function SearchScreen() {
       onLike={handleLike}
       onComment={handleComment}
       onShare={handleShare}
-      onPress={handlePostPress}
       onMessage={handleMessage}
       onReport={handleReport}
       onBlock={handleBlock}
@@ -314,7 +308,6 @@ export default function SearchScreen() {
       </View>
 
       <View style={styles.safeContent}>
-
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={Colors.primary[500]} />

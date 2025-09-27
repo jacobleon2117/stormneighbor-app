@@ -150,22 +150,17 @@ export default function CreateScreen() {
 
   const toggleQuickActions = () => {
     if (showQuickActions) {
-      // Switching from Quick Actions to Keyboard
       setShowQuickActions(false);
-      // Shorter delay for smoother transition
       setTimeout(() => {
         textInputRef.current?.focus();
       }, 50);
     } else {
-      // Switching from Keyboard to Quick Actions
       if (isTyping) {
-        // Dismiss keyboard first, then show quick actions after a brief delay
         Keyboard.dismiss();
         setTimeout(() => {
           setShowQuickActions(true);
         }, 50);
       } else {
-        // If not typing, show quick actions immediately
         setShowQuickActions(true);
       }
     }
@@ -304,12 +299,10 @@ export default function CreateScreen() {
 
   const handleGalleryPress = async () => {
     try {
-      // Check current permission status first
       const { status: currentStatus } = await ImagePicker.getMediaLibraryPermissionsAsync();
 
       let permissionStatus = currentStatus;
 
-      // If not granted, request permission
       if (currentStatus !== "granted") {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         permissionStatus = status;
@@ -321,7 +314,10 @@ export default function CreateScreen() {
           "You've denied access to your photo library. To select images, please enable photo library access in your device settings.",
           [
             { text: "Cancel", style: "cancel" },
-            { text: "Open Settings", onPress: () => console.log("Open settings - implement if needed") }
+            {
+              text: "Open Settings",
+              onPress: () => console.log("Open settings - implement if needed"),
+            },
           ]
         );
         return;
@@ -401,7 +397,10 @@ export default function CreateScreen() {
           "You've denied camera access. To take photos, please enable camera access in your device settings.",
           [
             { text: "Cancel", style: "cancel" },
-            { text: "Open Settings", onPress: () => console.log("Open settings - implement if needed") }
+            {
+              text: "Open Settings",
+              onPress: () => console.log("Open settings - implement if needed"),
+            },
           ]
         );
         return;
@@ -474,7 +473,6 @@ export default function CreateScreen() {
     }
   };
 
-
   const handleClosePress = () => {
     const hasContent = postText.trim() || selectedImages.length > 0 || selectedAction;
 
@@ -504,9 +502,7 @@ export default function CreateScreen() {
       return newImages;
     });
 
-    // Keep keyboard visible if user was typing
     if (wasTyping) {
-      // Use a shorter timeout and ensure focus is maintained
       setTimeout(() => {
         textInputRef.current?.focus();
       }, 10);
@@ -532,7 +528,6 @@ export default function CreateScreen() {
         <SafeAreaView style={styles.safeContent} edges={["bottom", "left", "right"]}>
           <TouchableWithoutFeedback
             onPress={() => {
-              // Only dismiss keyboard if tapping in empty space, not on buttons/images
               if (isTyping) {
                 Keyboard.dismiss();
               }
@@ -581,7 +576,8 @@ export default function CreateScreen() {
                 <TouchableOpacity
                   style={[
                     styles.postButton,
-                    (!postText.trim() && selectedImages.length === 0 || isPosting) && styles.postButtonDisabled,
+                    ((!postText.trim() && selectedImages.length === 0) || isPosting) &&
+                      styles.postButtonDisabled,
                   ]}
                   onPress={handleCreatePost}
                   disabled={(!postText.trim() && selectedImages.length === 0) || isPosting}
@@ -589,7 +585,8 @@ export default function CreateScreen() {
                   <Text
                     style={[
                       styles.postButtonText,
-                      (!postText.trim() && selectedImages.length === 0 || isPosting) && styles.postButtonTextDisabled,
+                      ((!postText.trim() && selectedImages.length === 0) || isPosting) &&
+                        styles.postButtonTextDisabled,
                     ]}
                   >
                     Post
@@ -645,7 +642,7 @@ export default function CreateScreen() {
                     <TouchableOpacity
                       style={styles.removeImageButton}
                       onPress={() => {
-                        console.log('Remove button pressed for image', index);
+                        console.log("Remove button pressed for image", index);
                         handleRemoveImage(index);
                       }}
                       activeOpacity={0.8}

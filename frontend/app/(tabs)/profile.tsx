@@ -370,8 +370,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 16,
     paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
   },
   menuIcon: {
     width: 40,
@@ -392,9 +390,21 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary,
   },
   dangerZone: {
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+    backgroundColor: Colors.background,
+    marginHorizontal: 20,
     marginTop: 20,
+    marginBottom: 20,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   logoutButton: {
     alignSelf: "center",

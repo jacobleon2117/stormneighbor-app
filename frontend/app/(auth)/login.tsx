@@ -174,6 +174,8 @@ export default function LoginScreen() {
                     placeholder="Enter your password"
                     secureTextEntry={!showPassword}
                     error={errors.password}
+                    textContentType="none"
+                    autoComplete="off"
                     required
                   />
                   <TouchableOpacity

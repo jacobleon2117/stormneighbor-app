@@ -20,7 +20,30 @@
         "NSPhotoLibraryUsageDescription": "This app accesses photo library to select images for posts",
         "NSLocationWhenInUseUsageDescription": "This app uses location to show nearby posts and weather information",
         "NSUserNotificationsUsageDescription": "This app sends notifications for emergency alerts and important community updates",
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": false,
+          "NSAllowsArbitraryLoadsInWebContent": false,
+          "NSAllowsLocalNetworking": true,
+          "NSExceptionDomains": {
+            "localhost": {
+              "NSExceptionAllowsInsecureHTTPLoads": true,
+              "NSExceptionMinimumTLSVersion": "1.0",
+              "NSExceptionRequiresForwardSecrecy": false,
+              "NSIncludesSubdomains": true
+            },
+            "api.openweathermap.org": {
+              "NSExceptionRequiresForwardSecrecy": false,
+              "NSExceptionMinimumTLSVersion": "1.2",
+              "NSThirdPartyExceptionRequiresForwardSecrecy": false
+            },
+            "res.cloudinary.com": {
+              "NSExceptionRequiresForwardSecrecy": false,
+              "NSExceptionMinimumTLSVersion": "1.2",
+              "NSThirdPartyExceptionRequiresForwardSecrecy": false
+            }
+          }
+        }
       }
     },
     "android": {

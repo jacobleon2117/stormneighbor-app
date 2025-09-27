@@ -1,6 +1,7 @@
 const cloudinary = require("cloudinary").v2;
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const multer = require("multer");
+const { v4: uuidv4 } = require("uuid");
 const logger = require("../utils/logger");
 
 cloudinary.config({
@@ -49,7 +50,8 @@ const profileImageStorage = new CloudinaryStorage({
     public_id: (req, _file) => {
       const timestamp = Date.now();
       const userId = req.user?.userId || "unknown";
-      return `profile_${userId}_${timestamp}`;
+      const uniqueId = uuidv4().substring(0, 8); // Use first 8 chars of UUID
+      return `profile_${userId}_${timestamp}_${uniqueId}`;
     },
   },
 });
@@ -67,7 +69,8 @@ const postImageStorage = new CloudinaryStorage({
     public_id: (req, _file) => {
       const timestamp = Date.now();
       const postId = req.params.postId || "new";
-      return `post_${postId}_${timestamp}`;
+      const uniqueId = uuidv4().substring(0, 8); // Use first 8 chars of UUID
+      return `post_${postId}_${timestamp}_${uniqueId}`;
     },
   },
 });
@@ -85,7 +88,8 @@ const commentImageStorage = new CloudinaryStorage({
     public_id: (req, _file) => {
       const timestamp = Date.now();
       const commentId = req.params.commentId || "new";
-      return `comment_${commentId}_${timestamp}`;
+      const uniqueId = uuidv4().substring(0, 8); // Use first 8 chars of UUID
+      return `comment_${commentId}_${timestamp}_${uniqueId}`;
     },
   },
 });

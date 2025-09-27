@@ -125,7 +125,8 @@ export default function ChangePasswordScreen() {
           placeholderTextColor={Colors.text.disabled}
           secureTextEntry={!showPasswords[visibilityField]}
           autoCapitalize="none"
-          autoComplete="password"
+          autoComplete="off"
+          textContentType="none"
         />
         <TouchableOpacity
           onPress={() => togglePasswordVisibility(visibilityField)}

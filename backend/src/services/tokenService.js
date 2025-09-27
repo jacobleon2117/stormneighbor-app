@@ -95,11 +95,11 @@ class TokenService {
       const hashedOld = this.hashToken(oldRefreshToken);
       const res = await client.query(
         `
-        SELECT s.*, u.id as user_id, u.email, u.role
+        SELECT s.*, u.id as user_id, u.email
         FROM user_sessions s
         JOIN users u ON s.user_id = u.id
-        WHERE s.refresh_token = $1 
-        AND s.is_active = true 
+        WHERE s.refresh_token = $1
+        AND s.is_active = true
         AND s.expires_at > NOW()
       `,
         [hashedOld]

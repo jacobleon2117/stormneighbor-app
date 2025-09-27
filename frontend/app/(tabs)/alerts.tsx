@@ -265,10 +265,28 @@ export default function AlertsScreen() {
     }
   };
 
+
+  const mapAlertTypeToCardType = (alertType: string) => {
+    switch (alertType) {
+      case "weather_alert":
+        return "weather_alerts";
+      case "community_alert":
+        return "community_alerts";
+      case "safety_alert":
+        return "safety_alerts";
+      case "system":
+        return "announcements";
+      case "emergency":
+        return "severe_weather";
+      default:
+        return "announcements";
+    }
+  };
+
   const renderAlert = ({ item }: { item: Alert }) => (
     <AlertCard
       id={item.id.toString()}
-      type={item.alertType as any}
+      type={mapAlertTypeToCardType(item.alertType) as any}
       title={item.title}
       description={item.description}
       timestamp={item.createdAt}

@@ -293,7 +293,6 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ visible, use
                 onLike={() => {}}
                 onComment={() => {}}
                 onShare={() => {}}
-                onPress={() => {}}
                 currentUserId={currentUser?.id}
               />
             )}

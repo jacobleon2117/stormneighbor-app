@@ -104,17 +104,12 @@ export default function SavedPostsScreen() {
     Alert.alert("Share", "Sharing functionality will be implemented soon.");
   };
 
-  const handlePostPress = (postId: number) => {
-    router.push(`/post/${postId}`);
-  };
-
   const renderPost = ({ item }: { item: Post }) => (
     <PostCard
       post={item}
       onLike={handleLike}
       onComment={handleComment}
       onShare={handleShare}
-      onPress={handlePostPress}
       onSave={() => handleUnsavePost(item.id)}
       currentUserId={user?.id}
     />

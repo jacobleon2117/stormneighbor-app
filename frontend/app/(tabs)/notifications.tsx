@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Alert,
   RefreshControl,
+  ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
 import {
@@ -46,10 +47,13 @@ const NOTIFICATION_ICONS = {
 export default function NotificationsScreen() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [filter] = useState<"all" | "unread">("all");
 
   const loadNotifications = async (isRefresh = false) => {
     try {
+      if (!isRefresh) setLoading(true);
+
       const response = await apiService.getNotifications();
 
       if (response.success && response.data) {
@@ -59,8 +63,11 @@ export default function NotificationsScreen() {
       }
     } catch (error: any) {
       console.error("Load notifications error:", error);
-      Alert.alert("Error", "Failed to load notifications. Please try again.");
+      if (!isRefresh) {
+        Alert.alert("Error", "Failed to load notifications. Please try again.");
+      }
     } finally {
+      setLoading(false);
       if (isRefresh) setRefreshing(false);
     }
   };
@@ -72,6 +79,13 @@ export default function NotificationsScreen() {
 
   useEffect(() => {
     loadNotifications();
+
+    // Set up polling for real-time notifications
+    const interval = setInterval(() => {
+      loadNotifications();
+    }, 30000); // Poll every 30 seconds
+
+    return () => clearInterval(interval);
   }, []);
 
   const markAsRead = async (notificationId: number) => {
@@ -211,6 +225,23 @@ export default function NotificationsScreen() {
   const handleGoBack = () => {
     router.back();
   };
+
+  if (loading && !refreshing) {
+    return (
+      <View style={styles.container}>
+        <Header
+          title="Notifications"
+          showBackButton={true}
+          onBackPress={handleGoBack}
+          backgroundColor={Colors.background}
+        />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.primary[500]} />
+          <Text style={styles.loadingText}>Loading notifications...</Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>

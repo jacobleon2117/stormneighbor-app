@@ -8,11 +8,9 @@ import {
   ActivityIndicator,
   RefreshControl,
   Image,
-  // TextInput, - Currently not being used, need to either use it or remove it (if needed later, uncomment)
-  // Alert, - Currently not being used, need to either use it or remove it (if needed later, uncomment)
 } from "react-native";
 import { router } from "expo-router";
-// import { MessageCircle } from "lucide-react-native"; - Currently not being used, need to either use it or remove it (if needed later, uncomment)
+import { MessageCircle, Plus } from "lucide-react-native";
 import { Header } from "../../components/UI/Header";
 import { MessageSearchModal } from "../../components/Messages/MessageSearchModal";
 import { Colors } from "../../constants/Colors";
@@ -147,6 +145,24 @@ export default function MessagesScreen() {
     router.back();
   };
 
+  const handleNewMessage = () => {
+    setShowSearchModal(true);
+  };
+
+  const renderEmptyState = () => (
+    <View style={styles.emptyState}>
+      <MessageCircle size={64} color={Colors.text.disabled} />
+      <Text style={styles.emptyTitle}>No conversations yet</Text>
+      <Text style={styles.emptyMessage}>
+        Start a conversation by tapping the + button above or by messaging someone from their profile.
+      </Text>
+      <TouchableOpacity style={styles.startConversationButton} onPress={handleNewMessage}>
+        <Plus size={20} color={Colors.text.inverse} />
+        <Text style={styles.startConversationText}>Start Conversation</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   if (loading && !refreshing) {
     return (
       <View style={styles.container}>
@@ -182,6 +198,11 @@ export default function MessagesScreen() {
         onBackPress={handleGoBack}
         showSearch={true}
         onSearchPress={() => setShowSearchModal(true)}
+        rightComponent={
+          <TouchableOpacity style={styles.newMessageButton} onPress={handleNewMessage}>
+            <Plus size={24} color={Colors.primary[600]} />
+          </TouchableOpacity>
+        }
       />
 
       <View style={styles.safeContent}>
@@ -202,6 +223,7 @@ export default function MessagesScreen() {
             />
           }
           showsVerticalScrollIndicator={false}
+          ListEmptyComponent={renderEmptyState}
         />
       </View>
 
@@ -378,5 +400,23 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary,
     textAlign: "center",
     lineHeight: 20,
+    marginBottom: 24,
+  },
+  startConversationButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.primary[500],
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 24,
+    gap: 8,
+  },
+  startConversationText: {
+    color: Colors.text.inverse,
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  newMessageButton: {
+    padding: 8,
   },
 });

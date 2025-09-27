@@ -1,39 +1,5 @@
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
-# TASK #0: Quick Check (I just did a full rotate of credentials 09/26/2025 - Today)
-➕ Just need to double check these, I did a full rotate of credentials so that should be completed:
-        ➖ [❌] Rotate all exposed secrets & remove .env from version control
-        ➖ [❌] Rotate Firebase and Cloudinary credentials
-        ➖ [❌] Enable SSL certificate validation for production DB
-        ➖ [❌] Restrict production CORS to trusted domains
-        ➖ [❌] Audit for unauthorized access & possible compromise
-➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
-
-
-
-➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
-# TASK #1: GitGuardian
-➕ Secrets incidents detected double check codebase - (Might be from the old keys in the file called PRODUCTION_AUDIT_REPORT.md):
-        ➖ [❌] Resend API key
-        ➖ [❌] Redis CLI Password
-        ➖ [❌] PostgreSQL URI
-        ➖ [❌] Generic Password
-        ➖ [❌] Generic High Entropy Secret
-➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
-
-
-
-➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
-# TASK #2: Expo Go (USING IOS SIMULATOR)
-➕ The app is currently not working properly:
-        ➖ [❌] Check logs and see what errors are currently there
-        ➖ [❌] Need to check backend codebase and frontend codebase to see what's going on
-        ➖ [❌] The app is experiencing major problems that need to be addressed before anything else is done
-➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
-
-
-
-➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
-# TASK #3: Security & Privacy & Security Concerns
+# TASK #1: Security & Privacy & Security Concerns
 ➕ Review and strengthen security and privacy measures - (subject to change, review features and see what is missing, fixed, changed):
         ➖ [❌] Enhanced input validation
         ➖ [❌] XSS prevention improvements
@@ -49,77 +15,43 @@
         ➖ [❌] No automated backup verification system
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
 
-
-
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
-# TASK #4: Secure environment variables
+# TASK #2: Secure environment variables
 ➕ Improve management of environment variables - (subject to change, review features and see what is missing, fixed, changed):
         ➖ [❌] Use environment variable management service (AWS Secrets Manager, etc.)
         ➖ [❌] Never commit actual secrets to any file
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
 
-
-
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
-# TASK #5: Audit access
+# TASK #3: Audit access
 ➕ Implement and review auditing for access and credentials - (subject to change, review features and see what is missing, fixed, changed):
         ➖ [❌] Check if these credentials have been used maliciously
         ➖ [❌] Monitor all connected services for unauthorized access
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
 
-
-
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
-# TASK #6: Account Deletion
-➕ All current accounts in the codebase and database need to be deleted:
-        ➖ [❌] jacobleon2117@gmail.com account needs to be fully removed and deleted from codebase and database
-        ➖ [❌] jacobleon222@gmail.com account needs to be fully removed and deleted from codebase and database
-        ➖ [❌] Check and see if there is any other accounts located in the codebase and database then we need to delete them
-➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
-
-
-
-➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
-# TASK #7: Frontend Concerns
-➕ Review frontend configuration and security issues - (subject to change, review for potential risks and missing configurations):
-        ➖ [❌] Development API endpoint hardcoded: `http://192.168.1.223:3000`
-        ➖ [❌] Missing OpenWeather API key
-        ➖ [❌] Push notifications disabled in development
-        ➖ [❌] No offline functionality implementation - (Future for now, but start the code and file but don't use it then add notes in the file of what to do later on in that file.)
+# TASK #4: Frontend Concerns
 ➕ Security:
-        ➖ [❌] No certificate pinning for API calls
-        ➖ [❌] Local storage security needs review
-        ➖ [❌] Missing app transport security configuration
+        ➖ [🕙] No certificate pinning for API calls - (Verified: Not implemented, needs production setup)
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
 
-
-
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
-# TASK #8: Infrastructure Concerns
-➕ Review infrastructure and deployment setup - (subject to change, ensure proper deployment and monitoring):
-        ➖ [❌] Docker Compose file incomplete - (only 1 line - Has been updated, need to double check this)
-        ➖ [❌] Missing container orchestration - (Would need to be looked over and double checked)
-        ➖ [❌] No persistent volume configuration
-        ➖ [❌] Render.com free tier limitations for production - (No longer being used, removed from codebase currently)
+# TASK #5: Infrastructure Concerns
 ➕ Monitoring:
         ➖ [❌] Optional Sentry integration not enforced
         ➖ [❌] No default monitoring solution
         ➖ [❌] Missing alerting configuration
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
 
-
-
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
-# TASK #9: Create Screen Bugs & Updates
+# TASK #6: Create Screen Bugs & Updates
 ➕ Fix and enhance create screen functionality - (subject to change, review features and see what is missing, fixed, changed):
         ➖ [❌] BUG #1: Currently if you tap the red "X" the keyboard closes and the image never gets removed
         ➖ [❌] FIX FOR BUG #1: Fix the red "X" to remove the image without closing the keyboard and ensure the image is removed on first tap
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
 
-
-
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
-# TASK #10: Profile Screen Bugs & Updates
+# TASK #7: Profile Screen Bugs & Updates
 ➕ Review and fix profile screen features - (subject to change, review features and see what is missing, fixed, changed):
         ➖ [❌] BUG #1: Cannot add an image to profile picture (avatar)
         ➖ [❌] FIX FOR BUG #1: Fix the bug to allow users to add a profile picture to their avatar
@@ -129,10 +61,8 @@
         ➖ [❌] Place logout button in its own white rounded container matching main menu screens
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
 
-
-
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
-# TASK #11: Post Card Updates & Bugs & Comment Functionality
+# TASK #8: Post Card Updates & Bugs & Comment Functionality
 ➕ Review and update post card features; enhance post and comment capabilities - (subject to change, review features and see what is missing, fixed, changed):
         ➖ [❌] Fully implement liking, commenting, and sharing features; update comments modal to show comments and implement new UI/UX components/features
         ➖ [❌] Update more options modal:
@@ -146,10 +76,8 @@
         ➖ [❌] Post analytics (view count, engagement metrics)
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
 
-
-
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
-# TASK #12: Conversation Features
+# TASK #9: Conversation Features
 ➕ Review and improve messaging and conversation features - (subject to change, review features and see what is missing, fixed, changed):
         ➖ [❌] Message search within conversations
         ➖ [❌] File/image sharing in messages
@@ -160,28 +88,22 @@
         ➖ [❌] Message read receipts
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
 
-
-
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
-# TASK #13: Update Search & Notifications & Messages Screens
+# TASK #10: Update Search & Notifications & Messages Screens
 ➕ Improve navigation on search, notifications, and messages screens - (subject to change, review features and see what is missing, fixed, changed):
         ➖ [❌] Implement swipe-left to close functionality similar to profile screen’s back navigation
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
 
-
-
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
-# TASK #14: Notification Enhancements
+# TASK #11: Notification Enhancements
 ➕ Improve notification handling and user control - (subject to change, review features and see what is missing, fixed, changed):
         ➖ [❌] Notification categories/grouping
         ➖ [❌] Bulk delete notifications
         ➖ [❌] Notification settings per category
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
 
-
-
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
-# TASK #15: Alert System
+# TASK #12: Alert System
 ➕ Develop and refine alert system features - (subject to change, review features and see what is missing, fixed, changed):
         ➖ [❌] Alert subscription management
         ➖ [❌] Custom alert creation by users
@@ -190,18 +112,14 @@
         ➖ [❌] Alert verification/reporting
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
 
-
-
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
-# TASK #16: Home Screen Bugs & Updates
+# TASK #13: Home Screen Bugs & Updates
 ➕ Improve home screen scrolling behavior - (subject to change, review features and see what is missing, fixed, changed):
         ➖ [❌] Header hides when user swipes up to scroll down the list of posts, shows when user swipes down; stays visible if user reaches the latest post
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
 
-
-
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
-# TASK #17: Weather Screen Bugs & Updates & Enhancements
+# TASK #14: Weather Screen Bugs & Updates & Enhancements
 ➕ Improve weather screen features, interactivity, and map interactions - (subject to change, review features and see what is missing, fixed, changed):
         ➖ [❌] BUG #1: Arrow button does not take user directly to current location
         ➖ [❌] FIX FOR BUG #1: Fix issue to ensure arrow navigates to user location; troubleshoot location retrieval if needed
@@ -215,20 +133,16 @@
         ➖ [❌] Weather-based post filtering
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
 
-
-
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
-# TASK #18: UI/UX Improvements
+# TASK #15: UI/UX Improvements
 ➕ Improve overall UI/UX design and experience - (subject to change, review features and see what is missing, fixed, changed):
         ➖ [❌] Enhanced loading states on buttons
         ➖ [❌] Modal animations and state management
         ➖ [❌] Better error handling and user feedback
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
 
-
-
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
-# TASK #19: Accessibility
+# TASK #16: Accessibility
 ➕ Improve app accessibility - (subject to change, review features and see what is missing, fixed, changed):
         ➖ [❌] Add accessibility labels
         ➖ [❌] Screen reader support
@@ -236,10 +150,8 @@
         ➖ [❌] High contrast mode support
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
 
-
-
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
-# TASK #20: Weather API Migration
+# TASK #17: Weather API Migration
 ➕ Evaluate switching from OpenWeather to Tomorrow.io. OpenWeather API is currently deactivated:
         ➖ [❌] Research Tomorrow.io capabilities vs OpenWeather
         ➖ [❌] Analyze visual display options (clouds/rain/etc mapping)
@@ -247,19 +159,8 @@
         ➖ [❌] Keep OpenWeather code as backup if needed
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
 
-
-
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
-# TASK #21: Cloudinary Upload Handling
-➕ Ensure file uploads are safe from collisions - (subject to change, review features and see what is missing, fixed, changed):
-        ➖ [❌] Avoid overwriting uploads with identical timestamps
-        ➖ [❌] Append a random string or UUID to uploaded filenames to ensure uniqueness
-➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
-
-
-
-➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
-# TASK #22: Additional Requirements Needed
+# TASK #18: Additional Requirements Needed
 ➕ Complete missing app requirements and compliance features - (subject to change, review features and see what is missing, fixed, changed):
         ➖ [❌] App Transport Security (ATS) configuration
         ➖ [❌] Privacy policy implementation
@@ -269,15 +170,19 @@
         ➖ [❌] Performance optimization
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
 
-
-
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
-# TASK #23: Performance & Technical
+# TASK #19: Performance & Technical
 ➕ Review and optimize performance-related features - (subject to change, review features and see what is missing, fixed, changed):
         ➖ [❌] Image caching and optimization
         ➖ [❌] Infinite scroll optimizations
         ➖ [❌] Background app refresh
         ➖ [❌] Push notification handling improvements
+➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
+
+➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
+# TASK #21: Can't log out on IOS Simulator and Expo Go
+➕ Need to fix a bunch of issues with ios sim
+        ➖ [❌] Fix logging out
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖
 
 

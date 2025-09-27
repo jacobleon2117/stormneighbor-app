@@ -22,23 +22,25 @@ const developmentFormat = winston.format.combine(
 
 const errorTransport = new DailyRotateFile({
   filename: "logs/error-%DATE%.log",
-  datePattern: "YYYY-MM-DD",
+  datePattern: "YYYY-MM-DD-HH",
   level: "error",
-  maxSize: "5m",
-  maxFiles: "1d",
+  maxSize: "1m",
+  maxFiles: "5",
   zippedArchive: true,
   createSymlink: true,
   symlinkName: "error-current.log",
+  options: { flags: 'a' }
 });
 
 const combinedTransport = new DailyRotateFile({
   filename: "logs/combined-%DATE%.log",
-  datePattern: "YYYY-MM-DD",
-  maxSize: "5m",
-  maxFiles: "1d",
+  datePattern: "YYYY-MM-DD-HH",
+  maxSize: "1m",
+  maxFiles: "5",
   zippedArchive: true,
   createSymlink: true,
   symlinkName: "combined-current.log",
+  options: { flags: 'a' }
 });
 
 const transports = [];
@@ -51,10 +53,22 @@ const logger = winston.createLogger({
   format: logFormat,
   defaultMeta: { service: "stormneighbor-backend" },
   transports,
+  handleExceptions: false,
+  handleRejections: false,
+  exitOnError: false,
+  rejectionHandlers: [],
+  exceptionHandlers: []
 });
 
 if (process.env.NODE_ENV !== "production") {
-  logger.add(new winston.transports.Console({ format: developmentFormat }));
+  logger.add(new winston.transports.Console({
+    format: developmentFormat,
+    handleExceptions: false,
+    handleRejections: false,
+    exitOnError: false,
+    stderrLevels: [], // Prevent stderr write issues
+    level: 'info' // Only log info and above to console
+  }));
 }
 
 if (process.env.NODE_ENV === "test") {
@@ -91,5 +105,7 @@ const cleanupLargeLogs = () => {
 };
 
 cleanupLargeLogs();
+
+setInterval(cleanupLargeLogs, 6 * 60 * 60 * 1000);
 
 module.exports = logger;

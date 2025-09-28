@@ -9,13 +9,13 @@ try {
   logger.info("Environment variables configured properly");
 } catch (error) {
   logger.error("Environment validation failed", { error: error.message });
-  process.exitCode = 1;
+  process.exit(1);
 }
 
 const app = require("./app");
 if (!app) {
   logger.error("Express app is undefined. Cannot start server.");
-  process.exitCode = 1;
+  process.exit(1);
 }
 
 const sessionCleanupJob = require("./jobs/sessionCleanup");
@@ -81,7 +81,7 @@ const gracefulShutdown = (signal) => {
 
     clearTimeout(forceTimeout);
     logger.info("Graceful shutdown completed");
-    process.exitCode = 1;
+    process.exit(0);
   });
 };
 
@@ -90,12 +90,12 @@ const gracefulShutdown = (signal) => {
 );
 
 process.on("uncaughtException", (error) => {
-  logger.error("CRITICAL: Uncaught Exception:", error);
-  process.exitCode = 1;
+  logger.error("CRITICAL: Uncaught Exception:", error.stack || error);
+  setTimeout(() => process.exit(1), 1000);
 });
 process.on("unhandledRejection", (reason, promise) => {
-  logger.error("WARNING: Unhandled Promise Rejection", { reason, promise });
-  process.exitCode = 1;
+  logger.error("WARNING: Unhandled Promise Rejection", { reason: reason?.stack || reason, promise });
+  setTimeout(() => process.exit(1), 1000);
 });
 
 module.exports = server;

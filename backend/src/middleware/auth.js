@@ -40,7 +40,7 @@ const auth = async (req, res, next) => {
       });
     }
 
-    const user = await fetchUserById(decoded.userId);
+    const user = await fetchUserById(decoded.id);
 
     if (!user) {
       return res.status(401).json({
@@ -91,7 +91,7 @@ const optionalAuth = async (req, _res, next) => {
 
     try {
       const decoded = await tokenService.verifyAccessToken(token);
-      const user = await fetchUserById(decoded.userId);
+      const user = await fetchUserById(decoded.id);
 
       if (user && user.is_active) {
         req.user = {

@@ -1,4 +1,5 @@
 const securityMiddleware = require("./security");
+const { logSecurityEvent } = require("../services/SecurityEventService");
 const logger = require("../utils/logger");
 
 const createErrorResponse = (message, code, error = null, data = null, success = false) => {
@@ -78,7 +79,7 @@ const handleServerError = (error, req, res, operation = "operation") => {
     );
 };
 
-const globalErrorHandler = (err, req, res, _next) => {
+const globalErrorHandler = async (err, req, res, _next) => {
   logger.error("Global error handler:", {
     error: err.message,
     stack: err.stack,
@@ -88,10 +89,16 @@ const globalErrorHandler = (err, req, res, _next) => {
   });
 
   if (err.message?.includes("Invalid JSON") || err.type === "entity.parse.failed") {
-    securityMiddleware.logSecurityEvent(req, "MALFORMED_REQUEST", {
-      error: err.message,
-      type: err.type,
-    });
+    try {
+      await logSecurityEvent(req.user?.userId || null, "MALFORMED_REQUEST", {
+        error: err.message,
+        type: err.type,
+        url: req.url,
+        method: req.method,
+      });
+    } catch (logError) {
+      logger.warn("Failed to log security event:", logError);
+    }
     return res.status(400).json(createErrorResponse("Invalid request format", "INVALID_REQUEST"));
   }
 

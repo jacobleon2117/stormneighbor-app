@@ -45,8 +45,12 @@ class ApiService {
         ) {
           try {
             await this.refreshToken();
-            originalRequest.headers["X-Retry"] = "true";
-            return this.api(originalRequest);
+            const newToken = await this.getAccessToken();
+            if (newToken) {
+              originalRequest.headers["Authorization"] = `Bearer ${newToken}`;
+              originalRequest.headers["X-Retry"] = "true";
+              return this.api(originalRequest);
+            }
           } catch (refreshError) {
             await this.clearTokens();
             throw refreshError;

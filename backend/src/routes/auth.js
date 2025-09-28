@@ -52,7 +52,8 @@ const registerValidation = [
     .withMessage("Last name can only contain letters, spaces, hyphens, and apostrophes"),
   body("phone")
     .optional()
-    .isMobilePhone("any", { strictMode: false })
+    .isLength({ min: 10, max: 25 })
+    .matches(/^[\d\s\-\(\)\+\.]+$/)
     .withMessage("Please provide a valid phone number"),
 ];
 
@@ -106,7 +107,11 @@ const updateProfileValidation = [
     .trim()
     .isLength({ min: 1, max: 50 })
     .matches(/^[a-zA-Z\s'-]+$/),
-  body("phone").optional().isMobilePhone("any", { strictMode: false }),
+  body("phone")
+    .optional()
+    .isLength({ min: 10, max: 25 })
+    .matches(/^[\d\s\-\(\)\+\.]+$/)
+    .withMessage("Please provide a valid phone number"),
   body("bio").optional().trim().isLength({ max: 500 }),
   validateCoordinates,
 ];

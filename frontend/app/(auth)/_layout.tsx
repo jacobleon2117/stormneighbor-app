@@ -35,16 +35,16 @@ export default function AuthLayout() {
           }}
         />
         <Stack.Screen
-          name="location-permissions"
+          name="location-setup"
           options={{
-            title: "Location Permissions",
+            title: "Location Setup",
             headerShown: false,
           }}
         />
         <Stack.Screen
-          name="home-address-setup"
+          name="notifications-setup"
           options={{
-            title: "Home Address",
+            title: "Notification Setup",
             headerShown: false,
           }}
         />

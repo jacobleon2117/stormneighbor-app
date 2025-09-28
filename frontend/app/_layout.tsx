@@ -15,37 +15,28 @@ function RootLayoutContent() {
     const navigationTimer = setTimeout(() => {
       if (!isLoading && !hasNavigated) {
         if (isAuthenticated && user) {
-          const hasHomeLocation = user?.homeCity && user?.homeState;
-          const hasLegacyLocation = user?.locationCity && user?.addressState;
-          const hasLocationPreferences =
-            user?.locationPreferences && Object.keys(user.locationPreferences).length > 0;
-
-          const needsLocationOnboarding = !hasHomeLocation && !hasLegacyLocation;
-          const needsPermissionsOnboarding = !hasLocationPreferences;
+          const hasLocation = user?.homeCity && user?.homeState;
+          const hasNotificationPreferences = user?.notificationPreferences &&
+            Object.keys(user.notificationPreferences).length > 0;
 
           console.log("Onboarding check:", {
             homeCity: user?.homeCity,
             homeState: user?.homeState,
-            locationCity: user?.locationCity,
-            addressState: user?.addressState,
-            locationPreferences: user?.locationPreferences,
-            hasHomeLocation,
-            hasLegacyLocation,
-            hasLocationPreferences,
-            needsLocationOnboarding,
-            needsPermissionsOnboarding,
+            notificationPreferences: user?.notificationPreferences,
+            hasLocation,
+            hasNotificationPreferences,
           });
 
-          if (needsPermissionsOnboarding) {
-            console.log("Redirecting to location permissions setup");
-            router.replace("/(auth)/location-permissions");
+          if (!hasLocation) {
+            console.log("Redirecting to location setup");
+            router.replace("/(auth)/location-setup");
             setHasNavigated(true);
-          } else if (needsLocationOnboarding) {
-            console.log("Redirecting to home address setup");
-            router.replace("/(auth)/home-address-setup");
+          } else if (!hasNotificationPreferences) {
+            console.log("Redirecting to notification setup");
+            router.replace("/(auth)/notifications-setup");
             setHasNavigated(true);
           } else {
-            console.log("Location onboarding complete, going to main app");
+            console.log("Onboarding complete, going to main app");
             router.replace("/(tabs)");
             setHasNavigated(true);
           }

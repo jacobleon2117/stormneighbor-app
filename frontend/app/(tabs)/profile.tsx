@@ -1,6 +1,4 @@
-import React, {
-  useState /* useEffect - Currently not being used, need to either use it or remove it (if needed later, uncomment) */,
-} from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -9,7 +7,6 @@ import {
   TouchableOpacity,
   Image,
   Alert,
-  ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -20,6 +17,9 @@ import { apiService } from "../../services/api";
 import { Header } from "../../components/UI/Header";
 import { MessageSquare } from "lucide-react-native";
 import { Button } from "../../components/UI/Button";
+import { useErrorHandler } from "../../utils/errorHandler";
+import { useLoadingState } from "../../utils/loadingStates";
+import { LoadingSpinner } from "../../components/UI/LoadingSpinner";
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();

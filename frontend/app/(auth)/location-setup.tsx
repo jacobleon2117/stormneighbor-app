@@ -5,8 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
-  Platform,
-  Linking,
   ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -22,252 +20,233 @@ import { useAuth } from "../../hooks/useAuth";
 export default function LocationSetupScreen() {
   const { refreshProfile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [manualEntry, setManualEntry] = useState(false);
+  const [step, setStep] = useState<"permissions" | "location">("permissions");
+  const [locationGranted, setLocationGranted] = useState(false);
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
-  const [locationGranted, setLocationGranted] = useState(false);
 
-  const requestLocationPermission = async () => {
+  const handleRequestPermissions = async () => {
+    setIsLoading(true);
+
     try {
-      setIsLoading(true);
-
       const { status } = await Location.requestForegroundPermissionsAsync();
 
-      if (status !== "granted") {
-        Alert.alert(
-          "Location Access Needed",
-          "StormNeighbor needs location access to provide accurate weather alerts and connect you with your local community.",
-          [
-            {
-              text: "Skip for Now",
-              style: "cancel",
-              onPress: () => setManualEntry(true),
-            },
-            {
-              text: "Open Settings",
-              onPress: () => {
-                if (Platform.OS === "ios") {
-                  Linking.openURL("app-settings:");
-                } else {
-                  Linking.openSettings();
-                }
-              },
-            },
-          ]
-        );
-        return;
-      }
-
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-
-      const reverseGeocode = await Location.reverseGeocodeAsync({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-      });
-
-      const address = reverseGeocode[0];
-
-      try {
-        const profileData = {
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-          locationCity: address?.city || "Unknown City",
-          addressState: address?.region || "Unknown State",
-        };
-
-        console.log("Attempting to save location data:", profileData);
-
-        const updateResponse = await apiService.updateProfile(profileData);
-        console.log("Location update response:", updateResponse);
-
-        console.log("Location saved to profile successfully");
-
-        console.log("Refreshing profile after location save...");
-        const updatedUser = await refreshProfile();
-
-        if (!updatedUser?.locationCity && !updatedUser?.latitude) {
-          console.error("Warning: Location data not found in updated profile");
-        } else {
-          console.log("Location data verified in updated profile");
+      let backgroundStatus = "denied";
+      if (status === "granted") {
+        try {
+          const bgPermission = await Location.requestBackgroundPermissionsAsync();
+          backgroundStatus = bgPermission.status;
+        } catch (bgError) {
+          console.warn("Background location not available in Expo Go:", bgError);
+          backgroundStatus = "denied";
         }
-
-        setLocationGranted(true);
-      } catch (error) {
-        console.error("Error saving location:", error);
-        Alert.alert("Error", "Failed to save location. Please try again.");
       }
+
+      const locationPreferences = {
+        useCurrentLocationForWeather: status === "granted",
+        useCurrentLocationForAlerts: status === "granted", // Use foreground for Expo Go
+        allowBackgroundLocation: backgroundStatus === "granted",
+        shareLocationInPosts: status === "granted",
+      };
+
+      const locationPermissions = {
+        foreground: status,
+        background: backgroundStatus,
+        lastUpdated: new Date().toISOString(),
+      };
+
+      await apiService.updateProfile({
+        locationPreferences,
+        locationPermissions,
+      });
+
+      setLocationGranted(status === "granted");
+      setStep("location");
     } catch (error) {
-      console.error("Error getting location:", error);
-      Alert.alert(
-        "Location Error",
-        "We couldn't get your location. You can enter it manually or try again.",
-        [
-          { text: "Enter Manually", onPress: () => setManualEntry(true) },
-          { text: "Try Again", onPress: requestLocationPermission },
-        ]
-      );
+      console.error("Error requesting permissions:", error);
+      console.log("Continuing with manual location entry...");
+      setStep("location");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleManualSave = async () => {
-    if (!city.trim() || !state.trim()) {
-      Alert.alert("Missing Information", "Please enter both city and state.");
+  const handleUseCurrentLocation = async () => {
+    if (!locationGranted) {
+      Alert.alert("Error", "Location permission not granted");
       return;
     }
 
+    setIsLoading(true);
     try {
-      setIsLoading(true);
+      const location = await Location.getCurrentLocationAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
 
-      const profileData = {
-        locationCity: city.trim(),
-        addressState: state.trim(),
-      };
+      const [addressResult] = await Location.reverseGeocodeAsync({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      });
 
-      console.log("Attempting to save manual location data:", profileData);
+      if (addressResult) {
+        await apiService.updateProfile({
+          homeCity: addressResult.city || addressResult.subregion || "",
+          homeState: addressResult.region || addressResult.isoCountryCode || "",
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        });
 
-      const updateResponse = await apiService.updateProfile(profileData);
-      console.log("Manual location update response:", updateResponse);
-
-      console.log("Manual location saved successfully");
-
-      console.log("Refreshing profile after manual location save...");
-      const updatedUser = await refreshProfile();
-
-      if (!updatedUser?.locationCity) {
-        console.error("Warning: Manual location data not found in updated profile");
+        await refreshProfile();
+        router.push("/(auth)/notifications-setup");
       } else {
-        console.log("Manual location data verified in updated profile");
+        Alert.alert("Error", "Unable to determine address from location. Please enter manually.");
       }
-
-      setLocationGranted(true);
     } catch (error) {
-      console.error("Error saving manual location:", error);
+      console.error("Error getting location:", error);
+      Alert.alert("Error", "Unable to get current location. Please enter manually.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleManualLocation = async () => {
+    if (!city.trim() || !state.trim()) {
+      Alert.alert("Error", "Please enter both city and state");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await apiService.updateProfile({
+        homeCity: city.trim(),
+        homeState: state.trim(),
+      });
+
+      await refreshProfile();
+      router.push("/(auth)/notification-setup");
+    } catch (error) {
+      console.error("Error saving location:", error);
       Alert.alert("Error", "Failed to save location. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleContinue = () => {
-    router.push("/(auth)/notifications-setup");
+  const handleSkip = () => {
+    router.push("/(auth)/notification-setup");
   };
 
-  const handleSkip = () => {
-    router.push("/(auth)/notifications-setup");
-  };
+  if (step === "permissions") {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.content}>
+          <View style={styles.header}>
+            <MapPin size={64} color={Colors.primary[600]} />
+            <Text style={styles.title}>Location Setup</Text>
+            <Text style={styles.subtitle}>
+              Get accurate weather alerts and connect with your local community
+            </Text>
+          </View>
+
+          <View style={styles.benefits}>
+            <View style={styles.benefitItem}>
+              <Navigation size={24} color={Colors.success[600]} />
+              <Text style={styles.benefitText}>Accurate weather for your area</Text>
+            </View>
+            <View style={styles.benefitItem}>
+              <MapPin size={24} color={Colors.primary[600]} />
+              <Text style={styles.benefitText}>Connect with local neighbors</Text>
+            </View>
+          </View>
+
+          <View style={styles.actions}>
+            <Button
+              title={isLoading ? "Setting up..." : "Enable Location"}
+              onPress={handleRequestPermissions}
+              loading={isLoading}
+              disabled={isLoading}
+              style={styles.primaryButton}
+            />
+
+            <TouchableOpacity
+              style={styles.skipButton}
+              onPress={() => setStep("location")}
+              disabled={isLoading}
+            >
+              <Text style={styles.skipText}>Set Location Manually</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.header}>
-          <View style={styles.iconContainer}>
-            <MapPin size={48} color={Colors.primary[500]} />
-          </View>
-          <Text style={styles.title}>Set Your Location</Text>
+          <MapPin size={48} color={Colors.primary[600]} />
+          <Text style={styles.title}>Your Location</Text>
           <Text style={styles.subtitle}>
-            Help us personalize your experience with accurate weather information and local
-            community updates for your area.
+            {locationGranted
+              ? "Use your current location or enter manually"
+              : "Enter your city and state to get started"
+            }
           </Text>
         </View>
 
-        <View style={styles.optionsContainer}>
-          {!locationGranted && !manualEntry && (
-            <>
-              <TouchableOpacity
-                style={styles.locationOption}
-                onPress={requestLocationPermission}
-                disabled={isLoading}
-              >
-                <View style={styles.optionIcon}>
-                  <Navigation size={24} color={Colors.primary[500]} />
-                </View>
-                <View style={styles.optionContent}>
-                  <Text style={styles.optionTitle}>Use Current Location</Text>
-                  <Text style={styles.optionDescription}>
-                    Get precise weather for where you are
-                  </Text>
-                </View>
-                {isLoading ? (
-                  <ActivityIndicator size="small" color={Colors.primary[500]} />
-                ) : (
-                  <ChevronRight size={20} color={Colors.text.secondary} />
-                )}
-              </TouchableOpacity>
-
-              <View style={styles.divider}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>or</Text>
-                <View style={styles.dividerLine} />
-              </View>
-
-              <TouchableOpacity style={styles.locationOption} onPress={() => setManualEntry(true)}>
-                <View style={styles.optionIcon}>
-                  <Edit3 size={24} color={Colors.text.secondary} />
-                </View>
-                <View style={styles.optionContent}>
-                  <Text style={styles.optionTitle}>Enter Manually</Text>
-                  <Text style={styles.optionDescription}>Type your city and state</Text>
-                </View>
-                <ChevronRight size={20} color={Colors.text.secondary} />
-              </TouchableOpacity>
-            </>
-          )}
-
-          {manualEntry && !locationGranted && (
-            <View style={styles.manualForm}>
-              <Input
-                label="City"
-                value={city}
-                onChangeText={setCity}
-                placeholder="Enter your city"
-                autoCapitalize="words"
-                required
-              />
-              <Input
-                label="State"
-                value={state}
-                onChangeText={setState}
-                placeholder="Enter your state"
-                autoCapitalize="words"
-                required
-              />
-              <Button
-                title="Save Location"
-                onPress={handleManualSave}
-                loading={isLoading}
-                style={styles.saveButton}
-              />
-              <TouchableOpacity style={styles.backButton} onPress={() => setManualEntry(false)}>
-                <Text style={styles.backButtonText}>Back to Options</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
+        <View style={styles.form}>
           {locationGranted && (
-            <View style={styles.successContainer}>
-              <View style={styles.successIcon}>
-                <MapPin size={24} color={Colors.success[600]} />
-              </View>
-              <Text style={styles.successText}>Location Set!</Text>
-              <Text style={styles.successDescription}>
-                We'll use this to provide accurate weather and alerts for your area.
-              </Text>
-            </View>
-          )}
-        </View>
-
-        <View style={styles.footer}>
-          {locationGranted ? (
-            <Button title="Continue" onPress={handleContinue} style={styles.continueButton} />
-          ) : (
-            <TouchableOpacity onPress={handleSkip}>
-              <Text style={styles.skipText}>Skip for Now</Text>
+            <TouchableOpacity
+              style={styles.currentLocationButton}
+              onPress={handleUseCurrentLocation}
+              disabled={isLoading}
+            >
+              <Navigation size={20} color={Colors.primary[600]} />
+              <Text style={styles.currentLocationText}>Use Current Location</Text>
+              <ChevronRight size={20} color={Colors.text.secondary} />
             </TouchableOpacity>
           )}
+
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or enter manually</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          <Input
+            label="City"
+            value={city}
+            onChangeText={setCity}
+            placeholder="Enter your city"
+            required
+          />
+
+          <Input
+            label="State"
+            value={state}
+            onChangeText={setState}
+            placeholder="Enter your state"
+            required
+          />
+        </View>
+
+        <View style={styles.actions}>
+          <Button
+            title={isLoading ? "Saving..." : "Continue"}
+            onPress={handleManualLocation}
+            loading={isLoading}
+            disabled={isLoading || !city.trim() || !state.trim()}
+            style={styles.primaryButton}
+          />
+
+          <TouchableOpacity
+            style={styles.skipButton}
+            onPress={handleSkip}
+            disabled={isLoading}
+          >
+            <Text style={styles.skipText}>Skip for Now</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </SafeAreaView>
@@ -282,76 +261,65 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 40,
-    paddingBottom: 24,
+    paddingVertical: 32,
+    justifyContent: "space-between",
   },
   header: {
     alignItems: "center",
-    marginBottom: 48,
-  },
-  iconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: Colors.primary[50],
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 24,
+    marginBottom: 32,
   },
   title: {
     fontSize: 28,
-    fontWeight: "bold",
+    fontWeight: "700",
     color: Colors.text.primary,
-    marginBottom: 12,
+    marginTop: 16,
+    marginBottom: 8,
     textAlign: "center",
   },
   subtitle: {
     fontSize: 16,
     color: Colors.text.secondary,
     textAlign: "center",
-    lineHeight: 24,
-    paddingHorizontal: 8,
+    lineHeight: 22,
   },
-  optionsContainer: {
-    flex: 1,
+  benefits: {
+    marginBottom: 32,
+    gap: 16,
   },
-  locationOption: {
+  benefitItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.surface,
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    gap: 12,
   },
-  optionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: Colors.primary[50],
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 16,
-  },
-  optionContent: {
+  benefitText: {
+    fontSize: 16,
+    color: Colors.text.primary,
     flex: 1,
   },
-  optionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.text.primary,
-    marginBottom: 4,
+  form: {
+    gap: 16,
   },
-  optionDescription: {
-    fontSize: 14,
-    color: Colors.text.secondary,
-    lineHeight: 20,
+  currentLocationButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: Colors.primary[50],
+    borderWidth: 1,
+    borderColor: Colors.primary[200],
+    borderRadius: 12,
+    padding: 16,
+  },
+  currentLocationText: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: Colors.primary[700],
+    flex: 1,
+    marginLeft: 12,
   },
   divider: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: 24,
+    marginVertical: 8,
   },
   dividerLine: {
     flex: 1,
@@ -359,70 +327,23 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.border,
   },
   dividerText: {
-    paddingHorizontal: 16,
     fontSize: 14,
     color: Colors.text.secondary,
+    paddingHorizontal: 16,
   },
-  manualForm: {
-    backgroundColor: Colors.surface,
-    borderRadius: 12,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: Colors.border,
+  actions: {
+    gap: 12,
   },
-  saveButton: {
-    marginTop: 8,
-    marginBottom: 16,
-  },
-  backButton: {
-    alignSelf: "center",
-    padding: 8,
-  },
-  backButtonText: {
-    color: Colors.primary[500],
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  successContainer: {
-    alignItems: "center",
-    backgroundColor: Colors.success[50],
-    borderRadius: 12,
-    padding: 32,
-    borderWidth: 1,
-    borderColor: Colors.success[100],
-  },
-  successIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: Colors.success[100],
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  successText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: Colors.success[700],
+  primaryButton: {
     marginBottom: 8,
   },
-  successDescription: {
-    fontSize: 14,
-    color: Colors.success[600],
-    textAlign: "center",
-    lineHeight: 20,
-  },
-  footer: {
-    paddingTop: 24,
-  },
-  continueButton: {
-    marginBottom: 16,
+  skipButton: {
+    alignItems: "center",
+    paddingVertical: 12,
   },
   skipText: {
-    color: Colors.text.secondary,
     fontSize: 16,
+    color: Colors.text.secondary,
     fontWeight: "500",
-    textAlign: "center",
-    padding: 12,
   },
 });

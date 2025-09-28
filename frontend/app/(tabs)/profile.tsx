@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Image,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,11 +20,11 @@ import { MessageSquare } from "lucide-react-native";
 import { Button } from "../../components/UI/Button";
 import { useErrorHandler } from "../../utils/errorHandler";
 import { useLoadingState } from "../../utils/loadingStates";
-import { LoadingSpinner } from "../../components/UI/LoadingSpinner";
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
-  const [loading, setLoading] = useState(false);
+  const errorHandler = useErrorHandler();
+  const loadingState = useLoadingState();
   const [imageError, setImageError] = useState(false);
 
   const handleLogout = async () => {
@@ -36,7 +37,7 @@ export default function ProfileScreen() {
           try {
             await logout();
           } catch (error) {
-            console.error("Logout error:", error);
+            errorHandler.handleError(error, "Logout");
           }
         },
       },
@@ -96,7 +97,7 @@ export default function ProfileScreen() {
 
   const uploadProfileImage = async (imageUri: string) => {
     try {
-      setLoading(true);
+      loadingState.setLoading(true);
       const response = await apiService.uploadImage(imageUri, "profile");
 
       if (response.success) {
@@ -106,10 +107,9 @@ export default function ProfileScreen() {
         }
       }
     } catch (error: any) {
-      console.error("Error uploading image:", error);
-      Alert.alert("Error", "Failed to update profile picture. Please try again.");
+      errorHandler.handleError(error, "Profile Image Upload");
     } finally {
-      setLoading(false);
+      loadingState.setLoading(false);
     }
   };
 
@@ -131,7 +131,7 @@ export default function ProfileScreen() {
           <View style={styles.cameraIcon}>
             <Ionicons name="camera" size={16} color={Colors.text.inverse} />
           </View>
-          {loading && (
+          {loadingState.isLoading && (
             <View style={styles.loadingOverlay}>
               <ActivityIndicator size="small" color={Colors.primary[500]} />
             </View>

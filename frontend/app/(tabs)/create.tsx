@@ -22,6 +22,8 @@ import { Header } from "../../components/UI/Header";
 import { Colors } from "../../constants/Colors";
 import { useAuth } from "../../hooks/useAuth";
 import { apiService } from "../../services/api";
+import { useErrorHandler } from "../../utils/errorHandler";
+import { useLoadingState } from "../../utils/loadingStates";
 import * as ImagePicker from "expo-image-picker";
 import {
   MapPin,
@@ -45,6 +47,8 @@ const MAX_IMAGES = 5;
 
 export default function CreateScreen() {
   const { user } = useAuth();
+  const errorHandler = useErrorHandler();
+  const loadingState = useLoadingState();
   const insets = useSafeAreaInsets();
   const textInputRef = React.useRef<TextInput>(null);
   const [postText, setPostText] = useState("");

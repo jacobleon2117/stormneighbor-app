@@ -10,18 +10,14 @@ import {
   Platform,
 } from "react-native";
 import { router } from "expo-router";
-import {
-  /* ArrowLeft, - Currently not being used, need to either use it or remove it (if needed later, uncomment) */ MessageSquare,
-  Bug,
-  Lightbulb,
-  Palette,
-} from "lucide-react-native";
+import { MessageSquare, Bug, Lightbulb, Palette } from "lucide-react-native";
 import { Colors } from "../constants/Colors";
 import { Button } from "../components/UI/Button";
 import { Header } from "../components/UI/Header";
 import { useAuth } from "../hooks/useAuth";
 import { apiService } from "../services/api";
 import { UserFeedback } from "../types";
+import { ErrorHandler } from "../utils/errorHandler";
 
 const FEEDBACK_TYPES = [
   {
@@ -104,7 +100,7 @@ export default function UserFeedbackScreen() {
         ]
       );
     } catch (error) {
-      console.error("Error submitting feedback:", error);
+      ErrorHandler.silent(error as Error, "Error submitting feedback");
       Alert.alert("Error", "Failed to submit feedback. Please try again.");
     } finally {
       setIsSubmitting(false);

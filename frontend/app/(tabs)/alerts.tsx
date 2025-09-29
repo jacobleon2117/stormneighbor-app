@@ -21,6 +21,7 @@ import { apiService } from "../../services/api";
 import { weatherAlertsService } from "../../services/weatherAlerts";
 import { useAuth } from "../../hooks/useAuth";
 import { Alert } from "../../types";
+import { ErrorHandler } from "../../utils/errorHandler";
 
 interface AlertsState {
   alerts: Alert[];
@@ -136,11 +137,8 @@ export default function AlertsScreen() {
           params.state = state;
         }
 
-        console.log("Fetching alerts with params:", params);
-
         try {
           const response = await apiService.getAlerts(params);
-          console.log("Alerts API response:", response);
 
           if (response.success && response.data) {
             setAlertsState((prev) => ({
@@ -154,9 +152,9 @@ export default function AlertsScreen() {
             throw new Error(response.message || "Failed to fetch alerts");
           }
         } catch (apiError: any) {
-          console.error("API Error details:", apiError.response?.data || apiError.message);
+          ErrorHandler.silent(apiError, "Fetch Alerts from API");
 
-          console.log("Using fallback demo alerts due to API error");
+          // Using fallback demo alerts due to API error
           const demoAlerts = generateDemoAlerts(city, state);
 
           setAlertsState((prev) => ({
@@ -172,11 +170,11 @@ export default function AlertsScreen() {
           try {
             await weatherAlertsService.syncWeatherAlerts(latitude, longitude);
           } catch (weatherError) {
-            console.warn("Weather alerts sync failed:", weatherError);
+            ErrorHandler.silent(weatherError as Error, "Weather Alerts Sync");
           }
         }
       } catch (error: any) {
-        console.error("Critical error in fetchAlerts:", error);
+        ErrorHandler.silent(error, "Critical Error in Fetch Alerts");
         setAlertsState((prev) => ({
           ...prev,
           loading: false,
@@ -208,7 +206,7 @@ export default function AlertsScreen() {
           try {
             await weatherAlertsService.syncWeatherAlerts(latitude, longitude);
           } catch (error) {
-            console.warn("Background weather sync failed:", error);
+            ErrorHandler.silent(error as Error, "Background Weather Sync");
           }
         },
         15 * 60 * 1000
@@ -260,11 +258,10 @@ export default function AlertsScreen() {
         url: shareUrl,
       });
     } catch (error) {
-      console.error("Error sharing alert:", error);
+      ErrorHandler.silent(error as Error, "Share Alert");
       AlertDialog.alert("Error", "Failed to share alert");
     }
   };
-
 
   const mapAlertTypeToCardType = (alertType: string) => {
     switch (alertType) {

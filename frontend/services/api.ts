@@ -2,6 +2,7 @@ import axios, { AxiosInstance, AxiosError } from "axios";
 import * as SecureStore from "expo-secure-store";
 import { API_CONFIG } from "../constants/config";
 import { NotificationPreferences, SearchFilters } from "../types";
+import { ErrorHandler } from "../utils/errorHandler";
 
 const ACCESS_TOKEN_KEY = "access_token";
 const REFRESH_TOKEN_KEY = "refresh_token";
@@ -66,7 +67,7 @@ class ApiService {
     try {
       return await SecureStore.getItemAsync(ACCESS_TOKEN_KEY);
     } catch (error) {
-      console.error("Error getting access token:", error);
+      ErrorHandler.silent(error as Error, "Get Access Token");
       return null;
     }
   }
@@ -75,7 +76,7 @@ class ApiService {
     try {
       await SecureStore.setItemAsync(ACCESS_TOKEN_KEY, token);
     } catch (error) {
-      console.error("Error setting access token:", error);
+      ErrorHandler.silent(error as Error, "Set Access Token");
     }
   }
 
@@ -83,7 +84,7 @@ class ApiService {
     try {
       return await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
     } catch (error) {
-      console.error("Error getting refresh token:", error);
+      ErrorHandler.silent(error as Error, "Get Refresh Token");
       return null;
     }
   }
@@ -92,7 +93,7 @@ class ApiService {
     try {
       await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, token);
     } catch (error) {
-      console.error("Error setting refresh token:", error);
+      ErrorHandler.silent(error as Error, "Set Refresh Token");
     }
   }
 
@@ -101,7 +102,7 @@ class ApiService {
       await SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY);
       await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
     } catch (error) {
-      console.error("Error clearing tokens:", error);
+      ErrorHandler.silent(error as Error, "Clear Tokens");
     }
   }
 
@@ -122,21 +123,16 @@ class ApiService {
 
   async login(email: string, password: string) {
     try {
-      console.log("Attempting login for:", email);
-      console.log("API Base URL:", API_CONFIG.BASE_URL);
-
       const response = await this.api.post("/auth/login", { email, password });
-      console.log("Login response received");
 
       const { accessToken, refreshToken } = response.data.data;
 
       await this.setAccessToken(accessToken);
       await this.setRefreshToken(refreshToken);
 
-      console.log("Login successful, tokens saved");
       return response.data;
     } catch (error) {
-      console.error("Login error in API service:", error);
+      ErrorHandler.silent(error as Error, "Login");
       throw error;
     }
   }
@@ -149,17 +145,10 @@ class ApiService {
     phone?: string;
   }) {
     try {
-      console.log("Attempting registration with:", {
-        ...userData,
-        password: "[HIDDEN]",
-      });
-      console.log("API Base URL:", API_CONFIG.BASE_URL);
-
       const response = await this.api.post("/auth/register", userData);
-      console.log("Registration successful");
       return response.data;
     } catch (error) {
-      console.error("Registration error in API service:", error);
+      ErrorHandler.silent(error as Error, "Registration");
       throw error;
     }
   }
@@ -169,7 +158,7 @@ class ApiService {
       const response = await this.api.post("/auth/forgot-password", { email });
       return response.data;
     } catch (error) {
-      console.error("Forgot password error in API service:", error);
+      ErrorHandler.silent(error as Error, "Forgot Password");
       throw error;
     }
   }
@@ -183,7 +172,7 @@ class ApiService {
       });
       return response.data;
     } catch (error) {
-      console.error("Reset password error in API service:", error);
+      ErrorHandler.silent(error as Error, "Reset Password");
       throw error;
     }
   }
@@ -257,7 +246,7 @@ class ApiService {
       });
       return response.data;
     } catch (error) {
-      console.error("Update notification preferences error in API service:", error);
+      ErrorHandler.silent(error as Error, "Update Notification Preferences");
       throw error;
     }
   }
@@ -269,7 +258,7 @@ class ApiService {
       });
       return response.data;
     } catch (error) {
-      console.error("Register push token error in API service:", error);
+      ErrorHandler.silent(error as Error, "Register Push Token");
       throw error;
     }
   }
@@ -493,6 +482,11 @@ class ApiService {
 
   async markMessageAsRead(messageId: number) {
     const response = await this.api.put(`/messages/messages/${messageId}/read`);
+    return response.data;
+  }
+
+  async markMessagesAsRead(conversationId: number) {
+    const response = await this.api.put(`/messages/conversations/${conversationId}/read`);
     return response.data;
   }
 

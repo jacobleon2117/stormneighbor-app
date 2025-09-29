@@ -1,4 +1,5 @@
 import { apiService } from "./api";
+import { ErrorHandler } from "../utils/errorHandler";
 
 interface NWSAlert {
   id: string;
@@ -84,7 +85,7 @@ class WeatherAlertsService {
         );
       });
     } catch (error) {
-      console.error("Error fetching NWS weather alerts:", error);
+      ErrorHandler.silent(error as Error, "Fetch NWS Weather Alerts");
       return [];
     }
   }
@@ -146,14 +147,13 @@ class WeatherAlertsService {
 
           if (!existsAlready) {
             await apiService.createAlert(internalAlert);
-            console.log(`Created weather alert: ${internalAlert.title}`);
           }
         } catch (createError) {
-          console.error("Error creating weather alert:", createError);
+          ErrorHandler.silent(createError as Error, "Create Weather Alert");
         }
       }
     } catch (error) {
-      console.error("Error syncing weather alerts:", error);
+      ErrorHandler.silent(error as Error, "Sync Weather Alerts");
       throw error;
     }
   }
@@ -197,7 +197,7 @@ class WeatherAlertsService {
         })),
       };
     } catch (error) {
-      console.error("Error getting weather alerts summary:", error);
+      ErrorHandler.silent(error as Error, "Get Weather Alerts Summary");
       return {
         activeCount: 0,
         highestSeverity: null,
@@ -215,7 +215,7 @@ class WeatherAlertsService {
       try {
         await this.syncWeatherAlerts(latitude, longitude);
       } catch (error) {
-        console.error("Scheduled weather alerts sync failed:", error);
+        ErrorHandler.silent(error as Error, "Scheduled Weather Alerts Sync");
       }
     }, syncInterval);
   }

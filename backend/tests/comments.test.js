@@ -314,7 +314,6 @@ describe("Comments System", () => {
         .set("Authorization", "Bearer invalid-token")
         .send({
           reason: "other",
-          // Missing additionalDetails
         })
         .expect(400);
 
@@ -329,7 +328,6 @@ describe("Comments System", () => {
     });
 
     it("should prevent self-reporting", async () => {
-      // This test needs to be implemented with actual user context
       await request(app)
         .post("/api/v1/comments/1/report")
         .set("Authorization", "Bearer invalid-token")
@@ -431,7 +429,6 @@ describe("Comments System", () => {
     });
 
     it("should prevent circular reply references", async () => {
-      // This needs more complex testing with actual comment IDs
       await request(app)
         .post("/api/v1/posts/1/comments")
         .set("Authorization", "Bearer invalid-token")

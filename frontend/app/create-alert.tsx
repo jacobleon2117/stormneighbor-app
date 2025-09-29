@@ -15,6 +15,7 @@ import { Colors } from "../constants/Colors";
 import { Button } from "../components/UI/Button";
 import { apiService } from "../services/api";
 import { useAuth } from "../hooks/useAuth";
+import { ErrorHandler } from "../utils/errorHandler";
 
 const ALERT_TYPES = [
   {
@@ -90,9 +91,9 @@ export default function CreateAlertScreen() {
         },
       };
 
-      console.log("Creating alert with data:", alertData);
+      // Debug: Creating alert with data removed
       const response = await apiService.createAlert(alertData);
-      console.log("Create alert response:", response);
+      // Debug: Create alert response removed
 
       if (response.success) {
         Alert.alert(
@@ -109,8 +110,11 @@ export default function CreateAlertScreen() {
         throw new Error(response.message || "Failed to create alert");
       }
     } catch (error: any) {
-      console.error("Error creating alert:", error);
-      console.error("API Error details:", error.response?.data || error.message);
+      ErrorHandler.silent(error as Error, "Failed to create alert");
+      ErrorHandler.silent(
+        new Error(`API Error: ${JSON.stringify(error.response?.data || error.message)}`),
+        "Alert creation API error details"
+      );
 
       let errorMessage = "Failed to create alert. Please try again.";
       if (error.response?.status === 400) {

@@ -19,6 +19,7 @@ import { apiService } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
 import { Button } from "../../components/UI/Button";
 import { Input } from "../../components/UI/Input";
+import { ErrorHandler } from "../../utils/errorHandler";
 
 export default function LocationSettingsScreen() {
   const { user, refreshProfile } = useAuth();
@@ -72,7 +73,7 @@ export default function LocationSettingsScreen() {
         }
       }
     } catch (error) {
-      console.error("Error getting current location:", error);
+      ErrorHandler.silent(error as Error, "Failed to get current location");
     }
   };
 
@@ -133,7 +134,7 @@ export default function LocationSettingsScreen() {
       });
       await refreshProfile();
     } catch (error) {
-      console.error("Error updating location preferences:", error);
+      ErrorHandler.silent(error as Error, "Failed to update location preferences");
       Alert.alert("Error", "Failed to save location preferences");
       setPreferences(preferences);
     }
@@ -175,7 +176,7 @@ export default function LocationSettingsScreen() {
       setShowAddressForm(false);
       Alert.alert("Success", "Home address updated successfully");
     } catch (error) {
-      console.error("Error updating home address:", error);
+      ErrorHandler.silent(error as Error, "Failed to update home address");
       Alert.alert("Error", "Failed to update home address");
     } finally {
       setIsUpdatingAddress(false);
@@ -215,7 +216,7 @@ export default function LocationSettingsScreen() {
 
       Alert.alert("Success", "Home address set to current location");
     } catch (error) {
-      console.error("Error setting current location as home:", error);
+      ErrorHandler.silent(error as Error, "Failed to set current location as home address");
       Alert.alert("Error", "Failed to set home address");
     } finally {
       setIsLoading(false);

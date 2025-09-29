@@ -256,7 +256,7 @@ const cacheConfigs = {
   medium: createCacheMiddleware({ ttl: 300000 }),
   longTerm: createCacheMiddleware({ ttl: 900000 }),
   static: createCacheMiddleware({ ttl: 3600000 }),
-  none: (req, res, next) => next(),
+  none: (_req, _res, next) => next(),
 };
 
 module.exports = {

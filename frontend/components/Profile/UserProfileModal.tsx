@@ -20,6 +20,7 @@ import { PostCard } from "../Posts/PostCard";
 import { apiService } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
 import { Post, User } from "../../types";
+import { ErrorHandler } from "../../utils/errorHandler";
 
 interface UserProfileModalProps {
   visible: boolean;
@@ -101,7 +102,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ visible, use
         throw new Error("User not found");
       }
     } catch (error) {
-      console.error("Error loading user profile:", error);
+      ErrorHandler.silent(error as Error, "Load user profile");
       Alert.alert("Error", "Failed to load user profile");
       onClose();
     } finally {
@@ -138,7 +139,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ visible, use
           break;
       }
     } catch (error) {
-      console.error(`Error loading ${activeTab} data:`, error);
+      ErrorHandler.silent(error as Error, `Load ${activeTab} data`);
     } finally {
       setLoading(false);
     }
@@ -178,7 +179,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ visible, use
         });
       }
     } catch (error) {
-      console.error("Error following/unfollowing user:", error);
+      ErrorHandler.silent(error as Error, "Follow/unfollow user");
       Alert.alert("Error", "Failed to update follow status");
     } finally {
       setActionLoading(null);
@@ -222,7 +223,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ visible, use
               Alert.alert("User Blocked", "The user has been blocked successfully.");
               onClose();
             } catch (error) {
-              console.error("Error blocking user:", error);
+              ErrorHandler.silent(error as Error, "Block user");
               Alert.alert("Error", "Failed to block user");
             } finally {
               setActionLoading(null);

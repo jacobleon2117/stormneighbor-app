@@ -1,6 +1,7 @@
 import * as Location from "expo-location";
 import { Alert, Platform, Linking } from "react-native";
 import { LocationPermissionsWithChoice, LocationPreferences } from "../types";
+import { ErrorHandler } from "../utils/errorHandler";
 
 export class LocationService {
   private static instance: LocationService;
@@ -63,7 +64,7 @@ export class LocationService {
         userChoice: "while-using",
       };
     } catch (error) {
-      console.error("Error requesting location permissions:", error);
+      ErrorHandler.silent(error as Error, "Request Location Permissions");
       return {
         foreground: "denied",
         background: "denied",
@@ -154,7 +155,7 @@ export class LocationService {
       this.currentLocation = location;
       return location;
     } catch (error) {
-      console.error("Error getting current location:", error);
+      ErrorHandler.silent(error as Error, "Get Current Location");
       return null;
     }
   }
@@ -170,7 +171,7 @@ export class LocationService {
       });
       return result[0] || null;
     } catch (error) {
-      console.error("Error reverse geocoding:", error);
+      ErrorHandler.silent(error as Error, "Reverse Geocoding");
       return null;
     }
   }
@@ -180,7 +181,7 @@ export class LocationService {
       const result = await Location.geocodeAsync(address);
       return result[0] || null;
     } catch (error) {
-      console.error("Error forward geocoding:", error);
+      ErrorHandler.silent(error as Error, "Forward Geocoding");
       return null;
     }
   }
@@ -193,7 +194,10 @@ export class LocationService {
       const { status } = await Location.getBackgroundPermissionsAsync();
 
       if (status !== "granted") {
-        console.warn("Background location permission not granted");
+        ErrorHandler.silent(
+          new Error("Background location permission not granted"),
+          "Start Location Watching"
+        );
         return false;
       }
 
@@ -215,7 +219,7 @@ export class LocationService {
 
       return true;
     } catch (error) {
-      console.error("Error starting location watching:", error);
+      ErrorHandler.silent(error as Error, "Start Location Watching");
       return false;
     }
   }

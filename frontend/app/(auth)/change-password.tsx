@@ -17,6 +17,7 @@ import { Header } from "../../components/UI/Header";
 import { Button } from "../../components/UI/Button";
 import { Colors } from "../../constants/Colors";
 import { apiService } from "../../services/api";
+import { ErrorHandler } from "../../utils/errorHandler";
 
 export default function ChangePasswordScreen() {
   const [formData, setFormData] = useState({
@@ -80,7 +81,7 @@ export default function ChangePasswordScreen() {
         ]);
       }
     } catch (error: any) {
-      console.error("Change password error:", error);
+      ErrorHandler.silent(error as Error, "Change password error");
 
       if (error.response?.status === 400) {
         setErrors({ currentPassword: "Current password is incorrect" });

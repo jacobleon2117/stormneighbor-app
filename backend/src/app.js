@@ -11,7 +11,7 @@ const rateLimit = require("express-rate-limit");
 const logger = require("./utils/logger");
 const EnvironmentValidator = require("./utils/envValidator");
 const securityMiddleware = require("./middleware/security");
-const { sanitizeInput, sanitizeSensitive } = require("./middleware/sanitize");
+const { sanitizeSensitive } = require("./middleware/sanitize");
 const {
   requestLogger,
   errorLogger,

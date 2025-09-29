@@ -16,27 +16,36 @@ import * as Clipboard from "expo-clipboard";
 import { router, useFocusEffect } from "expo-router";
 import { Search, X } from "lucide-react-native";
 import { PostCard } from "../../components/Posts/PostCard";
-import { useAuth } from "../../hooks/useAuth";
-import { apiService } from "../../services/api";
+import { useAuthUser } from "../../stores";
+import {
+  usePostsStore,
+  usePostsList,
+  usePostsLoading,
+  usePostsRefreshing,
+  usePostsLoadingMore,
+  usePostsPagination,
+  useSearchResults,
+  usePostsSearching,
+} from "../../stores";
 import { Post, SearchFilters } from "../../types";
 import { Colors } from "../../constants/Colors";
 import { URL_CONFIG } from "../../constants/config";
+import { apiService } from "../../services/api";
+import { useErrorHandler, ErrorHandler } from "../../utils/errorHandler";
 import { Button } from "../../components/UI/Button";
 import { Header } from "../../components/UI/Header";
 
 export default function HomeScreen() {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const user = useAuthUser();
+  const posts = usePostsList();
+  const isLoading = usePostsLoading();
+  const isRefreshing = usePostsRefreshing();
+  const isLoadingMore = usePostsLoadingMore();
+  const { fetchPosts, searchPosts, likePost, hidePost, setFilters, clearSearch } = usePostsStore();
+  const errorHandler = useErrorHandler();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [searchActive, setSearchActive] = useState(false);
-  const [searchResults, setSearchResults] = useState<Post[]>([]);
-  const [searchLoading, setSearchLoading] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [searchFilters, setSearchFilters] = useState<SearchFilters>({
     types: [],
@@ -46,116 +55,33 @@ export default function HomeScreen() {
     sortBy: "date",
   });
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const searchResults = useSearchResults();
+  const isSearching = usePostsSearching();
+  const [error, setError] = useState<string | null>(null);
 
-  const { user } = useAuth();
+  const handleRefresh = useCallback(async () => {
+    await fetchPosts({
+      page: 1,
+      isRefresh: true,
+      city: user?.homeCity || user?.locationCity,
+      state: user?.homeState || user?.addressState,
+    });
+  }, [fetchPosts, user]);
 
-  const fetchPosts = useCallback(
-    async (pageNum: number = 1, isRefresh: boolean = false) => {
-      try {
-        if (pageNum === 1) {
-          setError(null);
-        }
+  const pagination = usePostsPagination();
 
-        const response = await apiService.getPosts({
-          page: pageNum,
-          limit: 20,
-          city: user?.homeCity || user?.locationCity,
-          state: user?.homeState || user?.addressState,
-        });
-
-        if (response.success && response.data) {
-          const newPosts = response.data.posts || response.data;
-
-          if (isRefresh || pageNum === 1) {
-            setPosts(newPosts);
-          } else {
-            setPosts((prev) => [...prev, ...newPosts]);
-          }
-
-          if (newPosts.length < 20) {
-            setHasMore(false);
-          }
-
-          setPage(pageNum);
-        } else {
-          throw new Error(response.message || "Failed to load posts");
-        }
-      } catch (error: any) {
-        console.error("Error fetching posts:", error);
-        const errorMessage =
-          error.response?.data?.message || error.message || "Failed to load posts";
-
-        if (pageNum === 1) {
-          setError(errorMessage);
-        } else {
-          Alert.alert("Error", "Failed to load more posts");
-        }
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
-        setLoadingMore(false);
-      }
-    },
-    [user]
-  );
-
-  const handleRefresh = useCallback(() => {
-    setRefreshing(true);
-    setHasMore(true);
-    fetchPosts(1, true);
-  }, [fetchPosts]);
-
-  const handleLoadMore = useCallback(() => {
-    if (!loadingMore && hasMore && posts.length > 0) {
-      setLoadingMore(true);
-      fetchPosts(page + 1, false);
+  const handleLoadMore = useCallback(async () => {
+    if (!isLoadingMore && pagination.hasMore && posts.length > 0) {
+      await fetchPosts({
+        page: pagination.page + 1,
+        city: user?.homeCity || user?.locationCity,
+        state: user?.homeState || user?.addressState,
+      });
     }
-  }, [loadingMore, hasMore, page, posts.length, fetchPosts]);
+  }, [isLoadingMore, pagination.hasMore, pagination.page, posts.length, fetchPosts, user]);
 
   const handleLike = async (postId: number) => {
-    try {
-      setPosts((prevPosts) =>
-        prevPosts.map((post) =>
-          post.id === postId
-            ? {
-                ...post,
-                userReaction: post.userReaction ? null : "like",
-                likeCount: post.userReaction
-                  ? (post.likeCount || 1) - 1
-                  : (post.likeCount || 0) + 1,
-              }
-            : post
-        )
-      );
-
-      const currentPost = posts.find((p) => p.id === postId);
-
-      if (currentPost?.userReaction) {
-        await apiService.getApi().delete(`/posts/${postId}/reactions`);
-      } else {
-        await apiService.getApi().post(`/posts/${postId}/reactions`, {
-          reactionType: "like",
-        });
-      }
-    } catch (error: any) {
-      console.error("Error toggling like:", error);
-
-      setPosts((prevPosts) =>
-        prevPosts.map((post) =>
-          post.id === postId
-            ? {
-                ...post,
-                userReaction: post.userReaction ? null : "like",
-                likeCount: post.userReaction
-                  ? (post.likeCount || 1) - 1
-                  : (post.likeCount || 0) + 1,
-              }
-            : post
-        )
-      );
-
-      Alert.alert("Error", "Failed to update reaction. Please try again.");
-    }
+    await likePost(postId);
   };
 
   const handleComment = (postId: number) => {
@@ -188,7 +114,7 @@ export default function HomeScreen() {
               url: shareUrl,
             });
           } catch (error) {
-            console.error("Error sharing:", error);
+            ErrorHandler.silent(error as Error, "Share post");
           }
         },
       },
@@ -216,7 +142,7 @@ export default function HomeScreen() {
         }
       }
     } catch (error) {
-      console.error("Error checking conversations:", error);
+      ErrorHandler.silent(error as Error, "Check conversations");
     }
 
     Alert.alert("Start Conversation", `Send a message to ${userName}?`, [
@@ -240,54 +166,51 @@ export default function HomeScreen() {
     async (query: string, filters?: SearchFilters) => {
       if (!query.trim() && !filters?.types?.length && !filters?.priorities?.length) {
         setSearchActive(false);
-        setSearchResults([]);
+        clearSearch();
         return;
       }
 
       try {
-        setSearchLoading(true);
         setSearchActive(true);
-
-        const response = await apiService.searchPosts(query.trim(), {
+        await searchPosts(query.trim(), {
           ...searchFilters,
           ...filters,
           city: user?.homeCity || user?.locationCity,
           state: user?.homeState || user?.addressState,
         });
 
-        if (response.success && response.data) {
-          const results = response.data.posts || response.data;
-          setSearchResults(results);
-
-          if (query.trim()) {
-            setRecentSearches((prev) => {
-              const updated = [query.trim(), ...prev.filter((s) => s !== query.trim())].slice(0, 5);
-              return updated;
-            });
-          }
+        if (query.trim()) {
+          setRecentSearches((prev) => {
+            const updated = [query.trim(), ...prev.filter((s) => s !== query.trim())].slice(0, 5);
+            return updated;
+          });
         }
       } catch (error: any) {
-        console.error("Search error:", error);
-        Alert.alert("Search Error", "Failed to search posts. Please try again.");
-      } finally {
-        setSearchLoading(false);
+        errorHandler.handleError(error, "Search Posts");
       }
     },
-    [searchFilters, user]
+    [searchFilters, user, searchPosts, clearSearch, errorHandler]
   );
 
   useEffect(() => {
     if (user) {
-      fetchPosts(1);
-    } else {
-      setLoading(false);
+      fetchPosts({
+        page: 1,
+        city: user?.homeCity || user?.locationCity,
+        state: user?.homeState || user?.addressState,
+      });
     }
   }, [user, fetchPosts]);
 
   useFocusEffect(
     useCallback(() => {
       if (user && !searchActive) {
-        fetchPosts(1, true);
+        fetchPosts({
+          page: 1,
+          isRefresh: true,
+          city: user?.homeCity || user?.locationCity,
+          state: user?.homeState || user?.addressState,
+        });
       }
     }, [user, searchActive, fetchPosts])
   );
@@ -300,7 +223,7 @@ export default function HomeScreen() {
       return () => clearTimeout(delayedSearch);
     } else if (searchActive) {
       setSearchActive(false);
-      setSearchResults([]);
+      clearSearch();
     }
   }, [searchQuery, handleSearch, searchActive, searchFilters]);
 
@@ -319,7 +242,7 @@ export default function HomeScreen() {
       await apiService.reportPost(postId, reason, "Reported from mobile app");
       Alert.alert("Reported", "Thank you for your report. We'll review this content.");
     } catch (error) {
-      console.error("Error reporting post:", error);
+      ErrorHandler.silent(error as Error, "Report post");
       Alert.alert("Error", "Failed to report post. Please try again.");
     }
   };
@@ -352,7 +275,7 @@ export default function HomeScreen() {
       {
         text: "Hide",
         onPress: () => {
-          setPosts((currentPosts) => currentPosts.filter((post) => post.id !== postId));
+          hidePost(postId);
           Alert.alert("Hidden", "Post has been hidden from your feed.");
         },
       },
@@ -390,7 +313,7 @@ export default function HomeScreen() {
         throw new Error(response.message || "Failed to save post");
       }
     } catch (error: any) {
-      console.error("Error saving post:", error);
+      ErrorHandler.silent(error as Error, "Save post");
       Alert.alert("Error", "Failed to save post. Please try again.");
     }
   };
@@ -425,7 +348,7 @@ export default function HomeScreen() {
   );
 
   const renderFooter = () => {
-    if (!loadingMore) return null;
+    if (!isLoadingMore) return null;
 
     return (
       <View style={styles.loadingMore}>
@@ -596,7 +519,7 @@ export default function HomeScreen() {
     );
   };
 
-  if (loading && posts.length === 0) {
+  if (isLoading && posts.length === 0) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
@@ -638,7 +561,7 @@ export default function HomeScreen() {
         keyExtractor={(item, index) => (item.id ? item.id.toString() : `post-${index}`)}
         contentContainerStyle={styles.contentContainer}
         ListEmptyComponent={() => {
-          if (searchActive && !searchLoading) {
+          if (searchActive && !isSearching) {
             return (
               <View style={styles.emptyContainer}>
                 <Search size={64} color={Colors.neutral[400]} />
@@ -669,7 +592,7 @@ export default function HomeScreen() {
           return renderEmpty();
         }}
         ListFooterComponent={() => {
-          if (searchLoading && searchResults.length > 0) {
+          if (isSearching && searchResults.length > 0) {
             return (
               <View style={styles.loadingMore}>
                 <ActivityIndicator size="small" color={Colors.primary[500]} />
@@ -681,7 +604,7 @@ export default function HomeScreen() {
         }}
         refreshControl={
           <RefreshControl
-            refreshing={refreshing}
+            refreshing={isRefreshing}
             onRefresh={
               searchActive ? () => handleSearch(searchQuery, searchFilters) : handleRefresh
             }
@@ -798,8 +721,8 @@ const styles = StyleSheet.create({
   },
   modalHeader: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,

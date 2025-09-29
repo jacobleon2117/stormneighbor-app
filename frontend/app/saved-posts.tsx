@@ -17,6 +17,7 @@ import { Colors } from "../constants/Colors";
 import { apiService } from "../services/api";
 import { useAuth } from "../hooks/useAuth";
 import { Post } from "../types";
+import { ErrorHandler } from "../utils/errorHandler";
 
 export default function SavedPostsScreen() {
   const { user } = useAuth();
@@ -38,7 +39,7 @@ export default function SavedPostsScreen() {
         setError("Failed to load saved posts");
       }
     } catch (error: any) {
-      console.error("Error fetching saved posts:", error);
+      ErrorHandler.silent(error as Error, "Error fetching saved posts");
       setError("Failed to load saved posts");
     } finally {
       setLoading(false);

@@ -34,6 +34,7 @@ import { WeatherData, Alert as WeatherAlert, Post } from "../../types";
 import { useAuth } from "../../hooks/useAuth";
 import WeatherLegend from "../../components/Weather/WeatherLegend";
 import { router } from "expo-router";
+import { ErrorHandler } from "../../utils/errorHandler";
 
 export default function WeatherScreen() {
   const { user } = useAuth();
@@ -95,7 +96,7 @@ export default function WeatherScreen() {
       }
       return true;
     } catch (error) {
-      console.error("Error requesting location permission:", error);
+      ErrorHandler.silent(error as Error, "Request Location Permission");
       Alert.alert("Error", "Failed to request location permission.");
       return false;
     }
@@ -103,7 +104,7 @@ export default function WeatherScreen() {
 
   const getCurrentLocation = useCallback(async () => {
     try {
-      console.log("Weather screen - determining best location for weather");
+      // Determining best location for weather
 
       const homeLocation =
         user?.homeLatitude && user?.homeLongitude
@@ -119,7 +120,7 @@ export default function WeatherScreen() {
       );
 
       if (bestLocation && bestLocation.source === "current") {
-        console.log("Using current GPS location for weather");
+        // Using current GPS location for weather
         const address = await locationService.reverseGeocode(
           bestLocation.latitude,
           bestLocation.longitude
@@ -135,7 +136,7 @@ export default function WeatherScreen() {
       }
 
       if (bestLocation && bestLocation.source === "home") {
-        console.log("Using home address for weather");
+        // Using home address for weather
         setLocation({
           latitude: bestLocation.latitude,
           longitude: bestLocation.longitude,
@@ -146,10 +147,10 @@ export default function WeatherScreen() {
         return;
       }
 
-      console.log("No saved location found, requesting current GPS location");
+      // No saved location found, requesting current GPS location
       const hasPermission = await requestLocationPermission();
       if (!hasPermission) {
-        console.log("Location permission denied, using fallback location");
+        // Location permission denied, using fallback location
         setLocation({
           latitude: 40.7128,
           longitude: -74.006,
@@ -184,7 +185,7 @@ export default function WeatherScreen() {
           longitude: currentLocation.coords.longitude,
         }));
       } catch (locationError) {
-        console.error("Error getting current location:", locationError);
+        ErrorHandler.silent(locationError as Error, "Get Current Location");
         setLocation({
           latitude: 40.7128,
           longitude: -74.006,
@@ -194,7 +195,7 @@ export default function WeatherScreen() {
         });
       }
     } catch (error) {
-      console.error("Error getting current location:", error);
+      ErrorHandler.silent(error as Error, "Get Current Location");
       setLocation({
         latitude: 40.7128,
         longitude: -74.006,
@@ -207,27 +208,13 @@ export default function WeatherScreen() {
 
   const fetchWeatherData = async (lat: number, lng: number) => {
     try {
-      console.log(`Fetching weather data for coordinates: ${lat}, ${lng}`);
       const weatherResponse = await apiService.getCurrentWeather(lat, lng);
 
-      console.log("Weather API response:", {
-        success: weatherResponse.success,
-        hasData: !!weatherResponse.data,
-        dataKeys: weatherResponse.data ? Object.keys(weatherResponse.data) : null,
-      });
-
       if (weatherResponse.success && weatherResponse.data) {
-        console.log("Setting weather data:", weatherResponse.data);
         setWeather(weatherResponse.data);
-      } else {
-        console.log("Weather API response failed or no data");
       }
     } catch (error: any) {
-      console.error("Error fetching weather:", error);
-      console.error("Weather API error details:", {
-        status: error.response?.status,
-        message: error.response?.data?.message || error.message,
-      });
+      ErrorHandler.silent(error, "Fetch Weather Data");
       throw error;
     }
   };
@@ -253,7 +240,7 @@ export default function WeatherScreen() {
         setAlerts(activeAlerts);
       }
     } catch (error: any) {
-      console.error("Error fetching alerts:", error);
+      ErrorHandler.silent(error, "Fetch Alerts");
     }
   };
 
@@ -276,28 +263,24 @@ export default function WeatherScreen() {
           );
         });
         setCommunityAlerts(recentAlerts);
-        console.log(`Found ${recentAlerts.length} recent community alerts`);
       }
     } catch (error: any) {
-      console.error("Error fetching community alerts:", error);
+      ErrorHandler.silent(error, "Fetch Community Alerts");
     }
   };
 
   const loadWeatherData = useCallback(
     async (isRefresh = false) => {
       if (!location) {
-        console.log("No location available for weather data");
         return;
       }
 
       const now = Date.now();
       if (!isRefresh && now - lastApiCall < 30000) {
-        console.log("Throttling weather API call - waiting 30 seconds between calls");
         return;
       }
 
       try {
-        console.log("Loading weather data for location:", location);
         setLastApiCall(now);
         if (!isRefresh) setLoading(true);
         setError(null);
@@ -307,9 +290,8 @@ export default function WeatherScreen() {
           fetchAlerts(location.city, location.state, location.latitude, location.longitude),
           fetchCommunityAlerts(),
         ]);
-        console.log("Weather data loaded successfully");
       } catch (error: any) {
-        console.error("Error loading weather data:", error);
+        ErrorHandler.silent(error, "Load Weather Data");
         setError(error.response?.data?.message || "Failed to load weather data");
       } finally {
         setLoading(false);
@@ -369,7 +351,6 @@ export default function WeatherScreen() {
         setMapRegion(userRegion);
         mapRef.current.animateToRegion(userRegion, 500);
 
-        // Update location state to reflect current position
         const address = await locationService.reverseGeocode(
           currentLocation.coords.latitude,
           currentLocation.coords.longitude
@@ -385,27 +366,12 @@ export default function WeatherScreen() {
         Alert.alert("Error", "Unable to get your current location. Please try again.");
       }
     } catch (error) {
-      console.error("Error getting current location:", error);
+      ErrorHandler.silent(error as Error, "Get Current Location for Navigation");
       Alert.alert("Error", "Failed to get your current location. Please try again.");
     }
   };
 
   const handleLayerToggle = (layerId: string, enabled: boolean) => {
-    console.log(`Weather layer ${layerId} ${enabled ? "ENABLED" : "DISABLED"}`);
-
-    if (enabled) {
-      console.log(
-        "WEATHER_CONFIG.OPENWEATHER_API_KEY available:",
-        !!WEATHER_CONFIG.OPENWEATHER_API_KEY
-      );
-      if (WEATHER_CONFIG.OPENWEATHER_API_KEY) {
-        console.log(
-          "API Key starts with:",
-          WEATHER_CONFIG.OPENWEATHER_API_KEY.substring(0, 8) + "..."
-        );
-      }
-    }
-
     setWeatherLayers((prev) => {
       const newLayers = { ...prev };
 
@@ -418,7 +384,6 @@ export default function WeatherScreen() {
         newLayers[layerId] = false;
       }
 
-      console.log(`Updated weather layers (single selection):`, newLayers);
       return newLayers;
     });
 
@@ -435,48 +400,27 @@ export default function WeatherScreen() {
 
       if (layerId === "clouds" || layerId === "wind" || layerId === "temperature") {
         if (!WEATHER_CONFIG.OPENWEATHER_API_KEY) {
-          console.warn(
-            `${layerName} overlay enabled but NO API KEY found - overlay will not display`
+          ErrorHandler.silent(
+            new Error(`${layerName} overlay enabled but NO API KEY found`),
+            "Weather Layer Toggle"
           );
-        } else {
-          console.log(`${layerName} overlay enabled with API key - should display`);
         }
       }
 
       if (layerId === "precipitation") {
         const timestamp = Math.floor(rainTimestamp / 1000 / 600) * 600;
-        console.log(`Precipitation overlay enabled - using timestamp: ${timestamp}`);
-        console.log(
-          `RainViewer URL pattern: https://tilecache.rainviewer.com/v2/radar/{z}/{x}/{y}/${timestamp}/1_1.png`
-        );
-        console.log(
-          `Test URL for zoom 5: https://tilecache.rainviewer.com/v2/radar/5/122/80/${timestamp}/1_1.png`
-        );
 
         fetch("https://tilecache.rainviewer.com/api/maps.json")
           .then((response) => response.json())
           .then((data) => {
-            console.log("Latest RainViewer timestamps:", data.slice(-3));
             const latestTimestamp = data[data.length - 1];
-            console.log(`Using latest timestamp: ${latestTimestamp}`);
             setRainTimestamp(latestTimestamp * 1000);
           })
-          .catch((error) => console.error("Failed to fetch RainViewer timestamps:", error));
+          .catch((error) => ErrorHandler.silent(error, "Fetch RainViewer Timestamps"));
       }
 
       if (layerId === "alerts") {
-        console.log(`Alerts overlay enabled - found ${alerts.length} active alerts`);
-        if (alerts.length > 0) {
-          alerts.forEach((alert, index) => {
-            console.log(`Alert ${index + 1}: ${alert.severity} - ${alert.title}`);
-            console.log(`  Area: ${alert.metadata?.areaDesc || "Unknown area"}`);
-            console.log(
-              `  Effective: ${alert.startTime || "Now"} until ${alert.endTime || "Unknown"}`
-            );
-          });
-        } else {
-          console.log("No active weather alerts in your area - all clear!");
-
+        if (alerts.length === 0) {
           setTimeout(() => {
             Alert.alert(
               "No Weather Alerts",
@@ -495,7 +439,6 @@ export default function WeatherScreen() {
 
   useEffect(() => {
     const userHasLocation = user?.latitude && user?.longitude;
-    console.log("User profile changed, has location:", userHasLocation);
     if (userHasLocation) {
       getCurrentLocation();
     }
@@ -573,11 +516,8 @@ export default function WeatherScreen() {
 
   const fetchUserLocationWeatherData = useCallback(async () => {
     if (!WEATHER_CONFIG.OPENWEATHER_API_KEY) {
-      console.log("No API key available for location weather data");
       return;
     }
-
-    console.log("Fetching weather data for user locations...");
 
     const locations: Array<{
       id: string;
@@ -606,7 +546,7 @@ export default function WeatherScreen() {
         });
       }
     } catch (err: unknown) {
-      console.log("Could not get current location for weather marker", err);
+      ErrorHandler.silent(err as Error, "Get Current Location for Weather Marker");
     }
 
     if (user?.homeLatitude && user?.homeLongitude) {
@@ -635,11 +575,6 @@ export default function WeatherScreen() {
       });
     }
 
-    console.log(
-      `Fetching weather for ${locations.length} user locations:`,
-      locations.map((l) => l.locationName)
-    );
-
     const weatherPromises = locations.map(async (location) => {
       try {
         const response = await fetch(
@@ -654,7 +589,7 @@ export default function WeatherScreen() {
           condition: data.weather?.[0]?.main || "Unknown",
         };
       } catch (err: unknown) {
-        console.error(`Failed to fetch weather for ${location.locationName}:`, err);
+        ErrorHandler.silent(err as Error, `Fetch Weather for ${location.locationName}`);
         return null;
       }
     });
@@ -664,8 +599,6 @@ export default function WeatherScreen() {
     const validResults = results.filter(
       (result): result is NonNullable<typeof result> => result !== null
     );
-
-    console.log(`Successfully fetched weather data for ${validResults.length} user locations`);
 
     setUserLocationWeatherData(validResults);
   }, [user]);
@@ -964,7 +897,7 @@ export default function WeatherScreen() {
           rotateEnabled={false}
           pitchEnabled={false}
           mapType="standard"
-          onMapReady={() => console.log("Map ready for overlays")}
+          onMapReady={() => {}}
         >
           {weatherLayers.precipitation && (
             <UrlTile
@@ -1033,7 +966,6 @@ export default function WeatherScreen() {
                   fillColor={colors.fill}
                   strokeWidth={2}
                   onPress={() => {
-                    console.log("Weather alert pressed:", alert.title);
                     setSelectedAlert(alert);
                     setShowAlertModal(true);
                   }}
@@ -1089,7 +1021,6 @@ export default function WeatherScreen() {
                   anchor={{ x: 0.5, y: 0.5 }}
                   zIndex={999}
                   onPress={() => {
-                    console.log("Community alert pressed:", alert.title);
                     setSelectedAlert(alert);
                     setShowAlertModal(true);
                   }}
@@ -1695,13 +1626,12 @@ const styles = StyleSheet.create({
   },
   modalHeader: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
-    backgroundColor: Colors.background,
   },
   modalCloseButton: {
     width: 32,
@@ -1727,7 +1657,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     color: Colors.text.primary,
-    textAlign: "center",
   },
   modalPlaceholder: {
     width: 32,

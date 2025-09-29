@@ -2,6 +2,7 @@ import React, { createContext, useContext, useReducer, useEffect, ReactNode } fr
 import { apiService } from "../services/api";
 import { NotificationService } from "../services/notifications";
 import { User } from "../types";
+import { ErrorHandler } from "../utils/errorHandler";
 
 interface AuthState {
   user: User | null;
@@ -110,31 +111,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       const token = await apiService.getAccessToken();
       if (token) {
-        console.log("Token found, fetching user profile");
         const response = await apiService.getProfile();
-        console.log("Initial auth check - profile data:", {
-          locationCity: response.data?.locationCity,
-          latitude: response.data?.latitude,
-          longitude: response.data?.longitude,
-          addressState: response.data?.addressState,
-          hasFullData: !!(
-            response.data?.locationCity ||
-            (response.data?.latitude && response.data?.longitude)
-          ),
-        });
         dispatch({ type: "AUTH_SUCCESS", payload: response.data });
 
         try {
           await NotificationService.registerForPushNotifications();
         } catch (error) {
-          console.log("Failed to register for push notifications:", error);
+          ErrorHandler.silent(error as Error, "Register Push Notifications in Auth Check");
         }
       } else {
-        console.log("No token found, dispatching logout");
         dispatch({ type: "AUTH_LOGOUT" });
       }
     } catch (error) {
-      console.log("No existing authentication found:", error);
+      ErrorHandler.silent(error as Error, "Check Existing Auth");
       dispatch({ type: "AUTH_LOGOUT" });
     }
   };
@@ -148,7 +137,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       try {
         await NotificationService.registerForPushNotifications();
       } catch (error) {
-        console.log("Failed to register for push notifications:", error);
+        ErrorHandler.silent(error as Error, "Register Push Notifications in Login");
       }
     } catch (error) {
       const errorMessage = (error as any).response?.data?.message || "Login failed";
@@ -166,16 +155,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }) => {
     dispatch({ type: "AUTH_START" });
     try {
-      console.log("Attempting registration with:", {
-        ...userData,
-        password: "[HIDDEN]",
-      });
       await apiService.register(userData);
-      console.log("Registration successful, attempting login...");
       await login(userData.email, userData.password);
-      console.log("Login after registration successful");
     } catch (error) {
-      console.error("Registration/login error:", error);
+      ErrorHandler.silent(error as Error, "Registration/Login");
       const errorMessage = (error as any).response?.data?.message || "Registration failed";
       dispatch({ type: "AUTH_ERROR", payload: errorMessage });
       throw error;
@@ -186,7 +169,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       await apiService.logout();
     } catch (error) {
-      console.log("Logout error:", error);
+      ErrorHandler.silent(error as Error, "Logout");
     } finally {
       dispatch({ type: "AUTH_MANUAL_LOGOUT" });
     }
@@ -198,23 +181,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const refreshProfile = async () => {
     try {
-      console.log("Refreshing user profile");
       const response = await apiService.getProfile();
-      console.log("Profile data received:", {
-        locationCity: response.data?.locationCity,
-        latitude: response.data?.latitude,
-        longitude: response.data?.longitude,
-        addressState: response.data?.addressState,
-        hasLocationData: !!(
-          response.data?.locationCity ||
-          (response.data?.latitude && response.data?.longitude)
-        ),
-      });
       dispatch({ type: "AUTH_SUCCESS", payload: response.data });
-      console.log("Profile refreshed successfully");
       return response.data;
     } catch (error) {
-      console.error("Error refreshing profile:", error);
+      ErrorHandler.silent(error as Error, "Refresh Profile");
       throw error;
     }
   };

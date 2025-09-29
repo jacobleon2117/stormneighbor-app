@@ -129,7 +129,6 @@ const testHelpers = {
   },
 };
 
-// Make testHelpers available globally and as export
 global.testHelpers = testHelpers;
 module.exports = { testHelpers };
 

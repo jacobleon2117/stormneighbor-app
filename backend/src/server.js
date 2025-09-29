@@ -9,13 +9,13 @@ try {
   logger.info("Environment variables configured properly");
 } catch (error) {
   logger.error("Environment validation failed", { error: error.message });
-  process.exit(1);
+  throw new Error("Environment validation failed");
 }
 
 const app = require("./app");
 if (!app) {
   logger.error("Express app is undefined. Cannot start server.");
-  process.exit(1);
+  throw new Error("Express app is undefined. Cannot start server.");
 }
 
 const sessionCleanupJob = require("./jobs/sessionCleanup");
@@ -68,7 +68,9 @@ const gracefulShutdown = (signal) => {
   logger.info(`\nSHUTDOWN INITIATED (${signal})`);
   logSeparator();
 
-  const forceTimeout = setTimeout(() => (process.exitCode = 1), 15000);
+  const forceTimeout = setTimeout(() => {
+    throw new Error("Graceful shutdown timeout");
+  }, 15000);
 
   server.close(async (err) => {
     if (err) logger.error("Server shutdown error:", err.message);
@@ -81,7 +83,7 @@ const gracefulShutdown = (signal) => {
 
     clearTimeout(forceTimeout);
     logger.info("Graceful shutdown completed");
-    process.exit(0);
+    throw new Error("Graceful shutdown completed");
   });
 };
 
@@ -91,11 +93,18 @@ const gracefulShutdown = (signal) => {
 
 process.on("uncaughtException", (error) => {
   logger.error("CRITICAL: Uncaught Exception:", error.stack || error);
-  setTimeout(() => process.exit(1), 1000);
+  setTimeout(() => {
+    throw new Error("Uncaught Exception - shutting down");
+  }, 1000);
 });
 process.on("unhandledRejection", (reason, promise) => {
-  logger.error("WARNING: Unhandled Promise Rejection", { reason: reason?.stack || reason, promise });
-  setTimeout(() => process.exit(1), 1000);
+  logger.error("WARNING: Unhandled Promise Rejection", {
+    reason: reason?.stack || reason,
+    promise,
+  });
+  setTimeout(() => {
+    throw new Error("Unhandled Promise Rejection - shutting down");
+  }, 1000);
 });
 
 module.exports = server;

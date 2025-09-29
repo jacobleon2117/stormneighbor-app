@@ -7,6 +7,7 @@ import { Button } from "../components/UI/Button";
 import { useAuth } from "../hooks/useAuth";
 import { Colors } from "../constants/Colors";
 import { apiService } from "../services/api";
+import { ErrorHandler } from "../utils/errorHandler";
 
 interface LocationForm {
   address: string;
@@ -64,7 +65,7 @@ export default function LocationSettingsScreen() {
         { text: "OK", onPress: () => router.back() },
       ]);
     } catch (error) {
-      console.error("Location update error:", error);
+      ErrorHandler.silent(error as Error, "Location update error");
       Alert.alert("Error", "Failed to update location settings. Please try again.");
     } finally {
       setLoading(false);

@@ -22,6 +22,7 @@ import {
 import { Header } from "../../components/UI/Header";
 import { Colors } from "../../constants/Colors";
 import { apiService } from "../../services/api";
+import { ErrorHandler } from "../../utils/errorHandler";
 
 interface Notification {
   id: number;
@@ -62,7 +63,7 @@ export default function NotificationsScreen() {
         throw new Error(response.message || "Failed to load notifications");
       }
     } catch (error: any) {
-      console.error("Load notifications error:", error);
+      ErrorHandler.silent(error as Error, "Load notifications");
       if (!isRefresh) {
         Alert.alert("Error", "Failed to load notifications. Please try again.");
       }
@@ -80,10 +81,9 @@ export default function NotificationsScreen() {
   useEffect(() => {
     loadNotifications();
 
-    // Set up polling for real-time notifications
     const interval = setInterval(() => {
       loadNotifications();
-    }, 30000); // Poll every 30 seconds
+    }, 30000);
 
     return () => clearInterval(interval);
   }, []);
@@ -97,7 +97,7 @@ export default function NotificationsScreen() {
         )
       );
     } catch (error) {
-      console.error("Mark as read error:", error);
+      ErrorHandler.silent(error as Error, "Mark notification as read");
     }
   };
 
@@ -106,7 +106,7 @@ export default function NotificationsScreen() {
       await apiService.markAllNotificationsAsRead();
       setNotifications((prev) => prev.map((notification) => ({ ...notification, isRead: true })));
     } catch (error) {
-      console.error("Mark all as read error:", error);
+      ErrorHandler.silent(error as Error, "Mark all notifications as read");
       Alert.alert("Error", "Failed to mark all as read. Please try again.");
     }
   };
@@ -116,7 +116,7 @@ export default function NotificationsScreen() {
       await apiService.deleteNotification(notificationId);
       setNotifications((prev) => prev.filter((notification) => notification.id !== notificationId));
     } catch (error) {
-      console.error("Delete notification error:", error);
+      ErrorHandler.silent(error as Error, "Delete notification");
       Alert.alert("Error", "Failed to delete notification. Please try again.");
     }
   };
@@ -222,17 +222,15 @@ export default function NotificationsScreen() {
     </View>
   );
 
-  const handleGoBack = () => {
-    router.back();
-  };
-
   if (loading && !refreshing) {
     return (
       <View style={styles.container}>
         <Header
           title="Notifications"
-          showBackButton={true}
-          onBackPress={handleGoBack}
+          showSearch={true}
+          showMessages={true}
+          onSearchPress={() => router.push("/(tabs)/search")}
+          onMessagesPress={() => router.push("/(tabs)/messages")}
           backgroundColor={Colors.background}
         />
         <View style={styles.loadingContainer}>
@@ -247,8 +245,10 @@ export default function NotificationsScreen() {
     <View style={styles.container}>
       <Header
         title="Notifications"
-        showBackButton={true}
-        onBackPress={handleGoBack}
+        showSearch={true}
+        showMessages={true}
+        onSearchPress={() => router.push("/(tabs)/search")}
+        onMessagesPress={() => router.push("/(tabs)/messages")}
         backgroundColor={Colors.background}
       />
       <View style={styles.safeContent}>

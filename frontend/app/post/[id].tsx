@@ -10,6 +10,7 @@ import { apiService } from "../../services/api";
 import { Post } from "../../types";
 import { useAuth } from "../../hooks/useAuth";
 import { URL_CONFIG } from "../../constants/config";
+import { ErrorHandler } from "../../utils/errorHandler";
 
 export default function PostDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -33,7 +34,7 @@ export default function PostDetailScreen() {
         setError("Post not found");
       }
     } catch (error: any) {
-      console.error("Error fetching post:", error);
+      ErrorHandler.silent(error as Error, "Failed to fetch post");
       setError(error.response?.data?.message || "Failed to load post");
     } finally {
       setLoading(false);
@@ -83,7 +84,7 @@ export default function PostDetailScreen() {
         });
       }
     } catch (error: any) {
-      console.error("Error toggling like:", error);
+      ErrorHandler.silent(error as Error, "Failed to toggle post like");
 
       setPost((prevPost) => {
         if (!prevPost) return null;
@@ -126,7 +127,7 @@ export default function PostDetailScreen() {
               url: shareUrl,
             });
           } catch (error) {
-            console.error("Error sharing:", error);
+            ErrorHandler.silent(error as Error, "Failed to share post");
           }
         },
       },
@@ -164,7 +165,7 @@ export default function PostDetailScreen() {
         }
       }
     } catch (error) {
-      console.error("Error checking conversations:", error);
+      ErrorHandler.silent(error as Error, "Failed to check existing conversations");
     }
 
     Alert.alert("Start Conversation", `Send a message to ${userName}?`, [

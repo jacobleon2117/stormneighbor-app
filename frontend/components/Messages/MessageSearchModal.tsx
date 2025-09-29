@@ -1,6 +1,4 @@
-import React, {
-  useState /* useEffect, useCallback - Currently not being used, need to either use it or remove it (if needed later, uncomment) */,
-} from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,

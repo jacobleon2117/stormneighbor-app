@@ -12,7 +12,7 @@ import {
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { useAuth } from "../../hooks/useAuth";
+import { useAuthUser, useAuthStore } from "../../stores";
 import { Colors } from "../../constants/Colors";
 import { apiService } from "../../services/api";
 import { Header } from "../../components/UI/Header";
@@ -22,7 +22,8 @@ import { useErrorHandler } from "../../utils/errorHandler";
 import { useLoadingState } from "../../utils/loadingStates";
 
 export default function ProfileScreen() {
-  const { user, logout } = useAuth();
+  const user = useAuthUser();
+  const { logout } = useAuthStore();
   const errorHandler = useErrorHandler();
   const loadingState = useLoadingState();
   const [imageError, setImageError] = useState(false);

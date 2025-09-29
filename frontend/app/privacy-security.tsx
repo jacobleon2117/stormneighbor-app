@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Header } from "../components/UI/Header";
 import { Colors } from "../constants/Colors";
 import { apiService } from "../services/api";
+import { ErrorHandler } from "../utils/errorHandler";
 
 interface SecuritySettings {
   twoFactorEnabled: boolean;
@@ -45,7 +46,7 @@ export default function PrivacySecurityScreen() {
         setSettings(response.data.data);
       }
     } catch (error) {
-      console.error("Failed to load security settings:", error);
+      ErrorHandler.silent(error as Error, "Failed to load security settings");
     } finally {
       setLoading(false);
     }
@@ -62,7 +63,7 @@ export default function PrivacySecurityScreen() {
         Alert.alert("Success", "Security settings updated successfully!");
       }
     } catch (error) {
-      console.error("Failed to update security settings:", error);
+      ErrorHandler.silent(error as Error, "Failed to update security settings");
       Alert.alert("Error", "Failed to update settings. Please try again.");
     } finally {
       setSaving(false);

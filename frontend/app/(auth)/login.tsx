@@ -15,8 +15,9 @@ import * as LocalAuthentication from "expo-local-authentication";
 import * as SecureStore from "expo-secure-store";
 import { Input } from "../../components/UI/Input";
 import { Button } from "../../components/UI/Button";
-import { useAuth } from "../../hooks/useAuth";
+import { useAuthStore, useAuthLoading, useAuthError } from "../../stores";
 import { Colors } from "../../constants/Colors";
+import { ErrorHandler } from "../../utils/errorHandler";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -26,12 +27,14 @@ export default function LoginScreen() {
   const [biometricType, setBiometricType] = useState<string | null>(null);
   const [isAutoLoggingIn, setIsAutoLoggingIn] = useState(false);
 
-  const { login, isLoading, error, clearError } = useAuth();
+  const { login, clearError } = useAuthStore();
+  const isLoading = useAuthLoading();
+  const error = useAuthError();
 
   const checkBiometricAndAutoLogin = useCallback(async () => {
     try {
       if (!LocalAuthentication) {
-        console.log("LocalAuthentication not available");
+        // LocalAuthentication not available
         return;
       }
 
@@ -62,17 +65,20 @@ export default function LoginScreen() {
             setIsAutoLoggingIn(true);
 
             try {
-              await login(storedEmail.trim().toLowerCase(), storedPassword);
+              await login({
+                email: storedEmail.trim().toLowerCase(),
+                password: storedPassword,
+              });
               router.replace("/(tabs)");
             } catch (error) {
-              console.log("Auto-login failed:", error);
+              ErrorHandler.silent(error as Error, "Auto-login from biometrics");
               setIsAutoLoggingIn(false);
             }
           }
         }
       }
     } catch (error) {
-      console.log("Biometric check error:", error);
+      ErrorHandler.silent(error as Error, "Biometric check");
     }
   }, [biometricType, login]);
 
@@ -86,10 +92,13 @@ export default function LoginScreen() {
         setTimeout(async () => {
           try {
             setIsAutoLoggingIn(true);
-            await login(email.trim().toLowerCase(), password);
+            await login({
+              email: email.trim().toLowerCase(),
+              password,
+            });
             router.replace("/(tabs)");
           } catch (error) {
-            console.log("Auto-login from auto-fill failed:", error);
+            ErrorHandler.silent(error as Error, "Auto-login from auto-fill");
             setIsAutoLoggingIn(false);
           }
         }, 500);
@@ -124,14 +133,21 @@ export default function LoginScreen() {
     }
 
     try {
-      await login(email.trim().toLowerCase(), password);
+      const success = await login({
+        email: email.trim().toLowerCase(),
+        password,
+      });
+
+      if (!success) {
+        return;
+      }
 
       if (biometricType) {
         try {
           await SecureStore.setItemAsync("biometric_email", email.trim().toLowerCase());
           await SecureStore.setItemAsync("biometric_password", password);
         } catch (error) {
-          console.log("Failed to store biometric credentials:", error);
+          ErrorHandler.silent(error as Error, "Store biometric credentials");
         }
       }
 

@@ -249,7 +249,6 @@ describe("Users System", () => {
     });
 
     it("should prevent self-following", async () => {
-      // This needs to be tested with actual user context
       await request(app)
         .post("/api/v1/users/follow/1")
         .set("Authorization", "Bearer invalid-token")
@@ -380,7 +379,6 @@ describe("Users System", () => {
         .post("/api/v1/users/device-token")
         .set("Authorization", "Bearer invalid-token")
         .send({
-          // Missing token
           platform: "ios",
         })
         .expect(400);
@@ -428,7 +426,7 @@ describe("Users System", () => {
 
   describe("GET /api/v1/users/search", () => {
     it("should validate search query", async () => {
-      await request(app).get("/api/v1/users/search").expect(400); // Missing query parameter
+      await request(app).get("/api/v1/users/search").expect(400);
 
       await request(app).get("/api/v1/users/search?q=").expect(400);
 

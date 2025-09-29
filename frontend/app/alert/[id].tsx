@@ -27,6 +27,7 @@ import { ALERT_COLORS, getAlertColor } from "../../constants/AlertColors";
 import { apiService } from "../../services/api";
 import { Alert } from "../../types";
 import { Button } from "../../components/UI/Button";
+import { ErrorHandler } from "../../utils/errorHandler";
 
 const ALERT_ICONS = {
   weather_alert: AlertTriangle,
@@ -58,7 +59,7 @@ export default function AlertDetailScreen() {
         setError("Alert not found");
       }
     } catch (error: any) {
-      console.error("Error fetching alert:", error);
+      ErrorHandler.silent(error as Error, "Failed to fetch alert details");
       setError(error.response?.data?.message || "Failed to load alert");
     } finally {
       setLoading(false);
@@ -99,7 +100,7 @@ export default function AlertDetailScreen() {
         url: shareUrl,
       });
     } catch (error) {
-      console.error("Error sharing alert:", error);
+      ErrorHandler.silent(error as Error, "Failed to share alert");
       AlertDialog.alert("Error", "Failed to share alert");
     }
   };

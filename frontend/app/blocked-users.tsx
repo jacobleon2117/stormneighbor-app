@@ -17,6 +17,7 @@ import { Header } from "../components/UI/Header";
 import { Colors } from "../constants/Colors";
 import apiService from "../services/api";
 import { User } from "../types";
+import { ErrorHandler } from "../utils/errorHandler";
 
 export default function BlockedUsersScreen() {
   const [blockedUsers, setBlockedUsers] = useState<User[]>([]);
@@ -38,7 +39,7 @@ export default function BlockedUsersScreen() {
         setError("Failed to load blocked users");
       }
     } catch (error: any) {
-      console.error("Error fetching blocked users:", error);
+      ErrorHandler.silent(error as Error, "Error fetching blocked users");
       setError("Failed to load blocked users");
     } finally {
       setLoading(false);

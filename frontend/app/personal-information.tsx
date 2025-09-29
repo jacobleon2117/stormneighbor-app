@@ -1,14 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TextInput,
-  Alert,
-  // TouchableOpacity, - Currently not being used, need to either use it or remove it (if needed later, uncomment).
-  // ActivityIndicator, - Currently not being used, need to either use it or remove it (if needed later, uncomment).
-} from "react-native";
+import { View, Text, StyleSheet, ScrollView, TextInput, Alert } from "react-native";
 import { router } from "expo-router";
 import { Header } from "../components/UI/Header";
 import { Input } from "../components/UI/Input";
@@ -16,6 +7,7 @@ import { Button } from "../components/UI/Button";
 import { useAuth } from "../hooks/useAuth";
 import { Colors } from "../constants/Colors";
 import { apiService } from "../services/api";
+import { ErrorHandler } from "../utils/errorHandler";
 
 interface ProfileForm {
   firstName: string;
@@ -68,7 +60,7 @@ export default function PersonalInformationScreen() {
         { text: "OK", onPress: () => router.back() },
       ]);
     } catch (error) {
-      console.error("Profile update error:", error);
+      ErrorHandler.silent(error as Error, "Profile update error");
       Alert.alert("Error", "Failed to update profile. Please try again.");
     } finally {
       setLoading(false);

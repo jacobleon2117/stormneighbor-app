@@ -20,6 +20,7 @@ import { Colors } from "../../constants/Colors";
 import { apiService } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
 import { Message } from "../../types";
+import { ErrorHandler } from "../../utils/errorHandler";
 
 export default function ConversationScreen() {
   const { id, userName, userImage } = useLocalSearchParams<{
@@ -48,7 +49,7 @@ export default function ConversationScreen() {
         setMessages(response.data.messages || []);
       }
     } catch (error: any) {
-      console.error("Error fetching messages:", error);
+      ErrorHandler.silent(error as Error, "Failed to fetch messages");
       Alert.alert("Error", "Failed to load messages");
     } finally {
       setLoading(false);
@@ -94,7 +95,7 @@ export default function ConversationScreen() {
         }, 100);
       }
     } catch (error: any) {
-      console.error("Error sending message:", error);
+      ErrorHandler.silent(error as Error, "Failed to send message");
       Alert.alert("Error", "Failed to send message. Please try again.");
       setNewMessage(messageContent);
     } finally {

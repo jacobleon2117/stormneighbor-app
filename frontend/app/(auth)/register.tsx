@@ -13,8 +13,9 @@ import { Link, router } from "expo-router";
 import { Eye, EyeOff, AlertCircle } from "lucide-react-native";
 import { Input } from "../../components/UI/Input";
 import { Button } from "../../components/UI/Button";
-import { useAuth } from "../../hooks/useAuth";
+import { useAuthStore, useAuthLoading, useAuthError } from "../../stores";
 import { Colors } from "../../constants/Colors";
+import { ErrorHandler } from "../../utils/errorHandler";
 
 export default function RegisterScreen() {
   const [formData, setFormData] = useState({
@@ -29,7 +30,9 @@ export default function RegisterScreen() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
-  const { register, isLoading, error, clearError } = useAuth();
+  const { register, clearError } = useAuthStore();
+  const isLoading = useAuthLoading();
+  const error = useAuthError();
 
   const updateFormData = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -95,7 +98,7 @@ export default function RegisterScreen() {
     }
 
     try {
-      await register({
+      const success = await register({
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         email: formData.email.trim().toLowerCase(),
@@ -103,10 +106,11 @@ export default function RegisterScreen() {
         password: formData.password,
       });
 
-      // Navigate to location permissions setup after successful registration
-      router.push("/(auth)/location-permissions");
+      if (success) {
+        router.push("/(auth)/location-setup");
+      }
     } catch (error) {
-      console.error("Registration error in component:", error);
+      ErrorHandler.silent(error as Error, "Registration error in component");
     }
   };
 

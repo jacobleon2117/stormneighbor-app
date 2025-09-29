@@ -1,12 +1,5 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Alert,
-  ActivityIndicator,
-} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Bell, AlertTriangle, MessageSquare, Cloud, CheckCircle } from "lucide-react-native";
@@ -15,14 +8,17 @@ import { Button } from "../../components/UI/Button";
 import { Colors } from "../../constants/Colors";
 import { apiService } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
+import { useErrorHandler, ErrorHandler } from "../../utils/errorHandler";
+import { useLoadingState } from "../../utils/loadingStates";
 
 export default function NotificationSetupScreen() {
   const { refreshProfile } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
+  const errorHandler = useErrorHandler();
+  const loadingState = useLoadingState();
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
 
   const handleEnableNotifications = async () => {
-    setIsLoading(true);
+    loadingState.setLoading(true);
 
     try {
       const { status } = await Notifications.requestPermissionsAsync();
@@ -33,6 +29,10 @@ export default function NotificationSetupScreen() {
         communityUpdates: status === "granted",
         emergencyAlerts: status === "granted",
         messageNotifications: status === "granted",
+        emailNotifications: false,
+        postReactions: false,
+        comments: false,
+        quietHoursEnabled: false,
       };
 
       await apiService.updateNotificationPreferences(preferences);
@@ -40,27 +40,26 @@ export default function NotificationSetupScreen() {
       if (status === "granted") {
         try {
           // Skip push token registration in Expo Go to avoid errors
-          console.log("Push notifications enabled, but token registration skipped in development");
+          // Push notifications enabled, but token registration skipped in development
         } catch (tokenError) {
-          console.warn("Failed to get push token:", tokenError);
+          ErrorHandler.silent(tokenError as Error, "Get push token");
         }
       }
 
       await refreshProfile();
       setNotificationsEnabled(status === "granted");
 
-      // Finish onboarding
       router.replace("/(tabs)");
     } catch (error) {
-      console.error("Error setting up notifications:", error);
-      Alert.alert("Error", "Unable to setup notifications. You can enable them later in settings.");
+      errorHandler.handleError(error, "Notification Setup");
       router.replace("/(tabs)");
     } finally {
-      setIsLoading(false);
+      loadingState.setLoading(false);
     }
   };
 
   const handleSkip = async () => {
+    loadingState.setLoading(true);
     try {
       const preferences = {
         pushNotifications: false,
@@ -68,15 +67,20 @@ export default function NotificationSetupScreen() {
         communityUpdates: false,
         emergencyAlerts: false,
         messageNotifications: false,
+        emailNotifications: false,
+        postReactions: false,
+        comments: false,
+        quietHoursEnabled: false,
       };
 
       await apiService.updateNotificationPreferences(preferences);
       await refreshProfile();
     } catch (error) {
-      console.warn("Failed to save notification preferences:", error);
+      ErrorHandler.silent(error as Error, "Save notification preferences");
+    } finally {
+      loadingState.setLoading(false);
+      router.replace("/(tabs)");
     }
-
-    router.replace("/(tabs)");
   };
 
   return (
@@ -85,9 +89,7 @@ export default function NotificationSetupScreen() {
         <View style={styles.header}>
           <Bell size={64} color={Colors.primary[600]} />
           <Text style={styles.title}>Stay Informed</Text>
-          <Text style={styles.subtitle}>
-            Get important alerts and updates from your community
-          </Text>
+          <Text style={styles.subtitle}>Get important alerts and updates from your community</Text>
         </View>
 
         <View style={styles.benefits}>
@@ -103,12 +105,14 @@ export default function NotificationSetupScreen() {
             <MessageSquare size={24} color={Colors.primary[600]} />
             <View style={styles.benefitContent}>
               <Text style={styles.benefitTitle}>Community Updates</Text>
-              <Text style={styles.benefitDescription}>Important posts and messages from neighbors</Text>
+              <Text style={styles.benefitDescription}>
+                Important posts and messages from neighbors
+              </Text>
             </View>
           </View>
 
           <View style={styles.benefitItem}>
-            <Cloud size={24} color={Colors.info[600]} />
+            <Cloud size={24} color={Colors.primary[600]} />
             <View style={styles.benefitContent}>
               <Text style={styles.benefitTitle}>Emergency Alerts</Text>
               <Text style={styles.benefitDescription}>Critical safety information and updates</Text>
@@ -124,17 +128,17 @@ export default function NotificationSetupScreen() {
 
         <View style={styles.actions}>
           <Button
-            title={isLoading ? "Setting up..." : "Enable Notifications"}
+            title={loadingState.isLoading ? "Setting up..." : "Enable Notifications"}
             onPress={handleEnableNotifications}
-            loading={isLoading}
-            disabled={isLoading}
+            loading={loadingState.isLoading}
+            disabled={loadingState.isLoading}
             style={styles.primaryButton}
           />
 
           <TouchableOpacity
             style={styles.skipButton}
             onPress={handleSkip}
-            disabled={isLoading}
+            disabled={loadingState.isLoading}
           >
             <Text style={styles.skipText}>Skip for Now</Text>
           </TouchableOpacity>

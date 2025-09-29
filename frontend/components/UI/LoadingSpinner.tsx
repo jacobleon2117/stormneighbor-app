@@ -15,13 +15,9 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   text,
   color = Colors.primary[600],
   overlay = false,
-  style
+  style,
 }) => {
-  const containerStyle = [
-    styles.container,
-    overlay && styles.overlay,
-    style
-  ];
+  const containerStyle = [styles.container, overlay && styles.overlay, style];
 
   return (
     <View style={containerStyle}>

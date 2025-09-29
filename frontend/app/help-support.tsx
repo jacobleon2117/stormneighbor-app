@@ -16,6 +16,7 @@ import { Header } from "../components/UI/Header";
 import { Button } from "../components/UI/Button";
 import { Colors } from "../constants/Colors";
 import { apiService } from "../services/api";
+import { ErrorHandler } from "../utils/errorHandler";
 
 interface FAQ {
   id: string;
@@ -138,7 +139,7 @@ export default function HelpSupportScreen() {
         setContactForm({ subject: "", message: "", category: "general" });
       }
     } catch (error) {
-      console.error("Contact form error:", error);
+      ErrorHandler.silent(error as Error, "Contact form error");
       Alert.alert(
         "Error",
         "Failed to send your message. Please try again or email us directly at support@stormneighbor.app"

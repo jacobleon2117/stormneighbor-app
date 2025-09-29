@@ -10,22 +10,22 @@ export const useLoadingState = (initialLoading = false) => {
   const [state, setState] = useState<LoadingState>({
     isLoading: initialLoading,
     error: null,
-    lastUpdated: null
+    lastUpdated: null,
   });
 
   const setLoading = useCallback((loading: boolean) => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       isLoading: loading,
-      error: loading ? null : prev.error // Clear error when starting new operation
+      error: loading ? null : prev.error,
     }));
   }, []);
 
   const setError = useCallback((error: string | null) => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       isLoading: false,
-      error
+      error,
     }));
   }, []);
 
@@ -33,7 +33,7 @@ export const useLoadingState = (initialLoading = false) => {
     setState({
       isLoading: false,
       error: null,
-      lastUpdated: new Date()
+      lastUpdated: new Date(),
     });
   }, []);
 
@@ -41,7 +41,7 @@ export const useLoadingState = (initialLoading = false) => {
     setState({
       isLoading: false,
       error: null,
-      lastUpdated: null
+      lastUpdated: null,
     });
   }, []);
 
@@ -50,38 +50,40 @@ export const useLoadingState = (initialLoading = false) => {
     setLoading,
     setError,
     setSuccess,
-    reset
+    reset,
   };
 };
 
-// Enhanced hook for async operations
 export const useAsyncOperation = <T = any>() => {
   const loadingState = useLoadingState();
   const [data, setData] = useState<T | null>(null);
 
-  const execute = useCallback(async (
-    operation: () => Promise<T>,
-    onSuccess?: (result: T) => void,
-    onError?: (error: any) => void
-  ) => {
-    loadingState.setLoading(true);
-    try {
-      const result = await operation();
-      setData(result);
-      loadingState.setSuccess();
-      onSuccess?.(result);
-      return result;
-    } catch (error) {
-      loadingState.setError(error instanceof Error ? error.message : String(error));
-      onError?.(error);
-      throw error;
-    }
-  }, [loadingState]);
+  const execute = useCallback(
+    async (
+      operation: () => Promise<T>,
+      onSuccess?: (result: T) => void,
+      onError?: (error: any) => void
+    ) => {
+      loadingState.setLoading(true);
+      try {
+        const result = await operation();
+        setData(result);
+        loadingState.setSuccess();
+        onSuccess?.(result);
+        return result;
+      } catch (error) {
+        loadingState.setError(error instanceof Error ? error.message : String(error));
+        onError?.(error);
+        throw error;
+      }
+    },
+    [loadingState]
+  );
 
   return {
     ...loadingState,
     data,
     execute,
-    setData
+    setData,
   };
 };

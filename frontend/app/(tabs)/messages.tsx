@@ -16,14 +16,17 @@ import { MessageSearchModal } from "../../components/Messages/MessageSearchModal
 import { Colors } from "../../constants/Colors";
 import { apiService } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
+import { useErrorHandler, ErrorHandler } from "../../utils/errorHandler";
+import { useLoadingState } from "../../utils/loadingStates";
 import { Conversation } from "../../types";
 
 export default function MessagesScreen() {
   const { user } = useAuth();
-  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const errorHandler = useErrorHandler();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [showSearchModal, setShowSearchModal] = useState(false);
 
   const fetchConversations = useCallback(async (isRefresh: boolean = false) => {
@@ -39,7 +42,7 @@ export default function MessagesScreen() {
         setConversations(response.data.conversations || []);
       }
     } catch (error: any) {
-      console.error("Error fetching conversations:", error);
+      ErrorHandler.silent(error as Error, "Fetch conversations");
       setError("Failed to load conversations");
     } finally {
       setLoading(false);
@@ -141,10 +144,6 @@ export default function MessagesScreen() {
     );
   };
 
-  const handleGoBack = () => {
-    router.back();
-  };
-
   const handleNewMessage = () => {
     setShowSearchModal(true);
   };
@@ -154,7 +153,8 @@ export default function MessagesScreen() {
       <MessageCircle size={64} color={Colors.text.disabled} />
       <Text style={styles.emptyTitle}>No conversations yet</Text>
       <Text style={styles.emptyMessage}>
-        Start a conversation by tapping the + button above or by messaging someone from their profile.
+        Start a conversation by tapping the + button above or by messaging someone from their
+        profile.
       </Text>
       <TouchableOpacity style={styles.startConversationButton} onPress={handleNewMessage}>
         <Plus size={20} color={Colors.text.inverse} />
@@ -166,7 +166,13 @@ export default function MessagesScreen() {
   if (loading && !refreshing) {
     return (
       <View style={styles.container}>
-        <Header title="Messages" showBackButton={true} onBackPress={handleGoBack} />
+        <Header
+          title="Messages"
+          showSearch={true}
+          showNotifications={true}
+          onSearchPress={() => setShowSearchModal(true)}
+          onNotificationsPress={() => router.push("/(tabs)/notifications")}
+        />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.primary[500]} />
           <Text style={styles.loadingText}>Loading messages...</Text>
@@ -178,7 +184,13 @@ export default function MessagesScreen() {
   if (error && !refreshing) {
     return (
       <View style={styles.container}>
-        <Header title="Messages" showBackButton={true} onBackPress={handleGoBack} />
+        <Header
+          title="Messages"
+          showSearch={true}
+          showNotifications={true}
+          onSearchPress={() => setShowSearchModal(true)}
+          onNotificationsPress={() => router.push("/(tabs)/notifications")}
+        />
         <View style={styles.errorContainer}>
           <Text style={styles.errorTitle}>Unable to load messages</Text>
           <Text style={styles.errorMessage}>{error}</Text>
@@ -194,11 +206,11 @@ export default function MessagesScreen() {
     <View style={styles.container}>
       <Header
         title="Messages"
-        showBackButton={true}
-        onBackPress={handleGoBack}
         showSearch={true}
+        showNotifications={true}
         onSearchPress={() => setShowSearchModal(true)}
-        rightComponent={
+        onNotificationsPress={() => router.push("/(tabs)/notifications")}
+        customRightContent={
           <TouchableOpacity style={styles.newMessageButton} onPress={handleNewMessage}>
             <Plus size={24} color={Colors.primary[600]} />
           </TouchableOpacity>

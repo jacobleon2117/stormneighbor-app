@@ -267,9 +267,7 @@ export function PostCard({
         title: post.title || "StormNeighbor Post",
       });
       closeModalImmediately(setShowShareModal, shareModalY);
-    } catch (error) {
-      console.log("Share cancelled or failed:", error);
-    }
+    } catch (error) {}
   };
 
   const handleShareToMessages = () => {

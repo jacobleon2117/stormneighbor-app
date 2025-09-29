@@ -1,12 +1,5 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Alert,
-  ActivityIndicator,
-} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { MapPin, Navigation, Edit3, ChevronRight } from "lucide-react-native";
@@ -16,17 +9,20 @@ import { Button } from "../../components/UI/Button";
 import { Colors } from "../../constants/Colors";
 import { apiService } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
+import { useErrorHandler } from "../../utils/errorHandler";
+import { useLoadingState } from "../../utils/loadingStates";
 
 export default function LocationSetupScreen() {
   const { refreshProfile } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
+  const errorHandler = useErrorHandler();
+  const loadingState = useLoadingState();
   const [step, setStep] = useState<"permissions" | "location">("permissions");
   const [locationGranted, setLocationGranted] = useState(false);
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
 
   const handleRequestPermissions = async () => {
-    setIsLoading(true);
+    loadingState.setLoading(true);
 
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -37,14 +33,13 @@ export default function LocationSetupScreen() {
           const bgPermission = await Location.requestBackgroundPermissionsAsync();
           backgroundStatus = bgPermission.status;
         } catch (bgError) {
-          console.warn("Background location not available in Expo Go:", bgError);
           backgroundStatus = "denied";
         }
       }
 
       const locationPreferences = {
         useCurrentLocationForWeather: status === "granted",
-        useCurrentLocationForAlerts: status === "granted", // Use foreground for Expo Go
+        useCurrentLocationForAlerts: status === "granted",
         allowBackgroundLocation: backgroundStatus === "granted",
         shareLocationInPosts: status === "granted",
       };
@@ -63,23 +58,22 @@ export default function LocationSetupScreen() {
       setLocationGranted(status === "granted");
       setStep("location");
     } catch (error) {
-      console.error("Error requesting permissions:", error);
-      console.log("Continuing with manual location entry...");
+      errorHandler.handleSilentError(error, "Location Permissions");
       setStep("location");
     } finally {
-      setIsLoading(false);
+      loadingState.setLoading(false);
     }
   };
 
   const handleUseCurrentLocation = async () => {
     if (!locationGranted) {
-      Alert.alert("Error", "Location permission not granted");
+      errorHandler.handleError("Location permission not granted", "Location Access");
       return;
     }
 
-    setIsLoading(true);
+    loadingState.setLoading(true);
     try {
-      const location = await Location.getCurrentLocationAsync({
+      const location = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
       });
 
@@ -99,23 +93,25 @@ export default function LocationSetupScreen() {
         await refreshProfile();
         router.push("/(auth)/notifications-setup");
       } else {
-        Alert.alert("Error", "Unable to determine address from location. Please enter manually.");
+        errorHandler.handleError(
+          "Unable to determine address from location. Please enter manually.",
+          "Address Lookup"
+        );
       }
     } catch (error) {
-      console.error("Error getting location:", error);
-      Alert.alert("Error", "Unable to get current location. Please enter manually.");
+      errorHandler.handleError(error, "Current Location");
     } finally {
-      setIsLoading(false);
+      loadingState.setLoading(false);
     }
   };
 
   const handleManualLocation = async () => {
     if (!city.trim() || !state.trim()) {
-      Alert.alert("Error", "Please enter both city and state");
+      errorHandler.handleError("Please enter both city and state", "Manual Location");
       return;
     }
 
-    setIsLoading(true);
+    loadingState.setLoading(true);
     try {
       await apiService.updateProfile({
         homeCity: city.trim(),
@@ -123,17 +119,16 @@ export default function LocationSetupScreen() {
       });
 
       await refreshProfile();
-      router.push("/(auth)/notification-setup");
+      router.push("/(auth)/notifications-setup");
     } catch (error) {
-      console.error("Error saving location:", error);
-      Alert.alert("Error", "Failed to save location. Please try again.");
+      errorHandler.handleError(error, "Save Location");
     } finally {
-      setIsLoading(false);
+      loadingState.setLoading(false);
     }
   };
 
   const handleSkip = () => {
-    router.push("/(auth)/notification-setup");
+    router.push("/(auth)/notifications-setup");
   };
 
   if (step === "permissions") {
@@ -161,17 +156,17 @@ export default function LocationSetupScreen() {
 
           <View style={styles.actions}>
             <Button
-              title={isLoading ? "Setting up..." : "Enable Location"}
+              title={loadingState.isLoading ? "Setting up..." : "Enable Location"}
               onPress={handleRequestPermissions}
-              loading={isLoading}
-              disabled={isLoading}
+              loading={loadingState.isLoading}
+              disabled={loadingState.isLoading}
               style={styles.primaryButton}
             />
 
             <TouchableOpacity
               style={styles.skipButton}
               onPress={() => setStep("location")}
-              disabled={isLoading}
+              disabled={loadingState.isLoading}
             >
               <Text style={styles.skipText}>Set Location Manually</Text>
             </TouchableOpacity>
@@ -190,8 +185,7 @@ export default function LocationSetupScreen() {
           <Text style={styles.subtitle}>
             {locationGranted
               ? "Use your current location or enter manually"
-              : "Enter your city and state to get started"
-            }
+              : "Enter your city and state to get started"}
           </Text>
         </View>
 
@@ -200,7 +194,7 @@ export default function LocationSetupScreen() {
             <TouchableOpacity
               style={styles.currentLocationButton}
               onPress={handleUseCurrentLocation}
-              disabled={isLoading}
+              disabled={loadingState.isLoading}
             >
               <Navigation size={20} color={Colors.primary[600]} />
               <Text style={styles.currentLocationText}>Use Current Location</Text>
@@ -233,17 +227,17 @@ export default function LocationSetupScreen() {
 
         <View style={styles.actions}>
           <Button
-            title={isLoading ? "Saving..." : "Continue"}
+            title={loadingState.isLoading ? "Saving..." : "Continue"}
             onPress={handleManualLocation}
-            loading={isLoading}
-            disabled={isLoading || !city.trim() || !state.trim()}
+            loading={loadingState.isLoading}
+            disabled={loadingState.isLoading || !city.trim() || !state.trim()}
             style={styles.primaryButton}
           />
 
           <TouchableOpacity
             style={styles.skipButton}
             onPress={handleSkip}
-            disabled={isLoading}
+            disabled={loadingState.isLoading}
           >
             <Text style={styles.skipText}>Skip for Now</Text>
           </TouchableOpacity>

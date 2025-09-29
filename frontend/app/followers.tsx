@@ -17,6 +17,7 @@ import { Header } from "../components/UI/Header";
 import { Colors } from "../constants/Colors";
 import { apiService } from "../services/api";
 import { useAuth } from "../hooks/useAuth";
+import { ErrorHandler } from "../utils/errorHandler";
 
 interface User {
   id: number;
@@ -61,7 +62,7 @@ export default function FollowersFollowingScreen() {
           setError("Failed to load user data");
         }
       } catch (error: any) {
-        console.error("Error fetching user data:", error);
+        ErrorHandler.silent(error as Error, "Failed to fetch user data");
         setError("Failed to load user data");
       } finally {
         setLoading(false);
@@ -111,7 +112,7 @@ export default function FollowersFollowingScreen() {
         },
       ]);
     } catch (error) {
-      console.error("Error toggling follow:", error);
+      ErrorHandler.silent(error as Error, "Failed to toggle follow status");
     }
   };
 
@@ -136,7 +137,7 @@ export default function FollowersFollowingScreen() {
         }
       }
     } catch (error) {
-      console.error("Error checking conversations:", error);
+      ErrorHandler.silent(error as Error, "Failed to check existing conversations");
     }
 
     Alert.alert("Start Conversation", `Send a message to ${userName}?`, [

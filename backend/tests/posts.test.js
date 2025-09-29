@@ -242,7 +242,6 @@ describe("Posts System", () => {
     });
 
     it("should return post details for valid ID", async () => {
-      // This needs to require a test post to exist
       const response = await request(app).get("/api/v1/posts/1");
 
       expect([200, 404]).toContain(response.status);
@@ -390,7 +389,6 @@ describe("Posts System", () => {
         .set("Authorization", "Bearer invalid-token")
         .send({
           reason: "other",
-          // Missing additionalDetails
         })
         .expect(400);
     });

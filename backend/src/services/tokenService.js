@@ -210,7 +210,7 @@ class TokenService {
           email: user.email,
           firstName: user.first_name,
           lastName: user.last_name,
-        }
+        },
       };
     } catch (error) {
       logger.error("Error creating session:", error);
@@ -260,13 +260,13 @@ class TokenService {
          ORDER BY last_used DESC`,
         [userId]
       );
-      return result.rows.map(session => ({
+      return result.rows.map((session) => ({
         id: session.id,
         deviceInfo: JSON.parse(session.device_info),
         ipAddress: session.ip_address,
         createdAt: session.created_at,
         lastUsed: session.last_used,
-        expiresAt: session.expires_at
+        expiresAt: session.expires_at,
       }));
     } catch (error) {
       logger.error("Error getting user sessions:", error);

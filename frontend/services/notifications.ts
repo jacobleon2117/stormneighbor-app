@@ -2,6 +2,7 @@ import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import { apiService } from "./api";
 import { PUSH_CONFIG } from "../constants/config";
+import { ErrorHandler } from "../utils/errorHandler";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -26,17 +27,23 @@ export class NotificationService {
         }
 
         if (finalStatus !== "granted") {
-          console.warn("Failed to get push token for push notification!");
+          ErrorHandler.silent(
+            new Error("Failed to get push token for push notification!"),
+            "Request Permissions"
+          );
           return false;
         }
 
         return true;
       } else {
-        console.warn("Must use physical device for Push Notifications");
+        ErrorHandler.silent(
+          new Error("Must use physical device for Push Notifications"),
+          "Request Permissions"
+        );
         return false;
       }
     } catch (error) {
-      console.error("Error requesting notification permissions:", error);
+      ErrorHandler.silent(error as Error, "Request Notification Permissions");
       return false;
     }
   }
@@ -52,17 +59,15 @@ export class NotificationService {
         projectId: PUSH_CONFIG.projectId,
       });
 
-      console.log("Expo Push Token:", token.data);
-
       try {
         await apiService.registerPushToken(token.data);
       } catch (error) {
-        console.error("Failed to register push token with backend:", error);
+        ErrorHandler.silent(error as Error, "Register Push Token with Backend");
       }
 
       return token.data;
     } catch (error) {
-      console.error("Error getting push token:", error);
+      ErrorHandler.silent(error as Error, "Get Push Token");
       return null;
     }
   }
@@ -85,7 +90,7 @@ export class NotificationService {
 
       return notificationId;
     } catch (error) {
-      console.error("Error scheduling notification:", error);
+      ErrorHandler.silent(error as Error, "Schedule Notification");
       throw error;
     }
   }
@@ -98,7 +103,7 @@ export class NotificationService {
     try {
       await this.scheduleLocalNotification(title, body, data);
     } catch (error) {
-      console.error("Error showing notification:", error);
+      ErrorHandler.silent(error as Error, "Show Notification");
     }
   }
 
@@ -106,7 +111,7 @@ export class NotificationService {
     try {
       await Notifications.cancelScheduledNotificationAsync(notificationId);
     } catch (error) {
-      console.error("Error canceling notification:", error);
+      ErrorHandler.silent(error as Error, "Cancel Notification");
     }
   }
 
@@ -114,7 +119,7 @@ export class NotificationService {
     try {
       await Notifications.cancelAllScheduledNotificationsAsync();
     } catch (error) {
-      console.error("Error canceling all notifications:", error);
+      ErrorHandler.silent(error as Error, "Cancel All Notifications");
     }
   }
 
@@ -122,7 +127,7 @@ export class NotificationService {
     try {
       return await Notifications.getBadgeCountAsync();
     } catch (error) {
-      console.error("Error getting badge count:", error);
+      ErrorHandler.silent(error as Error, "Get Badge Count");
       return 0;
     }
   }
@@ -131,7 +136,7 @@ export class NotificationService {
     try {
       await Notifications.setBadgeCountAsync(count);
     } catch (error) {
-      console.error("Error setting badge count:", error);
+      ErrorHandler.silent(error as Error, "Set Badge Count");
     }
   }
 

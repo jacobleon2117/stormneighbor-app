@@ -53,7 +53,7 @@ const registerValidation = [
   body("phone")
     .optional()
     .isLength({ min: 10, max: 25 })
-    .matches(/^[\d\s\-\(\)\+\.]+$/)
+    .matches(/^[\d\s\-()+.]+$/)
     .withMessage("Please provide a valid phone number"),
 ];
 
@@ -110,7 +110,7 @@ const updateProfileValidation = [
   body("phone")
     .optional()
     .isLength({ min: 10, max: 25 })
-    .matches(/^[\d\s\-\(\)\+\.]+$/)
+    .matches(/^[\d\s\-()+.]+$/)
     .withMessage("Please provide a valid phone number"),
   body("bio").optional().trim().isLength({ max: 500 }),
   validateCoordinates,
@@ -198,7 +198,6 @@ router.delete(
   authController.revokeSession
 );
 
-// Email test endpoints
 router.get("/test-email", async (_req, res) => {
   try {
     const testResult = await testEmailService();

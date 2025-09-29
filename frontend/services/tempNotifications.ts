@@ -1,4 +1,5 @@
 import * as Notifications from "expo-notifications";
+import { ErrorHandler } from "../utils/errorHandler";
 export class TempNotificationService {
   static async sendLocalAlert(title: string, body: string, data?: any) {
     try {
@@ -13,10 +14,9 @@ export class TempNotificationService {
         trigger: null,
       });
 
-      console.log(`Local notification sent: ${title}`);
       return true;
     } catch (error) {
-      console.error("Failed to send local notification:", error);
+      ErrorHandler.silent(error as Error, "Send Local Notification");
       return false;
     }
   }

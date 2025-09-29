@@ -16,27 +16,21 @@ function RootLayoutContent() {
       if (!isLoading && !hasNavigated) {
         if (isAuthenticated && user) {
           const hasLocation = user?.homeCity && user?.homeState;
-          const hasNotificationPreferences = user?.notificationPreferences &&
-            Object.keys(user.notificationPreferences).length > 0;
+          const hasNotificationPreferences =
+            user?.notificationPreferences && Object.keys(user.notificationPreferences).length > 0;
 
-          console.log("Onboarding check:", {
-            homeCity: user?.homeCity,
-            homeState: user?.homeState,
-            notificationPreferences: user?.notificationPreferences,
-            hasLocation,
-            hasNotificationPreferences,
-          });
+          // Debug: Onboarding check removed
 
           if (!hasLocation) {
-            console.log("Redirecting to location setup");
+            // Debug: Redirecting to location setup
             router.replace("/(auth)/location-setup");
             setHasNavigated(true);
           } else if (!hasNotificationPreferences) {
-            console.log("Redirecting to notification setup");
+            // Debug: Redirecting to notification setup
             router.replace("/(auth)/notifications-setup");
             setHasNavigated(true);
           } else {
-            console.log("Onboarding complete, going to main app");
+            // Debug: Onboarding complete, going to main app
             router.replace("/(tabs)");
             setHasNavigated(true);
           }

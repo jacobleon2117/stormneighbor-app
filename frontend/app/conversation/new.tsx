@@ -15,6 +15,7 @@ import { useLocalSearchParams, router } from "expo-router";
 import { ArrowLeft, Send } from "lucide-react-native";
 import { Colors } from "../../constants/Colors";
 import { apiService } from "../../services/api";
+import { ErrorHandler } from "../../utils/errorHandler";
 
 export default function NewConversationScreen() {
   const { recipientId, recipientName } = useLocalSearchParams<{
@@ -50,7 +51,7 @@ export default function NewConversationScreen() {
         });
       }
     } catch (error: any) {
-      console.error("Error creating conversation:", error);
+      ErrorHandler.silent(error as Error, "Error creating conversation");
       Alert.alert(
         "Error",
         error.response?.data?.message || "Failed to send message. Please try again."

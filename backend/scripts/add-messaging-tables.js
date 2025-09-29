@@ -1,18 +1,17 @@
-const { Pool } = require('pg');
-require('dotenv').config();
+const { Pool } = require("pg");
+require("dotenv").config();
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
 });
 
 const createMessagingTables = async () => {
   const client = await pool.connect();
 
   try {
-    console.log('Creating conversations and messages tables...');
+    console.log("Creating conversations and messages tables...");
 
-    // Create conversations table
     await client.query(`
       CREATE TABLE IF NOT EXISTS conversations (
           id SERIAL PRIMARY KEY,
@@ -31,9 +30,8 @@ const createMessagingTables = async () => {
       );
     `);
 
-    console.log('✅ Conversations table created');
+    console.log("Conversations table created");
 
-    // Create messages table
     await client.query(`
       CREATE TABLE IF NOT EXISTS messages (
           id SERIAL PRIMARY KEY,
@@ -52,9 +50,8 @@ const createMessagingTables = async () => {
       );
     `);
 
-    console.log('✅ Messages table created');
+    console.log("Messages table created");
 
-    // Add foreign key constraint
     await client.query(`
       DO $$
       BEGIN
@@ -68,9 +65,8 @@ const createMessagingTables = async () => {
       END $$;
     `);
 
-    console.log('✅ Foreign key constraint added');
+    console.log("Foreign key constraint added");
 
-    // Create indexes
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_conversations_participants ON conversations(participant_1_id, participant_2_id);
       CREATE INDEX IF NOT EXISTS idx_conversations_last_message ON conversations(last_message_at DESC);
@@ -82,9 +78,8 @@ const createMessagingTables = async () => {
       CREATE INDEX IF NOT EXISTS idx_messages_unread ON messages(recipient_id, is_read) WHERE is_read = false;
     `);
 
-    console.log('✅ Indexes created');
+    console.log("Indexes created");
 
-    // Create triggers
     await client.query(`
       CREATE OR REPLACE FUNCTION update_conversation_on_message()
       RETURNS TRIGGER AS $$
@@ -151,9 +146,8 @@ const createMessagingTables = async () => {
           EXECUTE FUNCTION update_conversation_unread_on_read();
     `);
 
-    console.log('✅ Triggers created');
+    console.log("Triggers created");
 
-    // Test the tables
     const testResult = await client.query(`
       SELECT
           COUNT(*) as conversation_count
@@ -166,25 +160,23 @@ const createMessagingTables = async () => {
       FROM messages;
     `);
 
-    console.log('✅ Database migration completed successfully!');
-    console.log(`📊 Current conversations: ${testResult.rows[0].conversation_count}`);
-    console.log(`📊 Current messages: ${testResult2.rows[0].message_count}`);
-
+    console.log("Database migration completed successfully!");
+    console.log(`Current conversations: ${testResult.rows[0].conversation_count}`);
+    console.log(`Current messages: ${testResult2.rows[0].message_count}`);
   } catch (error) {
-    console.error('❌ Migration failed:', error);
+    console.error("Migration failed:", error);
     throw error;
   } finally {
     client.release();
   }
 };
 
-// Run the migration
 createMessagingTables()
   .then(() => {
-    console.log('🎉 Migration completed successfully!');
-    process.exit(0);
+    console.log("Migration completed successfully!");
+    process.exitCode = 1;
   })
   .catch((error) => {
-    console.error('💥 Migration failed:', error);
-    process.exit(1);
+    console.error("Migration failed:", error);
+    process.exitCode = 1;
   });

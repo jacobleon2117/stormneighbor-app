@@ -18,6 +18,7 @@ import { Colors } from "../../../constants/Colors";
 import { apiService } from "../../../services/api";
 import { useAuth } from "../../../hooks/useAuth";
 import { Post } from "../../../types";
+import { ErrorHandler } from "../../../utils/errorHandler";
 
 const POST_TYPES = [
   { key: "general", label: "General", icon: HelpCircle },
@@ -68,7 +69,7 @@ export default function EditPostScreen() {
         throw new Error("Post not found");
       }
     } catch (error: any) {
-      console.error("Error loading post:", error);
+      ErrorHandler.silent(error as Error, "Failed to load post for editing");
       Alert.alert("Error", "Failed to load post data. Please try again.", [
         { text: "OK", onPress: () => router.back() },
       ]);
@@ -119,7 +120,7 @@ export default function EditPostScreen() {
         throw new Error(response.message || "Failed to update post");
       }
     } catch (error: any) {
-      console.error("Error updating post:", error);
+      ErrorHandler.silent(error as Error, "Failed to update post");
       Alert.alert("Error", "Failed to update post. Please try again.");
     } finally {
       setSaving(false);

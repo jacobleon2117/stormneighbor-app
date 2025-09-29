@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Comment } from "../../types";
 import { Colors } from "../../constants/Colors";
 import { Button } from "../UI/Button";
+import { ErrorHandler } from "../../utils/errorHandler";
 
 interface CommentCardProps {
   comment: Comment;
@@ -60,7 +61,7 @@ export function CommentCard({
       setReplyContent("");
       setShowReplyInput(false);
     } catch (error) {
-      console.error("Error submitting reply:", error);
+      ErrorHandler.silent(error as Error, "Submit reply");
     } finally {
       setIsSubmitting(false);
     }
@@ -78,7 +79,7 @@ export function CommentCard({
       await onEdit?.(comment.id, editContent.trim());
       setShowEditInput(false);
     } catch (error) {
-      console.error("Error editing comment:", error);
+      ErrorHandler.silent(error as Error, "Edit comment");
       setEditContent(comment.content);
     } finally {
       setIsSubmitting(false);

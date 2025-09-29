@@ -29,7 +29,7 @@ const errorTransport = new DailyRotateFile({
   zippedArchive: true,
   createSymlink: true,
   symlinkName: "error-current.log",
-  options: { flags: 'a' }
+  options: { flags: "a" },
 });
 
 const combinedTransport = new DailyRotateFile({
@@ -40,7 +40,7 @@ const combinedTransport = new DailyRotateFile({
   zippedArchive: true,
   createSymlink: true,
   symlinkName: "combined-current.log",
-  options: { flags: 'a' }
+  options: { flags: "a" },
 });
 
 const transports = [];
@@ -57,18 +57,20 @@ const logger = winston.createLogger({
   handleRejections: false,
   exitOnError: false,
   rejectionHandlers: [],
-  exceptionHandlers: []
+  exceptionHandlers: [],
 });
 
 if (process.env.NODE_ENV !== "production") {
-  logger.add(new winston.transports.Console({
-    format: developmentFormat,
-    handleExceptions: false,
-    handleRejections: false,
-    exitOnError: false,
-    stderrLevels: [], // Prevent stderr write issues
-    level: 'info' // Only log info and above to console
-  }));
+  logger.add(
+    new winston.transports.Console({
+      format: developmentFormat,
+      handleExceptions: false,
+      handleRejections: false,
+      exitOnError: false,
+      stderrLevels: [],
+      level: "info",
+    })
+  );
 }
 
 if (process.env.NODE_ENV === "test") {

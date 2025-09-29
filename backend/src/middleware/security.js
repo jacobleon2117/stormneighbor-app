@@ -8,7 +8,6 @@ const logger = require("../utils/logger");
 const window = new JSDOM("").window;
 const DOMPurify = createDOMPurify(window);
 
-// Optional Redis setup - falls back to memory if Redis is unavailable
 let redisClient = null;
 let RedisStore = null;
 let redisInitialized = false;
@@ -30,25 +29,23 @@ function initializeRedis() {
     });
 
     let errorLogged = false;
-    redisClient.on('error', () => {
+    redisClient.on("error", () => {
       if (!errorLogged) {
-        logger.info('Redis unavailable, using memory-based rate limiting');
+        logger.info("Redis unavailable, using memory-based rate limiting");
         errorLogged = true;
       }
       redisClient = null;
     });
 
-    redisClient.on('connect', () => {
-      logger.info('Redis connected for rate limiting');
+    redisClient.on("connect", () => {
+      logger.info("Redis connected for rate limiting");
     });
-
   } catch (error) {
-    logger.info('Redis not available, using memory-based rate limiting');
+    logger.info("Redis not available, using memory-based rate limiting");
   }
 }
 
-// Only initialize Redis if explicitly enabled
-if (process.env.ENABLE_REDIS === 'true') {
+if (process.env.ENABLE_REDIS === "true") {
   initializeRedis();
 }
 
@@ -163,9 +160,9 @@ class SecurityMiddleware {
 
     if (redisClient && RedisStore) {
       config.store = new RedisStore({ sendCommand: (...args) => redisClient.call(...args) });
-      logger.info('Using Redis store for password reset protection');
+      logger.info("Using Redis store for password reset protection");
     } else {
-      logger.info('Using memory store for password reset protection');
+      logger.info("Using memory store for password reset protection");
     }
 
     return rateLimit(config);
@@ -185,9 +182,9 @@ class SecurityMiddleware {
 
     if (redisClient && RedisStore) {
       config.store = new RedisStore({ sendCommand: (...args) => redisClient.call(...args) });
-      logger.info('Using Redis store for registration protection');
+      logger.info("Using Redis store for registration protection");
     } else {
-      logger.info('Using memory store for registration protection');
+      logger.info("Using memory store for registration protection");
     }
 
     return rateLimit(config);
@@ -205,7 +202,6 @@ class SecurityMiddleware {
         if (redisClient) {
           attempts = parseInt(await redisClient.get(key)) || 0;
         } else {
-          // Fallback to memory-based tracking (not persistent but better than nothing)
           const memKey = `${email}:${req.ip}`;
           attempts = this.requestCounts.get(memKey) || 0;
         }
@@ -228,7 +224,6 @@ class SecurityMiddleware {
                 const memKey = `${email}:${req.ip}`;
                 const newCount = (this.requestCounts.get(memKey) || 0) + 1;
                 this.requestCounts.set(memKey, newCount);
-                // Clean up memory after lockout period
                 setTimeout(() => this.requestCounts.delete(memKey), this.LOCKOUT_DURATION);
               }
             } else if (data.success === true) {
@@ -240,12 +235,12 @@ class SecurityMiddleware {
               }
             }
           } catch (error) {
-            logger.error('Error in login brute force protection:', error);
+            logger.error("Error in login brute force protection:", error);
           }
           return originalJson(data);
         };
       } catch (error) {
-        logger.error('Error in login brute force protection setup:', error);
+        logger.error("Error in login brute force protection setup:", error);
       }
 
       next();

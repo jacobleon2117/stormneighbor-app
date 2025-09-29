@@ -15,6 +15,7 @@ import { Colors } from "../../constants/Colors";
 import { apiService } from "../../services/api";
 import { Comment } from "../../types";
 import { useAuth } from "../../hooks/useAuth";
+import { ErrorHandler } from "../../utils/errorHandler";
 
 interface CommentsSectionProps {
   postId: number;
@@ -64,7 +65,7 @@ export function CommentsSection({ postId, onCommentCountChange }: CommentsSectio
           onCommentCountChange?.(totalCount);
         }
       } catch (error: any) {
-        console.error("Error fetching comments:", error);
+        ErrorHandler.silent(error, "Fetch Comments");
         const errorMessage = error.response?.data?.message || "Failed to load comments";
 
         if (pageNum === 1) {
@@ -110,7 +111,7 @@ export function CommentsSection({ postId, onCommentCountChange }: CommentsSectio
         onCommentCountChange?.(comments.length + 1);
       }
     } catch (error: any) {
-      console.error("Error creating comment:", error);
+      ErrorHandler.silent(error, "Create Comment");
       Alert.alert(
         "Error",
         error.response?.data?.message || "Failed to post comment. Please try again."
@@ -145,7 +146,7 @@ export function CommentsSection({ postId, onCommentCountChange }: CommentsSectio
         onCommentCountChange?.(comments.length + 1);
       }
     } catch (error: any) {
-      console.error("Error creating reply:", error);
+      ErrorHandler.silent(error, "Create Reply");
       Alert.alert(
         "Error",
         error.response?.data?.message || "Failed to post reply. Please try again."
@@ -185,7 +186,7 @@ export function CommentsSection({ postId, onCommentCountChange }: CommentsSectio
         await apiService.toggleCommentReaction(commentId, "like");
       }
     } catch (error: any) {
-      console.error("Error toggling like:", error);
+      ErrorHandler.silent(error, "Toggle Like");
 
       const revertComment = (comment: Comment): Comment => {
         if (comment.id === commentId) {
@@ -236,7 +237,7 @@ export function CommentsSection({ postId, onCommentCountChange }: CommentsSectio
         setComments((prev) => prev.map(updateComment));
       }
     } catch (error: any) {
-      console.error("Error editing comment:", error);
+      ErrorHandler.silent(error, "Edit Comment");
       Alert.alert(
         "Error",
         error.response?.data?.message || "Failed to edit comment. Please try again."
@@ -266,7 +267,7 @@ export function CommentsSection({ postId, onCommentCountChange }: CommentsSectio
         });
       }
     } catch (error: any) {
-      console.error("Error deleting comment:", error);
+      ErrorHandler.silent(error, "Delete Comment");
       Alert.alert(
         "Error",
         error.response?.data?.message || "Failed to delete comment. Please try again."
@@ -289,7 +290,7 @@ export function CommentsSection({ postId, onCommentCountChange }: CommentsSectio
         );
       }
     } catch (error: any) {
-      console.error("Error reporting comment:", error);
+      ErrorHandler.silent(error, "Report Comment");
       Alert.alert(
         "Error",
         error.response?.data?.message || "Failed to report comment. Please try again."

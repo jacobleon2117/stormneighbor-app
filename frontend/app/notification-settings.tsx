@@ -6,6 +6,7 @@ import { Button } from "../components/UI/Button";
 import { useAuth } from "../hooks/useAuth";
 import { Colors } from "../constants/Colors";
 import { apiService } from "../services/api";
+import { ErrorHandler } from "../utils/errorHandler";
 
 interface NotificationPreferences {
   emailNotifications: boolean;
@@ -55,7 +56,7 @@ export default function NotificationSettingsScreen() {
         { text: "OK", onPress: () => router.back() },
       ]);
     } catch (error) {
-      console.error("Notification preferences update error:", error);
+      ErrorHandler.silent(error as Error, "Notification preferences update error");
       Alert.alert("Error", "Failed to update notification preferences. Please try again.");
     } finally {
       setLoading(false);

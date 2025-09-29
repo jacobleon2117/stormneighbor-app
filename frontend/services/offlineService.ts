@@ -46,6 +46,7 @@
 
 // TODO: Add AsyncStorage when implementing offline functionality
 // import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ErrorHandler } from "../utils/errorHandler";
 
 // Placeholder interface for future implementation
 interface OfflineServiceInterface {
@@ -71,17 +72,14 @@ interface OfflineServiceInterface {
 
 // Basic placeholder implementation
 class OfflineService implements OfflineServiceInterface {
-
   async isOnline(): Promise<boolean> {
     // TODO: Implement actual network detection
     // For now, assume online
-    console.log('OfflineService: isOnline() - placeholder implementation');
     return true;
   }
 
   onConnectivityChange(callback: (isOnline: boolean) => void): void {
     // TODO: Implement network change detection
-    console.log('OfflineService: onConnectivityChange() - placeholder implementation');
     // Would use NetInfo.addEventListener here
   }
 
@@ -94,9 +92,9 @@ class OfflineService implements OfflineServiceInterface {
       //   timestamp: Date.now(),
       //   version: '1.0'
       // }));
-      console.log(`OfflineService: Cached data for key: ${key} (placeholder)`);
+      // Data cached successfully (placeholder implementation)
     } catch (error) {
-      console.error('OfflineService: Failed to cache data:', error);
+      ErrorHandler.silent(error as Error, "Cache Data");
     }
   }
 
@@ -108,13 +106,12 @@ class OfflineService implements OfflineServiceInterface {
       if (cached) {
         const parsedCache = JSON.parse(cached);
         // TODO: Implement cache expiration logic
-        console.log(`OfflineService: Retrieved cached data for key: ${key}`);
         return parsedCache.data;
       }
-      console.log(`OfflineService: No cached data for key: ${key} (placeholder)`);
+      // No cached data found
       return null;
     } catch (error) {
-      console.error('OfflineService: Failed to get cached data:', error);
+      ErrorHandler.silent(error as Error, "Get Cached Data");
       return null;
     }
   }
@@ -125,37 +122,40 @@ class OfflineService implements OfflineServiceInterface {
       // const keys = await AsyncStorage.getAllKeys();
       // const cacheKeys = keys.filter((key: string) => key.startsWith('offline_cache_'));
       // await AsyncStorage.multiRemove(cacheKeys);
-      console.log('OfflineService: Cache cleared (placeholder)');
+      // Cache cleared successfully (placeholder implementation)
     } catch (error) {
-      console.error('OfflineService: Failed to clear cache:', error);
+      ErrorHandler.silent(error as Error, "Clear Cache");
     }
   }
 
   async queueAction(action: any): Promise<void> {
     try {
-      const queueKey = 'offline_action_queue';
+      const queueKey = "offline_action_queue";
       const existingQueue = await this.getQueuedActions();
-      const newQueue = [...existingQueue, {
-        ...action,
-        id: Date.now().toString(),
-        timestamp: Date.now()
-      }];
+      const newQueue = [
+        ...existingQueue,
+        {
+          ...action,
+          id: Date.now().toString(),
+          timestamp: Date.now(),
+        },
+      ];
       // TODO: Implement AsyncStorage.setItem when AsyncStorage is installed
       // await AsyncStorage.setItem(queueKey, JSON.stringify(newQueue));
-      console.log('OfflineService: Action queued for sync');
+      // Action queued successfully (placeholder implementation)
     } catch (error) {
-      console.error('OfflineService: Failed to queue action:', error);
+      ErrorHandler.silent(error as Error, "Queue Action");
     }
   }
 
   async getQueuedActions(): Promise<any[]> {
     try {
-      const queueKey = 'offline_action_queue';
+      const queueKey = "offline_action_queue";
       // TODO: Implement AsyncStorage.getItem when AsyncStorage is installed
       const queue = null; // await AsyncStorage.getItem(queueKey);
       return queue ? JSON.parse(queue) : [];
     } catch (error) {
-      console.error('OfflineService: Failed to get queued actions:', error);
+      ErrorHandler.silent(error as Error, "Get Queued Actions");
       return [];
     }
   }
@@ -163,8 +163,6 @@ class OfflineService implements OfflineServiceInterface {
   async syncQueuedActions(): Promise<void> {
     try {
       const actions = await this.getQueuedActions();
-      console.log(`OfflineService: Syncing ${actions.length} queued actions`);
-
       // TODO: Implement actual sync logic
       // Process each action and sync with server
       // Remove successfully synced actions from queue
@@ -172,53 +170,53 @@ class OfflineService implements OfflineServiceInterface {
       // For now, just clear the queue
       // TODO: Implement AsyncStorage.removeItem when AsyncStorage is installed
       // await AsyncStorage.removeItem('offline_action_queue');
-      console.log('OfflineService: Queue sync completed (placeholder)');
+      // Queue sync completed (placeholder implementation)
     } catch (error) {
-      console.error('OfflineService: Failed to sync queued actions:', error);
+      ErrorHandler.silent(error as Error, "Sync Queued Actions");
     }
   }
 
   async saveOfflinePost(post: any): Promise<void> {
     try {
-      const offlinePostsKey = 'offline_posts';
+      const offlinePostsKey = "offline_posts";
       const existingPosts = await this.getOfflinePosts();
       const newPost = {
         ...post,
         id: Date.now().toString(),
         timestamp: Date.now(),
-        status: 'offline_pending'
+        status: "offline_pending",
       };
       const updatedPosts = [...existingPosts, newPost];
       // TODO: Implement AsyncStorage.setItem when AsyncStorage is installed
       // await AsyncStorage.setItem(offlinePostsKey, JSON.stringify(updatedPosts));
-      console.log('OfflineService: Offline post saved');
+      // Offline post saved successfully (placeholder implementation)
     } catch (error) {
-      console.error('OfflineService: Failed to save offline post:', error);
+      ErrorHandler.silent(error as Error, "Save Offline Post");
     }
   }
 
   async getOfflinePosts(): Promise<any[]> {
     try {
-      const offlinePostsKey = 'offline_posts';
+      const offlinePostsKey = "offline_posts";
       // TODO: Implement AsyncStorage.getItem when AsyncStorage is installed
       const posts = null; // await AsyncStorage.getItem(offlinePostsKey);
       return posts ? JSON.parse(posts) : [];
     } catch (error) {
-      console.error('OfflineService: Failed to get offline posts:', error);
+      ErrorHandler.silent(error as Error, "Get Offline Posts");
       return [];
     }
   }
 
   async removeOfflinePost(postId: string): Promise<void> {
     try {
-      const offlinePostsKey = 'offline_posts';
+      const offlinePostsKey = "offline_posts";
       const existingPosts = await this.getOfflinePosts();
-      const updatedPosts = existingPosts.filter(post => post.id !== postId);
+      const updatedPosts = existingPosts.filter((post) => post.id !== postId);
       // TODO: Implement AsyncStorage.setItem when AsyncStorage is installed
       // await AsyncStorage.setItem(offlinePostsKey, JSON.stringify(updatedPosts));
-      console.log(`OfflineService: Offline post ${postId} removed`);
+      // Offline post removed successfully (placeholder implementation)
     } catch (error) {
-      console.error('OfflineService: Failed to remove offline post:', error);
+      ErrorHandler.silent(error as Error, "Remove Offline Post");
     }
   }
 }
@@ -231,13 +229,13 @@ export type { OfflineServiceInterface };
 
 // Helper functions for future implementation
 export const OfflineHelpers = {
-
   /**
    * Check if cached data is still valid
    * @param timestamp Cache timestamp
    * @param maxAge Maximum age in milliseconds
    */
-  isCacheValid(timestamp: number, maxAge: number = 300000): boolean { // 5 minutes default
+  isCacheValid(timestamp: number, maxAge: number = 300000): boolean {
+    // 5 minutes default
     return Date.now() - timestamp < maxAge;
   },
 
@@ -258,7 +256,7 @@ export const OfflineHelpers = {
     return {
       ...post,
       isOffline: true,
-      offlineIndicator: '📱 Offline Post - Will sync when online'
+      offlineIndicator: "📱 Offline Post - Will sync when online",
     };
-  }
+  },
 };

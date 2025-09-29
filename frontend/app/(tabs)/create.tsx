@@ -56,7 +56,6 @@ export default function CreateScreen() {
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
-  const [isPosting, setIsPosting] = useState(false);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<{
     name: string;
@@ -184,18 +183,21 @@ export default function CreateScreen() {
 
   const handleCreatePost = async () => {
     if (!postText.trim() && selectedImages.length === 0) {
-      Alert.alert("Error", "Please enter some text or add an image for your post.");
+      errorHandler.handleError(
+        "Please enter some text or add an image for your post.",
+        "Create Post"
+      );
       return;
     }
 
     if (!user) {
-      Alert.alert("Error", "Please log in to create a post.");
+      errorHandler.handleError("Please log in to create a post.", "Authentication");
       return;
     }
 
     try {
       Keyboard.dismiss();
-      setIsPosting(true);
+      loadingState.setLoading(true);
       setPostStatus("posting");
 
       Animated.timing(fadeAnim, {
@@ -214,8 +216,6 @@ export default function CreateScreen() {
         latitude: selectedLocation?.latitude,
         longitude: selectedLocation?.longitude,
       };
-
-      console.log("Creating post:", postData);
 
       const response = await apiService.createPost(postData);
 
@@ -249,19 +249,15 @@ export default function CreateScreen() {
         throw new Error(response.message || "Failed to create post");
       }
     } catch (error: any) {
-      console.error("Error creating post:", error);
       setPostStatus("idle");
       Animated.timing(fadeAnim, {
         toValue: 0,
         duration: 300,
         useNativeDriver: true,
       }).start();
-      Alert.alert(
-        "Error",
-        error.response?.data?.message || error.message || "Failed to create post. Please try again."
-      );
+      errorHandler.handleError(error, "Create Post");
     } finally {
-      setIsPosting(false);
+      loadingState.setLoading(false);
     }
   };
 
@@ -320,7 +316,7 @@ export default function CreateScreen() {
             { text: "Cancel", style: "cancel" },
             {
               text: "Open Settings",
-              onPress: () => console.log("Open settings - implement if needed"),
+              onPress: () => {}, // Open settings - implement if needed
             },
           ]
         );
@@ -377,19 +373,16 @@ export default function CreateScreen() {
         textInputRef.current?.focus();
       }, 100);
     } catch (error) {
-      console.error("Error selecting images:", error);
-      Alert.alert("Error", "Failed to select images from gallery. Please try again.");
+      errorHandler.handleError(error, "Gallery Selection");
     }
   };
 
   const handleCameraPress = async () => {
     try {
-      // Check current permission status first
       const { status: currentStatus } = await ImagePicker.getCameraPermissionsAsync();
 
       let permissionStatus = currentStatus;
 
-      // If not granted, request permission
       if (currentStatus !== "granted") {
         const { status } = await ImagePicker.requestCameraPermissionsAsync();
         permissionStatus = status;
@@ -403,7 +396,7 @@ export default function CreateScreen() {
             { text: "Cancel", style: "cancel" },
             {
               text: "Open Settings",
-              onPress: () => console.log("Open settings - implement if needed"),
+              onPress: () => {}, // Open settings - implement if needed
             },
           ]
         );
@@ -451,8 +444,7 @@ export default function CreateScreen() {
         textInputRef.current?.focus();
       }, 100);
     } catch (error) {
-      console.error("Error taking photo:", error);
-      Alert.alert("Error", "Failed to take photo. Please try again.");
+      errorHandler.handleError(error, "Camera");
     }
   };
 
@@ -497,12 +489,10 @@ export default function CreateScreen() {
   };
 
   const handleRemoveImage = (index: number) => {
-    console.log(`Removing image at index ${index}`);
     const wasTyping = isTyping;
 
     setSelectedImages((prev) => {
       const newImages = prev.filter((_, i) => i !== index);
-      console.log(`Images before: ${prev.length}, after: ${newImages.length}`);
       return newImages;
     });
 
@@ -580,16 +570,19 @@ export default function CreateScreen() {
                 <TouchableOpacity
                   style={[
                     styles.postButton,
-                    ((!postText.trim() && selectedImages.length === 0) || isPosting) &&
+                    ((!postText.trim() && selectedImages.length === 0) || loadingState.isLoading) &&
                       styles.postButtonDisabled,
                   ]}
                   onPress={handleCreatePost}
-                  disabled={(!postText.trim() && selectedImages.length === 0) || isPosting}
+                  disabled={
+                    (!postText.trim() && selectedImages.length === 0) || loadingState.isLoading
+                  }
                 >
                   <Text
                     style={[
                       styles.postButtonText,
-                      ((!postText.trim() && selectedImages.length === 0) || isPosting) &&
+                      ((!postText.trim() && selectedImages.length === 0) ||
+                        loadingState.isLoading) &&
                         styles.postButtonTextDisabled,
                     ]}
                   >
@@ -646,7 +639,6 @@ export default function CreateScreen() {
                     <TouchableOpacity
                       style={styles.removeImageButton}
                       onPress={() => {
-                        console.log("Remove button pressed for image", index);
                         handleRemoveImage(index);
                       }}
                       activeOpacity={0.8}
@@ -986,7 +978,6 @@ export default function CreateScreen() {
         </Animated.View>
       )}
 
-      {/* Image Viewer Modal */}
       <Modal
         visible={!!viewingImage}
         animationType="fade"

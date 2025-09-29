@@ -17,6 +17,7 @@ import { apiService } from "../../services/api";
 import { Post, SearchFilters } from "../../types";
 import { useAuth } from "../../hooks/useAuth";
 import { SearchFiltersModal } from "../../components/Search/SearchFiltersModal";
+import { ErrorHandler } from "../../utils/errorHandler";
 
 export default function SearchScreen() {
   const { user } = useAuth();
@@ -53,7 +54,7 @@ export default function SearchScreen() {
         throw new Error(response.message || "Search failed");
       }
     } catch (error: any) {
-      console.error("Search error:", error);
+      ErrorHandler.silent(error as Error, "Search posts");
       Alert.alert("Error", "Failed to search posts. Please try again.");
       setSearchResults([]);
     } finally {
@@ -104,7 +105,7 @@ export default function SearchScreen() {
         }
       }
     } catch (error) {
-      console.error("Error checking conversations:", error);
+      ErrorHandler.silent(error as Error, "Check conversations");
     }
 
     Alert.alert("Start Conversation", `Send a message to ${userName}?`, [
@@ -224,7 +225,7 @@ export default function SearchScreen() {
         throw new Error(response.message || "Failed to save post");
       }
     } catch (error: any) {
-      console.error("Error saving post:", error);
+      ErrorHandler.silent(error as Error, "Save post");
       Alert.alert("Error", "Failed to save post. Please try again.");
     }
   };
@@ -344,7 +345,7 @@ export default function SearchScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.surface,
   },
   safeHeader: {
     backgroundColor: Colors.background,

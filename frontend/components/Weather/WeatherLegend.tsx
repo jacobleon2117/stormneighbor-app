@@ -90,7 +90,6 @@ export default function WeatherLegend({ onLayerToggle, weatherLayers }: WeatherL
 
   const toggleLayer = (layerId: string) => {
     const currentState = weatherLayers[layerId] || false;
-    console.log(`WeatherLegend: Toggling ${layerId} from ${currentState} to ${!currentState}`);
     onLayerToggle(layerId, !currentState);
   };
 

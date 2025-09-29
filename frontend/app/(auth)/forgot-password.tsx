@@ -15,6 +15,7 @@ import { Input } from "../../components/UI/Input";
 import { Button } from "../../components/UI/Button";
 import { Colors } from "../../constants/Colors";
 import { apiService } from "../../services/api";
+import { ErrorHandler } from "../../utils/errorHandler";
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState("");
@@ -45,7 +46,7 @@ export default function ForgotPasswordScreen() {
       await apiService.forgotPassword(email.trim());
       setEmailSent(true);
     } catch (error: any) {
-      console.error("Forgot password error:", error);
+      ErrorHandler.silent(error as Error, "Forgot password error");
       if (error?.response?.data?.message) {
         setError(error.response.data.message);
       } else if (error?.response?.status === 429) {

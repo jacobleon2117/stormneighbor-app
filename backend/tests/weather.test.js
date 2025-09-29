@@ -246,7 +246,6 @@ describe("Weather System", () => {
     });
 
     it("should validate required fields", async () => {
-      // Missing alertType
       await request(app)
         .post("/api/v1/weather/alerts")
         .set("Authorization", "Bearer invalid-token")
@@ -256,7 +255,6 @@ describe("Weather System", () => {
         })
         .expect(400);
 
-      // Missing severity
       await request(app)
         .post("/api/v1/weather/alerts")
         .set("Authorization", "Bearer invalid-token")
@@ -266,7 +264,6 @@ describe("Weather System", () => {
         })
         .expect(400);
 
-      // Missing description
       await request(app)
         .post("/api/v1/weather/alerts")
         .set("Authorization", "Bearer invalid-token")

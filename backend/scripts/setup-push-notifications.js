@@ -82,9 +82,9 @@ async function setupPushNotificationTables() {
     const preferenceCount = await client.query("SELECT COUNT(*) FROM notification_preferences");
 
     console.log("\nINFO: Current Push Notification Statistics:");
-    console.log(`   Active Devices: ${deviceCount.rows[0].count}`);
-    console.log(`   Total Notifications Sent: ${notificationCount.rows[0].count}`);
-    console.log(`   User Preferences: ${preferenceCount.rows[0].count}`);
+    console.log(` Active Devices: ${deviceCount.rows[0].count}`);
+    console.log(` Total Notifications Sent: ${notificationCount.rows[0].count}`);
+    console.log(` User Preferences: ${preferenceCount.rows[0].count}`);
 
     console.log("\nSUCCESS: Push notification database setup completed successfully");
   } catch (error) {

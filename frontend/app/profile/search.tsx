@@ -12,9 +12,9 @@ import {
   X,
 } from "lucide-react-native";
 import { Colors } from "../../constants/Colors";
-// import { Header } from "../../components/UI/Header"; - Currently not being used, need to either use it or remove it (if needed later, uncomment).
 import { useAuth } from "../../hooks/useAuth";
 import { apiService } from "../../services/api";
+import { ErrorHandler } from "../../utils/errorHandler";
 
 interface SearchResult {
   id: string;
@@ -49,7 +49,7 @@ export default function ProfileSearchScreen() {
         }
       }
     } catch (error) {
-      console.error("Error loading user data:", error);
+      ErrorHandler.silent(error as Error, "Error loading user data");
     }
   }, [user?.id]);
 

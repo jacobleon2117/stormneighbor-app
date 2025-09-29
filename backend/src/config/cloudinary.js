@@ -50,7 +50,7 @@ const profileImageStorage = new CloudinaryStorage({
     public_id: (req, _file) => {
       const timestamp = Date.now();
       const userId = req.user?.userId || "unknown";
-      const uniqueId = uuidv4().substring(0, 8); // Use first 8 chars of UUID
+      const uniqueId = uuidv4().substring(0, 8);
       return `profile_${userId}_${timestamp}_${uniqueId}`;
     },
   },
@@ -69,7 +69,7 @@ const postImageStorage = new CloudinaryStorage({
     public_id: (req, _file) => {
       const timestamp = Date.now();
       const postId = req.params.postId || "new";
-      const uniqueId = uuidv4().substring(0, 8); // Use first 8 chars of UUID
+      const uniqueId = uuidv4().substring(0, 8);
       return `post_${postId}_${timestamp}_${uniqueId}`;
     },
   },
@@ -88,7 +88,7 @@ const commentImageStorage = new CloudinaryStorage({
     public_id: (req, _file) => {
       const timestamp = Date.now();
       const commentId = req.params.commentId || "new";
-      const uniqueId = uuidv4().substring(0, 8); // Use first 8 chars of UUID
+      const uniqueId = uuidv4().substring(0, 8);
       return `comment_${commentId}_${timestamp}_${uniqueId}`;
     },
   },

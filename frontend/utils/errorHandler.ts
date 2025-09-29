@@ -14,19 +14,10 @@ export class ErrorHandler {
 
     console.error(`[${context || "App"}] Error:`, error);
 
-    Alert.alert(
-      title,
-      errorMessage,
-      [{ text: "OK", style: "default" }],
-      { cancelable: true }
-    );
+    Alert.alert(title, errorMessage, [{ text: "OK", style: "default" }], { cancelable: true });
   }
 
-  static showWithRetry(
-    error: AppError | Error | string,
-    onRetry: () => void,
-    context?: string
-  ) {
+  static showWithRetry(error: AppError | Error | string, onRetry: () => void, context?: string) {
     const errorMessage = this.formatErrorMessage(error);
     const title = this.getErrorTitle(error);
 
@@ -37,7 +28,7 @@ export class ErrorHandler {
       errorMessage,
       [
         { text: "Cancel", style: "cancel" },
-        { text: "Retry", style: "default", onPress: onRetry }
+        { text: "Retry", style: "default", onPress: onRetry },
       ],
       { cancelable: true }
     );
@@ -56,7 +47,6 @@ export class ErrorHandler {
       return error.message || "An unexpected error occurred";
     }
 
-    // AppError
     if (error.type === "network") {
       return "Unable to connect to the server. Please check your internet connection and try again.";
     }
@@ -81,7 +71,6 @@ export class ErrorHandler {
       return "Error";
     }
 
-    // AppError
     switch (error.type) {
       case "network":
         return "Connection Error";
@@ -97,7 +86,6 @@ export class ErrorHandler {
   }
 
   static fromApiError(apiError: any): AppError {
-    // Handle different API error formats
     if (apiError.response) {
       const { status, data } = apiError.response;
 
@@ -106,7 +94,7 @@ export class ErrorHandler {
           message: data.message || "Authentication required",
           code: data.code,
           type: "auth",
-          details: data
+          details: data,
         };
       }
 
@@ -115,7 +103,7 @@ export class ErrorHandler {
           message: data.message || "Invalid request",
           code: data.code,
           type: "validation",
-          details: data
+          details: data,
         };
       }
 
@@ -124,7 +112,7 @@ export class ErrorHandler {
           message: "Server error. Please try again later.",
           code: data.code,
           type: "server",
-          details: data
+          details: data,
         };
       }
 
@@ -132,28 +120,26 @@ export class ErrorHandler {
         message: data.message || "Request failed",
         code: data.code,
         type: "unknown",
-        details: data
+        details: data,
       };
     }
 
-    // Network errors
     if (apiError.code === "NETWORK_ERROR" || !apiError.response) {
       return {
         message: "Unable to connect to server",
         type: "network",
-        details: apiError
+        details: apiError,
       };
     }
 
     return {
       message: apiError.message || "An unexpected error occurred",
       type: "unknown",
-      details: apiError
+      details: apiError,
     };
   }
 }
 
-// Hook for consistent error handling in components
 export const useErrorHandler = () => {
   const handleError = (error: any, context?: string) => {
     const appError = ErrorHandler.fromApiError(error);
@@ -173,6 +159,6 @@ export const useErrorHandler = () => {
   return {
     handleError,
     handleErrorWithRetry,
-    handleSilentError
+    handleSilentError,
   };
 };

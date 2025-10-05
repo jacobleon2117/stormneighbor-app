@@ -39,69 +39,6 @@ const ALERT_TYPE_MAP: Record<string, string> = {
   system: "system",
 };
 
-const generateDemoAlerts = (city?: string, state?: string): Alert[] => {
-  const location = city && state ? `${city}, ${state}` : "Your Area";
-
-  return [
-    {
-      id: 1,
-      title: "Severe Thunderstorm Warning",
-      description: `The National Weather Service has issued a severe thunderstorm warning for ${location}. Damaging winds up to 70 mph and quarter-size hail possible. Seek shelter indoors immediately and avoid travel until the storm passes.`,
-      severity: "HIGH" as const,
-      alertType: "weather_alert",
-      startTime: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-      endTime: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
-      isActive: true,
-      metadata: {
-        areaDesc: location,
-        event: "Severe Thunderstorm Warning",
-        urgency: "Immediate",
-        certainty: "Observed",
-        nwsId: "demo-nws-001",
-      },
-      createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-      updatedAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-    },
-    {
-      id: 2,
-      title: "Flash Flood Watch",
-      description: `A Flash Flood Watch is in effect for ${location} through tonight. Heavy rainfall may cause rapid rises in creeks and streams. Turn around, don't drown - never drive through flooded roads.`,
-      severity: "MODERATE" as const,
-      alertType: "weather_alert",
-      startTime: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-      endTime: new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString(),
-      isActive: true,
-      metadata: {
-        areaDesc: location,
-        event: "Flash Flood Watch",
-        urgency: "Future",
-        certainty: "Possible",
-        nwsId: "demo-nws-002",
-      },
-      createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-      updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: 3,
-      title: "System Maintenance Notice",
-      description: `StormNeighbor will undergo scheduled maintenance tonight from 2:00 AM to 4:00 AM. Some features may be temporarily unavailable during this time. We apologize for any inconvenience.`,
-      severity: "LOW" as const,
-      alertType: "system",
-      startTime: new Date().toISOString(),
-      endTime: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-      isActive: true,
-      metadata: {
-        areaDesc: "All Users",
-        event: "System Maintenance",
-        urgency: "Future",
-        certainty: "Certain",
-      },
-      createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-      updatedAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-    },
-  ];
-};
-
 export default function AlertsScreen() {
   const { user } = useAuth();
   const [activeFilter, setActiveFilter] = useState("all");
@@ -137,33 +74,18 @@ export default function AlertsScreen() {
           params.state = state;
         }
 
-        try {
-          const response = await apiService.getAlerts(params);
+        const response = await apiService.getAlerts(params);
 
-          if (response.success && response.data) {
-            setAlertsState((prev) => ({
-              ...prev,
-              alerts: response.data.alerts || [],
-              loading: false,
-              refreshing: false,
-              error: null,
-            }));
-          } else {
-            throw new Error(response.message || "Failed to fetch alerts");
-          }
-        } catch (apiError: any) {
-          ErrorHandler.silent(apiError, "Fetch Alerts from API");
-
-          // Using fallback demo alerts due to API error
-          const demoAlerts = generateDemoAlerts(city, state);
-
+        if (response.success && response.data) {
           setAlertsState((prev) => ({
             ...prev,
-            alerts: demoAlerts,
+            alerts: response.data.alerts || [],
             loading: false,
             refreshing: false,
             error: null,
           }));
+        } else {
+          throw new Error(response.message || "Failed to fetch alerts");
         }
 
         if (latitude && longitude) {
@@ -174,12 +96,15 @@ export default function AlertsScreen() {
           }
         }
       } catch (error: any) {
-        ErrorHandler.silent(error, "Critical Error in Fetch Alerts");
+        const errorMessage = error?.response?.data?.message || error?.message || "Unable to load alerts. Please try again later.";
+
+        ErrorHandler.handleError(error, "Failed to Load Alerts");
+
         setAlertsState((prev) => ({
           ...prev,
           loading: false,
           refreshing: false,
-          error: "Unable to load alerts. Please try again later.",
+          error: errorMessage,
         }));
       }
     },

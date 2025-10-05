@@ -1,8 +1,8 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
+import React from "react";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import { Bell, AlertTriangle, MessageSquare, Cloud, CheckCircle } from "lucide-react-native";
+import { Bell, AlertTriangle, MessageSquare, Cloud } from "lucide-react-native";
 import * as Notifications from "expo-notifications";
 import { Button } from "../../components/UI/Button";
 import { Colors } from "../../constants/Colors";
@@ -15,7 +15,6 @@ export default function NotificationSetupScreen() {
   const { refreshProfile } = useAuth();
   const errorHandler = useErrorHandler();
   const loadingState = useLoadingState();
-  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
 
   const handleEnableNotifications = async () => {
     loadingState.setLoading(true);

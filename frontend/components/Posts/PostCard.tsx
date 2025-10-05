@@ -44,6 +44,7 @@ import { Post } from "../../types";
 import { Colors } from "../../constants/Colors";
 import ReportModal from "../UI/ReportModal";
 import { apiService } from "../../services/api";
+import { CommentsSection } from "../Comments/CommentsSection";
 
 const { height: screenHeight } = Dimensions.get("window");
 
@@ -116,6 +117,7 @@ export function PostCard({
   const [showHideModal, setShowHideModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [commentCount, setCommentCount] = useState(post.commentCount || 0);
 
   const handleReportSubmit = async (category: string, description: string) => {
     await apiService.reportPost(post.id, category, description);
@@ -404,7 +406,7 @@ export function PostCard({
             }
           >
             <MessageCircle size={20} color={Colors.neutral[600]} />
-            <Text style={styles.actionText}>{post.commentCount || 0}</Text>
+            <Text style={styles.actionText}>{commentCount}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -464,7 +466,7 @@ export function PostCard({
               <Animated.View
                 style={[
                   styles.modalContainer,
-                  { height: screenHeight * 0.5 },
+                  { height: screenHeight * 0.85 },
                   { transform: [{ translateY: commentModalY }] },
                 ]}
               >
@@ -472,14 +474,13 @@ export function PostCard({
                   <View style={styles.modalHandleContainer}>
                     <View style={styles.modalHandle} />
                   </View>
-                  <View style={styles.modalHeaderCentered}>
-                    <Text style={styles.modalTitle}>Comments</Text>
-                  </View>
                 </View>
-                <ScrollView
-                  style={styles.modalContent}
-                  showsVerticalScrollIndicator={false}
-                ></ScrollView>
+                <View style={styles.commentsContainer}>
+                  <CommentsSection
+                    postId={post.id}
+                    onCommentCountChange={(count) => setCommentCount(count)}
+                  />
+                </View>
               </Animated.View>
             </TouchableWithoutFeedback>
           </View>
@@ -762,20 +763,6 @@ export function PostCard({
                           <Share size={24} color={Colors.neutral[600]} />
                         </View>
                         <Text style={styles.shareOptionText}>Copy Link</Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity style={styles.shareOption}>
-                        <View style={styles.shareOptionIcon}>
-                          <Share size={24} color={Colors.warning[600]} />
-                        </View>
-                        <Text style={styles.shareOptionText}>Snapchat</Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity style={styles.shareOption}>
-                        <View style={styles.shareOptionIcon}>
-                          <Share size={24} color={Colors.purple[600]} />
-                        </View>
-                        <Text style={styles.shareOptionText}>Instagram</Text>
                       </TouchableOpacity>
 
                       <TouchableOpacity style={styles.shareOption} onPress={handleShareMore}>
@@ -1252,5 +1239,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: Colors.text.inverse,
+  },
+  commentsContainer: {
+    flex: 1,
+    overflow: "hidden",
   },
 });

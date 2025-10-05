@@ -14,45 +14,28 @@ import { MessageCircle, Plus } from "lucide-react-native";
 import { Header } from "../../components/UI/Header";
 import { MessageSearchModal } from "../../components/Messages/MessageSearchModal";
 import { Colors } from "../../constants/Colors";
-import { apiService } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth";
-import { useErrorHandler, ErrorHandler } from "../../utils/errorHandler";
-import { useLoadingState } from "../../utils/loadingStates";
+import {
+  useMessagesStore,
+  useConversationsList,
+  useMessagesLoading,
+  useMessagesError,
+} from "../../stores";
 import { Conversation } from "../../types";
 
 export default function MessagesScreen() {
   const { user } = useAuth();
-  const errorHandler = useErrorHandler();
-  const [loading, setLoading] = useState(true);
+  const fetchConversations = useMessagesStore((state) => state.fetchConversations);
+  const conversations = useConversationsList();
+  const loading = useMessagesLoading();
+  const error = useMessagesError();
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [showSearchModal, setShowSearchModal] = useState(false);
 
-  const fetchConversations = useCallback(async (isRefresh: boolean = false) => {
-    try {
-      if (!isRefresh) {
-        setLoading(true);
-      }
-      setError(null);
-
-      const response = await apiService.getConversations();
-
-      if (response.success && response.data) {
-        setConversations(response.data.conversations || []);
-      }
-    } catch (error: any) {
-      ErrorHandler.silent(error as Error, "Fetch conversations");
-      setError("Failed to load conversations");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
-
-  const handleRefresh = useCallback(() => {
+  const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    fetchConversations(true);
+    await fetchConversations();
+    setRefreshing(false);
   }, [fetchConversations]);
 
   useEffect(() => {
@@ -194,7 +177,7 @@ export default function MessagesScreen() {
         <View style={styles.errorContainer}>
           <Text style={styles.errorTitle}>Unable to load messages</Text>
           <Text style={styles.errorMessage}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={() => fetchConversations()}>
+          <TouchableOpacity style={styles.retryButton} onPress={fetchConversations}>
             <Text style={styles.retryButtonText}>Try Again</Text>
           </TouchableOpacity>
         </View>

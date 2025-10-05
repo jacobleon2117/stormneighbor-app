@@ -335,5 +335,6 @@ export const usePostsLoading = () => usePostsStore((state) => state.loading.isLo
 export const usePostsRefreshing = () => usePostsStore((state) => state.isRefreshing.isLoading);
 export const usePostsLoadingMore = () => usePostsStore((state) => state.loadingMore.isLoading);
 export const usePostsSearching = () => usePostsStore((state) => state.searching.isLoading);
+export const usePostsError = () => usePostsStore((state) => state.loading.error);
 export const usePostsFilters = () => usePostsStore((state) => state.filters);
 export const usePostsPagination = () => usePostsStore((state) => state.pagination);

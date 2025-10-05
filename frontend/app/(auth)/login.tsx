@@ -229,22 +229,6 @@ export default function LoginScreen() {
                   loading={isLoading || isAutoLoggingIn}
                   style={styles.loginButton}
                 />
-
-                <View style={styles.dividerContainer}>
-                  <View style={styles.dividerLine} />
-                  <Text style={styles.dividerText}>Or login with</Text>
-                  <View style={styles.dividerLine} />
-                </View>
-
-                <View style={styles.socialButtonsRow}>
-                  <TouchableOpacity style={[styles.socialButton, styles.socialButtonHalf]}>
-                    <Text style={styles.socialButtonText}>Google</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity style={[styles.socialButton, styles.socialButtonHalf]}>
-                    <Text style={styles.socialButtonText}>Apple</Text>
-                  </TouchableOpacity>
-                </View>
               </View>
             </View>
 

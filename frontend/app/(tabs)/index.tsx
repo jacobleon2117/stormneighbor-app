@@ -26,6 +26,7 @@ import {
   usePostsPagination,
   useSearchResults,
   usePostsSearching,
+  usePostsError,
 } from "../../stores";
 import { Post, SearchFilters } from "../../types";
 import { Colors } from "../../constants/Colors";
@@ -41,7 +42,8 @@ export default function HomeScreen() {
   const isLoading = usePostsLoading();
   const isRefreshing = usePostsRefreshing();
   const isLoadingMore = usePostsLoadingMore();
-  const { fetchPosts, searchPosts, likePost, hidePost, setFilters, clearSearch } = usePostsStore();
+  const error = usePostsError();
+  const { fetchPosts, searchPosts, likePost, hidePost, clearSearch } = usePostsStore();
   const errorHandler = useErrorHandler();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -57,7 +59,6 @@ export default function HomeScreen() {
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const searchResults = useSearchResults();
   const isSearching = usePostsSearching();
-  const [error, setError] = useState<string | null>(null);
 
   const handleRefresh = useCallback(async () => {
     await fetchPosts({

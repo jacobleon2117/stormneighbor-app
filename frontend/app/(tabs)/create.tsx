@@ -489,18 +489,19 @@ export default function CreateScreen() {
   };
 
   const handleRemoveImage = (index: number) => {
-    const wasTyping = isTyping;
-
+    // Prevent keyboard from dismissing by keeping focus state
     setSelectedImages((prev) => {
       const newImages = prev.filter((_, i) => i !== index);
       return newImages;
     });
 
-    if (wasTyping) {
-      setTimeout(() => {
-        textInputRef.current?.focus();
-      }, 10);
-    }
+    // Maintain focus on text input after image removal
+    // Use requestAnimationFrame to ensure the state update completes first
+    requestAnimationFrame(() => {
+      if (textInputRef.current && isTyping) {
+        textInputRef.current.focus();
+      }
+    });
   };
 
   return (
@@ -818,7 +819,7 @@ export default function CreateScreen() {
                   Custom Location
                 </Text>
                 <Text style={styles.locationOptionSubtitle}>
-                  Choose a different location (feature coming soon)
+                  Choose a different location
                 </Text>
               </View>
               {!selectedLocation.useCurrentLocation && (

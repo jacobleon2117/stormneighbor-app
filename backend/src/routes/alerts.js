@@ -59,6 +59,13 @@ router.get(
   weatherController.getAlerts
 );
 
+router.get(
+  "/:id",
+  [param("id").isInt({ min: 1 }).withMessage("Valid alert ID is required")],
+  handleValidationErrors,
+  weatherController.getAlert
+);
+
 router.post(
   "/",
   auth,

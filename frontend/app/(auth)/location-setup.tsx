@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import { MapPin, Navigation, Edit3, ChevronRight } from "lucide-react-native";
+import { MapPin, Navigation, ChevronRight } from "lucide-react-native";
 import * as Location from "expo-location";
 import { Input } from "../../components/UI/Input";
 import { Button } from "../../components/UI/Button";

@@ -459,6 +459,68 @@ const deleteAlert = async (req, res) => {
   }
 };
 
+const getAlert = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const client = await pool.connect();
+
+    try {
+      const alertResult = await client.query(
+        `SELECT
+          id, title, description, severity, alert_type, source,
+          start_time, end_time, is_active, location_city, location_state,
+          metadata, created_at, updated_at
+        FROM weather_alerts
+        WHERE id = $1`,
+        [id]
+      );
+
+      if (alertResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Alert not found",
+        });
+      }
+
+      const row = alertResult.rows[0];
+      const alert = {
+        id: row.id,
+        title: row.title,
+        description: row.description,
+        severity: row.severity,
+        alertType: row.alert_type,
+        source: row.source,
+        startTime: row.start_time,
+        endTime: row.end_time,
+        isActive: row.is_active,
+        metadata: row.metadata || {},
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        location: {
+          city: row.location_city,
+          state: row.location_state,
+        },
+      };
+
+      res.json({
+        success: true,
+        message: "Alert retrieved successfully",
+        data: alert,
+      });
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    logger.error("Get alert error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error fetching alert",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
+};
+
 const getCacheStats = async (_req, res) => {
   try {
     const stats = weatherCache.getStats();
@@ -482,6 +544,7 @@ const getCacheStats = async (_req, res) => {
 module.exports = {
   getCurrentWeather,
   getAlerts,
+  getAlert,
   createAlert,
   updateAlert,
   deleteAlert,

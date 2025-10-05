@@ -23,7 +23,7 @@ import { useLoadingState } from "../../utils/loadingStates";
 
 export default function ProfileScreen() {
   const user = useAuthUser();
-  const { logout } = useAuthStore();
+  const { logout, refreshProfile } = useAuthStore();
   const errorHandler = useErrorHandler();
   const loadingState = useLoadingState();
   const [imageError, setImageError] = useState(false);
@@ -102,10 +102,9 @@ export default function ProfileScreen() {
       const response = await apiService.uploadImage(imageUri, "profile");
 
       if (response.success) {
-        const profileResponse = await apiService.getProfile();
-        if (profileResponse.success) {
-          Alert.alert("Success", "Profile picture updated successfully!");
-        }
+        // Refresh the profile to get the updated image URL
+        await refreshProfile();
+        Alert.alert("Success", "Profile picture updated successfully!");
       }
     } catch (error: any) {
       errorHandler.handleError(error, "Profile Image Upload");

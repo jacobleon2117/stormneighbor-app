@@ -105,7 +105,10 @@ export default function AlertsScreen() {
           }
         }
       } catch (error: any) {
-        const errorMessage = error?.response?.data?.message || error?.message || "Unable to load alerts. Please try again later.";
+        const errorMessage =
+          error?.response?.data?.message ||
+          error?.message ||
+          "Unable to load alerts. Please try again later.";
 
         ErrorHandler.handleError(error, "Failed to Load Alerts");
 

@@ -138,6 +138,25 @@ export class ErrorHandler {
       details: apiError,
     };
   }
+
+  // Backwards-compatible static delegates -------------------------------------------------
+  // Some parts of the codebase call ErrorHandler.handleError / handleErrorWithRetry / handleSilent
+  // directly on the class. Provide thin static wrappers that reuse the existing instance
+  // methods so those calls continue to work.
+  static handleError(error: any, context?: string) {
+    const appError = this.fromApiError(error);
+    this.show(appError, context);
+  }
+
+  static handleErrorWithRetry(error: any, onRetry: () => void, context?: string) {
+    const appError = this.fromApiError(error);
+    this.showWithRetry(appError, onRetry, context);
+  }
+
+  static handleSilent(error: any, context?: string) {
+    const appError = this.fromApiError(error);
+    this.silent(appError, context);
+  }
 }
 
 export const useErrorHandler = () => {

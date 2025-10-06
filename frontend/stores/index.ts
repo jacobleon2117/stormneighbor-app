@@ -18,6 +18,7 @@ export {
   usePostsRefreshing,
   usePostsLoadingMore,
   usePostsSearching,
+  usePostsError,
   usePostsFilters,
   usePostsPagination,
 } from "./postsStore";

@@ -74,6 +74,15 @@ export default function AlertsScreen() {
           params.state = state;
         }
 
+        // Require either lat/lng or city+state to fetch alerts. If not present,
+        // set a user-friendly error rather than calling the backend which will
+        // return a validation error.
+        if (!params.latitude || !params.longitude) {
+          if (!(params.city && params.state)) {
+            throw new Error("City and state are required for alerts");
+          }
+        }
+
         const response = await apiService.getAlerts(params);
 
         if (response.success && response.data) {

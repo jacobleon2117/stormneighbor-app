@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -15,6 +15,7 @@ export default function NotificationSetupScreen() {
   const { refreshProfile } = useAuth();
   const errorHandler = useErrorHandler();
   const loadingState = useLoadingState();
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
 
   const handleEnableNotifications = async () => {
     loadingState.setLoading(true);

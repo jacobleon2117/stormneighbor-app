@@ -108,8 +108,10 @@ class ApiService {
 
   async refreshToken(): Promise<void> {
     const refreshToken = await this.getRefreshToken();
+    // If there's no refresh token, there's nothing to refresh. Return early
+    // instead of throwing to avoid noisy errors during anonymous app usage.
     if (!refreshToken) {
-      throw new Error("No refresh token available");
+      return;
     }
 
     const response = await axios.post(`${API_CONFIG.BASE_URL}/auth/refresh-token`, {

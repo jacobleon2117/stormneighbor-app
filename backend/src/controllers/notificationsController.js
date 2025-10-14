@@ -313,7 +313,7 @@ const getNotificationPreferences = async (req, res) => {
         emergencyAlerts: preferences.emergency_alerts ?? false,
         weatherAlerts: preferences.weather_alerts ?? false,
         communityUpdates: preferences.community_updates ?? false,
-        postReactions: preferences.post_reactions ?? false,
+        postReactions: preferences.reactions ?? false,
         comments: preferences.post_comments ?? false,
         quietHoursEnabled: preferences.quiet_hours_enabled ?? false,
       };
@@ -349,7 +349,7 @@ const updateNotificationPreferences = async (req, res) => {
         "emergency_alerts",
         "new_messages",
         "post_comments",
-        "post_reactions",
+        "reactions",
         "neighborhood_posts",
         "weather_alerts",
         "community_updates",

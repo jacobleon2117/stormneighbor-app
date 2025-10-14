@@ -466,9 +466,9 @@ router.get("/saved", auth, async (req, res) => {
          u.last_name,
          u.profile_image_url,
          sp.created_at as saved_at,
-         (SELECT COUNT(*) FROM post_reactions WHERE post_id = p.id AND reaction_type = 'like') as like_count,
+         (SELECT COUNT(*) FROM reactions WHERE post_id = p.id AND reaction_type = 'like') as like_count,
          (SELECT COUNT(*) FROM comments WHERE post_id = p.id AND is_active = true) as comment_count,
-         (SELECT reaction_type FROM post_reactions WHERE post_id = p.id AND user_id = $1) as user_reaction
+         (SELECT reaction_type FROM reactions WHERE post_id = p.id AND user_id = $1) as user_reaction
        FROM saved_posts sp
        JOIN posts p ON sp.post_id = p.id
        JOIN users u ON p.user_id = u.id

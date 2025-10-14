@@ -377,7 +377,7 @@ router.get("/preferences/notifications", auth, async (req, res) => {
         email_enabled: false,
         frequency: "immediate",
       },
-      post_reactions: {
+      reactions: {
         enabled: false,
         push_enabled: false,
         email_enabled: false,
@@ -466,7 +466,7 @@ router.put(
         "weather_alerts",
         "new_messages",
         "post_comments",
-        "post_reactions",
+        "reactions",
         "neighborhood_posts",
         "community_updates",
         "admin_announcements",
@@ -1100,9 +1100,9 @@ router.get(
            u.first_name,
            u.last_name,
            u.profile_image_url,
-           (SELECT COUNT(*) FROM post_reactions WHERE post_id = p.id AND reaction_type = 'like') as like_count,
+           (SELECT COUNT(*) FROM reactions WHERE post_id = p.id AND reaction_type = 'like') as like_count,
            (SELECT COUNT(*) FROM comments WHERE post_id = p.id AND is_active = true) as comment_count,
-           (SELECT reaction_type FROM post_reactions WHERE post_id = p.id AND user_id = $2) as user_reaction
+           (SELECT reaction_type FROM reactions WHERE post_id = p.id AND user_id = $2) as user_reaction
          FROM posts p
          JOIN users u ON p.user_id = u.id
          WHERE p.user_id = $1 AND u.is_active = true

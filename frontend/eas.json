@@ -6,13 +6,31 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_APP_ENV": "development"
+      }
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_APP_ENV": "staging",
+        "EXPO_PUBLIC_API_BASE_URL": "https://staging-api.stormneighbor.app/api/v1",
+        "EXPO_PUBLIC_BASE_WEB_URL": "https://staging.stormneighbor.app",
+        "EXPO_PUBLIC_ENABLE_PUSH_NOTIFICATIONS": "true"
+      }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_APP_ENV": "production",
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.stormneighbor.app/api/v1",
+        "EXPO_PUBLIC_BASE_WEB_URL": "https://stormneighbor.app",
+        "EXPO_PUBLIC_ENABLE_PUSH_NOTIFICATIONS": "true",
+        "EXPO_PUBLIC_ENABLE_LOCATION_SERVICES": "true",
+        "EXPO_PUBLIC_ENABLE_IMAGE_UPLOADS": "true",
+        "EXPO_PUBLIC_ENABLE_REAL_TIME_UPDATES": "true"
+      }
     }
   },
   "submit": {

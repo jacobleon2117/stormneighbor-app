@@ -19,18 +19,13 @@ function RootLayoutContent() {
           const hasNotificationPreferences =
             user?.notificationPreferences && Object.keys(user.notificationPreferences).length > 0;
 
-          // Debug: Onboarding check removed
-
           if (!hasLocation) {
-            // Debug: Redirecting to location setup
             router.replace("/(auth)/location-setup");
             setHasNavigated(true);
           } else if (!hasNotificationPreferences) {
-            // Debug: Redirecting to notification setup
             router.replace("/(auth)/notifications-setup");
             setHasNavigated(true);
           } else {
-            // Debug: Onboarding complete, going to main app
             router.replace("/(tabs)");
             setHasNavigated(true);
           }

@@ -15,6 +15,7 @@ import {
   TouchableWithoutFeedback,
   ActivityIndicator,
   Animated,
+  Linking,
 } from "react-native";
 import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -297,6 +298,14 @@ export default function CreateScreen() {
     }
   };
 
+  const openAppSettings = () => {
+    if (Platform.OS === "ios") {
+      Linking.openURL("app-settings:");
+    } else {
+      Linking.openSettings();
+    }
+  };
+
   const handleGalleryPress = async () => {
     try {
       const { status: currentStatus } = await ImagePicker.getMediaLibraryPermissionsAsync();
@@ -316,7 +325,7 @@ export default function CreateScreen() {
             { text: "Cancel", style: "cancel" },
             {
               text: "Open Settings",
-              onPress: () => {}, // Open settings - implement if needed
+              onPress: openAppSettings,
             },
           ]
         );
@@ -396,7 +405,7 @@ export default function CreateScreen() {
             { text: "Cancel", style: "cancel" },
             {
               text: "Open Settings",
-              onPress: () => {}, // Open settings - implement if needed
+              onPress: openAppSettings,
             },
           ]
         );

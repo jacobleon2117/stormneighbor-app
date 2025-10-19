@@ -91,9 +91,7 @@ export default function CreateAlertScreen() {
         },
       };
 
-      // Debug: Creating alert with data removed
       const response = await apiService.createAlert(alertData);
-      // Debug: Create alert response removed
 
       if (response.success) {
         Alert.alert(

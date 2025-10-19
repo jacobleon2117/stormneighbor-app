@@ -24,14 +24,7 @@
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": false,
           "NSAllowsArbitraryLoadsInWebContent": false,
-          "NSAllowsLocalNetworking": true,
           "NSExceptionDomains": {
-            "localhost": {
-              "NSExceptionAllowsInsecureHTTPLoads": true,
-              "NSExceptionMinimumTLSVersion": "1.0",
-              "NSExceptionRequiresForwardSecrecy": false,
-              "NSIncludesSubdomains": true
-            },
             "api.openweathermap.org": {
               "NSExceptionRequiresForwardSecrecy": false,
               "NSExceptionMinimumTLSVersion": "1.2",

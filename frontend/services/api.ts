@@ -148,6 +148,13 @@ class ApiService {
   }) {
     try {
       const response = await this.api.post("/auth/register", userData);
+
+      // Save tokens if registration returns them
+      if (response.data.data?.accessToken && response.data.data?.refreshToken) {
+        await this.setAccessToken(response.data.data.accessToken);
+        await this.setRefreshToken(response.data.data.refreshToken);
+      }
+
       return response.data;
     } catch (error) {
       ErrorHandler.silent(error as Error, "Registration");

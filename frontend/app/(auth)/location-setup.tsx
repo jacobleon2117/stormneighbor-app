@@ -16,63 +16,32 @@ export default function LocationSetupScreen() {
   const { refreshProfile } = useAuth();
   const errorHandler = useErrorHandler();
   const loadingState = useLoadingState();
-  const [step, setStep] = useState<"permissions" | "location">("permissions");
   const [locationGranted, setLocationGranted] = useState(false);
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
 
-  const handleRequestPermissions = async () => {
-    loadingState.setLoading(true);
-
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-
-      let backgroundStatus = "denied";
-      if (status === "granted") {
-        try {
-          const bgPermission = await Location.requestBackgroundPermissionsAsync();
-          backgroundStatus = bgPermission.status;
-        } catch (bgError) {
-          backgroundStatus = "denied";
-        }
-      }
-
-      const locationPreferences = {
-        useCurrentLocationForWeather: status === "granted",
-        useCurrentLocationForAlerts: status === "granted",
-        allowBackgroundLocation: backgroundStatus === "granted",
-        shareLocationInPosts: status === "granted",
-      };
-
-      const locationPermissions = {
-        foreground: status,
-        background: backgroundStatus,
-        lastUpdated: new Date().toISOString(),
-      };
-
-      await apiService.updateProfile({
-        locationPreferences,
-        locationPermissions,
-      });
-
+  // Check if location permission is already granted
+  React.useEffect(() => {
+    (async () => {
+      const { status } = await Location.getForegroundPermissionsAsync();
       setLocationGranted(status === "granted");
-      setStep("location");
-    } catch (error) {
-      errorHandler.handleSilentError(error, "Location Permissions");
-      setStep("location");
-    } finally {
-      loadingState.setLoading(false);
-    }
-  };
+    })();
+  }, []);
 
   const handleUseCurrentLocation = async () => {
-    if (!locationGranted) {
-      errorHandler.handleError("Location permission not granted", "Location Access");
-      return;
-    }
-
     loadingState.setLoading(true);
     try {
+      // Request permission if not granted
+      if (!locationGranted) {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== "granted") {
+          errorHandler.handleError("Location permission denied. Please enter manually.", "Location Access");
+          loadingState.setLoading(false);
+          return;
+        }
+        setLocationGranted(true);
+      }
+
       const location = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
       });
@@ -83,15 +52,27 @@ export default function LocationSetupScreen() {
       });
 
       if (addressResult) {
+        const city = addressResult.city || addressResult.subregion || "";
+        const state = addressResult.region || addressResult.isoCountryCode || "";
+
+        if (!city || !state) {
+          errorHandler.handleError(
+            "Unable to determine address from location. Please enter manually.",
+            "Address Lookup"
+          );
+          loadingState.setLoading(false);
+          return;
+        }
+
         await apiService.updateProfile({
-          homeCity: addressResult.city || addressResult.subregion || "",
-          homeState: addressResult.region || addressResult.isoCountryCode || "",
+          homeCity: city,
+          homeState: state,
           latitude: location.coords.latitude,
           longitude: location.coords.longitude,
         });
 
         await refreshProfile();
-        router.push("/(auth)/notifications-setup");
+        router.replace("/(auth)/notifications-setup");
       } else {
         errorHandler.handleError(
           "Unable to determine address from location. Please enter manually.",
@@ -131,51 +112,6 @@ export default function LocationSetupScreen() {
     router.push("/(auth)/notifications-setup");
   };
 
-  if (step === "permissions") {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.content}>
-          <View style={styles.header}>
-            <MapPin size={64} color={Colors.primary[600]} />
-            <Text style={styles.title}>Location Setup</Text>
-            <Text style={styles.subtitle}>
-              Get accurate weather alerts and connect with your local community
-            </Text>
-          </View>
-
-          <View style={styles.benefits}>
-            <View style={styles.benefitItem}>
-              <Navigation size={24} color={Colors.success[600]} />
-              <Text style={styles.benefitText}>Accurate weather for your area</Text>
-            </View>
-            <View style={styles.benefitItem}>
-              <MapPin size={24} color={Colors.primary[600]} />
-              <Text style={styles.benefitText}>Connect with local neighbors</Text>
-            </View>
-          </View>
-
-          <View style={styles.actions}>
-            <Button
-              title={loadingState.isLoading ? "Setting up..." : "Enable Location"}
-              onPress={handleRequestPermissions}
-              loading={loadingState.isLoading}
-              disabled={loadingState.isLoading}
-              style={styles.primaryButton}
-            />
-
-            <TouchableOpacity
-              style={styles.skipButton}
-              onPress={() => setStep("location")}
-              disabled={loadingState.isLoading}
-            >
-              <Text style={styles.skipText}>Set Location Manually</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
@@ -183,24 +119,20 @@ export default function LocationSetupScreen() {
           <MapPin size={48} color={Colors.primary[600]} />
           <Text style={styles.title}>Your Location</Text>
           <Text style={styles.subtitle}>
-            {locationGranted
-              ? "Use your current location or enter manually"
-              : "Enter your city and state to get started"}
+            Get accurate weather alerts and connect with your local community
           </Text>
         </View>
 
         <View style={styles.form}>
-          {locationGranted && (
-            <TouchableOpacity
-              style={styles.currentLocationButton}
-              onPress={handleUseCurrentLocation}
-              disabled={loadingState.isLoading}
-            >
-              <Navigation size={20} color={Colors.primary[600]} />
-              <Text style={styles.currentLocationText}>Use Current Location</Text>
-              <ChevronRight size={20} color={Colors.text.secondary} />
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity
+            style={styles.currentLocationButton}
+            onPress={handleUseCurrentLocation}
+            disabled={loadingState.isLoading}
+          >
+            <Navigation size={20} color={Colors.primary[600]} />
+            <Text style={styles.currentLocationText}>Use Current Location</Text>
+            <ChevronRight size={20} color={Colors.text.secondary} />
+          </TouchableOpacity>
 
           <View style={styles.divider}>
             <View style={styles.dividerLine} />
